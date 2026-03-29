@@ -1,4 +1,6 @@
 -- +goose Up
+
+-- +goose StatementBegin
 -- Fix: "structure of query does not match function result type"
 -- DROP forzado + recrear con tipos exactos
 
@@ -19,7 +21,6 @@ RETURNS TABLE(
   "countryCode" character varying,
   "timeZone" character varying,
   "isDefault" boolean
--- +goose StatementBegin
 ) LANGUAGE plpgsql AS $$
 BEGIN
   RETURN QUERY
@@ -52,7 +53,6 @@ BEGIN
   ORDER BY c."CompanyId", b."BranchId";
 END;
 $$;
--- +goose StatementEnd
 
 CREATE FUNCTION public.usp_sec_user_listcompanyaccesses(p_cod_usuario character varying)
 RETURNS TABLE(
@@ -65,7 +65,6 @@ RETURNS TABLE(
   "countryCode" character varying,
   "timeZone" character varying,
   "isDefault" boolean
--- +goose StatementBegin
 ) LANGUAGE plpgsql AS $$
 BEGIN
   RETURN QUERY
@@ -103,7 +102,6 @@ BEGIN
     c."CompanyId", b."BranchId";
 END;
 $$;
--- +goose StatementEnd
 
 CREATE FUNCTION public.usp_sec_user_getcompanyaccesses(p_cod_usuario character varying)
 RETURNS TABLE(
@@ -116,7 +114,6 @@ RETURNS TABLE(
   "countryCode" character varying,
   "timeZone" character varying,
   "isDefault" boolean
--- +goose StatementBegin
 ) LANGUAGE plpgsql AS $$
 BEGIN
   RETURN QUERY
@@ -155,12 +152,13 @@ EXCEPTION WHEN OTHERS THEN
   RETURN;
 END;
 $$;
--- +goose StatementEnd
 
 -- Ownership
 ALTER FUNCTION public.usp_sec_user_listcompanyaccesses_default() OWNER TO zentto_app;
 ALTER FUNCTION public.usp_sec_user_listcompanyaccesses(character varying) OWNER TO zentto_app;
 ALTER FUNCTION public.usp_sec_user_getcompanyaccesses(character varying) OWNER TO zentto_app;
+
+-- +goose StatementEnd
 
 -- +goose Down
 SELECT 1;

@@ -1,5 +1,7 @@
 -- +goose Up
 
+-- +goose StatementBegin
+
 -- Tabla de jobs de deploy BYOC
 CREATE TABLE IF NOT EXISTS sys."ByocDeployJob" (
   "JobId"           BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -52,7 +54,6 @@ CREATE OR REPLACE FUNCTION usp_sys_byocjob_create(
   p_server_size  VARCHAR(50)  DEFAULT NULL
 )
 RETURNS TABLE("JobId" BIGINT)
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 DECLARE v_job_id BIGINT;
 BEGIN
@@ -67,7 +68,6 @@ BEGIN
   RETURNING "JobId" INTO v_job_id;
   RETURN QUERY SELECT v_job_id;
 END; $$;
--- +goose StatementEnd
 
 -- SP: actualizar status del job
 CREATE OR REPLACE FUNCTION usp_sys_byocjob_updatestatus(
@@ -79,7 +79,6 @@ CREATE OR REPLACE FUNCTION usp_sys_byocjob_updatestatus(
   p_error_message  TEXT         DEFAULT NULL
 )
 RETURNS TABLE("ok" INT)
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 BEGIN
   UPDATE sys."ByocDeployJob"
@@ -94,7 +93,6 @@ BEGIN
   WHERE "JobId" = p_job_id;
   RETURN QUERY SELECT 1;
 END; $$;
--- +goose StatementEnd
 
 -- SP: append de log al job
 CREATE OR REPLACE FUNCTION usp_sys_byocjob_appendlog(
@@ -102,7 +100,6 @@ CREATE OR REPLACE FUNCTION usp_sys_byocjob_appendlog(
   p_log_line TEXT
 )
 RETURNS TABLE("ok" INT)
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 BEGIN
   UPDATE sys."ByocDeployJob"
@@ -110,7 +107,6 @@ BEGIN
   WHERE "JobId" = p_job_id;
   RETURN QUERY SELECT 1;
 END; $$;
--- +goose StatementEnd
 
 -- SP: obtener job
 CREATE OR REPLACE FUNCTION usp_sys_byocjob_get(p_job_id BIGINT)
@@ -120,7 +116,6 @@ RETURNS TABLE(
   "LogOutput" TEXT, "ErrorMessage" TEXT,
   "StartedAt" TIMESTAMP, "CompletedAt" TIMESTAMP, "CreatedAt" TIMESTAMP
 )
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 BEGIN
   RETURN QUERY SELECT
@@ -129,7 +124,6 @@ BEGIN
     j."LogOutput", j."ErrorMessage", j."StartedAt", j."CompletedAt", j."CreatedAt"
   FROM sys."ByocDeployJob" j WHERE j."JobId" = p_job_id;
 END; $$;
--- +goose StatementEnd
 
 -- SP: listar jobs de un tenant
 CREATE OR REPLACE FUNCTION usp_sys_byocjob_list(p_company_id BIGINT)
@@ -137,7 +131,6 @@ RETURNS TABLE(
   "JobId" BIGINT, "Provider" VARCHAR, "Status" VARCHAR,
   "ServerIp" VARCHAR, "TenantUrl" VARCHAR, "CreatedAt" TIMESTAMP
 )
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 BEGIN
   RETURN QUERY SELECT
@@ -147,7 +140,6 @@ BEGIN
   WHERE j."CompanyId" = p_company_id
   ORDER BY j."CreatedAt" DESC;
 END; $$;
--- +goose StatementEnd
 
 -- SP: crear token de onboarding
 CREATE OR REPLACE FUNCTION usp_sys_onboardingtoken_create(
@@ -156,7 +148,6 @@ CREATE OR REPLACE FUNCTION usp_sys_onboardingtoken_create(
   p_expires_at  TIMESTAMP
 )
 RETURNS TABLE("TokenId" BIGINT)
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 DECLARE v_id BIGINT;
 BEGIN
@@ -165,12 +156,10 @@ BEGIN
   RETURNING "TokenId" INTO v_id;
   RETURN QUERY SELECT v_id;
 END; $$;
--- +goose StatementEnd
 
 -- SP: validar y consumir token de onboarding
 CREATE OR REPLACE FUNCTION usp_sys_onboardingtoken_validate(p_token VARCHAR(64))
 RETURNS TABLE("CompanyId" BIGINT, "DeployType" VARCHAR, "ok" INT, "reason" VARCHAR)
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 DECLARE
   v_company_id  BIGINT;
@@ -199,6 +188,7 @@ BEGIN
   UPDATE sys."OnboardingToken" SET "UsedAt" = NOW() WHERE "Token" = p_token;
   RETURN QUERY SELECT v_company_id, v_deploy_type::VARCHAR, 1, ''::VARCHAR;
 END; $$;
+
 -- +goose StatementEnd
 
 -- +goose Down

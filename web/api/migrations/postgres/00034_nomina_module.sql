@@ -1,4 +1,6 @@
 -- +goose Up
+
+-- +goose StatementBegin
 -- ===========================================================================
 -- 00034_nomina_module.sql
 -- Migracion: modulo Nomina completo (funciones + seeds)
@@ -82,7 +84,6 @@ CREATE INDEX IF NOT EXISTS "IX_hr_PayrollBatchLine_Employee"
 -- ALTER TABLE: Agregar columnas faltantes si la tabla fue creada
 -- por 08_fin_hr_extensions.sql con esquema incompleto.
 -- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
--- +goose StatementBegin
 DO $$ BEGIN
   -- hr."PayrollBatch" â€” columnas que 08_fin_hr_extensions.sql no incluye
   IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='hr' AND table_name='PayrollBatch' AND column_name='BranchId') THEN
@@ -110,7 +111,6 @@ DO $$ BEGIN
     ALTER TABLE hr."PayrollBatch" ADD COLUMN "ApprovedAt" TIMESTAMP NULL;
   END IF;
 END $$;
--- +goose StatementEnd
 
 
 -- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -131,7 +131,6 @@ CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_GenerateDraft(
     OUT p_mensaje       TEXT
 )
 LANGUAGE plpgsql
--- +goose StatementBegin
 AS $$
 DECLARE
     v_emp_count INTEGER := 0;
@@ -223,7 +222,6 @@ BEGIN
     END;
 END;
 $$;
--- +goose StatementEnd
 
 
 -- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -242,7 +240,6 @@ CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_SaveDraftLine(
     OUT p_mensaje   TEXT
 )
 LANGUAGE plpgsql
--- +goose StatementBegin
 AS $$
 DECLARE
     v_batch_id BIGINT;
@@ -292,7 +289,6 @@ BEGIN
     END;
 END;
 $$;
--- +goose StatementEnd
 
 
 -- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -315,7 +311,6 @@ CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_BatchAddLine(
 )
 RETURNS record
 LANGUAGE plpgsql
--- +goose StatementBegin
 AS $$
 DECLARE
     v_employee_name VARCHAR(200);
@@ -402,7 +397,6 @@ BEGIN
     END;
 END;
 $$;
--- +goose StatementEnd
 
 
 -- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -419,7 +413,6 @@ CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_BatchRemoveLine(
 )
 RETURNS record
 LANGUAGE plpgsql
--- +goose StatementBegin
 AS $$
 DECLARE
     v_batch_id BIGINT;
@@ -462,7 +455,6 @@ BEGIN
     END;
 END;
 $$;
--- +goose StatementEnd
 
 
 -- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -502,7 +494,6 @@ RETURNS TABLE(
     "NetChangePercent" NUMERIC(8,2)
 )
 LANGUAGE plpgsql
--- +goose StatementBegin
 AS $$
 BEGIN
     RETURN QUERY
@@ -549,7 +540,6 @@ BEGIN
     WHERE b."BatchId" = p_batch_id;
 END;
 $$;
--- +goose StatementEnd
 
 -- 5b. Resumen general (sin columna departamento)
 DROP FUNCTION IF EXISTS public.usp_HR_Payroll_GetDraftSummary_ByDept(INTEGER) CASCADE;
@@ -565,7 +555,6 @@ RETURNS TABLE(
     "DeptNet"        NUMERIC
 )
 LANGUAGE plpgsql
--- +goose StatementBegin
 AS $$
 BEGIN
     RETURN QUERY
@@ -581,7 +570,6 @@ BEGIN
     WHERE bl."BatchId" = p_batch_id;
 END;
 $$;
--- +goose StatementEnd
 
 -- 5c. Alertas
 DROP FUNCTION IF EXISTS public.usp_HR_Payroll_GetDraftSummary_Alerts(INTEGER) CASCADE;
@@ -595,7 +583,6 @@ RETURNS TABLE(
     "AlertMessage" TEXT
 )
 LANGUAGE plpgsql
--- +goose StatementBegin
 AS $$
 BEGIN
     RETURN QUERY
@@ -650,7 +637,6 @@ BEGIN
     ORDER BY alerts."AlertType", alerts."EmployeeCode";
 END;
 $$;
--- +goose StatementEnd
 
 
 -- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -682,7 +668,6 @@ RETURNS TABLE(
     "ConceptCount"   BIGINT
 )
 LANGUAGE plpgsql
--- +goose StatementBegin
 AS $$
 BEGIN
     RETURN QUERY
@@ -727,7 +712,6 @@ BEGIN
     LIMIT p_limit;
 END;
 $$;
--- +goose StatementEnd
 
 
 -- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -757,7 +741,6 @@ RETURNS TABLE(
     "UpdatedAt"    TIMESTAMP
 )
 LANGUAGE plpgsql
--- +goose StatementBegin
 AS $$
 BEGIN
     RETURN QUERY
@@ -788,7 +771,6 @@ BEGIN
         bl."ConceptCode";
 END;
 $$;
--- +goose StatementEnd
 
 
 -- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -806,7 +788,6 @@ CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_ApproveDraft(
 )
 RETURNS record
 LANGUAGE plpgsql
--- +goose StatementBegin
 AS $$
 DECLARE
     v_current_status VARCHAR(20);
@@ -855,7 +836,6 @@ BEGIN
     END;
 END;
 $$;
--- +goose StatementEnd
 
 
 -- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -876,7 +856,6 @@ CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_ProcessBatch(
 )
 RETURNS record
 LANGUAGE plpgsql
--- +goose StatementBegin
 AS $$
 DECLARE
     v_company_id   INTEGER;
@@ -1001,7 +980,6 @@ BEGIN
     END;
 END;
 $$;
--- +goose StatementEnd
 
 
 -- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -1031,7 +1009,6 @@ RETURNS TABLE(
     "CreatedByUserId" INTEGER
 )
 LANGUAGE plpgsql
--- +goose StatementBegin
 AS $$
 BEGIN
     RETURN QUERY
@@ -1057,7 +1034,6 @@ BEGIN
     LIMIT p_limit;
 END;
 $$;
--- +goose StatementEnd
 
 
 -- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -1080,7 +1056,6 @@ CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_BatchBulkUpdate(
     OUT p_mensaje        TEXT
 )
 LANGUAGE plpgsql
--- +goose StatementBegin
 AS $$
 DECLARE
     v_count INTEGER;
@@ -1138,7 +1113,6 @@ BEGIN
     END;
 END;
 $$;
--- +goose StatementEnd
 
 -- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 -- WRAPPER: usp_HR_Payroll_GetDraftSummary
@@ -1176,7 +1150,6 @@ RETURNS TABLE(
     "totalNeto"            NUMERIC,
     "totalEmpleados"       BIGINT
 )
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 BEGIN
     RETURN QUERY
@@ -1198,7 +1171,6 @@ BEGIN
     FROM public.usp_HR_Payroll_GetDraftSummary_Header(p_batch_id) h;
 END;
 $$;
--- +goose StatementEnd
 
 -- â•â•â• sp_nomina_batch.sql completado exitosamente â•â•â•
 
@@ -1221,7 +1193,6 @@ CREATE OR REPLACE FUNCTION sp_nomina_reemplazar_variables(
   p_formula TEXT
 )
 RETURNS TEXT
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 DECLARE
   v_result TEXT := COALESCE(p_formula,''::VARCHAR);
@@ -1239,7 +1210,6 @@ BEGIN
   RETURN v_result;
 END;
 $$;
--- +goose StatementEnd
 
 -- =============================================
 -- Funcion: sp_Nomina_EvaluarFormula
@@ -1254,7 +1224,6 @@ CREATE OR REPLACE FUNCTION sp_nomina_evaluar_formula(
   OUT p_formula_resuelta TEXT
 )
 RETURNS RECORD
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 DECLARE
   v_sql TEXT;
@@ -1284,7 +1253,6 @@ BEGIN
   END;
 END;
 $$;
--- +goose StatementEnd
 
 -- =============================================
 -- Funcion: sp_Nomina_CalcularConcepto
@@ -1302,7 +1270,6 @@ CREATE OR REPLACE FUNCTION sp_nomina_calcular_concepto(
   OUT p_descripcion VARCHAR(200)
 )
 RETURNS RECORD
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 DECLARE
   v_company_id INT;
@@ -1338,7 +1305,6 @@ BEGIN
   p_total := p_monto * v_cantidad;
 END;
 $$;
--- +goose StatementEnd
 
 -- =============================================
 -- Funcion: sp_Nomina_ProcesarEmpleado
@@ -1355,7 +1321,6 @@ CREATE OR REPLACE FUNCTION sp_nomina_procesar_empleado(
   OUT p_mensaje VARCHAR(500)
 )
 RETURNS RECORD
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 DECLARE
   v_company_id INT;
@@ -1500,7 +1465,6 @@ BEGIN
   END;
 END;
 $$;
--- +goose StatementEnd
 
 -- =============================================
 -- Funcion: sp_Nomina_ProcesarNomina
@@ -1518,7 +1482,6 @@ CREATE OR REPLACE FUNCTION sp_nomina_procesar_nomina(
   OUT p_mensaje VARCHAR(500)
 )
 RETURNS RECORD
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 DECLARE
   v_company_id INT;
@@ -1558,7 +1521,6 @@ BEGIN
   p_mensaje := 'Proceso completado. Procesados=' || CAST(p_procesados AS VARCHAR(20)) || ' Errores=' || CAST(p_errores AS VARCHAR(20));
 END;
 $$;
--- +goose StatementEnd
 
 
 -- Source: sp_nomina_calculo_regimen.sql
@@ -1578,7 +1540,6 @@ CREATE OR REPLACE FUNCTION sp_nomina_cargar_constantes_regimen(
   p_tipo_nomina VARCHAR(15) DEFAULT 'MENSUAL'
 )
 RETURNS VOID
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 DECLARE
   v_company_id INT;
@@ -1615,7 +1576,6 @@ BEGIN
   END IF;
 END;
 $$;
--- +goose StatementEnd
 
 -- =============================================
 -- Funcion: sp_Nomina_CalcularVacacionesRegimen
@@ -1631,7 +1591,6 @@ CREATE OR REPLACE FUNCTION sp_nomina_calcular_vacaciones_regimen(
   OUT p_dias_bono_post_vacacional NUMERIC(18,6)
 )
 RETURNS RECORD
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 DECLARE
   v_vac_base NUMERIC(18,6);
@@ -1652,7 +1611,6 @@ BEGIN
   PERFORM sp_nomina_set_variable(p_session_id, 'DIAS_BONO_POST_VAC', p_dias_bono_post_vacacional, 'Bono post vacacional');
 END;
 $$;
--- +goose StatementEnd
 
 -- =============================================
 -- Funcion: sp_Nomina_CalcularUtilidadesRegimen
@@ -1666,7 +1624,6 @@ CREATE OR REPLACE FUNCTION sp_nomina_calcular_utilidades_regimen(
   OUT p_utilidades NUMERIC(18,6)
 )
 RETURNS NUMERIC(18,6)
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 DECLARE
   v_dias_min NUMERIC(18,6);
@@ -1694,7 +1651,6 @@ BEGIN
   PERFORM sp_nomina_set_variable(p_session_id, 'MONTO_UTILIDADES', p_utilidades, 'Monto utilidades');
 END;
 $$;
--- +goose StatementEnd
 
 -- =============================================
 -- Funcion: sp_Nomina_CalcularPrestacionesRegimen
@@ -1710,7 +1666,6 @@ CREATE OR REPLACE FUNCTION sp_nomina_calcular_prestaciones_regimen(
   OUT p_intereses NUMERIC(18,6)
 )
 RETURNS RECORD
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 DECLARE
   v_dias_anio NUMERIC(18,6);
@@ -1732,7 +1687,6 @@ BEGIN
   PERFORM sp_nomina_set_variable(p_session_id, 'INTERESES_PRESTACIONES', p_intereses, 'Intereses prestaciones');
 END;
 $$;
--- +goose StatementEnd
 
 -- =============================================
 -- Funcion: sp_Nomina_PrepararVariablesRegimen
@@ -1748,7 +1702,6 @@ CREATE OR REPLACE FUNCTION sp_nomina_preparar_variables_regimen(
   p_fecha_hasta DATE DEFAULT NULL
 )
 RETURNS VOID
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 DECLARE
   v_reg VARCHAR(10) := UPPER(COALESCE(p_regimen, p_nomina));
@@ -1759,7 +1712,6 @@ BEGIN
   PERFORM sp_nomina_cargar_constantes_regimen(p_session_id, v_reg, p_tipo_nomina);
 END;
 $$;
--- +goose StatementEnd
 
 -- =============================================
 -- Funcion: sp_Nomina_ProcesarEmpleadoRegimen
@@ -1776,7 +1728,6 @@ CREATE OR REPLACE FUNCTION sp_nomina_procesar_empleado_regimen(
   OUT p_mensaje VARCHAR(500)
 )
 RETURNS RECORD
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 DECLARE
   v_reg VARCHAR(10) := UPPER(COALESCE(p_regimen, p_nomina));
@@ -1801,7 +1752,6 @@ BEGIN
   END IF;
 END;
 $$;
--- +goose StatementEnd
 
 
 -- Source: sp_nomina_conceptolegal_adapter.sql
@@ -1845,7 +1795,6 @@ CREATE OR REPLACE FUNCTION sp_nomina_cargar_constantes_desde_concepto_legal(
   p_tipo_calculo VARCHAR(50) DEFAULT 'MENSUAL'
 )
 RETURNS VOID
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 DECLARE
   v_regimen VARCHAR(10) := UPPER(LEFT(COALESCE(p_convencion, 'LOT'), 10));
@@ -1854,7 +1803,6 @@ BEGIN
   PERFORM sp_nomina_cargar_constantes_regimen(p_session_id, v_regimen, v_tipo_nomina);
 END;
 $$;
--- +goose StatementEnd
 
 -- =============================================
 -- Funcion: sp_Nomina_ProcesarEmpleadoConceptoLegal
@@ -1872,7 +1820,6 @@ CREATE OR REPLACE FUNCTION sp_nomina_procesar_empleado_concepto_legal(
   OUT p_mensaje VARCHAR(500)
 )
 RETURNS RECORD
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 DECLARE
   v_regimen VARCHAR(10) := UPPER(COALESCE(p_convencion, p_nomina));
@@ -1884,7 +1831,6 @@ BEGIN
   ) r;
 END;
 $$;
--- +goose StatementEnd
 
 -- =============================================
 -- Funcion: sp_Nomina_ConceptosLegales_List
@@ -1912,7 +1858,6 @@ RETURNS TABLE (
   "Activo" BOOLEAN,
   "CO_NOMINA" VARCHAR
 )
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 BEGIN
   RETURN QUERY
@@ -1940,7 +1885,6 @@ BEGIN
   ORDER BY pc."ConventionCode", pc."CalculationType", pc."SortOrder", pc."ConceptCode";
 END;
 $$;
--- +goose StatementEnd
 
 -- =============================================
 -- Funcion: sp_Nomina_ValidarFormulasConceptoLegal
@@ -1958,7 +1902,6 @@ RETURNS TABLE (
   "Error" VARCHAR(500),
   "EsValida" BOOLEAN
 )
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 DECLARE
   rec RECORD;
@@ -2017,7 +1960,6 @@ BEGIN
   ORDER BY t."EsValida" ASC, t."CO_CONCEPT";
 END;
 $$;
--- +goose StatementEnd
 
 
 -- Source: sp_nomina_conceptolegal_crud.sql
@@ -2033,7 +1975,6 @@ $$;
 --    Lista conceptos legales con filtros opcionales.
 -- =============================================================================
 -- Nuclear drop: query pg_proc to find ALL overloads and drop them
--- +goose StatementBegin
 DO $$
 DECLARE _oid OID;
 BEGIN
@@ -2045,7 +1986,6 @@ BEGIN
     EXECUTE format('DROP FUNCTION IF EXISTS %s CASCADE', _oid::regprocedure);
   END LOOP;
 END $$;
--- +goose StatementEnd
 CREATE OR REPLACE FUNCTION public.usp_hr_legalconcept_list(
     p_company_id       INT,
     p_convention_code  VARCHAR  DEFAULT NULL,
@@ -2068,7 +2008,6 @@ RETURNS TABLE(
     "orden"         INT,
     "activo"        BOOLEAN
 )
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 BEGIN
     RETURN QUERY
@@ -2096,7 +2035,6 @@ BEGIN
     ORDER BY c."ConventionCode", c."CalculationType", c."SortOrder", c."ConceptCode";
 END;
 $$;
--- +goose StatementEnd
 
 -- =============================================================================
 -- 2. usp_HR_LegalConcept_ValidateFormulas
@@ -2114,7 +2052,6 @@ RETURNS TABLE(
     "formula"      VARCHAR(500),
     "defaultValue" NUMERIC(18,4)
 )
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 BEGIN
     RETURN QUERY
@@ -2132,7 +2069,6 @@ BEGIN
     ORDER BY c."SortOrder", c."ConceptCode";
 END;
 $$;
--- +goose StatementEnd
 
 -- =============================================================================
 -- 3. usp_HR_LegalConcept_ListConventions
@@ -2151,7 +2087,6 @@ RETURNS TABLE(
     "OrdenInicio"           INT,
     "OrdenFin"              INT
 )
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 BEGIN
     RETURN QUERY
@@ -2171,11 +2106,8 @@ BEGIN
     ORDER BY c."ConventionCode";
 END;
 $$;
--- +goose StatementEnd
 
--- +goose StatementBegin
 DO $$ BEGIN RAISE NOTICE 'sp_nomina_conceptolegal_crud.sql â€” funciones creadas'; END $$;
--- +goose StatementEnd
 
 
 -- Source: sp_nomina_constantes_convenios.sql
@@ -2186,7 +2118,6 @@ DO $$ BEGIN RAISE NOTICE 'sp_nomina_conceptolegal_crud.sql â€” funciones cr
 -- Traducido de SQL Server a PostgreSQL
 -- =============================================
 
--- +goose StatementBegin
 DO $$
 DECLARE
   v_company_id INT;
@@ -2302,7 +2233,6 @@ BEGIN
   RAISE NOTICE 'Conceptos por convenio sembrados/actualizados en hr.PayrollConcept';
 END;
 $$;
--- +goose StatementEnd
 
 
 -- Source: sp_nomina_constantes_venezuela.sql
@@ -2313,7 +2243,6 @@ $$;
 -- Inserta o actualiza constantes en hr.PayrollConstant.
 -- ============================================================
 
--- +goose StatementBegin
 DO $$
 DECLARE
     v_company_id INT;
@@ -2400,7 +2329,6 @@ BEGIN
     RAISE NOTICE 'Constantes de nómina Venezuela sembradas/actualizadas en hr.PayrollConstant';
 END;
 $$;
--- +goose StatementEnd
 
 
 -- Source: sp_nomina_consultas.sql
@@ -2444,7 +2372,6 @@ RETURNS TABLE(
     "Activo"       BOOLEAN
 )
 LANGUAGE plpgsql
--- +goose StatementBegin
 AS $$
 DECLARE
     v_company_id INT;
@@ -2500,7 +2427,6 @@ BEGIN
     LIMIT p_limit OFFSET v_offset;
 END;
 $$;
--- +goose StatementEnd
 
 
 -- =============================================
@@ -2528,7 +2454,6 @@ RETURNS TABLE(
     "Mensaje"   VARCHAR
 )
 LANGUAGE plpgsql
--- +goose StatementBegin
 AS $$
 DECLARE
     v_company_id  INT;
@@ -2602,7 +2527,6 @@ BEGIN
     RETURN QUERY SELECT v_resultado, v_mensaje;
 END;
 $$;
--- +goose StatementEnd
 
 
 -- =============================================
@@ -2635,7 +2559,6 @@ RETURNS TABLE(
     "TipoNomina"   VARCHAR
 )
 LANGUAGE plpgsql
--- +goose StatementBegin
 AS $$
 DECLARE
     v_company_id INT;
@@ -2684,7 +2607,6 @@ BEGIN
     LIMIT p_limit OFFSET v_offset;
 END;
 $$;
--- +goose StatementEnd
 
 
 -- =============================================
@@ -2713,7 +2635,6 @@ RETURNS TABLE(
     "TipoNomina"     VARCHAR
 )
 LANGUAGE plpgsql
--- +goose StatementBegin
 AS $$
 DECLARE
     v_company_id INT;
@@ -2744,7 +2665,6 @@ BEGIN
     LIMIT 1;
 END;
 $$;
--- +goose StatementEnd
 
 
 -- =============================================
@@ -2766,7 +2686,6 @@ RETURNS TABLE(
     "Total"            NUMERIC
 )
 LANGUAGE plpgsql
--- +goose StatementBegin
 AS $$
 DECLARE
     v_company_id INT;
@@ -2798,7 +2717,6 @@ BEGIN
     ORDER BY rl."PayrollRunLineId";
 END;
 $$;
--- +goose StatementEnd
 
 
 -- =============================================
@@ -2816,7 +2734,6 @@ RETURNS TABLE(
     "Mensaje"   VARCHAR
 )
 LANGUAGE plpgsql
--- +goose StatementBegin
 AS $$
 DECLARE
     v_company_id INT;
@@ -2849,7 +2766,6 @@ BEGIN
     RETURN QUERY SELECT 1, ('Registros cerrados: ' || v_rows::VARCHAR)::VARCHAR;
 END;
 $$;
--- +goose StatementEnd
 
 
 -- =============================================
@@ -2876,7 +2792,6 @@ RETURNS TABLE(
     "TotalCalculado"      NUMERIC
 )
 LANGUAGE plpgsql
--- +goose StatementBegin
 AS $$
 DECLARE
     v_company_id INT;
@@ -2915,7 +2830,6 @@ BEGIN
     LIMIT p_limit OFFSET v_offset;
 END;
 $$;
--- +goose StatementEnd
 
 
 -- =============================================
@@ -2941,7 +2855,6 @@ RETURNS TABLE(
     "CalculatedAmount"    NUMERIC
 )
 LANGUAGE plpgsql
--- +goose StatementBegin
 AS $$
 BEGIN
     RETURN QUERY
@@ -2963,7 +2876,6 @@ BEGIN
     LIMIT 1;
 END;
 $$;
--- +goose StatementEnd
 
 
 -- =============================================
@@ -2984,7 +2896,6 @@ RETURNS TABLE(
     "Total"                 NUMERIC
 )
 LANGUAGE plpgsql
--- +goose StatementBegin
 AS $$
 BEGIN
     RETURN QUERY
@@ -3002,7 +2913,6 @@ BEGIN
     ORDER BY vl."VacationProcessLineId";
 END;
 $$;
--- +goose StatementEnd
 
 
 -- =============================================
@@ -3027,7 +2937,6 @@ RETURNS TABLE(
     "FechaCalculo"         TIMESTAMP
 )
 LANGUAGE plpgsql
--- +goose StatementBegin
 AS $$
 DECLARE
     v_company_id INT;
@@ -3064,7 +2973,6 @@ BEGIN
     LIMIT p_limit OFFSET v_offset;
 END;
 $$;
--- +goose StatementEnd
 
 
 -- =============================================
@@ -3085,7 +2993,6 @@ RETURNS TABLE(
     "IsActive"   BOOLEAN
 )
 LANGUAGE plpgsql
--- +goose StatementBegin
 AS $$
 DECLARE
     v_company_id INT;
@@ -3115,7 +3022,6 @@ BEGIN
     LIMIT p_limit OFFSET v_offset;
 END;
 $$;
--- +goose StatementEnd
 
 
 -- =============================================
@@ -3134,7 +3040,6 @@ RETURNS TABLE(
     "Mensaje"   VARCHAR
 )
 LANGUAGE plpgsql
--- +goose StatementBegin
 AS $$
 DECLARE
     v_company_id INT;
@@ -3183,7 +3088,6 @@ BEGIN
     RETURN QUERY SELECT v_resultado, v_mensaje;
 END;
 $$;
--- +goose StatementEnd
 
 
 -- Source: sp_nomina_documentos.sql
@@ -3219,7 +3123,6 @@ CREATE TABLE IF NOT EXISTS hr."DocumentTemplate" (
 );
 
 -- Agregar columna IsSystem si la tabla ya existe sin ella (migraciÃ³n)
--- +goose StatementBegin
 DO $$
 BEGIN
     IF NOT EXISTS (
@@ -3234,7 +3137,6 @@ BEGIN
     END IF;
 END;
 $$;
--- +goose StatementEnd
 
 -- =============================================
 -- 2. FUNCIONES (equivalentes a los SPs)
@@ -3243,7 +3145,6 @@ $$;
 -- Nuclear drop: eliminar TODAS las sobrecargas por OID para evitar
 -- el error "function is not unique" que ocurre cuando conviven
 -- sobrecargas con firmas (CHAR vs VARCHAR) diferentes.
--- +goose StatementBegin
 DO $do$
 DECLARE _oid OID;
 BEGIN
@@ -3259,7 +3160,6 @@ BEGIN
     EXECUTE format('DROP FUNCTION IF EXISTS %s CASCADE', _oid::regprocedure);
   END LOOP;
 END $do$;
--- +goose StatementEnd
 
 -- --------------------------------------------
 -- usp_HR_DocumentTemplate_List
@@ -3283,7 +3183,6 @@ RETURNS TABLE(
     "UpdatedAt"    TIMESTAMP
 )
 LANGUAGE plpgsql
--- +goose StatementBegin
 AS $$
 BEGIN
     RETURN QUERY
@@ -3306,7 +3205,6 @@ BEGIN
     ORDER BY t."CountryCode", t."TemplateType", t."TemplateName";
 END;
 $$;
--- +goose StatementEnd
 
 
 -- --------------------------------------------
@@ -3331,7 +3229,6 @@ RETURNS TABLE(
     "UpdatedAt"    TIMESTAMP
 )
 LANGUAGE plpgsql
--- +goose StatementBegin
 AS $$
 BEGIN
     RETURN QUERY
@@ -3353,7 +3250,6 @@ BEGIN
       AND t."TemplateCode" = p_template_code;
 END;
 $$;
--- +goose StatementEnd
 
 
 -- --------------------------------------------
@@ -3372,7 +3268,6 @@ CREATE OR REPLACE FUNCTION public.usp_hr_documenttemplate_save(
     OUT p_mensaje   TEXT
 )
 LANGUAGE plpgsql
--- +goose StatementBegin
 AS $$
 BEGIN
     p_resultado := 0;
@@ -3416,7 +3311,6 @@ BEGIN
     p_mensaje   := 'Plantilla guardada correctamente.'::VARCHAR;
 END;
 $$;
--- +goose StatementEnd
 
 
 -- --------------------------------------------
@@ -3429,7 +3323,6 @@ CREATE OR REPLACE FUNCTION public.usp_hr_documenttemplate_delete(
     OUT p_mensaje   TEXT
 )
 LANGUAGE plpgsql
--- +goose StatementBegin
 AS $$
 BEGIN
     p_resultado := 0;
@@ -3464,13 +3357,11 @@ BEGIN
     p_mensaje   := 'Plantilla eliminada correctamente.'::VARCHAR;
 END;
 $$;
--- +goose StatementEnd
 
 
 -- =============================================
 -- 3. SEED â€” Plantillas legales (IsSystem=TRUE)
 -- =============================================
--- +goose StatementBegin
 DO $$
 DECLARE
     v_seed_company_id INTEGER;
@@ -3967,7 +3858,6 @@ En **{{empresa.direccion}}**, a {{fecha.generacion}},
 
 END;
 $$;
--- +goose StatementEnd
 
 -- >> sp_nomina_documentos.sql â€” despliegue completo OK
 
@@ -3998,7 +3888,6 @@ CREATE TABLE IF NOT EXISTS hr."PayrollCalcVariable" (
 DROP FUNCTION IF EXISTS fn_evaluar_expr(TEXT) CASCADE;
 CREATE OR REPLACE FUNCTION fn_evaluar_expr(p_expr TEXT)
 RETURNS NUMERIC(18,6)
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 BEGIN
   RETURN CAST(p_expr AS NUMERIC(18,6));
@@ -4006,7 +3895,6 @@ EXCEPTION WHEN OTHERS THEN
   RETURN NULL;
 END;
 $$;
--- +goose StatementEnd
 
 -- =============================================
 -- Funcion: fn_Nomina_GetVariable
@@ -4017,7 +3905,6 @@ CREATE OR REPLACE FUNCTION fn_nomina_get_variable(
   p_variable VARCHAR(120)
 )
 RETURNS NUMERIC(18,6)
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 DECLARE
   v_valor NUMERIC(18,6) := 0;
@@ -4030,7 +3917,6 @@ BEGIN
   RETURN COALESCE(v_valor, 0);
 END;
 $$;
--- +goose StatementEnd
 
 -- =============================================
 -- Funcion: fn_Nomina_ContarFeriados
@@ -4041,7 +3927,6 @@ CREATE OR REPLACE FUNCTION fn_nomina_contar_feriados(
   p_fecha_hasta DATE
 )
 RETURNS INT
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 BEGIN
   -- En DatqBoxWeb canonico no se depende de tabla Feriados legacy.
@@ -4049,7 +3934,6 @@ BEGIN
   RETURN 0;
 END;
 $$;
--- +goose StatementEnd
 
 -- =============================================
 -- Funcion: fn_Nomina_ContarDomingos
@@ -4060,7 +3944,6 @@ CREATE OR REPLACE FUNCTION fn_nomina_contar_domingos(
   p_fecha_hasta DATE
 )
 RETURNS INT
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 DECLARE
   v_actual DATE := p_fecha_desde;
@@ -4076,7 +3959,6 @@ BEGIN
   RETURN v_domingos;
 END;
 $$;
--- +goose StatementEnd
 
 -- =============================================
 -- Funcion: sp_Nomina_GetScope
@@ -4088,7 +3970,6 @@ CREATE OR REPLACE FUNCTION sp_nomina_get_scope(
   OUT p_branch_id INT
 )
 RETURNS RECORD
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 BEGIN
   SELECT c."CompanyId" INTO p_company_id
@@ -4113,7 +3994,6 @@ BEGIN
   END IF;
 END;
 $$;
--- +goose StatementEnd
 
 -- =============================================
 -- Funcion: sp_Nomina_LimpiarVariables
@@ -4123,13 +4003,11 @@ CREATE OR REPLACE FUNCTION sp_nomina_limpiar_variables(
   p_session_id VARCHAR(80)
 )
 RETURNS VOID
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 BEGIN
   DELETE FROM hr."PayrollCalcVariable" WHERE "SessionID" = p_session_id;
 END;
 $$;
--- +goose StatementEnd
 
 -- =============================================
 -- Funcion: sp_Nomina_SetVariable
@@ -4142,7 +4020,6 @@ CREATE OR REPLACE FUNCTION sp_nomina_set_variable(
   p_descripcion VARCHAR(255) DEFAULT NULL
 )
 RETURNS VOID
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 BEGIN
   INSERT INTO hr."PayrollCalcVariable" ("SessionID", "Variable", "Valor", "Descripcion")
@@ -4153,7 +4030,6 @@ BEGIN
     "UpdatedAt" = NOW() AT TIME ZONE 'UTC';
 END;
 $$;
--- +goose StatementEnd
 
 -- =============================================
 -- Funcion: sp_Nomina_CargarConstantes
@@ -4163,7 +4039,6 @@ CREATE OR REPLACE FUNCTION sp_nomina_cargar_constantes(
   p_session_id VARCHAR(80)
 )
 RETURNS VOID
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 DECLARE
   v_company_id INT;
@@ -4188,7 +4063,6 @@ BEGIN
     );
 END;
 $$;
--- +goose StatementEnd
 
 -- =============================================
 -- Funcion: sp_Nomina_CalcularAntiguedad
@@ -4200,7 +4074,6 @@ CREATE OR REPLACE FUNCTION sp_nomina_calcular_antiguedad(
   p_fecha_calculo DATE DEFAULT NULL
 )
 RETURNS VOID
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 DECLARE
   v_company_id INT;
@@ -4237,7 +4110,6 @@ BEGIN
   PERFORM sp_nomina_set_variable(p_session_id, 'ANTI_TOTAL_MESES', v_total_meses, 'Total meses de antiguedad');
 END;
 $$;
--- +goose StatementEnd
 
 -- =============================================
 -- Funcion: sp_Nomina_PrepararVariablesBase
@@ -4251,7 +4123,6 @@ CREATE OR REPLACE FUNCTION sp_nomina_preparar_variables_base(
   p_fecha_hasta DATE
 )
 RETURNS VOID
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 DECLARE
   v_company_id INT;
@@ -4299,7 +4170,6 @@ BEGIN
   PERFORM sp_nomina_calcular_antiguedad(p_session_id, p_cedula, p_fecha_hasta);
 END;
 $$;
--- +goose StatementEnd
 
 
 -- Source: sp_nomina_vacaciones_liquidacion.sql
@@ -4320,7 +4190,6 @@ CREATE OR REPLACE FUNCTION sp_nomina_calcular_salarios_promedio(
   p_fecha_hasta DATE
 )
 RETURNS VOID
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 DECLARE
   v_salario_diario NUMERIC(18,6);
@@ -4345,7 +4214,6 @@ BEGIN
   PERFORM sp_nomina_set_variable(p_session_id, 'DIAS_CALCULO', v_dias, 'Dias del calculo');
 END;
 $$;
--- +goose StatementEnd
 
 -- =============================================
 -- Funcion: sp_Nomina_CalcularDiasVacaciones
@@ -4359,7 +4227,6 @@ CREATE OR REPLACE FUNCTION sp_nomina_calcular_dias_vacaciones(
   OUT p_dias_bono_vacacional NUMERIC(18,6)
 )
 RETURNS RECORD
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 DECLARE
   v_fecha_retiro DATE;
@@ -4400,7 +4267,6 @@ BEGIN
   PERFORM sp_nomina_set_variable(p_session_id, 'DIAS_BONO_VAC', p_dias_bono_vacacional, 'Dias bono vacacional calculados');
 END;
 $$;
--- +goose StatementEnd
 
 -- =============================================
 -- Funcion: sp_Nomina_ProcesarVacaciones
@@ -4417,7 +4283,6 @@ CREATE OR REPLACE FUNCTION sp_nomina_procesar_vacaciones(
   OUT p_mensaje VARCHAR(500)
 )
 RETURNS RECORD
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 DECLARE
   v_company_id INT;
@@ -4535,7 +4400,6 @@ BEGIN
   END;
 END;
 $$;
--- +goose StatementEnd
 
 -- =============================================
 -- Funcion: sp_Nomina_CalcularLiquidacion
@@ -4551,7 +4415,6 @@ CREATE OR REPLACE FUNCTION sp_nomina_calcular_liquidacion(
   OUT p_mensaje VARCHAR(500)
 )
 RETURNS RECORD
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 DECLARE
   v_company_id INT;
@@ -4663,7 +4526,6 @@ BEGIN
   END;
 END;
 $$;
--- +goose StatementEnd
 
 -- =============================================
 -- Funcion: sp_Nomina_GetLiquidacion
@@ -4684,7 +4546,6 @@ RETURNS TABLE (
   "CreatedAt" TIMESTAMP,
   "UpdatedAt" TIMESTAMP
 )
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 BEGIN
   RETURN QUERY
@@ -4704,7 +4565,6 @@ BEGIN
   LIMIT 1;
 END;
 $$;
--- +goose StatementEnd
 
 DROP FUNCTION IF EXISTS sp_nomina_get_liquidacion_lines(VARCHAR(50)) CASCADE;
 CREATE OR REPLACE FUNCTION sp_nomina_get_liquidacion_lines(
@@ -4717,7 +4577,6 @@ RETURNS TABLE (
   "Amount" NUMERIC,
   "CreatedAt" TIMESTAMP
 )
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 BEGIN
   RETURN QUERY
@@ -4733,7 +4592,6 @@ BEGIN
   ORDER BY sl."SettlementProcessLineId";
 END;
 $$;
--- +goose StatementEnd
 
 DROP FUNCTION IF EXISTS sp_nomina_get_liquidacion_totals(VARCHAR(50)) CASCADE;
 CREATE OR REPLACE FUNCTION sp_nomina_get_liquidacion_totals(
@@ -4744,7 +4602,6 @@ RETURNS TABLE (
   "TotalDeducciones" NUMERIC,
   "TotalNeto" NUMERIC
 )
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 BEGIN
   RETURN QUERY
@@ -4757,7 +4614,6 @@ BEGIN
   WHERE sp."SettlementCode" = p_liquidacion_id;
 END;
 $$;
--- +goose StatementEnd
 
 
 -- Source: sp_nomina_venezuela_install.sql
@@ -4788,13 +4644,11 @@ CREATE OR REPLACE FUNCTION sp_nomina_limpiar_variables_compat(
   p_session_id VARCHAR(80)
 )
 RETURNS VOID
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 BEGIN
   DELETE FROM hr."PayrollCalcVariable" WHERE "SessionID" = p_session_id;
 END;
 $$;
--- +goose StatementEnd
 
 DROP FUNCTION IF EXISTS sp_nomina_set_variable_compat(VARCHAR(80), VARCHAR(120), NUMERIC(18,6), VARCHAR(255)) CASCADE;
 CREATE OR REPLACE FUNCTION sp_nomina_set_variable_compat(
@@ -4804,7 +4658,6 @@ CREATE OR REPLACE FUNCTION sp_nomina_set_variable_compat(
   p_descripcion VARCHAR(255) DEFAULT NULL
 )
 RETURNS VOID
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 BEGIN
   INSERT INTO hr."PayrollCalcVariable" ("SessionID", "Variable", "Valor", "Descripcion")
@@ -4815,7 +4668,6 @@ BEGIN
     "UpdatedAt" = NOW() AT TIME ZONE 'UTC';
 END;
 $$;
--- +goose StatementEnd
 
 DROP FUNCTION IF EXISTS sp_nomina_calcular_antiguedad_compat(VARCHAR(80), VARCHAR(32), DATE) CASCADE;
 CREATE OR REPLACE FUNCTION sp_nomina_calcular_antiguedad_compat(
@@ -4824,7 +4676,6 @@ CREATE OR REPLACE FUNCTION sp_nomina_calcular_antiguedad_compat(
   p_fecha_calculo DATE DEFAULT NULL
 )
 RETURNS VOID
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 DECLARE
   v_fecha_calc DATE;
@@ -4835,10 +4686,8 @@ BEGIN
   PERFORM sp_nomina_set_variable_compat(p_session_id, 'ANTI_TOTAL_MESES', 0, 'Total meses');
 END;
 $$;
--- +goose StatementEnd
 
 -- Semilla de constantes base para Venezuela (idempotente)
--- +goose StatementBegin
 DO $$
 DECLARE
   v_company_id INT;
@@ -4874,7 +4723,6 @@ BEGIN
   RAISE NOTICE 'Instalacion canonica de nomina completada.';
 END;
 $$;
--- +goose StatementEnd
 
 -- Verificacion de conteos
 SELECT 'PayrollType' AS "Objeto", COUNT(1) AS "Total" FROM hr."PayrollType"
@@ -4893,7 +4741,6 @@ UNION ALL SELECT 'PayrollCalcVariable', COUNT(1) FROM hr."PayrollCalcVariable";
 -- Fecha: 2026-03-16
 -- ============================================================================
 
--- +goose StatementBegin
 DO $$
 BEGIN
   RAISE NOTICE '=== SEED NOMINA COMPLETO — Inicio ===';
@@ -5616,7 +5463,6 @@ BEGIN
 EXCEPTION WHEN OTHERS THEN
   RAISE NOTICE 'Error en seed_nomina_completo.sql: %', SQLERRM;
 END $$;
--- +goose StatementEnd
 
 
 -- Source: seed_nomina_completo_p2.sql
@@ -5630,7 +5476,6 @@ END $$;
 -- Fecha: 2026-03-16
 -- ============================================================================
 
--- +goose StatementBegin
 DO $$
 BEGIN
   RAISE NOTICE '=== SEED NOMINA COMPLETO P2 — Inicio ===';
@@ -6378,7 +6223,6 @@ BEGIN
 EXCEPTION WHEN OTHERS THEN
   RAISE NOTICE 'Error en seed_nomina_completo_p2.sql: %', SQLERRM;
 END $$;
--- +goose StatementEnd
 
 
 
@@ -6418,7 +6262,6 @@ CREATE OR REPLACE FUNCTION usp_ar_receivable_applypayment(
     p_documentos_json  TEXT             DEFAULT NULL
 )
 RETURNS TABLE("Resultado" INT, "Mensaje" TEXT)
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 DECLARE
     v_customer_id BIGINT;
@@ -6519,7 +6362,6 @@ EXCEPTION WHEN OTHERS THEN
     RETURN QUERY SELECT -99, ('Error aplicando cobro canonico: ' || SQLERRM)::TEXT;
 END;
 $$;
--- +goose StatementEnd
 
 -- -----------------------------------------------------------------------------
 --  usp_ar_receivable_list
@@ -6546,7 +6388,6 @@ RETURNS TABLE(
     "estado" VARCHAR,
     "observacion" VARCHAR
 )
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 DECLARE
     v_total BIGINT;
@@ -6582,7 +6423,6 @@ BEGIN
     LIMIT p_limit OFFSET p_offset;
 END;
 $$;
--- +goose StatementEnd
 
 -- -----------------------------------------------------------------------------
 --  usp_ar_receivable_getpending
@@ -6598,7 +6438,6 @@ RETURNS TABLE(
     "pendiente" NUMERIC,
     "total" NUMERIC
 )
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 BEGIN
     RETURN QUERY
@@ -6616,7 +6455,6 @@ BEGIN
     ORDER BY d."IssueDate" ASC, d."ReceivableDocumentId" ASC;
 END;
 $$;
--- +goose StatementEnd
 
 -- -----------------------------------------------------------------------------
 --  usp_ar_balance_getbycustomer
@@ -6632,7 +6470,6 @@ RETURNS TABLE(
     "saldo90" NUMERIC,
     "saldo91" NUMERIC
 )
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 BEGIN
     RETURN QUERY
@@ -6647,7 +6484,6 @@ BEGIN
       AND c."IsDeleted" = FALSE;
 END;
 $$;
--- +goose StatementEnd
 
 
 -- =============================================================================
@@ -6666,7 +6502,6 @@ CREATE OR REPLACE FUNCTION usp_ap_payable_applypayment(
     p_documentos_json  TEXT             DEFAULT NULL
 )
 RETURNS TABLE("Resultado" INT, "Mensaje" TEXT)
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 DECLARE
     v_supplier_id BIGINT;
@@ -6762,7 +6597,6 @@ EXCEPTION WHEN OTHERS THEN
     RETURN QUERY SELECT -99, ('Error aplicando pago canonico: ' || SQLERRM)::TEXT;
 END;
 $$;
--- +goose StatementEnd
 
 -- -----------------------------------------------------------------------------
 --  usp_ap_payable_list
@@ -6788,7 +6622,6 @@ RETURNS TABLE(
     "estado" VARCHAR,
     "observacion" VARCHAR
 )
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 DECLARE
     v_total BIGINT;
@@ -6824,7 +6657,6 @@ BEGIN
     LIMIT p_limit OFFSET p_offset;
 END;
 $$;
--- +goose StatementEnd
 
 -- -----------------------------------------------------------------------------
 --  usp_ap_payable_getpending
@@ -6840,7 +6672,6 @@ RETURNS TABLE(
     "pendiente" NUMERIC,
     "total" NUMERIC
 )
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 BEGIN
     RETURN QUERY
@@ -6858,7 +6689,6 @@ BEGIN
     ORDER BY d."IssueDate" ASC, d."PayableDocumentId" ASC;
 END;
 $$;
--- +goose StatementEnd
 
 -- -----------------------------------------------------------------------------
 --  usp_ap_balance_getbysupplier
@@ -6874,7 +6704,6 @@ RETURNS TABLE(
     "saldo90" NUMERIC,
     "saldo91" NUMERIC
 )
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 BEGIN
     RETURN QUERY
@@ -6889,7 +6718,6 @@ BEGIN
       AND s."IsDeleted" = FALSE;
 END;
 $$;
--- +goose StatementEnd
 
 
 -- =============================================================================
@@ -6921,7 +6749,6 @@ RETURNS TABLE(
     "moneda" VARCHAR,
     "observacion" VARCHAR
 )
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 DECLARE
     v_company_id INT;
@@ -6972,7 +6799,6 @@ BEGIN
     LIMIT p_limit OFFSET p_offset;
 END;
 $$;
--- +goose StatementEnd
 
 -- -----------------------------------------------------------------------------
 --  usp_ap_payable_getbyid
@@ -6987,7 +6813,6 @@ RETURNS TABLE(
     "total" NUMERIC, "pendiente" NUMERIC, "estado" VARCHAR,
     "moneda" VARCHAR, "observacion" VARCHAR
 )
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 BEGIN
     RETURN QUERY
@@ -7001,7 +6826,6 @@ BEGIN
     WHERE d."PayableDocumentId" = p_id;
 END;
 $$;
--- +goose StatementEnd
 
 -- -----------------------------------------------------------------------------
 --  usp_ap_payable_create
@@ -7019,7 +6843,6 @@ CREATE OR REPLACE FUNCTION usp_ap_payable_create(
     p_notes          VARCHAR(500)   DEFAULT NULL
 )
 RETURNS TABLE("Resultado" INT, "Mensaje" TEXT)
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 DECLARE
     v_company_id INT;
@@ -7063,7 +6886,6 @@ BEGIN
     RETURN QUERY SELECT 1, 'ok'::TEXT;
 END;
 $$;
--- +goose StatementEnd
 
 -- -----------------------------------------------------------------------------
 --  usp_ap_payable_update
@@ -7082,7 +6904,6 @@ CREATE OR REPLACE FUNCTION usp_ap_payable_update(
     p_notes           VARCHAR(500)   DEFAULT NULL
 )
 RETURNS TABLE("Resultado" INT, "Mensaje" TEXT)
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 BEGIN
     UPDATE ap."PayableDocument"
@@ -7101,7 +6922,6 @@ BEGIN
     RETURN QUERY SELECT 1, 'ok'::TEXT;
 END;
 $$;
--- +goose StatementEnd
 
 -- -----------------------------------------------------------------------------
 --  usp_ap_payable_void
@@ -7111,7 +6931,6 @@ CREATE OR REPLACE FUNCTION usp_ap_payable_void(
     p_id BIGINT
 )
 RETURNS TABLE("Resultado" INT, "Mensaje" TEXT)
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 BEGIN
     UPDATE ap."PayableDocument"
@@ -7124,7 +6943,6 @@ BEGIN
     RETURN QUERY SELECT 1, 'ok'::TEXT;
 END;
 $$;
--- +goose StatementEnd
 
 
 -- =============================================================================
@@ -7149,7 +6967,6 @@ RETURNS TABLE(
     "total" NUMERIC, "pendiente" NUMERIC, "estado" VARCHAR,
     "moneda" VARCHAR, "observacion" VARCHAR
 )
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 DECLARE
     v_company_id INT;
@@ -7192,7 +7009,6 @@ BEGIN
     LIMIT p_limit OFFSET p_offset;
 END;
 $$;
--- +goose StatementEnd
 
 -- -----------------------------------------------------------------------------
 --  usp_ar_receivable_getbyid
@@ -7205,7 +7021,6 @@ RETURNS TABLE(
     "total" NUMERIC, "pendiente" NUMERIC, "estado" VARCHAR,
     "moneda" VARCHAR, "observacion" VARCHAR
 )
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 BEGIN
     RETURN QUERY
@@ -7219,7 +7034,6 @@ BEGIN
     WHERE d."ReceivableDocumentId" = p_id;
 END;
 $$;
--- +goose StatementEnd
 
 -- -----------------------------------------------------------------------------
 --  usp_ar_receivable_create
@@ -7237,7 +7051,6 @@ CREATE OR REPLACE FUNCTION usp_ar_receivable_create(
     p_notes           VARCHAR(500)   DEFAULT NULL
 )
 RETURNS TABLE("Resultado" INT, "Mensaje" TEXT)
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 DECLARE
     v_company_id  INT;
@@ -7281,7 +7094,6 @@ BEGIN
     RETURN QUERY SELECT 1, 'ok'::TEXT;
 END;
 $$;
--- +goose StatementEnd
 
 -- -----------------------------------------------------------------------------
 --  usp_ar_receivable_update
@@ -7300,7 +7112,6 @@ CREATE OR REPLACE FUNCTION usp_ar_receivable_update(
     p_notes           VARCHAR(500)   DEFAULT NULL
 )
 RETURNS TABLE("Resultado" INT, "Mensaje" TEXT)
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 BEGIN
     UPDATE ar."ReceivableDocument"
@@ -7319,7 +7130,6 @@ BEGIN
     RETURN QUERY SELECT 1, 'ok'::TEXT;
 END;
 $$;
--- +goose StatementEnd
 
 -- -----------------------------------------------------------------------------
 --  usp_ar_receivable_void
@@ -7327,7 +7137,6 @@ $$;
 DROP FUNCTION IF EXISTS usp_ar_receivable_void(BIGINT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_ar_receivable_void(p_id BIGINT)
 RETURNS TABLE("Resultado" INT, "Mensaje" TEXT)
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 BEGIN
     UPDATE ar."ReceivableDocument"
@@ -7340,7 +7149,6 @@ BEGIN
     RETURN QUERY SELECT 1, 'ok'::TEXT;
 END;
 $$;
--- +goose StatementEnd
 
 
 -- =============================================================================
@@ -7353,7 +7161,6 @@ $$;
 DROP FUNCTION IF EXISTS usp_hr_payroll_resolvescope() CASCADE;
 CREATE OR REPLACE FUNCTION usp_hr_payroll_resolvescope()
 RETURNS TABLE("companyId" INT, "branchId" INT, "systemUserId" INT)
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 BEGIN
     RETURN QUERY
@@ -7372,7 +7179,6 @@ BEGIN
     LIMIT 1;
 END;
 $$;
--- +goose StatementEnd
 
 -- -----------------------------------------------------------------------------
 --  usp_hr_payroll_resolveuser
@@ -7382,7 +7188,6 @@ CREATE OR REPLACE FUNCTION usp_hr_payroll_resolveuser(
     p_user_code VARCHAR(60) DEFAULT NULL
 )
 RETURNS TABLE("userId" INT)
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 BEGIN
     IF p_user_code IS NOT NULL AND TRIM(p_user_code) <> '' THEN
@@ -7403,7 +7208,6 @@ BEGIN
     LIMIT 1;
 END;
 $$;
--- +goose StatementEnd
 
 -- -----------------------------------------------------------------------------
 --  usp_hr_payroll_getconstant
@@ -7414,7 +7218,6 @@ CREATE OR REPLACE FUNCTION usp_hr_payroll_getconstant(
     p_code       VARCHAR(60)
 )
 RETURNS TABLE("value" NUMERIC)
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 BEGIN
     RETURN QUERY
@@ -7427,7 +7230,6 @@ BEGIN
     LIMIT 1;
 END;
 $$;
--- +goose StatementEnd
 
 -- -----------------------------------------------------------------------------
 --  usp_hr_payroll_ensuretype
@@ -7439,7 +7241,6 @@ CREATE OR REPLACE FUNCTION usp_hr_payroll_ensuretype(
     p_user_id      INT DEFAULT NULL
 )
 RETURNS VOID
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 BEGIN
     IF NOT EXISTS (
@@ -7451,7 +7252,6 @@ BEGIN
     END IF;
 END;
 $$;
--- +goose StatementEnd
 
 -- -----------------------------------------------------------------------------
 --  usp_hr_payroll_ensureemployee
@@ -7463,7 +7263,6 @@ CREATE OR REPLACE FUNCTION usp_hr_payroll_ensureemployee(
     p_user_id    INT DEFAULT NULL
 )
 RETURNS TABLE("employeeId" BIGINT, "employeeCode" VARCHAR, "employeeName" VARCHAR, "hireDate" DATE)
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 DECLARE
     v_exists BOOLEAN;
@@ -7497,7 +7296,6 @@ BEGIN
     RETURNING "EmployeeId", "EmployeeCode", "EmployeeName", "HireDate";
 END;
 $$;
--- +goose StatementEnd
 
 -- -----------------------------------------------------------------------------
 --  usp_hr_payroll_listconcepts
@@ -7519,7 +7317,6 @@ RETURNS TABLE(
     "esAntiguedad" VARCHAR, "cuentaContable" VARCHAR,
     "aplica" VARCHAR, "valorDefecto" NUMERIC
 )
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 DECLARE
     v_total BIGINT;
@@ -7554,7 +7351,6 @@ BEGIN
     LIMIT p_limit OFFSET p_offset;
 END;
 $$;
--- +goose StatementEnd
 
 -- -----------------------------------------------------------------------------
 --  usp_hr_payroll_saveconcept
@@ -7578,7 +7374,6 @@ CREATE OR REPLACE FUNCTION usp_hr_payroll_saveconcept(
     p_user_id                 INT           DEFAULT NULL
 )
 RETURNS TABLE("Resultado" INT, "Mensaje" TEXT)
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 DECLARE
     v_existing_id BIGINT;
@@ -7629,7 +7424,6 @@ BEGIN
     RETURN QUERY SELECT 1, 'Concepto guardado'::TEXT;
 END;
 $$;
--- +goose StatementEnd
 
 -- -----------------------------------------------------------------------------
 --  usp_hr_payroll_loadconceptsforrun
@@ -7647,7 +7441,6 @@ RETURNS TABLE(
     "conceptCode" VARCHAR, "conceptName" VARCHAR, "conceptType" VARCHAR,
     "defaultValue" NUMERIC, "formula" VARCHAR, "accountingAccountCode" VARCHAR
 )
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 BEGIN
     RETURN QUERY
@@ -7677,7 +7470,6 @@ BEGIN
     ORDER BY pc."SortOrder", pc."ConceptCode";
 END;
 $$;
--- +goose StatementEnd
 
 -- -----------------------------------------------------------------------------
 --  usp_hr_payroll_upsertrun
@@ -7700,7 +7492,6 @@ CREATE OR REPLACE FUNCTION usp_hr_payroll_upsertrun(
     p_lines_json         TEXT         DEFAULT NULL
 )
 RETURNS TABLE("Resultado" INT, "Mensaje" TEXT)
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 DECLARE
     v_run_id BIGINT;
@@ -7771,7 +7562,6 @@ EXCEPTION WHEN OTHERS THEN
     RETURN QUERY SELECT -99, ('Error en upsert run: ' || SQLERRM)::TEXT;
 END;
 $$;
--- +goose StatementEnd
 
 -- -----------------------------------------------------------------------------
 --  usp_hr_payroll_listactiveemployees
@@ -7782,7 +7572,6 @@ CREATE OR REPLACE FUNCTION usp_hr_payroll_listactiveemployees(
     p_solo_activos BOOLEAN DEFAULT TRUE
 )
 RETURNS TABLE("employeeCode" VARCHAR)
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 BEGIN
     RETURN QUERY
@@ -7794,7 +7583,6 @@ BEGIN
     ORDER BY e."EmployeeCode";
 END;
 $$;
--- +goose StatementEnd
 
 -- -----------------------------------------------------------------------------
 --  usp_hr_payroll_listruns
@@ -7817,7 +7605,6 @@ RETURNS TABLE(
     "totalAsignaciones" NUMERIC, "totalDeducciones" NUMERIC, "totalNeto" NUMERIC,
     "cerrada" BOOLEAN, "tipoNomina" VARCHAR
 )
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 DECLARE
     v_total BIGINT;
@@ -7849,7 +7636,6 @@ BEGIN
     LIMIT p_limit OFFSET p_offset;
 END;
 $$;
--- +goose StatementEnd
 
 -- -----------------------------------------------------------------------------
 --  usp_hr_payroll_closerun
@@ -7862,7 +7648,6 @@ CREATE OR REPLACE FUNCTION usp_hr_payroll_closerun(
     p_user_id       INT         DEFAULT NULL
 )
 RETURNS TABLE("Resultado" INT, "Mensaje" TEXT)
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 DECLARE
     v_affected INT;
@@ -7887,7 +7672,6 @@ BEGIN
     END IF;
 END;
 $$;
--- +goose StatementEnd
 
 -- -----------------------------------------------------------------------------
 --  usp_hr_payroll_upsertvacation
@@ -7907,7 +7691,6 @@ CREATE OR REPLACE FUNCTION usp_hr_payroll_upsertvacation(
     p_user_id           INT DEFAULT NULL
 )
 RETURNS TABLE("Resultado" INT, "Mensaje" TEXT)
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 DECLARE
     v_vacation_id BIGINT;
@@ -7955,7 +7738,6 @@ BEGIN
     RETURN QUERY SELECT 1, 'ok'::TEXT;
 END;
 $$;
--- +goose StatementEnd
 
 -- -----------------------------------------------------------------------------
 --  usp_hr_payroll_listvacations
@@ -7973,7 +7755,6 @@ RETURNS TABLE(
     "inicio" DATE, "hasta" DATE, "reintegro" DATE,
     "fechaCalculo" DATE, "total" NUMERIC, "totalCalculado" NUMERIC
 )
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 DECLARE
     v_total BIGINT;
@@ -7996,7 +7777,6 @@ BEGIN
     LIMIT p_limit OFFSET p_offset;
 END;
 $$;
--- +goose StatementEnd
 
 -- -----------------------------------------------------------------------------
 --  usp_hr_payroll_upsertsettlement
@@ -8018,7 +7798,6 @@ CREATE OR REPLACE FUNCTION usp_hr_payroll_upsertsettlement(
     p_user_id          INT DEFAULT NULL
 )
 RETURNS TABLE("Resultado" INT, "Mensaje" TEXT)
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 DECLARE
     v_settlement_id BIGINT;
@@ -8064,7 +7843,6 @@ BEGIN
     RETURN QUERY SELECT 1, 'ok'::TEXT;
 END;
 $$;
--- +goose StatementEnd
 
 -- -----------------------------------------------------------------------------
 --  usp_hr_payroll_listsettlements
@@ -8081,7 +7859,6 @@ RETURNS TABLE(
     "liquidacion" VARCHAR, "cedula" VARCHAR, "nombreEmpleado" VARCHAR,
     "fechaRetiro" DATE, "causaRetiro" VARCHAR, "total" NUMERIC
 )
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 DECLARE
     v_total BIGINT;
@@ -8103,7 +7880,6 @@ BEGIN
     LIMIT p_limit OFFSET p_offset;
 END;
 $$;
--- +goose StatementEnd
 
 -- -----------------------------------------------------------------------------
 --  usp_hr_payroll_listconstants
@@ -8119,7 +7895,6 @@ RETURNS TABLE(
     "codigo" VARCHAR, "nombre" VARCHAR, "valor" NUMERIC,
     "origen" VARCHAR, "activo" BOOLEAN
 )
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 DECLARE
     v_total BIGINT;
@@ -8139,7 +7914,6 @@ BEGIN
     LIMIT p_limit OFFSET p_offset;
 END;
 $$;
--- +goose StatementEnd
 
 -- -----------------------------------------------------------------------------
 --  usp_hr_payroll_saveconstant
@@ -8154,7 +7928,6 @@ CREATE OR REPLACE FUNCTION usp_hr_payroll_saveconstant(
     p_user_id     INT            DEFAULT NULL
 )
 RETURNS TABLE("Resultado" INT, "Mensaje" VARCHAR)
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 DECLARE
     v_existing_id BIGINT;
@@ -8191,7 +7964,6 @@ EXCEPTION WHEN OTHERS THEN
     RETURN QUERY SELECT -1::INT, SQLERRM::VARCHAR;
 END;
 $$;
--- +goose StatementEnd
 
 
 -- =============================================================================
@@ -8216,7 +7988,6 @@ RETURNS TABLE(
     "lotttArticulo" VARCHAR, "ccpClausula" VARCHAR,
     "orden" INT, "activo" BOOLEAN
 )
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 BEGIN
     RETURN QUERY
@@ -8237,7 +8008,6 @@ BEGIN
     ORDER BY pc."ConventionCode", pc."CalculationType", pc."SortOrder", pc."ConceptCode";
 END;
 $$;
--- +goose StatementEnd
 
 -- -----------------------------------------------------------------------------
 --  usp_hr_legalconcept_validateformulas
@@ -8249,7 +8019,6 @@ CREATE OR REPLACE FUNCTION usp_hr_legalconcept_validateformulas(
     p_calculation_type VARCHAR(30) DEFAULT NULL
 )
 RETURNS TABLE("coConcept" VARCHAR, "nbConcepto" VARCHAR, "formula" VARCHAR, "defaultValue" NUMERIC)
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 BEGIN
     RETURN QUERY
@@ -8264,7 +8033,6 @@ BEGIN
     ORDER BY pc."SortOrder", pc."ConceptCode";
 END;
 $$;
--- +goose StatementEnd
 
 -- -----------------------------------------------------------------------------
 --  usp_hr_legalconcept_listconventions
@@ -8278,7 +8046,6 @@ RETURNS TABLE(
     "ConceptosMensual" BIGINT, "ConceptosVacaciones" BIGINT,
     "ConceptosLiquidacion" BIGINT, "OrdenInicio" INT, "OrdenFin" INT
 )
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 BEGIN
     RETURN QUERY
@@ -8298,7 +8065,6 @@ BEGIN
     ORDER BY pc."ConventionCode";
 END;
 $$;
--- +goose StatementEnd
 
 
 -- =============================================================================
@@ -8321,7 +8087,6 @@ RETURNS TABLE(
     "totalAsignaciones" NUMERIC, "totalDeducciones" NUMERIC, "totalNeto" NUMERIC,
     "cerrada" BOOLEAN, "tipoNomina" VARCHAR
 )
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 BEGIN
     RETURN QUERY
@@ -8339,7 +8104,6 @@ BEGIN
     LIMIT 1;
 END;
 $$;
--- +goose StatementEnd
 
 -- -----------------------------------------------------------------------------
 --  usp_hr_payroll_getrunlines
@@ -8351,7 +8115,6 @@ RETURNS TABLE(
     "cantidad" NUMERIC, "monto" NUMERIC, "total" NUMERIC,
     "descripcion" TEXT, "cuentaContable" VARCHAR
 )
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 BEGIN
     RETURN QUERY
@@ -8364,7 +8127,6 @@ BEGIN
     ORDER BY rl."PayrollRunLineId";
 END;
 $$;
--- +goose StatementEnd
 
 -- -----------------------------------------------------------------------------
 --  usp_hr_payroll_getvacationheader
@@ -8380,7 +8142,6 @@ RETURNS TABLE(
     "reintegro" DATE, "fechaCalculo" DATE,
     "total" NUMERIC, "totalCalculado" NUMERIC
 )
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 BEGIN
     RETURN QUERY
@@ -8394,7 +8155,6 @@ BEGIN
     LIMIT 1;
 END;
 $$;
--- +goose StatementEnd
 
 -- -----------------------------------------------------------------------------
 --  usp_hr_payroll_getvacationlines
@@ -8402,7 +8162,6 @@ $$;
 DROP FUNCTION IF EXISTS usp_hr_payroll_getvacationlines(BIGINT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_hr_payroll_getvacationlines(p_vacation_process_id BIGINT)
 RETURNS TABLE("codigo" VARCHAR, "nombre" VARCHAR, "monto" NUMERIC)
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 BEGIN
     RETURN QUERY
@@ -8412,7 +8171,6 @@ BEGIN
     ORDER BY vl."VacationProcessLineId";
 END;
 $$;
--- +goose StatementEnd
 
 -- -----------------------------------------------------------------------------
 --  usp_hr_payroll_getsettlementheader
@@ -8423,7 +8181,6 @@ CREATE OR REPLACE FUNCTION usp_hr_payroll_getsettlementheader(
     p_settlement_code VARCHAR(60)
 )
 RETURNS TABLE("id" BIGINT, "total" NUMERIC)
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 BEGIN
     RETURN QUERY
@@ -8433,7 +8190,6 @@ BEGIN
     LIMIT 1;
 END;
 $$;
--- +goose StatementEnd
 
 -- -----------------------------------------------------------------------------
 --  usp_hr_payroll_getsettlementlines
@@ -8441,7 +8197,6 @@ $$;
 DROP FUNCTION IF EXISTS usp_hr_payroll_getsettlementlines(BIGINT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_hr_payroll_getsettlementlines(p_settlement_process_id BIGINT)
 RETURNS TABLE("codigo" VARCHAR, "nombre" VARCHAR, "monto" NUMERIC)
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 BEGIN
     RETURN QUERY
@@ -8451,7 +8206,6 @@ BEGIN
     ORDER BY sl."SettlementProcessLineId";
 END;
 $$;
--- +goose StatementEnd
 
 -- -----------------------------------------------------------------------------
 --  usp_HR_Payroll_DeleteConcept — soft-delete (IsActive = FALSE)
@@ -8461,7 +8215,6 @@ CREATE OR REPLACE FUNCTION usp_hr_payroll_deleteconcept(
     p_concept_code VARCHAR(20)
 )
 RETURNS TABLE("Resultado" INT, "Mensaje" VARCHAR(500))
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 BEGIN
     UPDATE hr."PayrollConcept"
@@ -8479,7 +8232,6 @@ BEGIN
     RETURN QUERY SELECT 1, 'Concepto desactivado'::VARCHAR(500);
 END;
 $$;
--- +goose StatementEnd
 
 -- -----------------------------------------------------------------------------
 --  usp_HR_Payroll_DeleteConstant — soft-delete (IsActive = FALSE)
@@ -8489,7 +8241,6 @@ CREATE OR REPLACE FUNCTION usp_hr_payroll_deleteconstant(
     p_constant_code VARCHAR(50)
 )
 RETURNS TABLE("Resultado" INT, "Mensaje" VARCHAR(500))
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 BEGIN
     UPDATE hr."PayrollConstant"
@@ -8507,7 +8258,6 @@ BEGIN
     RETURN QUERY SELECT 1, 'Constante desactivada'::VARCHAR(500);
 END;
 $$;
--- +goose StatementEnd
 
 
 -- Source: sp_vacation_request.sql
@@ -8539,7 +8289,6 @@ RETURNS TABLE (
     "RequestId" BIGINT
 )
 LANGUAGE plpgsql
--- +goose StatementBegin
 AS $fn$
 DECLARE
     v_request_id BIGINT;
@@ -8580,7 +8329,6 @@ BEGIN
     RETURN QUERY SELECT v_request_id;
 END;
 $fn$;
--- +goose StatementEnd
 
 
 -- =============================================================
@@ -8612,7 +8360,6 @@ RETURNS TABLE (
     "TotalCount"      INT
 )
 LANGUAGE plpgsql
--- +goose StatementBegin
 AS $fn$
 DECLARE
     v_total_count INT;
@@ -8652,7 +8399,6 @@ BEGIN
     OFFSET p_offset;
 END;
 $fn$;
--- +goose StatementEnd
 
 
 -- =============================================================
@@ -8684,7 +8430,6 @@ RETURNS TABLE (
     "UpdatedAt"       TIMESTAMP
 )
 LANGUAGE plpgsql
--- +goose StatementBegin
 AS $fn$
 BEGIN
     RETURN QUERY
@@ -8714,7 +8459,6 @@ BEGIN
      WHERE vr."RequestId" = p_request_id;
 END;
 $fn$;
--- +goose StatementEnd
 
 
 -- =============================================================
@@ -8732,7 +8476,6 @@ RETURNS TABLE (
     "DayType"      VARCHAR
 )
 LANGUAGE plpgsql
--- +goose StatementBegin
 AS $fn$
 BEGIN
     RETURN QUERY
@@ -8746,7 +8489,6 @@ BEGIN
      ORDER BY d."SelectedDate";
 END;
 $fn$;
--- +goose StatementEnd
 
 
 -- =============================================================
@@ -8763,7 +8505,6 @@ RETURNS TABLE (
     "Status"    VARCHAR
 )
 LANGUAGE plpgsql
--- +goose StatementBegin
 AS $fn$
 BEGIN
     IF NOT EXISTS (
@@ -8785,7 +8526,6 @@ BEGIN
     RETURN QUERY SELECT p_request_id, 'APROBADA'::VARCHAR;
 END;
 $fn$;
--- +goose StatementEnd
 
 
 -- =============================================================
@@ -8803,7 +8543,6 @@ RETURNS TABLE (
     "Status"    VARCHAR
 )
 LANGUAGE plpgsql
--- +goose StatementBegin
 AS $fn$
 BEGIN
     IF NOT EXISTS (
@@ -8826,7 +8565,6 @@ BEGIN
     RETURN QUERY SELECT p_request_id, 'RECHAZADA'::VARCHAR;
 END;
 $fn$;
--- +goose StatementEnd
 
 
 -- =============================================================
@@ -8842,7 +8580,6 @@ RETURNS TABLE (
     "Status"    VARCHAR
 )
 LANGUAGE plpgsql
--- +goose StatementBegin
 AS $fn$
 BEGIN
     IF NOT EXISTS (
@@ -8862,7 +8599,6 @@ BEGIN
     RETURN QUERY SELECT p_request_id, 'CANCELADA'::VARCHAR;
 END;
 $fn$;
--- +goose StatementEnd
 
 
 -- =============================================================
@@ -8880,7 +8616,6 @@ RETURNS TABLE (
     "VacationId" BIGINT
 )
 LANGUAGE plpgsql
--- +goose StatementBegin
 AS $fn$
 BEGIN
     IF NOT EXISTS (
@@ -8901,7 +8636,6 @@ BEGIN
     RETURN QUERY SELECT p_request_id, 'PROCESADA'::VARCHAR, p_vacation_id;
 END;
 $fn$;
--- +goose StatementEnd
 
 
 -- =============================================================
@@ -8923,7 +8657,6 @@ RETURNS TABLE (
     "DiasSaldo"       INT
 )
 LANGUAGE plpgsql
--- +goose StatementBegin
 AS $fn$
 DECLARE
     v_hire_date         DATE;
@@ -8988,7 +8721,6 @@ BEGIN
         (v_dias_disponibles - COALESCE(v_dias_tomados, 0) - COALESCE(v_dias_pendientes, 0));
 END;
 $fn$;
--- +goose StatementEnd
 
 -- ================================================================
 -- ALIAS: usp_hr_vacationrequest_list
@@ -9019,7 +8751,6 @@ RETURNS TABLE (
     "CreatedAt"       TIMESTAMP,
     "TotalCount"      INT
 )
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 BEGIN
     RETURN QUERY
@@ -9028,8 +8759,9 @@ BEGIN
     );
 END;
 $$;
--- +goose StatementEnd
 
+
+-- +goose StatementEnd
 
 -- +goose Down
 DROP FUNCTION IF EXISTS public.usp_HR_Payroll_GenerateDraft CASCADE;

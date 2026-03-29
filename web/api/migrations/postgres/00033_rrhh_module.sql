@@ -1,4 +1,6 @@
 -- +goose Up
+
+-- +goose StatementBegin
 -- ===========================================================================
 -- 00033_rrhh_module.sql
 -- Migracion: modulo RRHH completo (tablas + funciones + seeds)
@@ -14,7 +16,6 @@ RETURNS TABLE(
     "systemUserId"  INTEGER
 )
 LANGUAGE plpgsql
--- +goose StatementBegin
 AS $$
 BEGIN
     RETURN QUERY
@@ -33,7 +34,6 @@ BEGIN
     LIMIT 1;
 END;
 $$;
--- +goose StatementEnd
 
 -- Helper: usp_HR_Payroll_ResolveUser
 DROP FUNCTION IF EXISTS public.usp_HR_Payroll_ResolveUser(VARCHAR) CASCADE;
@@ -42,7 +42,6 @@ CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_ResolveUser(
 )
 RETURNS TABLE("userId" INTEGER)
 LANGUAGE plpgsql
--- +goose StatementBegin
 AS $$
 BEGIN
     IF p_user_code IS NOT NULL AND TRIM(p_user_code) <> '' THEN
@@ -61,7 +60,6 @@ BEGIN
     END IF;
 END;
 $$;
--- +goose StatementEnd
 
 
 -- RRHH Tables
@@ -449,7 +447,6 @@ CREATE INDEX IF NOT EXISTS "IX_Training_Regulatory"
 -- ----------------------------------------------------------------------------
 -- Seed: master."Employee" (si no hay empleados)
 -- ----------------------------------------------------------------------------
--- +goose StatementBegin
 DO $$
 BEGIN
   RAISE NOTICE '>> Seed: Empleados base (si no existen)';
@@ -498,12 +495,10 @@ BEGIN
 EXCEPTION WHEN OTHERS THEN
   RAISE NOTICE 'Error en seed empleados: %', SQLERRM;
 END $$;
--- +goose StatementEnd
 
 -- ----------------------------------------------------------------------------
 -- Seed: hr."SavingsFund" — Caja de Ahorro
 -- ----------------------------------------------------------------------------
--- +goose StatementBegin
 DO $$
 BEGIN
   RAISE NOTICE '>> Seed: SavingsFund';
@@ -568,12 +563,10 @@ BEGIN
 EXCEPTION WHEN OTHERS THEN
   RAISE NOTICE 'Error en seed SavingsFund: %', SQLERRM;
 END $$;
--- +goose StatementEnd
 
 -- ----------------------------------------------------------------------------
 -- Seed: hr."SavingsFundTransaction"
 -- ----------------------------------------------------------------------------
--- +goose StatementBegin
 DO $$
 DECLARE v_fund1 INT; v_fund2 INT;
 BEGIN
@@ -638,12 +631,10 @@ BEGIN
 EXCEPTION WHEN OTHERS THEN
   RAISE NOTICE 'Error en seed SavingsFundTransaction: %', SQLERRM;
 END $$;
--- +goose StatementEnd
 
 -- ----------------------------------------------------------------------------
 -- Seed: hr."SavingsLoan"
 -- ----------------------------------------------------------------------------
--- +goose StatementBegin
 DO $$
 DECLARE v_fund1 INT;
 BEGIN
@@ -670,12 +661,10 @@ BEGIN
 EXCEPTION WHEN OTHERS THEN
   RAISE NOTICE 'Error en seed SavingsLoan: %', SQLERRM;
 END $$;
--- +goose StatementEnd
 
 -- ----------------------------------------------------------------------------
 -- Seed: hr."SocialBenefitsTrust" — Fideicomiso Prestaciones Sociales
 -- ----------------------------------------------------------------------------
--- +goose StatementBegin
 DO $$
 BEGIN
   RAISE NOTICE '>> Seed: SocialBenefitsTrust';
@@ -807,12 +796,10 @@ BEGIN
 EXCEPTION WHEN OTHERS THEN
   RAISE NOTICE 'Error en seed SocialBenefitsTrust: %', SQLERRM;
 END $$;
--- +goose StatementEnd
 
 -- ----------------------------------------------------------------------------
 -- Seed: hr."ProfitSharing" + hr."ProfitSharingLine" — Utilidades 2025
 -- ----------------------------------------------------------------------------
--- +goose StatementBegin
 DO $$
 DECLARE v_ps_id INT;
 BEGIN
@@ -923,12 +910,10 @@ BEGIN
 EXCEPTION WHEN OTHERS THEN
   RAISE NOTICE 'Error en seed ProfitSharing: %', SQLERRM;
 END $$;
--- +goose StatementEnd
 
 -- ----------------------------------------------------------------------------
 -- Seed: hr."OccupationalHealth"
 -- ----------------------------------------------------------------------------
--- +goose StatementBegin
 DO $$
 BEGIN
   RAISE NOTICE '>> Seed: OccupationalHealth';
@@ -1067,12 +1052,10 @@ BEGIN
 EXCEPTION WHEN OTHERS THEN
   RAISE NOTICE 'Error en seed OccupationalHealth: %', SQLERRM;
 END $$;
--- +goose StatementEnd
 
 -- ----------------------------------------------------------------------------
 -- Seed: hr."MedicalExam"
 -- ----------------------------------------------------------------------------
--- +goose StatementBegin
 DO $$
 BEGIN
   RAISE NOTICE '>> Seed: MedicalExam';
@@ -1177,12 +1160,10 @@ BEGIN
 EXCEPTION WHEN OTHERS THEN
   RAISE NOTICE 'Error en seed MedicalExam: %', SQLERRM;
 END $$;
--- +goose StatementEnd
 
 -- ----------------------------------------------------------------------------
 -- Seed: hr."MedicalOrder"
 -- ----------------------------------------------------------------------------
--- +goose StatementBegin
 DO $$
 BEGIN
   RAISE NOTICE '>> Seed: MedicalOrder';
@@ -1261,12 +1242,10 @@ BEGIN
 EXCEPTION WHEN OTHERS THEN
   RAISE NOTICE 'Error en seed MedicalOrder: %', SQLERRM;
 END $$;
--- +goose StatementEnd
 
 -- ----------------------------------------------------------------------------
 -- Seed: hr."TrainingRecord"
 -- ----------------------------------------------------------------------------
--- +goose StatementBegin
 DO $$
 BEGIN
   RAISE NOTICE '>> Seed: TrainingRecord';
@@ -1405,12 +1384,10 @@ BEGIN
 EXCEPTION WHEN OTHERS THEN
   RAISE NOTICE 'Error en seed TrainingRecord: %', SQLERRM;
 END $$;
--- +goose StatementEnd
 
 -- ----------------------------------------------------------------------------
 -- Seed: hr."SafetyCommittee" + hr."SafetyCommitteeMember" + hr."SafetyCommitteeMeeting"
 -- ----------------------------------------------------------------------------
--- +goose StatementBegin
 DO $$
 DECLARE v_comm1 INT; v_comm2 INT;
 BEGIN
@@ -1509,7 +1486,6 @@ BEGIN
 EXCEPTION WHEN OTHERS THEN
   RAISE NOTICE 'Error en seed SafetyCommittee: %', SQLERRM;
 END $$;
--- +goose StatementEnd
 
 
 -- RRHH Functions: Beneficios
@@ -1558,7 +1534,6 @@ CREATE OR REPLACE FUNCTION public.usp_HR_ProfitSharing_Generate(
     OUT p_mensaje           VARCHAR(500)
 )
 LANGUAGE plpgsql
--- +goose StatementBegin
 AS $$
 DECLARE
     v_old_id            INTEGER;
@@ -1721,7 +1696,6 @@ BEGIN
     END;
 END;
 $$;
--- +goose StatementEnd
 
 -- =============================================================================
 -- 2. usp_HR_ProfitSharing_GetSummary
@@ -1735,7 +1709,6 @@ RETURNS TABLE (
     row_data    JSONB
 )
 LANGUAGE plpgsql
--- +goose StatementBegin
 AS $$
 BEGIN
     -- Cabecera
@@ -1787,7 +1760,6 @@ BEGIN
     ORDER BY l."EmployeeName";
 END;
 $$;
--- +goose StatementEnd
 
 -- =============================================================================
 -- 3. usp_HR_ProfitSharing_Approve
@@ -1800,7 +1772,6 @@ CREATE OR REPLACE FUNCTION public.usp_HR_ProfitSharing_Approve(
     OUT p_mensaje       VARCHAR(500)
 )
 LANGUAGE plpgsql
--- +goose StatementBegin
 AS $$
 DECLARE
     v_current_status VARCHAR(20);
@@ -1835,7 +1806,6 @@ BEGIN
     p_mensaje   := 'Utilidades aprobadas exitosamente.';
 END;
 $$;
--- +goose StatementEnd
 
 -- =============================================================================
 -- 4. usp_HR_ProfitSharing_List
@@ -1863,7 +1833,6 @@ RETURNS TABLE(
     "TotalNet"          NUMERIC
 )
 LANGUAGE plpgsql
--- +goose StatementBegin
 AS $$
 BEGIN
     RETURN QUERY
@@ -1887,7 +1856,6 @@ BEGIN
     LIMIT p_limit OFFSET p_offset;
 END;
 $$;
--- +goose StatementEnd
 
 -- =============================================================================
 -- 5. usp_HR_Trust_CalculateQuarter
@@ -1902,7 +1870,6 @@ CREATE OR REPLACE FUNCTION public.usp_HR_Trust_CalculateQuarter(
     OUT p_mensaje   VARCHAR(500)
 )
 LANGUAGE plpgsql
--- +goose StatementBegin
 AS $$
 DECLARE
     v_inserted      INTEGER;
@@ -2056,7 +2023,6 @@ BEGIN
     END;
 END;
 $$;
--- +goose StatementEnd
 
 -- =============================================================================
 -- 6. usp_HR_Trust_GetEmployeeBalance
@@ -2071,7 +2037,6 @@ RETURNS TABLE (
     row_data    JSONB
 )
 LANGUAGE plpgsql
--- +goose StatementBegin
 AS $$
 BEGIN
     -- Saldo actual (1 fila)
@@ -2113,7 +2078,6 @@ BEGIN
     ORDER BY t."FiscalYear", t."Quarter";
 END;
 $$;
--- +goose StatementEnd
 
 -- =============================================================================
 -- 7. usp_HR_Trust_GetSummary
@@ -2130,7 +2094,6 @@ RETURNS TABLE (
     row_data    JSONB
 )
 LANGUAGE plpgsql
--- +goose StatementBegin
 AS $$
 BEGIN
     -- Resumen por estado
@@ -2171,7 +2134,6 @@ BEGIN
     ORDER BY t."EmployeeName";
 END;
 $$;
--- +goose StatementEnd
 
 -- =============================================================================
 -- 8. usp_HR_Trust_List
@@ -2205,7 +2167,6 @@ RETURNS TABLE(
     "CreatedAt"             TIMESTAMP
 )
 LANGUAGE plpgsql
--- +goose StatementBegin
 AS $$
 BEGIN
     RETURN QUERY
@@ -2236,7 +2197,6 @@ BEGIN
     LIMIT p_limit OFFSET p_offset;
 END;
 $$;
--- +goose StatementEnd
 
 -- =============================================================================
 -- 9. usp_HR_Savings_Enroll
@@ -2254,7 +2214,6 @@ CREATE OR REPLACE FUNCTION public.usp_HR_Savings_Enroll(
     OUT p_mensaje               VARCHAR(500)
 )
 LANGUAGE plpgsql
--- +goose StatementBegin
 AS $$
 BEGIN
     p_resultado := 0;
@@ -2295,7 +2254,6 @@ BEGIN
     END;
 END;
 $$;
--- +goose StatementEnd
 
 -- =============================================================================
 -- 10. usp_HR_Savings_ProcessMonthly
@@ -2309,7 +2267,6 @@ CREATE OR REPLACE FUNCTION public.usp_HR_Savings_ProcessMonthly(
     OUT p_mensaje       VARCHAR(500)
 )
 LANGUAGE plpgsql
--- +goose StatementBegin
 AS $$
 DECLARE
     v_fund_id       INTEGER;
@@ -2392,7 +2349,6 @@ BEGIN
     END;
 END;
 $$;
--- +goose StatementEnd
 
 -- =============================================================================
 -- 11. usp_HR_Savings_GetBalance
@@ -2407,7 +2363,6 @@ RETURNS TABLE (
     row_data    JSONB
 )
 LANGUAGE plpgsql
--- +goose StatementBegin
 AS $$
 BEGIN
     -- Datos del fondo
@@ -2452,7 +2407,6 @@ BEGIN
     ORDER BY tx."TransactionDate" DESC, tx."TransactionId" DESC;
 END;
 $$;
--- +goose StatementEnd
 
 -- =============================================================================
 -- 12. usp_HR_Savings_RequestLoan
@@ -2469,7 +2423,6 @@ CREATE OR REPLACE FUNCTION public.usp_HR_Savings_RequestLoan(
     OUT p_mensaje       VARCHAR(500)
 )
 LANGUAGE plpgsql
--- +goose StatementBegin
 AS $$
 DECLARE
     v_fund_id       INTEGER;
@@ -2537,7 +2490,6 @@ BEGIN
     END;
 END;
 $$;
--- +goose StatementEnd
 
 -- =============================================================================
 -- 13. usp_HR_Savings_ApproveLoan
@@ -2552,7 +2504,6 @@ CREATE OR REPLACE FUNCTION public.usp_HR_Savings_ApproveLoan(
     OUT p_mensaje   VARCHAR(500)
 )
 LANGUAGE plpgsql
--- +goose StatementBegin
 AS $$
 DECLARE
     v_current_status    VARCHAR(15);
@@ -2634,7 +2585,6 @@ BEGIN
     END;
 END;
 $$;
--- +goose StatementEnd
 
 -- =============================================================================
 -- 14. usp_HR_Savings_ProcessLoanPayment
@@ -2649,7 +2599,6 @@ CREATE OR REPLACE FUNCTION public.usp_HR_Savings_ProcessLoanPayment(
     OUT p_mensaje       VARCHAR(500)
 )
 LANGUAGE plpgsql
--- +goose StatementBegin
 AS $$
 DECLARE
     v_fund_id           INTEGER;
@@ -2738,7 +2687,6 @@ BEGIN
     END;
 END;
 $$;
--- +goose StatementEnd
 
 -- =============================================================================
 -- 15. usp_HR_Savings_List
@@ -2765,7 +2713,6 @@ RETURNS TABLE(
     "CurrentBalance"        NUMERIC
 )
 LANGUAGE plpgsql
--- +goose StatementBegin
 AS $$
 BEGIN
     RETURN QUERY
@@ -2793,7 +2740,6 @@ BEGIN
     LIMIT p_limit OFFSET p_offset;
 END;
 $$;
--- +goose StatementEnd
 
 -- =============================================================================
 -- 16. usp_HR_Savings_LoanList
@@ -2827,7 +2773,6 @@ RETURNS TABLE(
     "CreatedAt"             TIMESTAMP
 )
 LANGUAGE plpgsql
--- +goose StatementBegin
 AS $$
 BEGIN
     RETURN QUERY
@@ -2859,7 +2804,6 @@ BEGIN
     LIMIT p_limit OFFSET p_offset;
 END;
 $$;
--- +goose StatementEnd
 
 
 -- RRHH Functions: Obligaciones Legales
@@ -3025,7 +2969,6 @@ RETURNS TABLE(
     "Notes"                 VARCHAR(500)
 )
 LANGUAGE plpgsql
--- +goose StatementBegin
 AS $$
 BEGIN
     IF p_page  < 1   THEN p_page  := 1;   END IF;
@@ -3063,7 +3006,6 @@ BEGIN
     LIMIT p_limit OFFSET (p_page - 1) * p_limit;
 END;
 $$;
--- +goose StatementEnd
 
 -- =============================================================================
 -- 2. usp_HR_Obligation_Save
@@ -3092,7 +3034,6 @@ CREATE OR REPLACE FUNCTION public.usp_HR_Obligation_Save(
     OUT p_mensaje           VARCHAR(500)
 )
 LANGUAGE plpgsql
--- +goose StatementBegin
 AS $$
 BEGIN
     p_resultado := 0;
@@ -3212,7 +3153,6 @@ BEGIN
     END;
 END;
 $$;
--- +goose StatementEnd
 
 -- =============================================================================
 -- 3. usp_HR_Obligation_GetByCountry
@@ -3242,7 +3182,6 @@ RETURNS TABLE (
     "Notes"                 VARCHAR(500)
 )
 LANGUAGE plpgsql
--- +goose StatementBegin
 AS $$
 BEGIN
     IF p_as_of_date IS NULL THEN
@@ -3276,7 +3215,6 @@ BEGIN
     ORDER BY o."Code";
 END;
 $$;
--- +goose StatementEnd
 
 -- =============================================================================
 -- 4. usp_HR_EmployeeObligation_Enroll
@@ -3294,7 +3232,6 @@ CREATE OR REPLACE FUNCTION public.usp_HR_EmployeeObligation_Enroll(
     OUT p_mensaje           VARCHAR(500)
 )
 LANGUAGE plpgsql
--- +goose StatementBegin
 AS $$
 BEGIN
     p_resultado := 0;
@@ -3350,7 +3287,6 @@ BEGIN
     END;
 END;
 $$;
--- +goose StatementEnd
 
 -- =============================================================================
 -- 5. usp_HR_EmployeeObligation_Disenroll
@@ -3363,7 +3299,6 @@ CREATE OR REPLACE FUNCTION public.usp_HR_EmployeeObligation_Disenroll(
     OUT p_mensaje               VARCHAR(500)
 )
 LANGUAGE plpgsql
--- +goose StatementBegin
 AS $$
 DECLARE
     v_current_status    VARCHAR(15);
@@ -3411,7 +3346,6 @@ BEGIN
     END;
 END;
 $$;
--- +goose StatementEnd
 
 -- =============================================================================
 -- 6. usp_HR_EmployeeObligation_GetByEmployee
@@ -3445,7 +3379,6 @@ RETURNS TABLE(
     "EffectiveEmployeeRate"     NUMERIC(8,5)
 )
 LANGUAGE plpgsql
--- +goose StatementBegin
 AS $$
 BEGIN
     RETURN QUERY
@@ -3483,7 +3416,6 @@ BEGIN
     ORDER BY lo."CountryCode", lo."Code";
 END;
 $$;
--- +goose StatementEnd
 
 -- =============================================================================
 -- 7. usp_HR_Filing_Generate
@@ -3499,7 +3431,6 @@ CREATE OR REPLACE FUNCTION public.usp_HR_Filing_Generate(
     OUT p_mensaje           VARCHAR(500)
 )
 LANGUAGE plpgsql
--- +goose StatementBegin
 AS $$
 DECLARE
     v_base_employer_rate    NUMERIC(8,5);
@@ -3656,7 +3587,6 @@ BEGIN
     END;
 END;
 $$;
--- +goose StatementEnd
 
 -- =============================================================================
 -- 8. usp_HR_Filing_GetSummary
@@ -3670,7 +3600,6 @@ RETURNS TABLE (
     row_data        JSONB
 )
 LANGUAGE plpgsql
--- +goose StatementBegin
 AS $$
 BEGIN
     -- Cabecera
@@ -3732,7 +3661,6 @@ BEGIN
     ORDER BY e."EmployeeName";
 END;
 $$;
--- +goose StatementEnd
 
 -- =============================================================================
 -- 9. usp_HR_Filing_MarkFiled
@@ -3749,7 +3677,6 @@ CREATE OR REPLACE FUNCTION public.usp_HR_Filing_MarkFiled(
     OUT p_mensaje           VARCHAR(500)
 )
 LANGUAGE plpgsql
--- +goose StatementBegin
 AS $$
 DECLARE
     v_current_status VARCHAR(15);
@@ -3798,7 +3725,6 @@ BEGIN
     END;
 END;
 $$;
--- +goose StatementEnd
 
 -- =============================================================================
 -- 10. usp_HR_Filing_List
@@ -3835,7 +3761,6 @@ RETURNS TABLE(
     "Status"                VARCHAR(15),
     "CreatedAt"             TIMESTAMP
 )
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 BEGIN
     IF p_limit < 1   THEN p_limit := 50;  END IF;
@@ -3871,7 +3796,6 @@ BEGIN
     LIMIT p_limit OFFSET p_offset;
 END;
 $$;
--- +goose StatementEnd
 
 -- =============================================================================
 -- Seed data - Obligaciones legales Venezuela (VE)
@@ -3938,7 +3862,6 @@ SELECT
 WHERE NOT EXISTS (SELECT 1 FROM hr."LegalObligation" WHERE "CountryCode" = 'VE' AND "Code" = 'VE_INCE');
 
 -- VE_SSO niveles de riesgo (clases I a IV)
--- +goose StatementBegin
 DO $$
 DECLARE
     v_sso_id INTEGER;
@@ -3966,7 +3889,6 @@ BEGIN
     END IF;
 END;
 $$;
--- +goose StatementEnd
 
 
 -- RRHH Functions: Salud Ocupacional
@@ -4034,7 +3956,6 @@ CREATE OR REPLACE FUNCTION public.usp_HR_OccHealth_Create(
     OUT p_mensaje               VARCHAR(500)
 )
 LANGUAGE plpgsql
--- +goose StatementBegin
 AS $$
 BEGIN
     p_resultado := 0;
@@ -4083,7 +4004,6 @@ BEGIN
     END;
 END;
 $$;
--- +goose StatementEnd
 
 -- =============================================================================
 -- 2. usp_HR_OccHealth_Update
@@ -4110,7 +4030,6 @@ CREATE OR REPLACE FUNCTION public.usp_HR_OccHealth_Update(
     OUT p_mensaje                   VARCHAR(500)
 )
 LANGUAGE plpgsql
--- +goose StatementBegin
 AS $$
 BEGIN
     p_resultado := 0;
@@ -4167,7 +4086,6 @@ BEGIN
     END;
 END;
 $$;
--- +goose StatementEnd
 
 -- =============================================================================
 -- 3. usp_HR_OccHealth_List
@@ -4214,7 +4132,6 @@ RETURNS TABLE(
     "UpdatedAt"                     TIMESTAMP
 )
 LANGUAGE plpgsql
--- +goose StatementBegin
 AS $$
 BEGIN
     IF p_page  < 1   THEN p_page  := 1;   END IF;
@@ -4262,7 +4179,6 @@ BEGIN
     LIMIT p_limit OFFSET (p_page - 1) * p_limit;
 END;
 $$;
--- +goose StatementEnd
 
 -- =============================================================================
 -- 4. usp_HR_OccHealth_Get
@@ -4302,7 +4218,6 @@ RETURNS TABLE (
     "UpdatedAt"                     TIMESTAMP
 )
 LANGUAGE plpgsql
--- +goose StatementBegin
 AS $$
 BEGIN
     RETURN QUERY
@@ -4338,7 +4253,6 @@ BEGIN
       AND (p_company_id IS NULL OR o."CompanyId" = p_company_id);
 END;
 $$;
--- +goose StatementEnd
 
 -- =============================================================================
 -- 5. usp_HR_MedExam_Save
@@ -4363,7 +4277,6 @@ CREATE OR REPLACE FUNCTION public.usp_HR_MedExam_Save(
     OUT p_mensaje       VARCHAR(500)
 )
 LANGUAGE plpgsql
--- +goose StatementBegin
 AS $$
 BEGIN
     p_resultado := 0;
@@ -4437,7 +4350,6 @@ BEGIN
     END;
 END;
 $$;
--- +goose StatementEnd
 
 -- =============================================================================
 -- 6. usp_HR_MedExam_List
@@ -4473,7 +4385,6 @@ RETURNS TABLE(
     "UpdatedAt"         TIMESTAMP
 )
 LANGUAGE plpgsql
--- +goose StatementBegin
 AS $$
 BEGIN
     IF p_page  < 1   THEN p_page  := 1;   END IF;
@@ -4510,7 +4421,6 @@ BEGIN
     LIMIT p_limit OFFSET (p_page - 1) * p_limit;
 END;
 $$;
--- +goose StatementEnd
 
 -- =============================================================================
 -- 7. usp_HR_MedExam_GetPending
@@ -4541,7 +4451,6 @@ RETURNS TABLE(
     "DaysUntilDue"      INTEGER
 )
 LANGUAGE plpgsql
--- +goose StatementBegin
 AS $$
 BEGIN
     IF p_as_of_date IS NULL THEN p_as_of_date := CAST((NOW() AT TIME ZONE 'UTC') AS DATE); END IF;
@@ -4584,7 +4493,6 @@ BEGIN
     LIMIT p_limit OFFSET (p_page - 1) * p_limit;
 END;
 $$;
--- +goose StatementEnd
 
 -- =============================================================================
 -- 8. usp_HR_MedOrder_Create
@@ -4607,7 +4515,6 @@ CREATE OR REPLACE FUNCTION public.usp_HR_MedOrder_Create(
     OUT p_mensaje   VARCHAR(500)
 )
 LANGUAGE plpgsql
--- +goose StatementBegin
 AS $$
 BEGIN
     p_resultado := 0;
@@ -4643,7 +4550,6 @@ BEGIN
     END;
 END;
 $$;
--- +goose StatementEnd
 
 -- =============================================================================
 -- 9. usp_HR_MedOrder_Approve
@@ -4660,7 +4566,6 @@ CREATE OR REPLACE FUNCTION public.usp_HR_MedOrder_Approve(
     OUT p_mensaje       VARCHAR(500)
 )
 LANGUAGE plpgsql
--- +goose StatementBegin
 AS $$
 BEGIN
     p_resultado := 0;
@@ -4716,7 +4621,6 @@ BEGIN
     END;
 END;
 $$;
--- +goose StatementEnd
 
 -- =============================================================================
 -- 10. usp_HR_MedOrder_List
@@ -4755,7 +4659,6 @@ RETURNS TABLE(
     "UpdatedAt"         TIMESTAMP
 )
 LANGUAGE plpgsql
--- +goose StatementBegin
 AS $$
 BEGIN
     IF p_page  < 1   THEN p_page  := 1;   END IF;
@@ -4795,7 +4698,6 @@ BEGIN
     LIMIT p_limit OFFSET (p_page - 1) * p_limit;
 END;
 $$;
--- +goose StatementEnd
 
 -- =============================================================================
 -- 11. usp_HR_Training_Save
@@ -4823,7 +4725,6 @@ CREATE OR REPLACE FUNCTION public.usp_HR_Training_Save(
     OUT p_mensaje           VARCHAR(500)
 )
 LANGUAGE plpgsql
--- +goose StatementBegin
 AS $$
 BEGIN
     p_resultado := 0;
@@ -4908,7 +4809,6 @@ BEGIN
     END;
 END;
 $$;
--- +goose StatementEnd
 
 -- =============================================================================
 -- 12. usp_HR_Training_List
@@ -4949,7 +4849,6 @@ RETURNS TABLE(
     "UpdatedAt"             TIMESTAMP
 )
 LANGUAGE plpgsql
--- +goose StatementBegin
 AS $$
 BEGIN
     IF p_page  < 1   THEN p_page  := 1;   END IF;
@@ -4991,7 +4890,6 @@ BEGIN
     LIMIT p_limit OFFSET (p_page - 1) * p_limit;
 END;
 $$;
--- +goose StatementEnd
 
 -- =============================================================================
 -- 13. usp_HR_Training_GetEmployeeCertifications
@@ -5023,7 +4921,6 @@ RETURNS TABLE (
     "UpdatedAt"         TIMESTAMP
 )
 LANGUAGE plpgsql
--- +goose StatementBegin
 AS $$
 BEGIN
     RETURN QUERY
@@ -5055,7 +4952,6 @@ BEGIN
     ORDER BY t."StartDate" DESC;
 END;
 $$;
--- +goose StatementEnd
 
 -- =============================================================================
 -- 14. usp_HR_Committee_Save
@@ -5073,7 +4969,6 @@ CREATE OR REPLACE FUNCTION public.usp_HR_Committee_Save(
     OUT p_mensaje           VARCHAR(500)
 )
 LANGUAGE plpgsql
--- +goose StatementBegin
 AS $$
 BEGIN
     p_resultado := 0;
@@ -5123,7 +5018,6 @@ BEGIN
     END;
 END;
 $$;
--- +goose StatementEnd
 
 -- =============================================================================
 -- 15. usp_HR_Committee_AddMember
@@ -5142,7 +5036,6 @@ CREATE OR REPLACE FUNCTION public.usp_HR_Committee_AddMember(
     OUT p_mensaje           VARCHAR(500)
 )
 LANGUAGE plpgsql
--- +goose StatementBegin
 AS $$
 BEGIN
     p_resultado := 0;
@@ -5193,7 +5086,6 @@ BEGIN
     END;
 END;
 $$;
--- +goose StatementEnd
 
 -- =============================================================================
 -- 16. usp_HR_Committee_RemoveMember
@@ -5208,7 +5100,6 @@ CREATE OR REPLACE FUNCTION public.usp_HR_Committee_RemoveMember(
     OUT p_mensaje           VARCHAR(500)
 )
 LANGUAGE plpgsql
--- +goose StatementBegin
 AS $$
 BEGIN
     p_resultado := 0;
@@ -5251,7 +5142,6 @@ BEGIN
     END;
 END;
 $$;
--- +goose StatementEnd
 
 -- =============================================================================
 -- 17. usp_HR_Committee_RecordMeeting
@@ -5268,7 +5158,6 @@ CREATE OR REPLACE FUNCTION public.usp_HR_Committee_RecordMeeting(
     OUT p_mensaje           VARCHAR(500)
 )
 LANGUAGE plpgsql
--- +goose StatementBegin
 AS $$
 BEGIN
     p_resultado := 0;
@@ -5303,7 +5192,6 @@ BEGIN
     END;
 END;
 $$;
--- +goose StatementEnd
 
 -- =============================================================================
 -- 18. usp_HR_Committee_List
@@ -5330,7 +5218,6 @@ RETURNS TABLE(
     "TotalMeetings"         BIGINT
 )
 LANGUAGE plpgsql
--- +goose StatementBegin
 AS $$
 BEGIN
     IF p_page  < 1   THEN p_page  := 1;   END IF;
@@ -5365,7 +5252,6 @@ BEGIN
     LIMIT p_limit OFFSET (p_page - 1) * p_limit;
 END;
 $$;
--- +goose StatementEnd
 
 -- =============================================================================
 -- 19. usp_HR_Committee_GetMeetings
@@ -5392,7 +5278,6 @@ RETURNS TABLE(
     "CommitteeName"         VARCHAR(200)
 )
 LANGUAGE plpgsql
--- +goose StatementBegin
 AS $$
 BEGIN
     IF p_page  < 1   THEN p_page  := 1;   END IF;
@@ -5427,7 +5312,6 @@ BEGIN
     LIMIT p_limit OFFSET (p_page - 1) * p_limit;
 END;
 $$;
--- +goose StatementEnd
 
 
 -- =============================================================================
@@ -5462,7 +5346,6 @@ CREATE OR REPLACE FUNCTION public.usp_hr_occhealth_create_internal(
     OUT p_resultado             INTEGER,
     OUT p_mensaje               VARCHAR(500)
 )
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 BEGIN
     p_resultado := 0;
@@ -5510,7 +5393,6 @@ BEGIN
     END;
 END;
 $$;
--- +goose StatementEnd
 
 -- Service wrapper: usp_HR_OccHealth_Create
 -- Service sends: p_company_id, p_branch_id, p_employee_code, p_record_type,
@@ -5529,7 +5411,6 @@ CREATE OR REPLACE FUNCTION public.usp_hr_occhealth_create(
     p_user_id       INTEGER     DEFAULT NULL
 )
 RETURNS TABLE("Resultado" INT, "Mensaje" VARCHAR)
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 DECLARE
     v_country_code CHAR(2);
@@ -5562,7 +5443,6 @@ EXCEPTION WHEN OTHERS THEN
     RETURN QUERY SELECT -1::INT, SQLERRM::VARCHAR;
 END;
 $$;
--- +goose StatementEnd
 
 
 -- Service wrapper: usp_HR_MedExam_Save
@@ -5583,7 +5463,6 @@ CREATE OR REPLACE FUNCTION public.usp_hr_medexam_save(
     p_user_id       INTEGER     DEFAULT NULL
 )
 RETURNS TABLE("Resultado" INT, "Mensaje" VARCHAR)
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 DECLARE
     v_resultado    INTEGER;
@@ -5622,7 +5501,6 @@ EXCEPTION WHEN OTHERS THEN
     RETURN QUERY SELECT -1::INT, SQLERRM::VARCHAR;
 END;
 $$;
--- +goose StatementEnd
 
 
 -- Service wrapper: usp_HR_Training_Save
@@ -5644,7 +5522,6 @@ CREATE OR REPLACE FUNCTION public.usp_hr_training_save(
     p_user_id       INTEGER     DEFAULT NULL
 )
 RETURNS TABLE("Resultado" INT, "Mensaje" VARCHAR)
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 DECLARE
     v_country_code CHAR(2);
@@ -5681,7 +5558,6 @@ EXCEPTION WHEN OTHERS THEN
     RETURN QUERY SELECT -1::INT, SQLERRM::VARCHAR;
 END;
 $$;
--- +goose StatementEnd
 
 
 -- Service wrapper: usp_HR_Committee_Save
@@ -5700,7 +5576,6 @@ CREATE OR REPLACE FUNCTION public.usp_hr_committee_save(
     p_user_id        INTEGER     DEFAULT NULL
 )
 RETURNS TABLE("Resultado" INT, "Mensaje" VARCHAR)
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 DECLARE
     v_country_code CHAR(2);
@@ -5741,7 +5616,6 @@ EXCEPTION WHEN OTHERS THEN
     RETURN QUERY SELECT -1::INT, SQLERRM::VARCHAR;
 END;
 $$;
--- +goose StatementEnd
 
 
 -- RRHH Seed Data
@@ -5753,7 +5627,6 @@ $$;
 -- Fecha: 2026-03-15
 -- ============================================================================
 
--- +goose StatementBegin
 DO $$
 BEGIN
   RAISE NOTICE '=== SEED RRHH COMPLETO — Inicio ===';
@@ -6282,8 +6155,9 @@ BEGIN
 EXCEPTION WHEN OTHERS THEN
   RAISE NOTICE 'Error en seed_rrhh_completo.sql: %', SQLERRM;
 END $$;
--- +goose StatementEnd
 
+
+-- +goose StatementEnd
 
 -- +goose Down
 DROP FUNCTION IF EXISTS public.usp_HR_ProfitSharing_Generate CASCADE;

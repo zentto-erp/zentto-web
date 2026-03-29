@@ -1,4 +1,6 @@
 -- +goose Up
+
+-- +goose StatementBegin
 -- Fix: TIMESTAMPTZÃ¢â€ â€™TIMESTAMP casts in pettycash functions + ambiguous column in committee meetings
 
 -- 1. usp_fin_pettycash_session_getactive Ã¢â‚¬â€ add ::TIMESTAMP casts
@@ -12,7 +14,6 @@ RETURNS TABLE(
     "ClosedAt" TIMESTAMP, "OpenedByUserId" INT, "ClosedByUserId" INT,
     "Notes" VARCHAR(500), "AvailableBalance" NUMERIC(18,2), "ExpenseCount" BIGINT
 )
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 BEGIN
     RETURN QUERY
@@ -25,7 +26,6 @@ BEGIN
     WHERE s."BoxId" = p_box_id AND s."Status" = 'OPEN';
 END;
 $$;
--- +goose StatementEnd
 
 -- 2. usp_fin_pettycash_expense_list Ã¢â‚¬â€ add ::TIMESTAMP cast
 DROP FUNCTION IF EXISTS public.usp_fin_pettycash_expense_list(INT, INT) CASCADE;
@@ -38,7 +38,6 @@ RETURNS TABLE(
     "ReceiptNumber" VARCHAR(50), "AccountCode" VARCHAR(20),
     "CreatedAt" TIMESTAMP, "CreatedByUserId" INT
 )
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 BEGIN
     RETURN QUERY
@@ -50,7 +49,6 @@ BEGIN
     ORDER BY e."CreatedAt" DESC;
 END;
 $$;
--- +goose StatementEnd
 
 -- 3. fin.usp_fin_pettycash_summary Ã¢â‚¬â€ add ::TIMESTAMP + ::VARCHAR casts
 DROP FUNCTION IF EXISTS fin.usp_fin_pettycash_summary(INTEGER) CASCADE;
@@ -59,7 +57,6 @@ RETURNS TABLE(
     "BoxId" INTEGER, "BoxName" VARCHAR, "MaxAmount" NUMERIC, "CurrentBalance" NUMERIC,
     "Status" VARCHAR, "SessionId" INTEGER, "OpeningAmount" NUMERIC, "TotalExpenses" NUMERIC,
     "AvailableBalance" NUMERIC, "OpenedAt" TIMESTAMP, "ExpenseCount" BIGINT)
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 BEGIN
     RETURN QUERY
@@ -73,7 +70,6 @@ BEGIN
     WHERE b."Id" = p_box_id;
 END;
 $$;
--- +goose StatementEnd
 
 -- Recreate fin wrappers dropped by CASCADE
 CREATE OR REPLACE FUNCTION fin.usp_fin_pettycash_session_getactive(p_box_id INTEGER)
@@ -81,22 +77,18 @@ RETURNS TABLE("Id" INTEGER,"BoxId" INTEGER,"OpeningAmount" NUMERIC,"ClosingAmoun
     "TotalExpenses" NUMERIC,"Status" VARCHAR,"OpenedAt" TIMESTAMP,"ClosedAt" TIMESTAMP,
     "OpenedByUserId" INTEGER,"ClosedByUserId" INTEGER,"Notes" VARCHAR,
     "AvailableBalance" NUMERIC,"ExpenseCount" BIGINT)
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 BEGIN RETURN QUERY SELECT * FROM public.usp_fin_pettycash_session_getactive(p_box_id); END;
 $$;
--- +goose StatementEnd
 
 CREATE OR REPLACE FUNCTION fin.usp_fin_pettycash_expense_list(
     p_box_id INTEGER, p_session_id INTEGER DEFAULT NULL)
 RETURNS TABLE("Id" INTEGER,"SessionId" INTEGER,"BoxId" INTEGER,"Category" VARCHAR,
     "Description" VARCHAR,"Amount" NUMERIC,"Beneficiary" VARCHAR,"ReceiptNumber" VARCHAR,
     "AccountCode" VARCHAR,"CreatedAt" TIMESTAMP,"CreatedByUserId" INTEGER)
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 BEGIN RETURN QUERY SELECT * FROM public.usp_fin_pettycash_expense_list(p_box_id, p_session_id); END;
 $$;
--- +goose StatementEnd
 
 -- 4. usp_HR_Committee_GetMeetings Ã¢â‚¬â€ fix ambiguous SafetyCommitteeId
 DROP FUNCTION IF EXISTS public.usp_HR_Committee_GetMeetings(INTEGER, INTEGER, DATE, DATE, INTEGER, INTEGER) CASCADE;
@@ -110,7 +102,6 @@ RETURNS TABLE(
     "MeetingDate" TIMESTAMP, "MinutesUrl" VARCHAR(500), "TopicsSummary" TEXT,
     "ActionItems" TEXT, "CreatedAt" TIMESTAMP, "CommitteeName" VARCHAR(200)
 )
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 BEGIN
     IF p_page < 1 THEN p_page := 1; END IF;
@@ -135,6 +126,7 @@ BEGIN
     LIMIT p_limit OFFSET (p_page - 1) * p_limit;
 END;
 $$;
+
 -- +goose StatementEnd
 
 -- +goose Down

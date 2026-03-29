@@ -1,7 +1,8 @@
 -- +goose Up
+
+-- +goose StatementBegin
 -- Seed: Carriers globales para Zentto Shipping (multi-país)
 -- Solo ejecuta si la tabla tiene las columnas esperadas
--- +goose StatementBegin
 DO $$
 BEGIN
   IF EXISTS (
@@ -46,6 +47,7 @@ BEGIN
     RAISE NOTICE 'Skipping carrier seed: TrackingUrlTemplate column not found';
   END IF;
 END $$;
+
 -- +goose StatementEnd
 
 -- +goose Down
