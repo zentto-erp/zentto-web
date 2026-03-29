@@ -169,7 +169,7 @@ studioRouter.get("/addons/:addonId", async (req, res) => {
 studioRouter.post("/addons", requireAdmin, async (req, res) => {
   const authReq = req as AuthenticatedRequest;
   const companyId = authReq.scope?.companyId;
-  const userId = Number(authReq.user?.sub ?? 0);
+  const userId = parseInt(String(authReq.user?.sub ?? "0"), 10) || 0;
   if (!companyId) return res.status(403).json({ error: "no_scope" });
 
   const parsed = saveSchema.safeParse(req.body);
@@ -213,7 +213,7 @@ studioRouter.post("/addons", requireAdmin, async (req, res) => {
 studioRouter.put("/addons/:addonId", requireAdmin, async (req, res) => {
   const authReq = req as AuthenticatedRequest;
   const companyId = authReq.scope?.companyId;
-  const userId = Number(authReq.user?.sub ?? 0);
+  const userId = parseInt(String(authReq.user?.sub ?? "0"), 10) || 0;
   if (!companyId) return res.status(403).json({ error: "no_scope" });
 
   const parsed = saveSchema.safeParse(req.body);

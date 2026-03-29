@@ -1,5 +1,4 @@
 -- +goose Up
-
 -- +goose StatementBegin
 -- ===========================================================================
 -- 00033_rrhh_module.sql
@@ -6155,8 +6154,6 @@ BEGIN
 EXCEPTION WHEN OTHERS THEN
   RAISE NOTICE 'Error en seed_rrhh_completo.sql: %', SQLERRM;
 END $$;
-
-
 -- +goose StatementEnd
 
 -- +goose Down

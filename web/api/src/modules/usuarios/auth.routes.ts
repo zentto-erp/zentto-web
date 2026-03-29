@@ -37,6 +37,8 @@ import {
 import { validateCaptchaToken } from "./captcha.service.js";
 import { signJwt, type JwtPayload } from "../../auth/jwt.js";
 import { createRateLimiter, getClientIp } from "../../middleware/rate-limit.js";
+import { requireAuth } from "../../middleware/auth.js";
+import { callSp, sql } from "../../db/query.js";
 
 export const authRouter = Router();
 
@@ -267,7 +269,8 @@ authRouter.get("/login-options", loginOptionsLimiter, async (req, res) => {
     return res.status(400).json({ error: "invalid_query", issues: parsed.error.flatten() });
   }
 
-  const user = await getUsuarioTipo(parsed.data.usuario);
+  const normalizedUsuario = String(parsed.data.usuario).trim().toUpperCase();
+  const user = await getUsuarioTipo(normalizedUsuario);
   if (!user) return res.status(404).json({ error: "user_not_found" });
 
   const isAdmin =
@@ -290,7 +293,7 @@ authRouter.post("/login", loginLimiter, async (req, res) => {
   }
 
   const { usuario, clave, companyId, branchId, captchaToken } = parsed.data;
-  const normalizedUser = String(usuario ?? "").trim();
+  const normalizedUser = String(usuario ?? "").trim().toUpperCase();
 
   if (requireCaptchaOnLogin) {
     const captcha = await ensureCaptcha(req, captchaToken, "login");
@@ -316,7 +319,7 @@ authRouter.post("/login", loginLimiter, async (req, res) => {
     });
   }
 
-  const record = await authenticateUsuario(usuario, clave);
+  const record = await authenticateUsuario(normalizedUser, clave);
 
   if (!record) {
     await registerLoginFailure(normalizedUser, getClientIp(req));
@@ -539,4 +542,52 @@ authRouter.get("/me", async (req, res) => {
     },
     companyAccesses: user.companyAccesses ?? [],
   });
+});
+
+// --- POST /v1/auth/unlock — Admin unlock a locked user account ---
+authRouter.post("/unlock", requireAuth, async (req, res) => {
+  try {
+    // Only admins can unlock accounts
+    const requester = (req as any).user;
+    const requesterTipo = requester?.tipo ?? requester?.Tipo ?? "";
+    const isAdmin = ["ADMIN", "SUP"].includes(String(requesterTipo).toUpperCase()) ||
+                    String(requester?.codUsuario ?? requester?.Cod_Usuario ?? "").toUpperCase() === "SUP";
+
+    if (!isAdmin) {
+      return res.status(403).json({ error: "forbidden", message: "Solo administradores pueden desbloquear cuentas." });
+    }
+
+    const { usuario } = req.body;
+    if (!usuario || typeof usuario !== "string") {
+      return res.status(400).json({ error: "invalid_payload", message: "Se requiere el campo 'usuario'." });
+    }
+
+    const normalizedUser = String(usuario).trim().toUpperCase();
+
+    await callSp("usp_Sec_Auth_ResetLockout", { UserCode: normalizedUser });
+
+    return res.json({
+      ok: true,
+      message: `Usuario ${normalizedUser} desbloqueado exitosamente.`,
+      usuario: normalizedUser,
+    });
+  } catch (err: any) {
+    // If SP doesn't exist, try direct SQL as fallback
+    try {
+      const { usuario } = req.body;
+      const normalizedUser = String(usuario).trim().toUpperCase();
+      await sql.query`
+        UPDATE zsys."SecLoginSecurity"
+        SET "FailedAttempts" = 0, "LockoutUntilUtc" = NULL
+        WHERE UPPER("UserCode") = ${normalizedUser}
+      `;
+      return res.json({
+        ok: true,
+        message: `Usuario ${normalizedUser} desbloqueado (fallback directo).`,
+        usuario: normalizedUser,
+      });
+    } catch {
+      return res.status(500).json({ error: "unlock_failed", message: err?.message ?? "Error al desbloquear." });
+    }
+  }
 });

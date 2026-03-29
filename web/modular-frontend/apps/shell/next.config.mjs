@@ -13,6 +13,10 @@ const nextConfig = {
     '@zentto/module-nomina',
     '@zentto/pos',
     '@zentto/restaurante',
+    '@zentto/studio',
+    '@zentto/studio-core',
+    '@zentto/studio-react',
+    'lit',
   ],
 };
 

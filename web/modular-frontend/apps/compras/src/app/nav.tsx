@@ -9,6 +9,17 @@ const PaymentIcon = dynamic(() => import('@mui/icons-material/Payment'), { ssr: 
 const DescriptionIcon = dynamic(() => import('@mui/icons-material/Description'), { ssr: false });
 const AssessmentIcon = dynamic(() => import('@mui/icons-material/Assessment'), { ssr: false });
 const RequestQuoteIcon = dynamic(() => import('@mui/icons-material/RequestQuote'), { ssr: false });
+const ExtensionIcon = dynamic(() => import('@mui/icons-material/Extension'), { ssr: false });
+const WidgetsIcon = dynamic(() => import('@mui/icons-material/Widgets'), { ssr: false });
+
+/** Read addons from localStorage cache (synced by listAddons service) */
+function getCachedModuleAddons(moduleId: string): { id: string; title: string }[] {
+    if (typeof window === 'undefined') return [];
+    try {
+        const all = JSON.parse(localStorage.getItem('zentto-studio-apps') || '[]');
+        return all.filter((a: any) => a.modules?.includes(moduleId) || a.modules?.includes('global'));
+    } catch { return []; }
+}
 
 export function buildNav(isAdmin: boolean, modulos: string[]): Array<Record<string, unknown>> {
     const nav: Array<Record<string, unknown>> = [];
@@ -45,6 +56,30 @@ export function buildNav(isAdmin: boolean, modulos: string[]): Array<Record<stri
 
         // ── Reportes
         nav.push({ kind: 'page', segment: 'reportes', title: 'Reportes', icon: <AssessmentIcon /> });
+
+        // ── Addons dinámicos ────────────────────────────────────
+        const addons = getCachedModuleAddons('compras');
+        if (addons.length > 0) {
+            nav.push({ kind: 'divider' });
+            nav.push({
+                kind: 'page',
+                segment: 'addons',
+                title: 'Addons',
+                icon: <ExtensionIcon />,
+                children: [
+                    { kind: 'page', segment: 'addons', title: 'Ver todos', icon: <ExtensionIcon /> },
+                    ...addons.map((a) => ({
+                        kind: 'page',
+                        segment: `addons/${a.id}`,
+                        title: a.title,
+                        icon: <WidgetsIcon />,
+                    })),
+                ],
+            });
+        } else {
+            nav.push({ kind: 'divider' });
+            nav.push({ kind: 'page', segment: 'addons', title: 'Addons', icon: <ExtensionIcon /> });
+        }
     }
 
     return nav;
