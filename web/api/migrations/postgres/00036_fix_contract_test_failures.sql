@@ -1,4 +1,6 @@
 -- +goose Up
+
+-- +goose StatementBegin
 -- ===========================================================================
 -- 00036_fix_contract_test_failures.sql
 -- Corrige 20 endpoints fallidos en test de contrato:
@@ -44,7 +46,6 @@ $$;
 
 -- 1c. usp_vendedores_getbycodigo → master."Seller"
 DROP FUNCTION IF EXISTS public.usp_vendedores_getbycodigo(VARCHAR) CASCADE;
--- +goose StatementBegin
 CREATE OR REPLACE FUNCTION public.usp_vendedores_getbycodigo(p_codigo VARCHAR(10))
 RETURNS TABLE(
     "Codigo" VARCHAR, "Nombre" VARCHAR, "Comision" DOUBLE PRECISION,
@@ -72,7 +73,6 @@ BEGIN
     WHERE s."SellerCode" = p_codigo AND COALESCE(s."IsDeleted", FALSE) = FALSE;
 END;
 $fn$;
--- +goose StatementEnd
 
 -- 1d. usp_tax_retention_getbycode → master."TaxRetention"
 DROP FUNCTION IF EXISTS public.usp_tax_retention_getbycode(VARCHAR) CASCADE;
@@ -90,7 +90,6 @@ $$;
 
 -- 1e. usp_cfg_entityimage_list → cfg."EntityImage" + cfg."MediaAsset" (BIGINT IDs)
 DROP FUNCTION IF EXISTS public.usp_cfg_entityimage_list(INT, INT, VARCHAR, INT) CASCADE;
--- +goose StatementBegin
 CREATE OR REPLACE FUNCTION public.usp_cfg_entityimage_list(
     p_company_id INT, p_branch_id INT, p_entity_type VARCHAR(50), p_entity_id INT
 )
@@ -116,11 +115,9 @@ BEGIN
     ORDER BY CASE WHEN ei."IsPrimary" THEN 0 ELSE 1 END, ei."SortOrder", ei."EntityImageId";
 END;
 $fn$;
--- +goose StatementEnd
 
 -- 1f. usp_inv_movement_listperiodsummary → master."InventoryPeriodSummary" (BIGINT SummaryId)
 DROP FUNCTION IF EXISTS public.usp_inv_movement_listperiodsummary(VARCHAR, VARCHAR, INT, INT) CASCADE;
--- +goose StatementBegin
 CREATE OR REPLACE FUNCTION public.usp_inv_movement_listperiodsummary(
     p_periodo VARCHAR(10) DEFAULT NULL, p_codigo VARCHAR(60) DEFAULT NULL,
     p_offset INT DEFAULT 0, p_limit INT DEFAULT 50
@@ -147,14 +144,12 @@ BEGIN
     LIMIT p_limit OFFSET p_offset;
 END;
 $fn$;
--- +goose StatementEnd
 
 -- ============================================================
 -- PARTE 2: Funciones RRHH (parámetros corregidos + columnas reales)
 -- ============================================================
 
 -- 2a. usp_HR_Savings_List (CompanyId, Search, Offset, Limit)
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS public.usp_hr_savings_list(INT, VARCHAR, VARCHAR, INT, INT) CASCADE;
 DROP FUNCTION IF EXISTS public.usp_hr_savings_list(INT, VARCHAR, INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_hr_savings_list(
@@ -187,10 +182,8 @@ BEGIN
     ORDER BY sf."EmployeeName" LIMIT p_limit OFFSET p_offset;
 END;
 $fn$;
--- +goose StatementEnd
 
 -- 2b. usp_HR_Trust_List (CompanyId, Year, Offset, Limit)
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS public.usp_hr_trust_list(INT, INT, SMALLINT, VARCHAR, VARCHAR, INT, INT) CASCADE;
 DROP FUNCTION IF EXISTS public.usp_hr_trust_list(INT, INT, INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_hr_trust_list(
@@ -220,10 +213,8 @@ BEGIN
     LIMIT p_limit OFFSET p_offset;
 END;
 $fn$;
--- +goose StatementEnd
 
 -- 2c. usp_HR_Obligation_List (CompanyId, CountryCode, Offset, Limit)
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS public.usp_hr_obligation_list(CHAR, VARCHAR, BOOLEAN, VARCHAR, INT, INT) CASCADE;
 DROP FUNCTION IF EXISTS public.usp_hr_obligation_list(INT, VARCHAR, INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_hr_obligation_list(
@@ -254,10 +245,8 @@ BEGIN
     ORDER BY o."CountryCode", o."Code" LIMIT p_limit OFFSET p_offset;
 END;
 $fn$;
--- +goose StatementEnd
 
 -- 2d. usp_HR_Obligation_GetByCountry (CompanyId, CountryCode)
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS public.usp_hr_obligation_getbycountry(CHAR, DATE) CASCADE;
 DROP FUNCTION IF EXISTS public.usp_hr_obligation_getbycountry(INT, VARCHAR) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_hr_obligation_getbycountry(p_company_id INT, p_country_code VARCHAR)
@@ -283,11 +272,9 @@ BEGIN
     ORDER BY o."Code";
 END;
 $fn$;
--- +goose StatementEnd
 
 -- 2e. usp_HR_OccHealth_List (CompanyId, EmployeeCode, RecordType, Offset, Limit)
 -- Columna InvestigationCompletedDate (no ClosedDate)
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS public.usp_hr_occhealth_list(INT, VARCHAR, VARCHAR, VARCHAR, CHAR, DATE, DATE, INT, INT) CASCADE;
 DROP FUNCTION IF EXISTS public.usp_hr_occhealth_list(INT, VARCHAR, VARCHAR, INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_hr_occhealth_list(
@@ -321,10 +308,8 @@ BEGIN
     ORDER BY oh."OccurrenceDate" DESC NULLS LAST LIMIT p_limit OFFSET p_offset;
 END;
 $fn$;
--- +goose StatementEnd
 
 -- 2f. usp_HR_MedExam_List (CompanyId, EmployeeCode, ExamType, Offset, Limit)
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS public.usp_hr_medexam_list(INT, VARCHAR, VARCHAR, VARCHAR, DATE, DATE, INT, INT) CASCADE;
 DROP FUNCTION IF EXISTS public.usp_hr_medexam_list(INT, VARCHAR, VARCHAR, INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_hr_medexam_list(
@@ -356,10 +341,8 @@ BEGIN
     ORDER BY me."ExamDate" DESC LIMIT p_limit OFFSET p_offset;
 END;
 $fn$;
--- +goose StatementEnd
 
 -- 2g. usp_HR_MedOrder_List (CompanyId, EmployeeCode, Status, Offset, Limit)
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS public.usp_hr_medorder_list(INT, VARCHAR, VARCHAR, VARCHAR, DATE, DATE, INT, INT) CASCADE;
 DROP FUNCTION IF EXISTS public.usp_hr_medorder_list(INT, VARCHAR, VARCHAR, INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_hr_medorder_list(
@@ -392,11 +375,9 @@ BEGIN
     ORDER BY mo."OrderDate" DESC LIMIT p_limit OFFSET p_offset;
 END;
 $fn$;
--- +goose StatementEnd
 
 -- 2h. usp_HR_Training_List (CompanyId, Search, Offset, Limit)
 -- Columna DurationHours (no Hours), sin Instructor en tabla
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS public.usp_hr_training_list(INT, VARCHAR, VARCHAR, CHAR, BOOLEAN, VARCHAR, DATE, DATE, INT, INT) CASCADE;
 DROP FUNCTION IF EXISTS public.usp_hr_training_list(INT, VARCHAR, INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_hr_training_list(
@@ -431,11 +412,9 @@ BEGIN
     ORDER BY tr."StartDate" DESC LIMIT p_limit OFFSET p_offset;
 END;
 $fn$;
--- +goose StatementEnd
 
 -- 2i. usp_HR_Committee_List (CompanyId, Search, Offset, Limit)
 -- SafetyCommitteeMember no tiene IsActive
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS public.usp_hr_committee_list(INT, CHAR, BOOLEAN, INT, INT) CASCADE;
 DROP FUNCTION IF EXISTS public.usp_hr_committee_list(INT, VARCHAR, INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_hr_committee_list(
@@ -466,6 +445,7 @@ BEGIN
     ORDER BY sc."CommitteeName" LIMIT p_limit OFFSET p_offset;
 END;
 $fn$;
+
 -- +goose StatementEnd
 
 -- +goose Down
