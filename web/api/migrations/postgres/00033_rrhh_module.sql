@@ -3943,7 +3943,6 @@ BEGIN
     END IF;
 END;
 $$;
--- +goose StatementEnd
 
 
 -- RRHH Functions: Salud Ocupacional
