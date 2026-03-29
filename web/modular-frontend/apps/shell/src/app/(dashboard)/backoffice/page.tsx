@@ -192,7 +192,7 @@ async function apiFetch<T>(
 
 // ─── Modal de autenticacion 2FA — TOTP (Google Authenticator) ────────────────
 
-type AuthStep = "key" | "totp" | "setup_qr" | "setup_confirm";
+type AuthStep = "key" | "totp" | "setup_qr" | "setup_confirm" | "regenerate_qr";
 
 function AuthModal({ onAuth }: { onAuth: (token: string) => void }) {
   const [step, setStep] = useState<AuthStep>("key");
@@ -209,7 +209,7 @@ function AuthModal({ onAuth }: { onAuth: (token: string) => void }) {
   // Paso 1 → verificar Master Key, luego ver si hay TOTP configurado
   const handleMasterKey = async () => {
     if (!masterKey.trim()) { setError("Ingresa la Master Key"); return; }
-    if (!captchaToken) { setError("Completa la verificacion anti-bot"); return; }
+    // captchaToken es opcional — el backend decide si es requerido
     setLoading(true); setError("");
     try {
       // Verificar status del TOTP
@@ -268,6 +268,54 @@ function AuthModal({ onAuth }: { onAuth: (token: string) => void }) {
     }
   };
 
+  // Regenerar TOTP → nuevo QR
+  const handleRegenerate = async () => {
+    setLoading(true); setError("");
+    try {
+      const res = await fetch(`${base}/v1/backoffice/auth/setup/regenerate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ masterKey: masterKey.trim(), captchaToken }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(res.status === 401 ? "Master Key incorrecta." : data.error ?? "Error.");
+        return;
+      }
+      setSetupSecret(data.secret);
+      setSetupQr(data.qrDataUrl);
+      setTotpCode("");
+      setStep("regenerate_qr");
+    } catch {
+      setError("Error de conexion.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Confirmar regeneración TOTP
+  const handleRegenerateConfirm = async () => {
+    if (totpCode.length !== 6) { setError("El codigo debe tener 6 digitos"); return; }
+    setLoading(true); setError("");
+    try {
+      const res = await fetch(`${base}/v1/backoffice/auth/setup/regenerate/confirm`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ masterKey: masterKey.trim(), code: totpCode, secret: setupSecret }),
+      });
+      if (!res.ok) {
+        setError("Codigo incorrecto. Verifica que escaneaste el nuevo QR.");
+        return;
+      }
+      // Regeneración confirmada → login inmediato
+      await handleLogin();
+    } catch {
+      setError("Error de conexion.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Paso 2b (login normal) → verificar código TOTP
   const handleLogin = async (secretOverride?: string) => {
     const code = secretOverride ? totpCode : totpCode;
@@ -303,6 +351,7 @@ function AuthModal({ onAuth }: { onAuth: (token: string) => void }) {
           {step === "key" && "— Acceso"}
           {step === "totp" && "— Verificacion 2FA"}
           {(step === "setup_qr" || step === "setup_confirm") && "— Configurar 2FA"}
+          {step === "regenerate_qr" && "— Regenerar 2FA"}
         </Stack>
       </DialogTitle>
 
@@ -319,7 +368,7 @@ function AuthModal({ onAuth }: { onAuth: (token: string) => void }) {
               fullWidth
               value={masterKey}
               onChange={(e) => { setMasterKey(e.target.value); setError(""); }}
-              onKeyDown={(e) => e.key === "Enter" && captchaToken && handleMasterKey()}
+              onKeyDown={(e) => e.key === "Enter" && handleMasterKey()}
               error={!!error}
               helperText={error}
               autoFocus
@@ -388,9 +437,52 @@ function AuthModal({ onAuth }: { onAuth: (token: string) => void }) {
               disabled={loading}
               inputProps={{ maxLength: 6, style: { letterSpacing: "0.5em", fontSize: "1.4rem", textAlign: "center" } }}
             />
-            <Button size="small" sx={{ mt: 1 }} onClick={() => { setStep("key"); setTotpCode(""); setError(""); }}>
-              Volver
-            </Button>
+            <Stack direction="row" justifyContent="space-between" mt={1}>
+              <Button size="small" onClick={() => { setStep("key"); setTotpCode(""); setError(""); }}>
+                Volver
+              </Button>
+              <Button size="small" color="warning" onClick={handleRegenerate} disabled={loading}>
+                Perdi mi autenticador
+              </Button>
+            </Stack>
+          </>
+        )}
+
+        {/* ── Paso: Regenerar QR (nuevo autenticador) ── */}
+        {step === "regenerate_qr" && (
+          <>
+            <Alert severity="warning" sx={{ mb: 2 }}>
+              Escanea este <strong>nuevo QR</strong> con Google Authenticator. El codigo anterior dejara de funcionar.
+            </Alert>
+            {setupQr && (
+              <Box textAlign="center" mb={2}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={setupQr} alt="QR TOTP" width={200} height={200} style={{ borderRadius: 8 }} />
+              </Box>
+            )}
+            <Typography variant="caption" color="text.secondary" display="block" mb={1}>
+              Codigo manual:
+            </Typography>
+            <Typography
+              variant="body2"
+              fontFamily="monospace"
+              sx={{ bgcolor: "action.hover", p: 1, borderRadius: 1, wordBreak: "break-all", mb: 2 }}
+            >
+              {setupSecret}
+            </Typography>
+            <TextField
+              label="Codigo de confirmacion (6 digitos)"
+              type="text"
+              fullWidth
+              value={totpCode}
+              onChange={(e) => { setTotpCode(e.target.value.replace(/\D/g, "").slice(0, 6)); setError(""); }}
+              onKeyDown={(e) => e.key === "Enter" && handleRegenerateConfirm()}
+              error={!!error}
+              helperText={error || "Ingresa el codigo del nuevo QR para confirmar"}
+              autoFocus
+              disabled={loading}
+              inputProps={{ maxLength: 6, style: { letterSpacing: "0.5em", fontSize: "1.4rem", textAlign: "center" } }}
+            />
           </>
         )}
       </DialogContent>
@@ -402,10 +494,11 @@ function AuthModal({ onAuth }: { onAuth: (token: string) => void }) {
           onClick={() => {
             if (step === "key") handleMasterKey();
             else if (step === "setup_qr") handleSetupConfirm();
+            else if (step === "regenerate_qr") handleRegenerateConfirm();
             else if (step === "totp") handleLogin();
           }}
         >
-          {loading ? "Verificando..." : step === "key" ? "Continuar" : step === "setup_qr" ? "Activar 2FA" : "Ingresar"}
+          {loading ? "Verificando..." : step === "key" ? "Continuar" : (step === "setup_qr" || step === "regenerate_qr") ? "Confirmar" : "Ingresar"}
         </Button>
       </DialogActions>
     </Dialog>

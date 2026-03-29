@@ -106,11 +106,13 @@ router.post("/setup", async (req: Request, res: Response) => {
 
   await constantDelay();
 
-  // Verificar captcha
-  const captcha = await validateCaptchaToken(captchaToken, ip, "backoffice_login");
-  if (!captcha.ok) {
-    res.status(400).json({ error: "captcha_required", reason: captcha.reason });
-    return;
+  // Verificar captcha (skip si AUTH_LOGIN_REQUIRE_CAPTCHA=false — entorno dev)
+  if (process.env.AUTH_LOGIN_REQUIRE_CAPTCHA !== "false") {
+    const captcha = await validateCaptchaToken(captchaToken, ip, "backoffice_login");
+    if (!captcha.ok) {
+      res.status(400).json({ error: "captcha_required", reason: captcha.reason });
+      return;
+    }
   }
 
   if (!MASTER_KEY || masterKey !== MASTER_KEY) {
@@ -265,31 +267,105 @@ router.post("/login", async (req: Request, res: Response) => {
   });
 });
 
-// ─── POST /setup/reset — Limpia el secret TOTP (requiere MasterKey) ──────────
-// Solo para emergencias. En producción desactivar o proteger adicionalmente.
+// ─── POST /setup/regenerate — Regenera TOTP: nuevo QR + secret ──────────────
+// Requiere MasterKey. Genera nuevo secret y QR para re-escanear.
+// El secret anterior deja de funcionar cuando se confirma el nuevo.
 
-router.post("/setup/reset", async (req: Request, res: Response) => {
-  const { masterKey } = req.body as { masterKey?: string };
+router.post("/setup/regenerate", async (req: Request, res: Response) => {
+  const { masterKey, captchaToken } = req.body as { masterKey?: string; captchaToken?: string };
+  const ip = getIp(req);
 
   await constantDelay();
+
+  // Captcha (skip si AUTH_LOGIN_REQUIRE_CAPTCHA=false)
+  if (process.env.AUTH_LOGIN_REQUIRE_CAPTCHA !== "false") {
+    const captcha = await validateCaptchaToken(captchaToken, ip, "backoffice_login");
+    if (!captcha.ok) {
+      res.status(400).json({ error: "captcha_required", reason: captcha.reason });
+      return;
+    }
+  }
 
   if (!MASTER_KEY || masterKey !== MASTER_KEY) {
     res.status(401).json({ error: "unauthorized" });
     return;
   }
 
-  obs.audit("backoffice.auth.totp.reset_requested", { module: "backoffice-auth", ip: getIp(req) });
+  // Generar nuevo secret
+  const secret = generateSecret();
+  const otpAuthUrl = generateURI({ secret, label: TOTP_ACCOUNT, issuer: TOTP_ISSUER, algorithm: "sha1", digits: 6, period: 30 });
+  const qrDataUrl = await QRCode.toDataURL(otpAuthUrl, {
+    width: 256,
+    margin: 2,
+    color: { dark: "#1a1a2e", light: "#ffffff" },
+  });
+
+  obs.audit("backoffice.auth.totp.regenerate_initiated", { module: "backoffice-auth", ip });
 
   res.json({
     ok: true,
-    message: "Para resetear el TOTP, elimina BACKOFFICE_TOTP_SECRET del .env del servidor y reinicia la API.",
-    steps: [
-      "1. SSH al servidor: ssh root@178.104.56.185",
-      "2. Editar: nano /opt/zentto/.env.api  (o donde esté el archivo de entorno)",
-      "3. Eliminar la línea BACKOFFICE_TOTP_SECRET=...",
-      "4. Reiniciar: docker restart zentto-api",
-      "5. Volver a /backoffice y escanear nuevo QR",
+    secret,
+    qrDataUrl,
+    otpAuthUrl,
+    instructions: [
+      "1. Abre Google Authenticator en tu telefono",
+      "2. Elimina la entrada anterior de 'Zentto Backoffice'",
+      "3. Escanea este nuevo QR",
+      "4. Ingresa el codigo de 6 digitos para confirmar",
     ],
+  });
+});
+
+// ─── POST /setup/regenerate/confirm — Confirma nuevo TOTP y actualiza el .env ─
+// Actualiza BACKOFFICE_TOTP_SECRET en el archivo .env del servidor automáticamente.
+
+router.post("/setup/regenerate/confirm", async (req: Request, res: Response) => {
+  const { masterKey, code, secret } = req.body as {
+    masterKey?: string;
+    code?: string;
+    secret?: string;
+  };
+
+  await constantDelay();
+
+  if (!MASTER_KEY || masterKey !== MASTER_KEY || !code || !secret) {
+    res.status(401).json({ error: "unauthorized" });
+    return;
+  }
+
+  const result = verifySync({ token: code.trim(), secret, ...TOTP_OPTS });
+  if (!result.valid) {
+    res.status(401).json({ error: "invalid_totp_code" });
+    return;
+  }
+
+  // Actualizar BACKOFFICE_TOTP_SECRET en el env del proceso actual
+  process.env.BACKOFFICE_TOTP_SECRET = secret;
+
+  // Intentar actualizar el archivo .env.api persistente
+  try {
+    const fs = await import("node:fs");
+    const envFiles = ["/opt/zentto/.env.api", "/opt/zentto-dev/.env.api"];
+    for (const envFile of envFiles) {
+      if (fs.existsSync(envFile)) {
+        let content = fs.readFileSync(envFile, "utf-8");
+        if (content.includes("BACKOFFICE_TOTP_SECRET=")) {
+          content = content.replace(/^BACKOFFICE_TOTP_SECRET=.*/m, `BACKOFFICE_TOTP_SECRET=${secret}`);
+        } else {
+          content += `\nBACKOFFICE_TOTP_SECRET=${secret}\n`;
+        }
+        fs.writeFileSync(envFile, content);
+      }
+    }
+  } catch {
+    // En Docker el .env puede no ser escribible — el secret ya está en process.env
+  }
+
+  obs.audit("backoffice.auth.totp.regenerated", { module: "backoffice-auth" });
+
+  res.json({
+    ok: true,
+    message: "TOTP regenerado exitosamente. El nuevo secret ya está activo.",
   });
 });
 

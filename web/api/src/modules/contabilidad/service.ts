@@ -582,7 +582,21 @@ export async function libroDiario(fechaDesde: string, fechaHasta: string) {
 }
 
 export async function dashboardResumen(fechaDesde: string, fechaHasta: string) {
-  const scope = await getDefaultScope();
+  const empty = {
+    totalIngresos: 0,
+    totalGastos: 0,
+    margenPorcentaje: 0,
+    cuentasPorPagar: 0,
+    totalAsientos: 0,
+    totalCuentas: 0,
+    totalAnulados: 0
+  };
+  let scope;
+  try {
+    scope = await getDefaultScope();
+  } catch {
+    return empty;
+  }
   const rows = await callSp<any>(
     "dbo.usp_Acct_Dashboard_Resumen",
     {
@@ -592,13 +606,5 @@ export async function dashboardResumen(fechaDesde: string, fechaHasta: string) {
       FechaHasta: fechaHasta
     }
   );
-  return rows[0] || {
-    totalIngresos: 0,
-    totalGastos: 0,
-    margenPorcentaje: 0,
-    cuentasPorPagar: 0,
-    totalAsientos: 0,
-    totalCuentas: 0,
-    totalAnulados: 0
-  };
+  return rows[0] || empty;
 }
