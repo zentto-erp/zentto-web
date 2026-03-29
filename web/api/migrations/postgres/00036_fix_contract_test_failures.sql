@@ -1,5 +1,4 @@
 -- +goose Up
-
 -- +goose StatementBegin
 -- ===========================================================================
 -- 00036_fix_contract_test_failures.sql

@@ -1,5 +1,4 @@
 -- +goose Up
-
 -- +goose StatementBegin
 -- Crea usp_sys_cleanup_list que faltaba en PostgreSQL (existia solo en SQL Server).
 -- Requerida por GET /v1/backoffice/dashboard.
