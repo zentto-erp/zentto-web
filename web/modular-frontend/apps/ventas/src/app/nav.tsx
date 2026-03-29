@@ -9,29 +9,54 @@ const AccountBalanceIcon = dynamic(() => import('@mui/icons-material/AccountBala
 const PaymentIcon = dynamic(() => import('@mui/icons-material/Payment'), { ssr: false });
 const ShoppingCartIcon = dynamic(() => import('@mui/icons-material/ShoppingCart'), { ssr: false });
 const PrintIcon = dynamic(() => import('@mui/icons-material/Print'), { ssr: false });
+const StorefrontIcon = dynamic(() => import('@mui/icons-material/Storefront'), { ssr: false });
+const RequestQuoteIcon = dynamic(() => import('@mui/icons-material/RequestQuote'), { ssr: false });
 
 export function buildNav(isAdmin: boolean, modulos: string[]): Array<Record<string, unknown>> {
     const nav: Array<Record<string, unknown>> = [];
     const has = (mod: string) => isAdmin || modulos.includes(mod);
 
     if (has('ventas')) {
-        // — Ventas —
-        nav.push({ kind: 'header', title: 'Ventas' });
+        // Dashboard
         nav.push({ kind: 'page', segment: '', title: 'Dashboard', icon: <DashboardIcon /> });
-        nav.push({ kind: 'page', segment: 'facturas', title: 'Facturas', icon: <ReceiptIcon /> });
-        nav.push({ kind: 'page', segment: 'clientes', title: 'Clientes', icon: <PeopleIcon /> });
-        nav.push({ kind: 'page', segment: 'articulos', title: 'Artículos', icon: <Inventory2Icon /> });
 
-        // — Cuentas por Cobrar —
-        nav.push({ kind: 'header', title: 'Cuentas por Cobrar' });
-        nav.push({ kind: 'page', segment: 'cxc', title: 'Estado de Cuenta', icon: <AccountBalanceIcon /> });
-        nav.push({ kind: 'page', segment: 'abonos', title: 'Cobros', icon: <PaymentIcon /> });
+        // ── Ventas (acordeón)
+        nav.push({
+            kind: 'page',
+            segment: 'facturas',
+            title: 'Ventas',
+            icon: <StorefrontIcon />,
+            children: [
+                { kind: 'page', segment: 'facturas', title: 'Facturas', icon: <ReceiptIcon /> },
+                { kind: 'page', segment: 'clientes', title: 'Clientes', icon: <PeopleIcon /> },
+                { kind: 'page', segment: 'articulos', title: 'Artículos', icon: <Inventory2Icon /> },
+            ],
+        });
 
-        // — E-Commerce —
-        nav.push({ kind: 'header', title: 'E-Commerce' });
-        nav.push({ kind: 'page', segment: 'pedidos-ecommerce', title: 'Pedidos Pendientes', icon: <ShoppingCartIcon /> });
+        // ── Cuentas por Cobrar (acordeón)
+        nav.push({
+            kind: 'page',
+            segment: 'cxc',
+            title: 'Cuentas por Cobrar',
+            icon: <RequestQuoteIcon />,
+            children: [
+                { kind: 'page', segment: 'cxc', title: 'Estado de Cuenta', icon: <AccountBalanceIcon /> },
+                { kind: 'page', segment: 'abonos', title: 'Cobros', icon: <PaymentIcon /> },
+            ],
+        });
 
-        nav.push({ kind: 'divider' });
+        // ── E-Commerce (acordeón)
+        nav.push({
+            kind: 'page',
+            segment: 'pedidos-ecommerce',
+            title: 'E-Commerce',
+            icon: <ShoppingCartIcon />,
+            children: [
+                { kind: 'page', segment: 'pedidos-ecommerce', title: 'Pedidos Pendientes', icon: <ShoppingCartIcon /> },
+            ],
+        });
+
+        // ── Reportes
         nav.push({ kind: 'page', segment: 'reportes', title: 'Reportes', icon: <PrintIcon /> });
     }
 

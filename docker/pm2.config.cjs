@@ -4,7 +4,7 @@
  *        bancos=3004, inventario=3005, ventas=3006, compras=3007
  *        restaurante=3008, ecommerce=3009, auditoria=3010
  *        logistica=3011, crm=3012, manufactura=3013, flota=3014
- *        shipping=3015
+ *        shipping=3015, report-studio=3017
  *
  * Las variables NEXT_PUBLIC_* se bakean en build-time via Dockerfile ARGs.
  * Las variables sin NEXT_PUBLIC_ se pasan aqui para SSR/runtime.
@@ -46,5 +46,6 @@ module.exports = {
     { name: 'manufactura',   script: 'node_modules/.bin/next', args: 'start -p 3013', cwd: '/app/apps/manufactura',   env: { ...runtimeEnv, NEXT_BASE_PATH: '/manufactura',  SHELL_URL: 'http://127.0.0.1:3000' } },
     { name: 'flota',         script: 'node_modules/.bin/next', args: 'start -p 3014', cwd: '/app/apps/flota',         env: { ...runtimeEnv, NEXT_BASE_PATH: '/flota',        SHELL_URL: 'http://127.0.0.1:3000' } },
     { name: 'shipping',      script: 'node_modules/.bin/next', args: 'start -p 3015', cwd: '/app/apps/shipping',      env: { ...runtimeEnv, NEXT_BASE_PATH: '/shipping',     SHELL_URL: 'http://127.0.0.1:3000' } },
+    { name: 'report-studio', script: 'node_modules/.bin/next', args: 'start -p 3017', cwd: '/app/apps/report-studio', env: runtimeEnv },
   ],
 };
