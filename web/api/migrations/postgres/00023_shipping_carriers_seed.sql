@@ -1,7 +1,7 @@
 -- +goose Up
--- +goose StatementBegin
 -- Seed: Carriers globales para Zentto Shipping (multi-país)
 -- Solo ejecuta si la tabla tiene las columnas esperadas
+-- +goose StatementBegin
 DO $$
 BEGIN
   IF EXISTS (

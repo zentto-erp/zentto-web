@@ -1,11 +1,8 @@
 -- +goose Up
 -- Migration: tabla sys.TenantDatabase + funciones de tenant routing
 
--- +goose StatementBegin
 CREATE SCHEMA IF NOT EXISTS sys;
--- +goose StatementEnd
 
--- +goose StatementBegin
 CREATE TABLE IF NOT EXISTS sys."TenantDatabase" (
   "TenantDbId"    INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   "CompanyId"     INT NOT NULL,
@@ -25,14 +22,13 @@ CREATE TABLE IF NOT EXISTS sys."TenantDatabase" (
   CONSTRAINT "UQ_sys_TenantDatabase_CompanyId" UNIQUE ("CompanyId"),
   CONSTRAINT "UQ_sys_TenantDatabase_DbName" UNIQUE ("DbName")
 );
--- +goose StatementEnd
 
--- +goose StatementBegin
 CREATE OR REPLACE FUNCTION usp_sys_tenantdb_resolve(p_company_id INT)
 RETURNS TABLE(
   "DbName" VARCHAR, "DbHost" VARCHAR, "DbPort" INT,
   "DbUser" VARCHAR, "DbPassword" VARCHAR,
   "PoolMin" INT, "PoolMax" INT, "IsDemo" BOOLEAN
+-- +goose StatementBegin
 ) LANGUAGE plpgsql AS $$
 BEGIN
   RETURN QUERY
@@ -53,7 +49,6 @@ END;
 $$;
 -- +goose StatementEnd
 
--- +goose StatementBegin
 CREATE OR REPLACE FUNCTION usp_sys_tenantdb_list()
 RETURNS TABLE(
   "TenantDbId" INT, "CompanyId" INT, "CompanyCode" VARCHAR,
@@ -62,6 +57,7 @@ RETURNS TABLE(
   "PoolMin" INT, "PoolMax" INT,
   "IsActive" BOOLEAN, "IsDemo" BOOLEAN,
   "ProvisionedAt" TIMESTAMP, "LastMigration" VARCHAR
+-- +goose StatementBegin
 ) LANGUAGE plpgsql AS $$
 BEGIN
   RETURN QUERY
@@ -78,7 +74,6 @@ END;
 $$;
 -- +goose StatementEnd
 
--- +goose StatementBegin
 CREATE OR REPLACE FUNCTION usp_sys_tenantdb_register(
   p_company_id   INT,
   p_company_code VARCHAR(20),
@@ -91,6 +86,7 @@ CREATE OR REPLACE FUNCTION usp_sys_tenantdb_register(
   p_pool_max     INT DEFAULT 5,
   p_is_demo      BOOLEAN DEFAULT FALSE
 )
+-- +goose StatementBegin
 RETURNS TABLE("ok" BOOLEAN, "mensaje" VARCHAR) LANGUAGE plpgsql AS $$
 BEGIN
   INSERT INTO sys."TenantDatabase" (
@@ -121,7 +117,6 @@ END;
 $$;
 -- +goose StatementEnd
 
--- +goose StatementBegin
 -- Seed: registrar la BD demo actual
 INSERT INTO sys."TenantDatabase" ("CompanyId", "CompanyCode", "DbName", "IsDemo")
 VALUES (0, 'DEMO', current_database() || '_demo', TRUE)
@@ -129,22 +124,13 @@ ON CONFLICT ("CompanyId") DO UPDATE SET
   "CompanyCode" = EXCLUDED."CompanyCode",
   "DbName" = EXCLUDED."DbName",
   "IsDemo" = EXCLUDED."IsDemo";
--- +goose StatementEnd
 
 -- +goose Down
 
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS usp_sys_tenantdb_resolve;
--- +goose StatementEnd
 
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS usp_sys_tenantdb_list;
--- +goose StatementEnd
 
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS usp_sys_tenantdb_register;
--- +goose StatementEnd
 
--- +goose StatementBegin
 DROP TABLE IF EXISTS sys."TenantDatabase";
--- +goose StatementEnd

@@ -7,7 +7,6 @@
 
 -- Helper: usp_HR_Payroll_ResolveScope
 DROP FUNCTION IF EXISTS public.usp_HR_Payroll_ResolveScope() CASCADE;
--- +goose StatementBegin
 CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_ResolveScope()
 RETURNS TABLE(
     "companyId"     INTEGER,
@@ -15,6 +14,7 @@ RETURNS TABLE(
     "systemUserId"  INTEGER
 )
 LANGUAGE plpgsql
+-- +goose StatementBegin
 AS $$
 BEGIN
     RETURN QUERY
@@ -37,12 +37,12 @@ $$;
 
 -- Helper: usp_HR_Payroll_ResolveUser
 DROP FUNCTION IF EXISTS public.usp_HR_Payroll_ResolveUser(VARCHAR) CASCADE;
--- +goose StatementBegin
 CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_ResolveUser(
     p_user_code  VARCHAR DEFAULT NULL
 )
 RETURNS TABLE("userId" INTEGER)
 LANGUAGE plpgsql
+-- +goose StatementBegin
 AS $$
 BEGIN
     IF p_user_code IS NOT NULL AND TRIM(p_user_code) <> '' THEN
@@ -1547,7 +1547,6 @@ END $$;
 -- 1. usp_HR_ProfitSharing_Generate
 -- =============================================================================
 DROP FUNCTION IF EXISTS public.usp_HR_ProfitSharing_Generate(INTEGER, INTEGER, INTEGER, INTEGER, NUMERIC(18,2), INTEGER, INTEGER, VARCHAR(500)) CASCADE;
--- +goose StatementBegin
 CREATE OR REPLACE FUNCTION public.usp_HR_ProfitSharing_Generate(
     p_company_id            INTEGER,
     p_branch_id             INTEGER,
@@ -1559,6 +1558,7 @@ CREATE OR REPLACE FUNCTION public.usp_HR_ProfitSharing_Generate(
     OUT p_mensaje           VARCHAR(500)
 )
 LANGUAGE plpgsql
+-- +goose StatementBegin
 AS $$
 DECLARE
     v_old_id            INTEGER;
@@ -1727,7 +1727,6 @@ $$;
 -- 2. usp_HR_ProfitSharing_GetSummary
 -- =============================================================================
 DROP FUNCTION IF EXISTS public.usp_HR_ProfitSharing_GetSummary(INTEGER) CASCADE;
--- +goose StatementBegin
 CREATE OR REPLACE FUNCTION public.usp_HR_ProfitSharing_GetSummary(
     p_profit_sharing_id INTEGER
 )
@@ -1736,6 +1735,7 @@ RETURNS TABLE (
     row_data    JSONB
 )
 LANGUAGE plpgsql
+-- +goose StatementBegin
 AS $$
 BEGIN
     -- Cabecera
@@ -1793,7 +1793,6 @@ $$;
 -- 3. usp_HR_ProfitSharing_Approve
 -- =============================================================================
 DROP FUNCTION IF EXISTS public.usp_HR_ProfitSharing_Approve(INTEGER, INTEGER, INTEGER, VARCHAR(500)) CASCADE;
--- +goose StatementBegin
 CREATE OR REPLACE FUNCTION public.usp_HR_ProfitSharing_Approve(
     p_profit_sharing_id INTEGER,
     p_approved_by       INTEGER,
@@ -1801,6 +1800,7 @@ CREATE OR REPLACE FUNCTION public.usp_HR_ProfitSharing_Approve(
     OUT p_mensaje       VARCHAR(500)
 )
 LANGUAGE plpgsql
+-- +goose StatementBegin
 AS $$
 DECLARE
     v_current_status VARCHAR(20);
@@ -1842,7 +1842,6 @@ $$;
 -- =============================================================================
 DROP FUNCTION IF EXISTS public.usp_HR_ProfitSharing_List(INTEGER, INTEGER, INTEGER, VARCHAR(20), INTEGER, INTEGER) CASCADE;
 DROP FUNCTION IF EXISTS public.usp_HR_ProfitSharing_List(INTEGER, INTEGER, VARCHAR(20), INTEGER, INTEGER) CASCADE;
--- +goose StatementBegin
 CREATE OR REPLACE FUNCTION public.usp_HR_ProfitSharing_List(
     p_company_id    INTEGER,
     p_year          INTEGER         DEFAULT NULL,
@@ -1864,6 +1863,7 @@ RETURNS TABLE(
     "TotalNet"          NUMERIC
 )
 LANGUAGE plpgsql
+-- +goose StatementBegin
 AS $$
 BEGIN
     RETURN QUERY
@@ -1893,7 +1893,6 @@ $$;
 -- 5. usp_HR_Trust_CalculateQuarter
 -- =============================================================================
 DROP FUNCTION IF EXISTS public.usp_HR_Trust_CalculateQuarter(INTEGER, INTEGER, SMALLINT, NUMERIC(8,5), INTEGER, VARCHAR(500)) CASCADE;
--- +goose StatementBegin
 CREATE OR REPLACE FUNCTION public.usp_HR_Trust_CalculateQuarter(
     p_company_id    INTEGER,
     p_fiscal_year   INTEGER,
@@ -1903,6 +1902,7 @@ CREATE OR REPLACE FUNCTION public.usp_HR_Trust_CalculateQuarter(
     OUT p_mensaje   VARCHAR(500)
 )
 LANGUAGE plpgsql
+-- +goose StatementBegin
 AS $$
 DECLARE
     v_inserted      INTEGER;
@@ -2062,7 +2062,6 @@ $$;
 -- 6. usp_HR_Trust_GetEmployeeBalance
 -- =============================================================================
 DROP FUNCTION IF EXISTS public.usp_HR_Trust_GetEmployeeBalance(INTEGER, VARCHAR(24)) CASCADE;
--- +goose StatementBegin
 CREATE OR REPLACE FUNCTION public.usp_HR_Trust_GetEmployeeBalance(
     p_company_id    INTEGER,
     p_employee_code VARCHAR(24)
@@ -2072,6 +2071,7 @@ RETURNS TABLE (
     row_data    JSONB
 )
 LANGUAGE plpgsql
+-- +goose StatementBegin
 AS $$
 BEGIN
     -- Saldo actual (1 fila)
@@ -2120,7 +2120,6 @@ $$;
 -- =============================================================================
 DROP FUNCTION IF EXISTS public.usp_HR_Trust_GetSummary(INTEGER, INTEGER, INTEGER) CASCADE;
 DROP FUNCTION IF EXISTS public.usp_HR_Trust_GetSummary(INTEGER, INTEGER, SMALLINT) CASCADE;
--- +goose StatementBegin
 CREATE OR REPLACE FUNCTION public.usp_HR_Trust_GetSummary(
     p_company_id    INTEGER,
     p_fiscal_year   INTEGER,
@@ -2131,6 +2130,7 @@ RETURNS TABLE (
     row_data    JSONB
 )
 LANGUAGE plpgsql
+-- +goose StatementBegin
 AS $$
 BEGIN
     -- Resumen por estado
@@ -2177,7 +2177,6 @@ $$;
 -- 8. usp_HR_Trust_List
 -- =============================================================================
 DROP FUNCTION IF EXISTS public.usp_HR_Trust_List(INTEGER, INTEGER, SMALLINT, VARCHAR(24), VARCHAR(20), INTEGER, INTEGER) CASCADE;
--- +goose StatementBegin
 CREATE OR REPLACE FUNCTION public.usp_HR_Trust_List(
     p_company_id    INTEGER,
     p_fiscal_year   INTEGER         DEFAULT NULL,
@@ -2206,6 +2205,7 @@ RETURNS TABLE(
     "CreatedAt"             TIMESTAMP
 )
 LANGUAGE plpgsql
+-- +goose StatementBegin
 AS $$
 BEGIN
     RETURN QUERY
@@ -2242,7 +2242,6 @@ $$;
 -- 9. usp_HR_Savings_Enroll
 -- =============================================================================
 DROP FUNCTION IF EXISTS public.usp_HR_Savings_Enroll(INTEGER, BIGINT, VARCHAR(24), VARCHAR(200), NUMERIC(8,4), NUMERIC(8,4), DATE, INTEGER, VARCHAR(500)) CASCADE;
--- +goose StatementBegin
 CREATE OR REPLACE FUNCTION public.usp_HR_Savings_Enroll(
     p_company_id                INTEGER,
     p_employee_id               BIGINT          DEFAULT NULL,
@@ -2255,6 +2254,7 @@ CREATE OR REPLACE FUNCTION public.usp_HR_Savings_Enroll(
     OUT p_mensaje               VARCHAR(500)
 )
 LANGUAGE plpgsql
+-- +goose StatementBegin
 AS $$
 BEGIN
     p_resultado := 0;
@@ -2301,7 +2301,6 @@ $$;
 -- 10. usp_HR_Savings_ProcessMonthly
 -- =============================================================================
 DROP FUNCTION IF EXISTS public.usp_HR_Savings_ProcessMonthly(INTEGER, DATE, INTEGER, INTEGER, VARCHAR(500)) CASCADE;
--- +goose StatementBegin
 CREATE OR REPLACE FUNCTION public.usp_HR_Savings_ProcessMonthly(
     p_company_id        INTEGER,
     p_process_date      DATE,
@@ -2310,6 +2309,7 @@ CREATE OR REPLACE FUNCTION public.usp_HR_Savings_ProcessMonthly(
     OUT p_mensaje       VARCHAR(500)
 )
 LANGUAGE plpgsql
+-- +goose StatementBegin
 AS $$
 DECLARE
     v_fund_id       INTEGER;
@@ -2398,7 +2398,6 @@ $$;
 -- 11. usp_HR_Savings_GetBalance
 -- =============================================================================
 DROP FUNCTION IF EXISTS public.usp_HR_Savings_GetBalance(INTEGER, VARCHAR(24)) CASCADE;
--- +goose StatementBegin
 CREATE OR REPLACE FUNCTION public.usp_HR_Savings_GetBalance(
     p_company_id    INTEGER,
     p_employee_code VARCHAR(24)
@@ -2408,6 +2407,7 @@ RETURNS TABLE (
     row_data    JSONB
 )
 LANGUAGE plpgsql
+-- +goose StatementBegin
 AS $$
 BEGIN
     -- Datos del fondo
@@ -2458,7 +2458,6 @@ $$;
 -- 12. usp_HR_Savings_RequestLoan
 -- =============================================================================
 DROP FUNCTION IF EXISTS public.usp_HR_Savings_RequestLoan(INTEGER, VARCHAR(24), NUMERIC(18,2), NUMERIC(8,5), INTEGER, VARCHAR(500), INTEGER, VARCHAR(500)) CASCADE;
--- +goose StatementBegin
 CREATE OR REPLACE FUNCTION public.usp_HR_Savings_RequestLoan(
     p_company_id        INTEGER,
     p_employee_code     VARCHAR(24),
@@ -2470,6 +2469,7 @@ CREATE OR REPLACE FUNCTION public.usp_HR_Savings_RequestLoan(
     OUT p_mensaje       VARCHAR(500)
 )
 LANGUAGE plpgsql
+-- +goose StatementBegin
 AS $$
 DECLARE
     v_fund_id       INTEGER;
@@ -2543,7 +2543,6 @@ $$;
 -- 13. usp_HR_Savings_ApproveLoan
 -- =============================================================================
 DROP FUNCTION IF EXISTS public.usp_HR_Savings_ApproveLoan(INTEGER, BOOLEAN, INTEGER, VARCHAR(500), INTEGER, VARCHAR(500)) CASCADE;
--- +goose StatementBegin
 CREATE OR REPLACE FUNCTION public.usp_HR_Savings_ApproveLoan(
     p_loan_id       INTEGER,
     p_approved      BOOLEAN,
@@ -2553,6 +2552,7 @@ CREATE OR REPLACE FUNCTION public.usp_HR_Savings_ApproveLoan(
     OUT p_mensaje   VARCHAR(500)
 )
 LANGUAGE plpgsql
+-- +goose StatementBegin
 AS $$
 DECLARE
     v_current_status    VARCHAR(15);
@@ -2640,7 +2640,6 @@ $$;
 -- 14. usp_HR_Savings_ProcessLoanPayment
 -- =============================================================================
 DROP FUNCTION IF EXISTS public.usp_HR_Savings_ProcessLoanPayment(INTEGER, NUMERIC(18,2), DATE, INTEGER, INTEGER, VARCHAR(500)) CASCADE;
--- +goose StatementBegin
 CREATE OR REPLACE FUNCTION public.usp_HR_Savings_ProcessLoanPayment(
     p_loan_id           INTEGER,
     p_payment_amount    NUMERIC(18,2)   DEFAULT NULL,
@@ -2650,6 +2649,7 @@ CREATE OR REPLACE FUNCTION public.usp_HR_Savings_ProcessLoanPayment(
     OUT p_mensaje       VARCHAR(500)
 )
 LANGUAGE plpgsql
+-- +goose StatementBegin
 AS $$
 DECLARE
     v_fund_id           INTEGER;
@@ -2744,7 +2744,6 @@ $$;
 -- 15. usp_HR_Savings_List
 -- =============================================================================
 DROP FUNCTION IF EXISTS public.usp_HR_Savings_List(INTEGER, VARCHAR(15), VARCHAR(24), INTEGER, INTEGER) CASCADE;
--- +goose StatementBegin
 CREATE OR REPLACE FUNCTION public.usp_HR_Savings_List(
     p_company_id    INTEGER,
     p_status        VARCHAR(15)     DEFAULT NULL,
@@ -2766,6 +2765,7 @@ RETURNS TABLE(
     "CurrentBalance"        NUMERIC
 )
 LANGUAGE plpgsql
+-- +goose StatementBegin
 AS $$
 BEGIN
     RETURN QUERY
@@ -2799,7 +2799,6 @@ $$;
 -- 16. usp_HR_Savings_LoanList
 -- =============================================================================
 DROP FUNCTION IF EXISTS public.usp_HR_Savings_LoanList(INTEGER, VARCHAR(15), VARCHAR(24), INTEGER, INTEGER) CASCADE;
--- +goose StatementBegin
 CREATE OR REPLACE FUNCTION public.usp_HR_Savings_LoanList(
     p_company_id    INTEGER,
     p_status        VARCHAR(15)     DEFAULT NULL,
@@ -2828,6 +2827,7 @@ RETURNS TABLE(
     "CreatedAt"             TIMESTAMP
 )
 LANGUAGE plpgsql
+-- +goose StatementBegin
 AS $$
 BEGIN
     RETURN QUERY
@@ -2995,7 +2995,6 @@ CREATE TABLE IF NOT EXISTS hr."ObligationFilingDetail" (
 -- 1. usp_HR_Obligation_List
 -- =============================================================================
 DROP FUNCTION IF EXISTS public.usp_HR_Obligation_List(CHAR(2), VARCHAR(20), BOOLEAN, VARCHAR(100), INTEGER, INTEGER) CASCADE;
--- +goose StatementBegin
 CREATE OR REPLACE FUNCTION public.usp_HR_Obligation_List(
     p_country_code      CHAR(2)         DEFAULT NULL,
     p_obligation_type   VARCHAR(20)     DEFAULT NULL,
@@ -3026,6 +3025,7 @@ RETURNS TABLE(
     "Notes"                 VARCHAR(500)
 )
 LANGUAGE plpgsql
+-- +goose StatementBegin
 AS $$
 BEGIN
     IF p_page  < 1   THEN p_page  := 1;   END IF;
@@ -3069,7 +3069,6 @@ $$;
 -- 2. usp_HR_Obligation_Save
 -- =============================================================================
 DROP FUNCTION IF EXISTS public.usp_HR_Obligation_Save(INTEGER, CHAR(2), VARCHAR(30), VARCHAR(200), VARCHAR(200), VARCHAR(20), VARCHAR(30), NUMERIC(18,2), VARCHAR(20), NUMERIC(8,5), NUMERIC(8,5), BOOLEAN, VARCHAR(15), VARCHAR(200), DATE, DATE, BOOLEAN, VARCHAR(500), INTEGER, VARCHAR(500)) CASCADE;
--- +goose StatementBegin
 CREATE OR REPLACE FUNCTION public.usp_HR_Obligation_Save(
     p_legal_obligation_id   INTEGER         DEFAULT NULL,
     p_country_code          CHAR(2)         DEFAULT NULL,
@@ -3093,6 +3092,7 @@ CREATE OR REPLACE FUNCTION public.usp_HR_Obligation_Save(
     OUT p_mensaje           VARCHAR(500)
 )
 LANGUAGE plpgsql
+-- +goose StatementBegin
 AS $$
 BEGIN
     p_resultado := 0;
@@ -3218,7 +3218,6 @@ $$;
 -- 3. usp_HR_Obligation_GetByCountry
 -- =============================================================================
 DROP FUNCTION IF EXISTS public.usp_HR_Obligation_GetByCountry(CHAR(2), DATE) CASCADE;
--- +goose StatementBegin
 CREATE OR REPLACE FUNCTION public.usp_HR_Obligation_GetByCountry(
     p_country_code  CHAR(2),
     p_as_of_date    DATE DEFAULT NULL
@@ -3243,6 +3242,7 @@ RETURNS TABLE (
     "Notes"                 VARCHAR(500)
 )
 LANGUAGE plpgsql
+-- +goose StatementBegin
 AS $$
 BEGIN
     IF p_as_of_date IS NULL THEN
@@ -3282,7 +3282,6 @@ $$;
 -- 4. usp_HR_EmployeeObligation_Enroll
 -- =============================================================================
 DROP FUNCTION IF EXISTS public.usp_HR_EmployeeObligation_Enroll(BIGINT, INTEGER, VARCHAR(50), VARCHAR(50), INTEGER, DATE, NUMERIC(8,5), INTEGER, VARCHAR(500)) CASCADE;
--- +goose StatementBegin
 CREATE OR REPLACE FUNCTION public.usp_HR_EmployeeObligation_Enroll(
     p_employee_id           BIGINT,
     p_legal_obligation_id   INTEGER,
@@ -3295,6 +3294,7 @@ CREATE OR REPLACE FUNCTION public.usp_HR_EmployeeObligation_Enroll(
     OUT p_mensaje           VARCHAR(500)
 )
 LANGUAGE plpgsql
+-- +goose StatementBegin
 AS $$
 BEGIN
     p_resultado := 0;
@@ -3356,7 +3356,6 @@ $$;
 -- 5. usp_HR_EmployeeObligation_Disenroll
 -- =============================================================================
 DROP FUNCTION IF EXISTS public.usp_HR_EmployeeObligation_Disenroll(INTEGER, DATE, INTEGER, VARCHAR(500)) CASCADE;
--- +goose StatementBegin
 CREATE OR REPLACE FUNCTION public.usp_HR_EmployeeObligation_Disenroll(
     p_employee_obligation_id    INTEGER,
     p_disenrollment_date        DATE,
@@ -3364,6 +3363,7 @@ CREATE OR REPLACE FUNCTION public.usp_HR_EmployeeObligation_Disenroll(
     OUT p_mensaje               VARCHAR(500)
 )
 LANGUAGE plpgsql
+-- +goose StatementBegin
 AS $$
 DECLARE
     v_current_status    VARCHAR(15);
@@ -3417,7 +3417,6 @@ $$;
 -- 6. usp_HR_EmployeeObligation_GetByEmployee
 -- =============================================================================
 DROP FUNCTION IF EXISTS public.usp_HR_EmployeeObligation_GetByEmployee(BIGINT, VARCHAR(15)) CASCADE;
--- +goose StatementBegin
 CREATE OR REPLACE FUNCTION public.usp_HR_EmployeeObligation_GetByEmployee(
     p_employee_id       BIGINT,
     p_status_filter     VARCHAR(15)     DEFAULT NULL
@@ -3446,6 +3445,7 @@ RETURNS TABLE(
     "EffectiveEmployeeRate"     NUMERIC(8,5)
 )
 LANGUAGE plpgsql
+-- +goose StatementBegin
 AS $$
 BEGIN
     RETURN QUERY
@@ -3489,7 +3489,6 @@ $$;
 -- 7. usp_HR_Filing_Generate
 -- =============================================================================
 DROP FUNCTION IF EXISTS public.usp_HR_Filing_Generate(INTEGER, INTEGER, DATE, DATE, DATE, INTEGER, VARCHAR(500)) CASCADE;
--- +goose StatementBegin
 CREATE OR REPLACE FUNCTION public.usp_HR_Filing_Generate(
     p_company_id            INTEGER,
     p_legal_obligation_id   INTEGER,
@@ -3500,6 +3499,7 @@ CREATE OR REPLACE FUNCTION public.usp_HR_Filing_Generate(
     OUT p_mensaje           VARCHAR(500)
 )
 LANGUAGE plpgsql
+-- +goose StatementBegin
 AS $$
 DECLARE
     v_base_employer_rate    NUMERIC(8,5);
@@ -3662,7 +3662,6 @@ $$;
 -- 8. usp_HR_Filing_GetSummary
 -- =============================================================================
 DROP FUNCTION IF EXISTS public.usp_HR_Filing_GetSummary(INTEGER) CASCADE;
--- +goose StatementBegin
 CREATE OR REPLACE FUNCTION public.usp_HR_Filing_GetSummary(
     p_filing_id INTEGER
 )
@@ -3671,6 +3670,7 @@ RETURNS TABLE (
     row_data        JSONB
 )
 LANGUAGE plpgsql
+-- +goose StatementBegin
 AS $$
 BEGIN
     -- Cabecera
@@ -3738,7 +3738,6 @@ $$;
 -- 9. usp_HR_Filing_MarkFiled
 -- =============================================================================
 DROP FUNCTION IF EXISTS public.usp_HR_Filing_MarkFiled(INTEGER, DATE, VARCHAR(100), INTEGER, VARCHAR(500), VARCHAR(500), INTEGER, VARCHAR(500)) CASCADE;
--- +goose StatementBegin
 CREATE OR REPLACE FUNCTION public.usp_HR_Filing_MarkFiled(
     p_obligation_filing_id  INTEGER,
     p_filed_date            DATE            DEFAULT NULL,
@@ -3750,6 +3749,7 @@ CREATE OR REPLACE FUNCTION public.usp_HR_Filing_MarkFiled(
     OUT p_mensaje           VARCHAR(500)
 )
 LANGUAGE plpgsql
+-- +goose StatementBegin
 AS $$
 DECLARE
     v_current_status VARCHAR(15);
@@ -3807,7 +3807,6 @@ $$;
 -- Function accepts those exact param names and inlines the query.
 DROP FUNCTION IF EXISTS public.usp_HR_Filing_List(INTEGER, INTEGER, CHAR, VARCHAR, DATE, DATE, INTEGER, INTEGER) CASCADE;
 DROP FUNCTION IF EXISTS public.usp_HR_Filing_List(INTEGER, INTEGER, VARCHAR, INTEGER, INTEGER) CASCADE;
--- +goose StatementBegin
 CREATE OR REPLACE FUNCTION public.usp_HR_Filing_List(
     p_company_id    INTEGER,
     p_obligation_id INTEGER     DEFAULT NULL,
@@ -3836,6 +3835,7 @@ RETURNS TABLE(
     "Status"                VARCHAR(15),
     "CreatedAt"             TIMESTAMP
 )
+-- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 BEGIN
     IF p_limit < 1   THEN p_limit := 50;  END IF;
@@ -4008,7 +4008,6 @@ $$;
 -- 1. usp_HR_OccHealth_Create
 -- =============================================================================
 DROP FUNCTION IF EXISTS public.usp_HR_OccHealth_Create(INTEGER, CHAR(2), VARCHAR(25), BIGINT, VARCHAR(24), VARCHAR(200), TIMESTAMP, TIMESTAMP, TIMESTAMP, VARCHAR(15), VARCHAR(100), INTEGER, VARCHAR(200), TEXT, VARCHAR(500), VARCHAR(500), DATE, VARCHAR(100), VARCHAR(500), VARCHAR(500), INTEGER, INTEGER, VARCHAR(500)) CASCADE;
--- +goose StatementBegin
 CREATE OR REPLACE FUNCTION public.usp_HR_OccHealth_Create(
     p_company_id                INTEGER,
     p_country_code              CHAR(2),
@@ -4035,6 +4034,7 @@ CREATE OR REPLACE FUNCTION public.usp_HR_OccHealth_Create(
     OUT p_mensaje               VARCHAR(500)
 )
 LANGUAGE plpgsql
+-- +goose StatementBegin
 AS $$
 BEGIN
     p_resultado := 0;
@@ -4089,7 +4089,6 @@ $$;
 -- 2. usp_HR_OccHealth_Update
 -- =============================================================================
 DROP FUNCTION IF EXISTS public.usp_HR_OccHealth_Update(INTEGER, INTEGER, TIMESTAMP, VARCHAR(15), VARCHAR(100), INTEGER, VARCHAR(200), TEXT, VARCHAR(500), VARCHAR(500), DATE, DATE, VARCHAR(100), VARCHAR(15), VARCHAR(500), VARCHAR(500), INTEGER, VARCHAR(500)) CASCADE;
--- +goose StatementBegin
 CREATE OR REPLACE FUNCTION public.usp_HR_OccHealth_Update(
     p_occupational_health_id        INTEGER,
     p_company_id                    INTEGER,
@@ -4111,6 +4110,7 @@ CREATE OR REPLACE FUNCTION public.usp_HR_OccHealth_Update(
     OUT p_mensaje                   VARCHAR(500)
 )
 LANGUAGE plpgsql
+-- +goose StatementBegin
 AS $$
 BEGIN
     p_resultado := 0;
@@ -4173,7 +4173,6 @@ $$;
 -- 3. usp_HR_OccHealth_List
 -- =============================================================================
 DROP FUNCTION IF EXISTS public.usp_HR_OccHealth_List(INTEGER, VARCHAR(25), VARCHAR(15), VARCHAR(24), CHAR(2), DATE, DATE, INTEGER, INTEGER) CASCADE;
--- +goose StatementBegin
 CREATE OR REPLACE FUNCTION public.usp_HR_OccHealth_List(
     p_company_id    INTEGER,
     p_record_type   VARCHAR(25)     DEFAULT NULL,
@@ -4215,6 +4214,7 @@ RETURNS TABLE(
     "UpdatedAt"                     TIMESTAMP
 )
 LANGUAGE plpgsql
+-- +goose StatementBegin
 AS $$
 BEGIN
     IF p_page  < 1   THEN p_page  := 1;   END IF;
@@ -4269,7 +4269,6 @@ $$;
 -- =============================================================================
 DROP FUNCTION IF EXISTS public.usp_HR_OccHealth_Get(INTEGER, INTEGER) CASCADE;
 DROP FUNCTION IF EXISTS public.usp_HR_OccHealth_Get(INTEGER) CASCADE;
--- +goose StatementBegin
 CREATE OR REPLACE FUNCTION public.usp_HR_OccHealth_Get(
     p_record_id                 INTEGER,
     p_company_id                INTEGER  DEFAULT NULL
@@ -4303,6 +4302,7 @@ RETURNS TABLE (
     "UpdatedAt"                     TIMESTAMP
 )
 LANGUAGE plpgsql
+-- +goose StatementBegin
 AS $$
 BEGIN
     RETURN QUERY
@@ -4344,7 +4344,6 @@ $$;
 -- 5. usp_HR_MedExam_Save
 -- =============================================================================
 DROP FUNCTION IF EXISTS public.usp_HR_MedExam_Save(INTEGER, INTEGER, BIGINT, VARCHAR(24), VARCHAR(200), VARCHAR(20), DATE, DATE, VARCHAR(20), VARCHAR(500), VARCHAR(200), VARCHAR(200), VARCHAR(500), VARCHAR(500), INTEGER, VARCHAR(500)) CASCADE;
--- +goose StatementBegin
 CREATE OR REPLACE FUNCTION public.usp_HR_MedExam_Save(
     p_medical_exam_id   INTEGER         DEFAULT NULL,
     p_company_id        INTEGER         DEFAULT NULL,
@@ -4364,6 +4363,7 @@ CREATE OR REPLACE FUNCTION public.usp_HR_MedExam_Save(
     OUT p_mensaje       VARCHAR(500)
 )
 LANGUAGE plpgsql
+-- +goose StatementBegin
 AS $$
 BEGIN
     p_resultado := 0;
@@ -4443,7 +4443,6 @@ $$;
 -- 6. usp_HR_MedExam_List
 -- =============================================================================
 DROP FUNCTION IF EXISTS public.usp_HR_MedExam_List(INTEGER, VARCHAR(20), VARCHAR(20), VARCHAR(24), DATE, DATE, INTEGER, INTEGER) CASCADE;
--- +goose StatementBegin
 CREATE OR REPLACE FUNCTION public.usp_HR_MedExam_List(
     p_company_id    INTEGER,
     p_exam_type     VARCHAR(20)     DEFAULT NULL,
@@ -4474,6 +4473,7 @@ RETURNS TABLE(
     "UpdatedAt"         TIMESTAMP
 )
 LANGUAGE plpgsql
+-- +goose StatementBegin
 AS $$
 BEGIN
     IF p_page  < 1   THEN p_page  := 1;   END IF;
@@ -4516,7 +4516,6 @@ $$;
 -- 7. usp_HR_MedExam_GetPending
 -- =============================================================================
 DROP FUNCTION IF EXISTS public.usp_HR_MedExam_GetPending(INTEGER, DATE, INTEGER, INTEGER, INTEGER) CASCADE;
--- +goose StatementBegin
 CREATE OR REPLACE FUNCTION public.usp_HR_MedExam_GetPending(
     p_company_id    INTEGER,
     p_as_of_date    DATE        DEFAULT NULL,
@@ -4542,6 +4541,7 @@ RETURNS TABLE(
     "DaysUntilDue"      INTEGER
 )
 LANGUAGE plpgsql
+-- +goose StatementBegin
 AS $$
 BEGIN
     IF p_as_of_date IS NULL THEN p_as_of_date := CAST((NOW() AT TIME ZONE 'UTC') AS DATE); END IF;
@@ -4590,7 +4590,6 @@ $$;
 -- 8. usp_HR_MedOrder_Create
 -- =============================================================================
 DROP FUNCTION IF EXISTS public.usp_HR_MedOrder_Create(INTEGER, BIGINT, VARCHAR(24), VARCHAR(200), VARCHAR(20), DATE, VARCHAR(500), VARCHAR(200), TEXT, NUMERIC(18,2), VARCHAR(500), VARCHAR(500), INTEGER, VARCHAR(500)) CASCADE;
--- +goose StatementBegin
 CREATE OR REPLACE FUNCTION public.usp_HR_MedOrder_Create(
     p_company_id    INTEGER,
     p_employee_id   BIGINT          DEFAULT NULL,
@@ -4608,6 +4607,7 @@ CREATE OR REPLACE FUNCTION public.usp_HR_MedOrder_Create(
     OUT p_mensaje   VARCHAR(500)
 )
 LANGUAGE plpgsql
+-- +goose StatementBegin
 AS $$
 BEGIN
     p_resultado := 0;
@@ -4649,7 +4649,6 @@ $$;
 -- 9. usp_HR_MedOrder_Approve
 -- =============================================================================
 DROP FUNCTION IF EXISTS public.usp_HR_MedOrder_Approve(INTEGER, INTEGER, VARCHAR(15), NUMERIC(18,2), INTEGER, VARCHAR(500), INTEGER, VARCHAR(500)) CASCADE;
--- +goose StatementBegin
 CREATE OR REPLACE FUNCTION public.usp_HR_MedOrder_Approve(
     p_medical_order_id  INTEGER,
     p_company_id        INTEGER,
@@ -4661,6 +4660,7 @@ CREATE OR REPLACE FUNCTION public.usp_HR_MedOrder_Approve(
     OUT p_mensaje       VARCHAR(500)
 )
 LANGUAGE plpgsql
+-- +goose StatementBegin
 AS $$
 BEGIN
     p_resultado := 0;
@@ -4722,7 +4722,6 @@ $$;
 -- 10. usp_HR_MedOrder_List
 -- =============================================================================
 DROP FUNCTION IF EXISTS public.usp_HR_MedOrder_List(INTEGER, VARCHAR(20), VARCHAR(15), VARCHAR(24), DATE, DATE, INTEGER, INTEGER) CASCADE;
--- +goose StatementBegin
 CREATE OR REPLACE FUNCTION public.usp_HR_MedOrder_List(
     p_company_id    INTEGER,
     p_order_type    VARCHAR(20)     DEFAULT NULL,
@@ -4756,6 +4755,7 @@ RETURNS TABLE(
     "UpdatedAt"         TIMESTAMP
 )
 LANGUAGE plpgsql
+-- +goose StatementBegin
 AS $$
 BEGIN
     IF p_page  < 1   THEN p_page  := 1;   END IF;
@@ -4801,7 +4801,6 @@ $$;
 -- 11. usp_HR_Training_Save
 -- =============================================================================
 DROP FUNCTION IF EXISTS public.usp_HR_Training_Save(INTEGER, INTEGER, CHAR(2), VARCHAR(25), VARCHAR(200), VARCHAR(200), DATE, DATE, NUMERIC(6,2), BIGINT, VARCHAR(24), VARCHAR(200), VARCHAR(100), VARCHAR(500), VARCHAR(15), BOOLEAN, VARCHAR(500), INTEGER, VARCHAR(500)) CASCADE;
--- +goose StatementBegin
 CREATE OR REPLACE FUNCTION public.usp_HR_Training_Save(
     p_training_record_id    INTEGER         DEFAULT NULL,
     p_company_id            INTEGER         DEFAULT NULL,
@@ -4824,6 +4823,7 @@ CREATE OR REPLACE FUNCTION public.usp_HR_Training_Save(
     OUT p_mensaje           VARCHAR(500)
 )
 LANGUAGE plpgsql
+-- +goose StatementBegin
 AS $$
 BEGIN
     p_resultado := 0;
@@ -4914,7 +4914,6 @@ $$;
 -- 12. usp_HR_Training_List
 -- =============================================================================
 DROP FUNCTION IF EXISTS public.usp_HR_Training_List(INTEGER, VARCHAR(25), VARCHAR(24), CHAR(2), BOOLEAN, VARCHAR(15), DATE, DATE, INTEGER, INTEGER) CASCADE;
--- +goose StatementBegin
 CREATE OR REPLACE FUNCTION public.usp_HR_Training_List(
     p_company_id    INTEGER,
     p_training_type VARCHAR(25)     DEFAULT NULL,
@@ -4950,6 +4949,7 @@ RETURNS TABLE(
     "UpdatedAt"             TIMESTAMP
 )
 LANGUAGE plpgsql
+-- +goose StatementBegin
 AS $$
 BEGIN
     IF p_page  < 1   THEN p_page  := 1;   END IF;
@@ -4997,7 +4997,6 @@ $$;
 -- 13. usp_HR_Training_GetEmployeeCertifications
 -- =============================================================================
 DROP FUNCTION IF EXISTS public.usp_HR_Training_GetEmployeeCertifications(INTEGER, VARCHAR(24)) CASCADE;
--- +goose StatementBegin
 CREATE OR REPLACE FUNCTION public.usp_HR_Training_GetEmployeeCertifications(
     p_company_id    INTEGER,
     p_employee_code VARCHAR(24)
@@ -5024,6 +5023,7 @@ RETURNS TABLE (
     "UpdatedAt"         TIMESTAMP
 )
 LANGUAGE plpgsql
+-- +goose StatementBegin
 AS $$
 BEGIN
     RETURN QUERY
@@ -5061,7 +5061,6 @@ $$;
 -- 14. usp_HR_Committee_Save
 -- =============================================================================
 DROP FUNCTION IF EXISTS public.usp_HR_Committee_Save(INTEGER, INTEGER, CHAR(2), VARCHAR(200), DATE, VARCHAR(15), BOOLEAN, INTEGER, VARCHAR(500)) CASCADE;
--- +goose StatementBegin
 CREATE OR REPLACE FUNCTION public.usp_HR_Committee_Save(
     p_safety_committee_id   INTEGER         DEFAULT NULL,
     p_company_id            INTEGER         DEFAULT NULL,
@@ -5074,6 +5073,7 @@ CREATE OR REPLACE FUNCTION public.usp_HR_Committee_Save(
     OUT p_mensaje           VARCHAR(500)
 )
 LANGUAGE plpgsql
+-- +goose StatementBegin
 AS $$
 BEGIN
     p_resultado := 0;
@@ -5129,7 +5129,6 @@ $$;
 -- 15. usp_HR_Committee_AddMember
 -- =============================================================================
 DROP FUNCTION IF EXISTS public.usp_HR_Committee_AddMember(INTEGER, INTEGER, BIGINT, VARCHAR(24), VARCHAR(200), VARCHAR(25), DATE, DATE, INTEGER, VARCHAR(500)) CASCADE;
--- +goose StatementBegin
 CREATE OR REPLACE FUNCTION public.usp_HR_Committee_AddMember(
     p_safety_committee_id   INTEGER,
     p_company_id            INTEGER,
@@ -5143,6 +5142,7 @@ CREATE OR REPLACE FUNCTION public.usp_HR_Committee_AddMember(
     OUT p_mensaje           VARCHAR(500)
 )
 LANGUAGE plpgsql
+-- +goose StatementBegin
 AS $$
 BEGIN
     p_resultado := 0;
@@ -5199,7 +5199,6 @@ $$;
 -- 16. usp_HR_Committee_RemoveMember
 -- =============================================================================
 DROP FUNCTION IF EXISTS public.usp_HR_Committee_RemoveMember(INTEGER, INTEGER, INTEGER, DATE, INTEGER, VARCHAR(500)) CASCADE;
--- +goose StatementBegin
 CREATE OR REPLACE FUNCTION public.usp_HR_Committee_RemoveMember(
     p_member_id             INTEGER,
     p_safety_committee_id   INTEGER,
@@ -5209,6 +5208,7 @@ CREATE OR REPLACE FUNCTION public.usp_HR_Committee_RemoveMember(
     OUT p_mensaje           VARCHAR(500)
 )
 LANGUAGE plpgsql
+-- +goose StatementBegin
 AS $$
 BEGIN
     p_resultado := 0;
@@ -5257,7 +5257,6 @@ $$;
 -- 17. usp_HR_Committee_RecordMeeting
 -- =============================================================================
 DROP FUNCTION IF EXISTS public.usp_HR_Committee_RecordMeeting(INTEGER, INTEGER, TIMESTAMP, VARCHAR(500), TEXT, TEXT, INTEGER, VARCHAR(500)) CASCADE;
--- +goose StatementBegin
 CREATE OR REPLACE FUNCTION public.usp_HR_Committee_RecordMeeting(
     p_safety_committee_id   INTEGER,
     p_company_id            INTEGER,
@@ -5269,6 +5268,7 @@ CREATE OR REPLACE FUNCTION public.usp_HR_Committee_RecordMeeting(
     OUT p_mensaje           VARCHAR(500)
 )
 LANGUAGE plpgsql
+-- +goose StatementBegin
 AS $$
 BEGIN
     p_resultado := 0;
@@ -5309,7 +5309,6 @@ $$;
 -- 18. usp_HR_Committee_List
 -- =============================================================================
 DROP FUNCTION IF EXISTS public.usp_HR_Committee_List(INTEGER, CHAR(2), BOOLEAN, INTEGER, INTEGER) CASCADE;
--- +goose StatementBegin
 CREATE OR REPLACE FUNCTION public.usp_HR_Committee_List(
     p_company_id    INTEGER,
     p_country_code  CHAR(2)     DEFAULT NULL,
@@ -5331,6 +5330,7 @@ RETURNS TABLE(
     "TotalMeetings"         BIGINT
 )
 LANGUAGE plpgsql
+-- +goose StatementBegin
 AS $$
 BEGIN
     IF p_page  < 1   THEN p_page  := 1;   END IF;
@@ -5372,7 +5372,6 @@ $$;
 -- =============================================================================
 DROP FUNCTION IF EXISTS public.usp_HR_Committee_GetMeetings(INTEGER, INTEGER, DATE, DATE, INTEGER, INTEGER) CASCADE;
 DROP FUNCTION IF EXISTS public.usp_HR_Committee_GetMeetings(INTEGER) CASCADE;
--- +goose StatementBegin
 CREATE OR REPLACE FUNCTION public.usp_HR_Committee_GetMeetings(
     p_committee_id          INTEGER,
     p_company_id            INTEGER     DEFAULT NULL,
@@ -5393,6 +5392,7 @@ RETURNS TABLE(
     "CommitteeName"         VARCHAR(200)
 )
 LANGUAGE plpgsql
+-- +goose StatementBegin
 AS $$
 BEGIN
     IF p_page  < 1   THEN p_page  := 1;   END IF;
@@ -5437,7 +5437,6 @@ $$;
 -- =============================================================================
 
 -- Internal alias for usp_HR_OccHealth_Create (avoids overload ambiguity)
--- +goose StatementBegin
 CREATE OR REPLACE FUNCTION public.usp_hr_occhealth_create_internal(
     p_company_id                INTEGER,
     p_country_code              CHAR(2),
@@ -5463,6 +5462,7 @@ CREATE OR REPLACE FUNCTION public.usp_hr_occhealth_create_internal(
     OUT p_resultado             INTEGER,
     OUT p_mensaje               VARCHAR(500)
 )
+-- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 BEGIN
     p_resultado := 0;
@@ -5518,7 +5518,6 @@ $$;
 DROP FUNCTION IF EXISTS public.usp_hr_occhealth_create(INTEGER, CHAR, VARCHAR, BIGINT, VARCHAR, VARCHAR, TIMESTAMP, TIMESTAMP, TIMESTAMP, VARCHAR, VARCHAR, INTEGER, VARCHAR, TEXT, VARCHAR, VARCHAR, DATE, VARCHAR, VARCHAR, VARCHAR, INTEGER) CASCADE;
 DROP FUNCTION IF EXISTS public.usp_hr_occhealth_create(INTEGER, INTEGER, VARCHAR, VARCHAR, TIMESTAMP, TEXT, VARCHAR, INTEGER) CASCADE;
 DROP FUNCTION IF EXISTS public.usp_hr_occhealth_create(INTEGER, INTEGER, VARCHAR, VARCHAR, DATE, TEXT, VARCHAR, INTEGER) CASCADE;
--- +goose StatementBegin
 CREATE OR REPLACE FUNCTION public.usp_hr_occhealth_create(
     p_company_id    INTEGER,
     p_branch_id     INTEGER     DEFAULT NULL,
@@ -5530,6 +5529,7 @@ CREATE OR REPLACE FUNCTION public.usp_hr_occhealth_create(
     p_user_id       INTEGER     DEFAULT NULL
 )
 RETURNS TABLE("Resultado" INT, "Mensaje" VARCHAR)
+-- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 DECLARE
     v_country_code CHAR(2);
@@ -5570,7 +5570,6 @@ $$;
 --                p_exam_type, p_exam_date, p_result, p_notes, p_next_due_date, p_user_id
 DROP FUNCTION IF EXISTS public.usp_HR_MedExam_Save(INTEGER, INTEGER, BIGINT, VARCHAR(24), VARCHAR(200), VARCHAR(20), DATE, DATE, VARCHAR(20), VARCHAR(500), VARCHAR(200), VARCHAR(200), VARCHAR(500), VARCHAR(500)) CASCADE;
 DROP FUNCTION IF EXISTS public.usp_hr_medexam_save(INTEGER, INTEGER, INTEGER, VARCHAR, VARCHAR, DATE, VARCHAR, VARCHAR, DATE, INTEGER) CASCADE;
--- +goose StatementBegin
 CREATE OR REPLACE FUNCTION public.usp_hr_medexam_save(
     p_company_id    INTEGER,
     p_branch_id     INTEGER     DEFAULT NULL,
@@ -5584,6 +5583,7 @@ CREATE OR REPLACE FUNCTION public.usp_hr_medexam_save(
     p_user_id       INTEGER     DEFAULT NULL
 )
 RETURNS TABLE("Resultado" INT, "Mensaje" VARCHAR)
+-- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 DECLARE
     v_resultado    INTEGER;
@@ -5630,7 +5630,6 @@ $$;
 --                p_start_date, p_end_date, p_instructor, p_hours, p_participants, p_user_id
 DROP FUNCTION IF EXISTS public.usp_HR_Training_Save(INTEGER, INTEGER, CHAR(2), VARCHAR(25), VARCHAR(200), VARCHAR(200), DATE, DATE, NUMERIC(6,2), BIGINT, VARCHAR(24), VARCHAR(200), VARCHAR(100), VARCHAR(500), VARCHAR(15), BOOLEAN, VARCHAR(500)) CASCADE;
 DROP FUNCTION IF EXISTS public.usp_hr_training_save(INTEGER, INTEGER, INTEGER, VARCHAR, VARCHAR, DATE, DATE, VARCHAR, NUMERIC, VARCHAR, INTEGER) CASCADE;
--- +goose StatementBegin
 CREATE OR REPLACE FUNCTION public.usp_hr_training_save(
     p_company_id    INTEGER,
     p_branch_id     INTEGER     DEFAULT NULL,
@@ -5645,6 +5644,7 @@ CREATE OR REPLACE FUNCTION public.usp_hr_training_save(
     p_user_id       INTEGER     DEFAULT NULL
 )
 RETURNS TABLE("Resultado" INT, "Mensaje" VARCHAR)
+-- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 DECLARE
     v_country_code CHAR(2);
@@ -5689,7 +5689,6 @@ $$;
 --                p_committee_type, p_start_date, p_end_date, p_user_id
 DROP FUNCTION IF EXISTS public.usp_HR_Committee_Save(INTEGER, INTEGER, CHAR(2), VARCHAR(200), DATE, VARCHAR(15), BOOLEAN) CASCADE;
 DROP FUNCTION IF EXISTS public.usp_hr_committee_save(INTEGER, INTEGER, INTEGER, VARCHAR, VARCHAR, DATE, DATE, INTEGER) CASCADE;
--- +goose StatementBegin
 CREATE OR REPLACE FUNCTION public.usp_hr_committee_save(
     p_company_id     INTEGER,
     p_branch_id      INTEGER     DEFAULT NULL,
@@ -5701,6 +5700,7 @@ CREATE OR REPLACE FUNCTION public.usp_hr_committee_save(
     p_user_id        INTEGER     DEFAULT NULL
 )
 RETURNS TABLE("Resultado" INT, "Mensaje" VARCHAR)
+-- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 DECLARE
     v_country_code CHAR(2);

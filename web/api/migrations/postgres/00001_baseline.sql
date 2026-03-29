@@ -2,7 +2,6 @@
 -- Baseline migration: estado completo de la base de datos
 -- Generado automaticamente desde run_all.sql el 2026-03-28
 
--- +goose StatementBegin
 -- Source: run_all.sql
 -- ============================================================
 -- DatqBoxWeb PostgreSQL - run_all.sql
@@ -29,9 +28,7 @@ INSERT INTO public._migrations (name) VALUES ('run_all.sql')
 -- ====================================================================
 -- FASE 2: DDL - Tablas y schemas
 -- ====================================================================
--- +goose StatementEnd
 
--- +goose StatementBegin
 -- Source: 01_core_foundation.sql
 -- ============================================================
 -- DatqBoxWeb PostgreSQL - 01_core_foundation.sql
@@ -227,6 +224,7 @@ INSERT INTO sec."Role" ("RoleCode", "RoleName", "IsSystem", "IsActive")
 VALUES ('ADMIN', 'Administrators', TRUE, TRUE)
 ON CONFLICT ("RoleCode") DO NOTHING;
 
+-- +goose StatementBegin
 DO $$
 DECLARE
   v_system_user_id INT;
@@ -254,11 +252,10 @@ BEGIN
     ON CONFLICT ("CompanyId", "BranchCode") DO NOTHING;
   END IF;
 END $$;
-
-COMMIT;
 -- +goose StatementEnd
 
--- +goose StatementBegin
+COMMIT;
+
 -- Source: 02_master_data.sql
 -- ============================================================
 -- DatqBoxWeb PostgreSQL - 02_master_data.sql
@@ -404,9 +401,7 @@ CREATE INDEX IF NOT EXISTS "IX_master_Product_Company_IsActive"
   ON master."Product" ("CompanyId", "IsActive", "ProductCode");
 
 COMMIT;
--- +goose StatementEnd
 
--- +goose StatementBegin
 -- Source: 03_accounting_core.sql
 -- ============================================================
 -- DatqBoxWeb PostgreSQL - 03_accounting_core.sql
@@ -560,9 +555,7 @@ CREATE TABLE IF NOT EXISTS acct."AccountingPolicy" (
 );
 
 COMMIT;
--- +goose StatementEnd
 
--- +goose StatementBegin
 -- Source: 04_operations_core.sql
 -- ============================================================
 -- DatqBoxWeb PostgreSQL - 04_operations_core.sql
@@ -991,9 +984,7 @@ CREATE TABLE IF NOT EXISTS rest."OrderTicketLine" (
 );
 
 COMMIT;
--- +goose StatementEnd
 
--- +goose StatementBegin
 -- Source: 005_auth_security_hardening.sql
 -- ============================================================================
 -- 005_auth_security_hardening.sql — PostgreSQL
@@ -1065,9 +1056,7 @@ FROM sec."User" u
 LEFT JOIN sec."AuthIdentity" ai ON ai."UserCode" = u."UserCode"
 WHERE ai."UserCode" IS NULL AND u."IsDeleted" = FALSE
 ON CONFLICT DO NOTHING;
--- +goose StatementEnd
 
--- +goose StatementBegin
 -- Source: 05_api_compat_bridge.sql
 -- ============================================================
 -- DatqBoxWeb PostgreSQL - 05_api_compat_bridge.sql
@@ -1080,6 +1069,7 @@ BEGIN;
 -- ============================================================
 -- Obtener IDs por defecto
 -- ============================================================
+-- +goose StatementBegin
 DO $$
 DECLARE
   v_DefaultCompanyId INT;
@@ -1095,6 +1085,7 @@ BEGIN
     RAISE EXCEPTION 'Missing DEFAULT company/MAIN branch. Run 01_core_foundation.sql first.';
   END IF;
 END $$;
+-- +goose StatementEnd
 
 -- ============================================================
 -- NOTA: Tablas legacy public.* eliminadas (2026-03-16).
@@ -1130,6 +1121,7 @@ RETURNS TABLE (
   "observacion"  VARCHAR,
   "codUsuario"   VARCHAR
 )
+-- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 DECLARE
   v_Page  INT := GREATEST(COALESCE(p_Page, 1), 1);
@@ -1159,6 +1151,7 @@ BEGIN
   LIMIT v_Limit OFFSET v_Offset;
 END;
 $$;
+-- +goose StatementEnd
 
 -- sp_CxP_Documentos_List
 DROP FUNCTION IF EXISTS public."sp_CxP_Documentos_List"(VARCHAR, VARCHAR, VARCHAR, DATE, DATE, INT, INT) CASCADE;
@@ -1182,6 +1175,7 @@ RETURNS TABLE (
   "observacion"  VARCHAR,
   "codUsuario"   VARCHAR
 )
+-- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 DECLARE
   v_Page  INT := GREATEST(COALESCE(p_Page, 1), 1);
@@ -1211,6 +1205,7 @@ BEGIN
   LIMIT v_Limit OFFSET v_Offset;
 END;
 $$;
+-- +goose StatementEnd
 
 -- ============================================================
 -- Funciones contables: usp_Contabilidad_Asientos_List
@@ -1242,6 +1237,7 @@ RETURNS TABLE(
   "CodUsuario"     VARCHAR,
   "TotalCount"     INT
 )
+-- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 DECLARE
   v_Page  INT := GREATEST(COALESCE(p_Page, 1), 1);
@@ -1285,6 +1281,7 @@ BEGIN
   LIMIT v_Limit OFFSET v_Offset;
 END;
 $$;
+-- +goose StatementEnd
 
 -- ============================================================
 -- usp_Contabilidad_Asiento_Get
@@ -1308,6 +1305,7 @@ RETURNS TABLE (
   "OrigenModulo"   VARCHAR,
   "CodUsuario"     VARCHAR
 )
+-- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 BEGIN
   RETURN QUERY
@@ -1330,6 +1328,7 @@ BEGIN
   LIMIT 1;
 END;
 $$;
+-- +goose StatementEnd
 
 -- ============================================================
 -- usp_Contabilidad_Asiento_Crear
@@ -1352,6 +1351,7 @@ CREATE OR REPLACE FUNCTION public."usp_Contabilidad_Asiento_Crear"(
   OUT p_Resultado      INT,
   OUT p_Mensaje        VARCHAR
 )
+-- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 DECLARE
   v_TotalDebe  NUMERIC(18,2);
@@ -1409,6 +1409,7 @@ BEGIN
   p_Mensaje := 'Asiento creado correctamente.';
 END;
 $$;
+-- +goose StatementEnd
 
 -- ============================================================
 -- usp_Contabilidad_Asiento_Anular
@@ -1421,6 +1422,7 @@ CREATE OR REPLACE FUNCTION public."usp_Contabilidad_Asiento_Anular"(
   OUT p_Resultado INT,
   OUT p_Mensaje   VARCHAR
 )
+-- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM public."Asientos" WHERE "Id" = p_AsientoId) THEN
@@ -1439,6 +1441,7 @@ BEGIN
   p_Mensaje := 'Asiento anulado.';
 END;
 $$;
+-- +goose StatementEnd
 
 -- ============================================================
 -- usp_Contabilidad_Ajuste_Crear
@@ -1455,6 +1458,7 @@ CREATE OR REPLACE FUNCTION public."usp_Contabilidad_Ajuste_Crear"(
   OUT p_Resultado  INT,
   OUT p_Mensaje    VARCHAR
 )
+-- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 DECLARE
   v_NumeroAsiento VARCHAR;
@@ -1474,6 +1478,7 @@ BEGIN
   );
 END;
 $$;
+-- +goose StatementEnd
 
 -- ============================================================
 -- usp_Contabilidad_Depreciacion_Generar (stub)
@@ -1486,12 +1491,14 @@ CREATE OR REPLACE FUNCTION public."usp_Contabilidad_Depreciacion_Generar"(
   OUT p_Resultado INT,
   OUT p_Mensaje   VARCHAR
 )
+-- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 BEGIN
   p_Resultado := 1;
   p_Mensaje := 'Proceso de depreciacion preparado (sin reglas cargadas).';
 END;
 $$;
+-- +goose StatementEnd
 
 -- ============================================================
 -- usp_Contabilidad_Libro_Mayor
@@ -1508,6 +1515,7 @@ RETURNS TABLE (
   "Haber"       NUMERIC,
   "Saldo"       NUMERIC
 )
+-- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 BEGIN
   RETURN QUERY
@@ -1526,6 +1534,7 @@ BEGIN
   ORDER BY d."Cod_Cuenta";
 END;
 $$;
+-- +goose StatementEnd
 
 -- ============================================================
 -- usp_Contabilidad_Mayor_Analitico
@@ -1546,6 +1555,7 @@ RETURNS TABLE (
   "Haber"          NUMERIC,
   "SaldoAcumulado" NUMERIC
 )
+-- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 BEGIN
   RETURN QUERY
@@ -1566,6 +1576,7 @@ BEGIN
   ORDER BY a."Fecha", a."Id", d."Id";
 END;
 $$;
+-- +goose StatementEnd
 
 -- ============================================================
 -- usp_Contabilidad_Balance_Comprobacion
@@ -1582,6 +1593,7 @@ RETURNS TABLE (
   "Haber"       NUMERIC,
   "Saldo"       NUMERIC
 )
+-- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 BEGIN
   RETURN QUERY
@@ -1600,6 +1612,7 @@ BEGIN
   ORDER BY d."Cod_Cuenta";
 END;
 $$;
+-- +goose StatementEnd
 
 -- ============================================================
 -- usp_Contabilidad_Estado_Resultados
@@ -1617,6 +1630,7 @@ RETURNS TABLE (
   "Haber"           NUMERIC,
   "SaldoResultado"  NUMERIC
 )
+-- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 BEGIN
   RETURN QUERY
@@ -1637,6 +1651,7 @@ BEGIN
   ORDER BY d."Cod_Cuenta";
 END;
 $$;
+-- +goose StatementEnd
 
 -- ============================================================
 -- usp_Contabilidad_Balance_General
@@ -1653,6 +1668,7 @@ RETURNS TABLE (
   "Haber"       NUMERIC,
   "Saldo"       NUMERIC
 )
+-- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 BEGIN
   RETURN QUERY
@@ -1674,6 +1690,7 @@ BEGIN
   ORDER BY d."Cod_Cuenta";
 END;
 $$;
+-- +goose StatementEnd
 
 -- ============================================================
 -- NOTA: Los triggers de sincronizacion bidireccional
@@ -1684,9 +1701,7 @@ $$;
 -- ============================================================
 
 COMMIT;
--- +goose StatementEnd
 
--- +goose StatementBegin
 -- Source: 07_pos_rest_extensions.sql
 -- ============================================================
 -- DatqBoxWeb PostgreSQL - 07_pos_rest_extensions.sql
@@ -1756,6 +1771,7 @@ CREATE INDEX IF NOT EXISTS "IX_rest_DiningTable_Search"
 -- ============================================================
 -- SEEDS
 -- ============================================================
+-- +goose StatementBegin
 DO $$
 DECLARE
   v_DefaultCompanyId INT;
@@ -1820,11 +1836,10 @@ BEGIN
 
   END IF;
 END $$;
-
-COMMIT;
 -- +goose StatementEnd
 
--- +goose StatementBegin
+COMMIT;
+
 -- Source: 08_fin_hr_extensions.sql
 -- ============================================================
 -- DatqBoxWeb PostgreSQL - 08_fin_hr_extensions.sql
@@ -2485,6 +2500,7 @@ CREATE TABLE IF NOT EXISTS hr."DocumentTemplate" (
 -- ============================================================
 -- SEED DATA
 -- ============================================================
+-- +goose StatementBegin
 DO $$
 DECLARE
   v_DefaultCompanyId INT;
@@ -2572,11 +2588,10 @@ BEGIN
 
   END IF;
 END $$;
-
-COMMIT;
 -- +goose StatementEnd
 
--- +goose StatementBegin
+COMMIT;
+
 -- Source: 09_canonical_maestros.sql
 -- ============================================================
 -- DatqBoxWeb PostgreSQL - 09_canonical_maestros.sql
@@ -2939,6 +2954,7 @@ LIMIT 1;
 -- ============================================================
 -- SECCION 4: SEED DATA (datos de referencia)
 -- ============================================================
+-- +goose StatementBegin
 DO $$
 DECLARE
   v_CompanyId INT;
@@ -3123,11 +3139,10 @@ BEGIN
   -- de modulo deben gestionarse en sec.* o cfg.*.
 
 END $$;
-
-COMMIT;
 -- +goose StatementEnd
 
--- +goose StatementBegin
+COMMIT;
+
 -- Source: 10_canonical_documents.sql
 -- ============================================================
 -- DatqBoxWeb PostgreSQL - 10_canonical_documents.sql
@@ -3146,6 +3161,7 @@ BEGIN;
 
 -- Solo eliminar si existen como tablas (no vistas)
 -- Usa DO block para ignorar si el objeto existe como vista en lugar de tabla
+-- +goose StatementBegin
 DO $$
 BEGIN
     IF EXISTS (
@@ -3185,6 +3201,7 @@ BEGIN
         DROP TABLE public."DocumentosCompra" CASCADE;
     END IF;
 END $$;
+-- +goose StatementEnd
 
 -- ============================================================
 -- SECCION 2: sec."UserModuleAccess" (permisos de modulos)
@@ -3204,6 +3221,7 @@ CREATE TABLE IF NOT EXISTS sec."UserModuleAccess" (
 -- Migrar datos de public."AccesoUsuarios" (tabla) -> sec."UserModuleAccess"
 -- Solo si public."AccesoUsuarios" existe como tabla
 -- ============================================================
+-- +goose StatementBegin
 DO $$
 BEGIN
   -- Verificar si "AccesoUsuarios" existe como tabla (no vista)
@@ -3224,6 +3242,7 @@ BEGIN
     DROP TABLE public."AccesoUsuarios";
   END IF;
 END $$;
+-- +goose StatementEnd
 
 -- ============================================================
 -- Vista de compatibilidad: public."AccesoUsuarios" -> sec."UserModuleAccess"
@@ -3238,9 +3257,7 @@ CREATE OR REPLACE VIEW public."AccesoUsuarios" AS
   FROM sec."UserModuleAccess";
 
 COMMIT;
--- +goose StatementEnd
 
--- +goose StatementBegin
 -- Source: 11_canonical_usuarios_fiscal.sql
 -- ============================================================
 -- DatqBoxWeb PostgreSQL - 11_canonical_usuarios_fiscal.sql
@@ -3254,6 +3271,7 @@ BEGIN;
 -- ============================================================
 -- SECCION 1: AMPLIAR sec."User" CON COLUMNAS LEGACY
 -- ============================================================
+-- +goose StatementBegin
 DO $$
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'sec' AND table_name = 'User' AND column_name = 'UserType') THEN
@@ -3284,11 +3302,13 @@ BEGIN
     ALTER TABLE sec."User" ADD COLUMN "Avatar" TEXT NULL;
   END IF;
 END $$;
+-- +goose StatementEnd
 
 -- ============================================================
 -- SECCION 2: MIGRAR DATOS public."Usuarios" -> sec."User"
 -- Convertir MERGE -> INSERT ... ON CONFLICT DO UPDATE
 -- ============================================================
+-- +goose StatementBegin
 DO $$
 BEGIN
   -- Solo migrar si existe la tabla Usuarios como tabla base
@@ -3345,6 +3365,7 @@ BEGIN
     DROP TABLE public."Usuarios";
   END IF;
 END $$;
+-- +goose StatementEnd
 
 -- ============================================================
 -- SECCION 3: VISTA public."Usuarios" -> sec."User"
@@ -3441,6 +3462,7 @@ WHERE UPPER("UserCode") = UPPER(OLD."Cod_Usuario")
 -- ============================================================
 -- SECCION 5: LIMPIAR public."Fiscal*" (duplicados de fiscal.*)
 -- ============================================================
+-- +goose StatementBegin
 DO $$
 DECLARE
   v_has_fk BOOLEAN;
@@ -3466,11 +3488,10 @@ BEGIN
     RAISE NOTICE '[11] AVISO: public.Fiscal* tiene dependencias FK externas.';
   END IF;
 END $$;
-
-COMMIT;
 -- +goose StatementEnd
 
--- +goose StatementBegin
+COMMIT;
+
 -- Source: 12_payment_ecommerce.sql
 -- ============================================================
 -- DatqBoxWeb PostgreSQL - 12_payment_ecommerce.sql
@@ -3805,6 +3826,7 @@ ON CONFLICT ("Code") DO NOTHING;
 -- ============================================================
 -- SEED: Capabilities para proveedores
 -- ============================================================
+-- +goose StatementBegin
 DO $$
 DECLARE
   v_redsysId    INT;
@@ -3879,11 +3901,10 @@ BEGIN
     ON CONFLICT ("ProviderId", "Capability", "PaymentMethod") DO NOTHING;
   END IF;
 END $$;
-
-COMMIT;
 -- +goose StatementEnd
 
--- +goose StatementBegin
+COMMIT;
+
 -- Source: 09_inventory_advanced.sql
 -- ============================================================
 -- Zentto PostgreSQL - 09_inventory_advanced.sql
@@ -4127,6 +4148,7 @@ CREATE INDEX IF NOT EXISTS "IX_inv_ProductBinStock_Warehouse"
 
 -- Trigger para mantener QuantityAvailable sincronizado
 CREATE OR REPLACE FUNCTION inv.trg_product_bin_stock_available()
+-- +goose StatementBegin
 RETURNS TRIGGER AS $$
 BEGIN
   NEW."QuantityAvailable" := NEW."QuantityOnHand" - NEW."QuantityReserved";
@@ -4250,7 +4272,6 @@ COMMIT;
 DO $$ BEGIN RAISE NOTICE '>>> 09_inventory_advanced.sql ejecutado correctamente <<<'; END $$;
 -- +goose StatementEnd
 
--- +goose StatementBegin
 -- Source: 10_logistics.sql
 -- ============================================================
 -- Zentto PostgreSQL - 10_logistics.sql
@@ -4547,10 +4568,10 @@ CREATE TABLE IF NOT EXISTS logistics."DeliveryNoteSerial" (
 
 COMMIT;
 
+-- +goose StatementBegin
 DO $$ BEGIN RAISE NOTICE '>>> 10_logistics.sql ejecutado correctamente <<<'; END $$;
 -- +goose StatementEnd
 
--- +goose StatementBegin
 -- Source: 11_crm.sql
 -- ============================================================
 -- Zentto PostgreSQL - 11_crm.sql
@@ -4742,10 +4763,10 @@ CREATE INDEX IF NOT EXISTS "IX_crm_LeadHistory_Lead"
 
 COMMIT;
 
+-- +goose StatementBegin
 DO $$ BEGIN RAISE NOTICE '>>> 11_crm.sql ejecutado correctamente <<<'; END $$;
 -- +goose StatementEnd
 
--- +goose StatementBegin
 -- Source: 12_manufacturing.sql
 -- ============================================================
 -- Zentto PostgreSQL - 12_manufacturing.sql
@@ -4987,9 +5008,7 @@ CREATE INDEX IF NOT EXISTS "IX_mfg_WOOutput_WorkOrder"
   ON mfg."WorkOrderOutput" ("WorkOrderId");
 
 COMMIT;
--- +goose StatementEnd
 
--- +goose StatementBegin
 -- Source: 13_fleet.sql
 -- ============================================================
 -- Zentto PostgreSQL - 13_fleet.sql
@@ -5287,9 +5306,7 @@ CREATE INDEX IF NOT EXISTS "IX_fleet_VehicleDoc_Expiry"
   WHERE "ExpiresAt" IS NOT NULL AND "IsDeleted" = FALSE;
 
 COMMIT;
--- +goose StatementEnd
 
--- +goose StatementBegin
 -- Source: 14_rbac.sql
 -- ============================================================
 -- Zentto PostgreSQL - 14_rbac.sql
@@ -5534,9 +5551,7 @@ CREATE INDEX IF NOT EXISTS "IX_sec_ApprovalAction_User"
   ON sec."ApprovalAction" ("ActionByUserId", "ActionAt" DESC);
 
 COMMIT;
--- +goose StatementEnd
 
--- +goose StatementBegin
 -- Source: 13_triggers.sql
 -- ============================================================
 -- DatqBoxWeb PostgreSQL - 13_triggers.sql
@@ -5545,6 +5560,7 @@ COMMIT;
 
 -- Funcion reutilizable para incrementar RowVer en UPDATE
 CREATE OR REPLACE FUNCTION trg_increment_row_ver()
+-- +goose StatementBegin
 RETURNS TRIGGER AS $$
 BEGIN
     NEW."RowVer" := COALESCE(OLD."RowVer", 0) + 1;
@@ -5820,9 +5836,7 @@ DROP TRIGGER IF EXISTS "trg_rest_DiningTable_updated_at" ON rest."DiningTable";
 CREATE TRIGGER "trg_rest_DiningTable_updated_at"
     BEFORE UPDATE ON rest."DiningTable"
     FOR EACH ROW EXECUTE FUNCTION trg_set_updated_at();
--- +goose StatementEnd
 
--- +goose StatementBegin
 -- Source: 14_fulltext_search.sql
 -- ============================================================
 -- DatqBoxWeb PostgreSQL - 14_fulltext_search.sql
@@ -5857,9 +5871,7 @@ CREATE INDEX IF NOT EXISTS "IX_master_Product_fulltext"
 -- Indice trigram para busqueda fuzzy por codigo
 CREATE INDEX IF NOT EXISTS "IX_master_Product_code_trgm"
     ON master."Product" USING GIN ("ProductCode" gin_trgm_ops);
--- +goose StatementEnd
 
--- +goose StatementBegin
 -- Source: includes/sp/create_documentos_unificado.sql
 -- ============================================================
 -- DatqBoxWeb PostgreSQL - create_documentos_unificado.sql
@@ -6374,9 +6386,7 @@ CREATE TABLE IF NOT EXISTS master."AlternateStock" (
     "IsDeleted"        BOOLEAN       NOT NULL DEFAULT FALSE,
     CONSTRAINT "UQ_AlternateStock_ProductCode" UNIQUE ("ProductCode")
 );
--- +goose StatementEnd
 
--- +goose StatementBegin
 -- Source: includes/sp/create_activos_fijos.sql
 /*
   Activos Fijos - Tablas canonicas (PostgreSQL)
@@ -6631,13 +6641,13 @@ EXCEPTION WHEN OTHERS THEN
 END $$;
 -- +goose StatementEnd
 
--- +goose StatementBegin
 -- Source: includes/sp/alter_bank_movement_journal.sql
 -- =============================================================================
 -- ALTER: Agregar JournalEntryId a fin.BankMovement (PostgreSQL)
 -- Permite vincular movimientos bancarios con asientos contables autogenerados.
 -- =============================================================================
 
+-- +goose StatementBegin
 DO $$
 BEGIN
     IF NOT EXISTS (
@@ -6661,7 +6671,6 @@ BEGIN
 END $$;
 -- +goose StatementEnd
 
--- +goose StatementBegin
 -- Source: includes/sp/create_hr_rrhh_tables.sql
 -- ============================================================================
 -- create_hr_rrhh_tables.sql
@@ -7046,6 +7055,7 @@ CREATE INDEX IF NOT EXISTS "IX_Training_Regulatory"
 -- ----------------------------------------------------------------------------
 -- Seed: master."Employee" (si no hay empleados)
 -- ----------------------------------------------------------------------------
+-- +goose StatementBegin
 DO $$
 BEGIN
   RAISE NOTICE '>> Seed: Empleados base (si no existen)';
@@ -7094,10 +7104,12 @@ BEGIN
 EXCEPTION WHEN OTHERS THEN
   RAISE NOTICE 'Error en seed empleados: %', SQLERRM;
 END $$;
+-- +goose StatementEnd
 
 -- ----------------------------------------------------------------------------
 -- Seed: hr."SavingsFund" — Caja de Ahorro
 -- ----------------------------------------------------------------------------
+-- +goose StatementBegin
 DO $$
 BEGIN
   RAISE NOTICE '>> Seed: SavingsFund';
@@ -7162,10 +7174,12 @@ BEGIN
 EXCEPTION WHEN OTHERS THEN
   RAISE NOTICE 'Error en seed SavingsFund: %', SQLERRM;
 END $$;
+-- +goose StatementEnd
 
 -- ----------------------------------------------------------------------------
 -- Seed: hr."SavingsFundTransaction"
 -- ----------------------------------------------------------------------------
+-- +goose StatementBegin
 DO $$
 DECLARE v_fund1 INT; v_fund2 INT;
 BEGIN
@@ -7230,10 +7244,12 @@ BEGIN
 EXCEPTION WHEN OTHERS THEN
   RAISE NOTICE 'Error en seed SavingsFundTransaction: %', SQLERRM;
 END $$;
+-- +goose StatementEnd
 
 -- ----------------------------------------------------------------------------
 -- Seed: hr."SavingsLoan"
 -- ----------------------------------------------------------------------------
+-- +goose StatementBegin
 DO $$
 DECLARE v_fund1 INT;
 BEGIN
@@ -7260,10 +7276,12 @@ BEGIN
 EXCEPTION WHEN OTHERS THEN
   RAISE NOTICE 'Error en seed SavingsLoan: %', SQLERRM;
 END $$;
+-- +goose StatementEnd
 
 -- ----------------------------------------------------------------------------
 -- Seed: hr."SocialBenefitsTrust" — Fideicomiso Prestaciones Sociales
 -- ----------------------------------------------------------------------------
+-- +goose StatementBegin
 DO $$
 BEGIN
   RAISE NOTICE '>> Seed: SocialBenefitsTrust';
@@ -7395,10 +7413,12 @@ BEGIN
 EXCEPTION WHEN OTHERS THEN
   RAISE NOTICE 'Error en seed SocialBenefitsTrust: %', SQLERRM;
 END $$;
+-- +goose StatementEnd
 
 -- ----------------------------------------------------------------------------
 -- Seed: hr."ProfitSharing" + hr."ProfitSharingLine" — Utilidades 2025
 -- ----------------------------------------------------------------------------
+-- +goose StatementBegin
 DO $$
 DECLARE v_ps_id INT;
 BEGIN
@@ -7509,10 +7529,12 @@ BEGIN
 EXCEPTION WHEN OTHERS THEN
   RAISE NOTICE 'Error en seed ProfitSharing: %', SQLERRM;
 END $$;
+-- +goose StatementEnd
 
 -- ----------------------------------------------------------------------------
 -- Seed: hr."OccupationalHealth"
 -- ----------------------------------------------------------------------------
+-- +goose StatementBegin
 DO $$
 BEGIN
   RAISE NOTICE '>> Seed: OccupationalHealth';
@@ -7651,10 +7673,12 @@ BEGIN
 EXCEPTION WHEN OTHERS THEN
   RAISE NOTICE 'Error en seed OccupationalHealth: %', SQLERRM;
 END $$;
+-- +goose StatementEnd
 
 -- ----------------------------------------------------------------------------
 -- Seed: hr."MedicalExam"
 -- ----------------------------------------------------------------------------
+-- +goose StatementBegin
 DO $$
 BEGIN
   RAISE NOTICE '>> Seed: MedicalExam';
@@ -7759,10 +7783,12 @@ BEGIN
 EXCEPTION WHEN OTHERS THEN
   RAISE NOTICE 'Error en seed MedicalExam: %', SQLERRM;
 END $$;
+-- +goose StatementEnd
 
 -- ----------------------------------------------------------------------------
 -- Seed: hr."MedicalOrder"
 -- ----------------------------------------------------------------------------
+-- +goose StatementBegin
 DO $$
 BEGIN
   RAISE NOTICE '>> Seed: MedicalOrder';
@@ -7841,10 +7867,12 @@ BEGIN
 EXCEPTION WHEN OTHERS THEN
   RAISE NOTICE 'Error en seed MedicalOrder: %', SQLERRM;
 END $$;
+-- +goose StatementEnd
 
 -- ----------------------------------------------------------------------------
 -- Seed: hr."TrainingRecord"
 -- ----------------------------------------------------------------------------
+-- +goose StatementBegin
 DO $$
 BEGIN
   RAISE NOTICE '>> Seed: TrainingRecord';
@@ -7983,10 +8011,12 @@ BEGIN
 EXCEPTION WHEN OTHERS THEN
   RAISE NOTICE 'Error en seed TrainingRecord: %', SQLERRM;
 END $$;
+-- +goose StatementEnd
 
 -- ----------------------------------------------------------------------------
 -- Seed: hr."SafetyCommittee" + hr."SafetyCommitteeMember" + hr."SafetyCommitteeMeeting"
 -- ----------------------------------------------------------------------------
+-- +goose StatementBegin
 DO $$
 DECLARE v_comm1 INT; v_comm2 INT;
 BEGIN
@@ -8087,7 +8117,6 @@ EXCEPTION WHEN OTHERS THEN
 END $$;
 -- +goose StatementEnd
 
--- +goose StatementBegin
 -- Source: includes/sp/create_contabilidad_general.sql
 -- ============================================================
 -- DatqBoxWeb PostgreSQL - create_contabilidad_general.sql
@@ -8295,9 +8324,7 @@ EXCEPTION WHEN OTHERS THEN
     RAISE EXCEPTION 'Error create_contabilidad_general.sql: %', SQLERRM;
 END;
 $body$;
--- +goose StatementEnd
 
--- +goose StatementBegin
 -- Source: includes/sp/create_fiscal_tributaria.sql
 /*
 ================================================================================
@@ -8319,6 +8346,7 @@ $body$;
 ================================================================================
 */
 
+-- +goose StatementBegin
 DO $$
 BEGIN
 
@@ -8607,7 +8635,6 @@ EXCEPTION WHEN OTHERS THEN
 END $$;
 -- +goose StatementEnd
 
--- +goose StatementBegin
 -- Source: 18_fiscal_retenciones_schema.sql
 -- =============================================================================
 -- 18_fiscal_retenciones_schema.sql (PostgreSQL)
@@ -8660,6 +8687,7 @@ CREATE TABLE IF NOT EXISTS fiscal."WithholdingConcept" (
 -- =============================================================================
 -- 3. ALTER master.Supplier — Campos de clasificación fiscal
 -- =============================================================================
+-- +goose StatementBegin
 DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='master' AND table_name='Supplier' AND column_name='SupplierType') THEN
         ALTER TABLE master."Supplier" ADD COLUMN "SupplierType" VARCHAR(20) NOT NULL DEFAULT 'JURIDICA';
@@ -8674,10 +8702,12 @@ DO $$ BEGIN
         ALTER TABLE master."Supplier" ADD COLUMN "CountryCode" CHAR(2) NOT NULL DEFAULT 'VE';
     END IF;
 END $$;
+-- +goose StatementEnd
 
 -- =============================================================================
 -- 4. ALTER ap.PayableApplication — Campos de retención en pagos
 -- =============================================================================
+-- +goose StatementBegin
 DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='ap' AND table_name='PayableApplication' AND column_name='RetentionType') THEN
         ALTER TABLE ap."PayableApplication" ADD COLUMN "RetentionType" VARCHAR(20) NULL;
@@ -8687,6 +8717,7 @@ DO $$ BEGIN
         ALTER TABLE ap."PayableApplication" ADD COLUMN "WithholdingVoucherId" BIGINT NULL;
     END IF;
 END $$;
+-- +goose StatementEnd
 
 -- =============================================================================
 -- 5. hr.EmployeeTaxProfile — Perfil fiscal del empleado (ARI)
@@ -8763,10 +8794,10 @@ WHERE NOT EXISTS (
     SELECT 1 FROM fiscal."WithholdingConcept" WHERE "ConceptCode" = v."ConceptCode" AND "CountryCode" = 'ES'
 );
 
+-- +goose StatementBegin
 DO $$ BEGIN RAISE NOTICE '>>> 18_fiscal_retenciones_schema.sql ejecutado correctamente <<<'; END $$;
 -- +goose StatementEnd
 
--- +goose StatementBegin
 -- Source: includes/sp/create_vacation_request.sql
 -- ============================================================
 -- DatqBoxWeb PostgreSQL - create_vacation_request.sql
@@ -8821,9 +8852,7 @@ CREATE INDEX IF NOT EXISTS "IX_VacationRequestDay_Request"
     ON hr."VacationRequestDay" ("RequestId");
 
 COMMIT;
--- +goose StatementEnd
 
--- +goose StatementBegin
 -- Source: includes/sp/create_supervisor_biometric_credentials.sql
 -- ============================================================
 -- DatqBoxWeb PostgreSQL - create_supervisor_biometric_credentials.sql
@@ -8855,9 +8884,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS "UX_SupervisorBiometricCredential_UserHash"
 
 CREATE INDEX IF NOT EXISTS "IX_SupervisorBiometricCredential_Active"
   ON sec."SupervisorBiometricCredential" ("SupervisorUserCode", "IsActive", "LastValidatedAtUtc" DESC);
--- +goose StatementEnd
 
--- +goose StatementBegin
 -- Source: includes/sp/create_supervisor_override_controls.sql
 -- ============================================================
 -- DatqBoxWeb PostgreSQL - create_supervisor_override_controls.sql
@@ -8896,6 +8923,7 @@ CREATE INDEX IF NOT EXISTS "IX_SupervisorOverride_Source"
 
 -- ── Columnas adicionales en tablas POS ──
 
+-- +goose StatementBegin
 DO $$
 BEGIN
   -- pos.WaitTicketLine
@@ -8948,7 +8976,6 @@ BEGIN
 END $$;
 -- +goose StatementEnd
 
--- +goose StatementBegin
 -- Source: includes/sp/alter_employee_position_company_address.sql
 -- ============================================================
 -- Migración: Campos complementarios en master.Employee y cfg.Company
@@ -8967,18 +8994,14 @@ ALTER TABLE master."Employee"
   ADD COLUMN IF NOT EXISTS "PositionName"   VARCHAR(150) NULL,
   ADD COLUMN IF NOT EXISTS "DepartmentName" VARCHAR(150) NULL,
   ADD COLUMN IF NOT EXISTS "Salary"         DECIMAL(18,2) NULL;
--- +goose StatementEnd
 
--- +goose StatementBegin
 -- Source: run_all.sql
 -- Drop overloads INTEGER de POS que duplican las versiones BIGINT de usp_ops.sql
 DROP FUNCTION IF EXISTS public.usp_pos_saleticket_create(integer, integer, character varying, character varying, character varying, integer, integer, character varying, character varying, character varying, character varying, character varying, text, integer, numeric, numeric, numeric, numeric) CASCADE;
 DROP FUNCTION IF EXISTS public.usp_pos_saleticketline_insert(integer, integer, character varying, integer, character varying, character varying, numeric, numeric, numeric, character varying, numeric, numeric, numeric, numeric, integer, text) CASCADE;
 DROP FUNCTION IF EXISTS public.usp_pos_waitticket_create(integer, integer, character varying, character varying, character varying, integer, integer, character varying, character varying, character varying, character varying, character varying, numeric, numeric, numeric, numeric) CASCADE;
 DROP FUNCTION IF EXISTS public.usp_pos_waitticketline_insert(integer, integer, character varying, integer, character varying, character varying, numeric, numeric, numeric, character varying, numeric, numeric, numeric, numeric, integer, text) CASCADE;
--- +goose StatementEnd
 
--- +goose StatementBegin
 -- Source: 19_sys_tenant_mgmt.sql
 -- 19_sys_tenant_mgmt.sql
 -- Schema sys + tablas de gestión de tenants
@@ -9161,9 +9184,7 @@ UPDATE cfg."Company"
 SET "LicenseKey" = md5('zentto-internal-license-forever')
 WHERE "CompanyCode" = 'ZENTTO'
   AND "LicenseKey" IS NULL;
--- +goose StatementEnd
 
--- +goose StatementBegin
 -- Source: includes/sp/alter_cfg_company_tenant.sql
 -- ============================================================
 -- Multi-tenant: agregar columnas de suscripción a cfg.Company
@@ -9182,9 +9203,7 @@ CREATE INDEX IF NOT EXISTS "IX_cfg_Company_OwnerEmail"
 
 CREATE INDEX IF NOT EXISTS "IX_cfg_Company_TenantStatus"
   ON cfg."Company"("TenantStatus");
--- +goose StatementEnd
 
--- +goose StatementBegin
 -- Source: run_all.sql
 -- ====================================================================
 -- FASE 7: Permisos de aplicacion
@@ -9200,9 +9219,7 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA acct, ap, ar, audit, cfg, doc, fin, fiscal, h
 -- ====================================================================
 -- FASE 7.5: Landing / Leads
 -- ====================================================================
--- +goose StatementEnd
 
--- +goose StatementBegin
 -- Source: run_all.sql
 -- ====================================================================
 -- FASE 8b: Nuclear cleanup — eliminar sobrecargas duplicadas
@@ -9243,7 +9260,6 @@ BEGIN
 END $cleanup$;
 
 -- Re-cargar funciones con tipos correctos (después de limpiar overloads)
--- +goose StatementEnd
 
 -- +goose Down
 -- No rollback para baseline
