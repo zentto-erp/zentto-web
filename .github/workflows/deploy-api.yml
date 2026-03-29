@@ -8,12 +8,8 @@ on:
     paths:
       - 'web/api/**'
       - 'docker/Dockerfile.api'
-      - 'docker-compose.prod.yml'
-      - 'scripts/deploy-db.sh'
-      - 'scripts/goose-entrypoint.sh'
+      # docker-compose, nginx y goose-deploy ahora viven en zentto-infra
       - 'scripts/migrate.sh'
-      - 'scripts/goose-deploy.sh'
-      - 'scripts/goose-deploy-all.sh'
   workflow_dispatch:
 
 concurrency:
@@ -185,7 +181,7 @@ jobs:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "web/api/migrations/postgres,web/api/sqlweb-pg,scripts/goose-deploy.sh,scripts/goose-deploy-all.sh,scripts/hotfix-sec-functions.sql,scripts/debug-sec-function.sql"
+          source: "web/api/migrations/postgres,web/api/sqlweb-pg,scripts/hotfix-sec-functions.sql,scripts/debug-sec-function.sql"
           target: /opt/zentto/_deploy_tmp/
           strip_components: 0
 
@@ -203,11 +199,15 @@ jobs:
             mkdir -p /opt/zentto/migrations/postgres /opt/zentto/sqlweb-pg
             cp -f /opt/zentto/_deploy_tmp/web/api/migrations/postgres/* /opt/zentto/migrations/postgres/
             cp -rf /opt/zentto/_deploy_tmp/web/api/sqlweb-pg/* /opt/zentto/sqlweb-pg/
-            cp -f /opt/zentto/_deploy_tmp/scripts/goose-deploy.sh /opt/zentto/goose-deploy.sh
-            cp -f /opt/zentto/_deploy_tmp/scripts/goose-deploy-all.sh /opt/zentto/goose-deploy-all.sh
+            # goose-deploy scripts vienen de zentto-infra (ya en /opt/zentto-infra/scripts/)
             cp -f /opt/zentto/_deploy_tmp/scripts/hotfix-sec-functions.sql /opt/zentto/hotfix-sec-functions.sql 2>/dev/null || true
             cp -f /opt/zentto/_deploy_tmp/scripts/debug-sec-function.sql /opt/zentto/debug-sec-function.sql 2>/dev/null || true
-            chmod +x /opt/zentto/goose-deploy.sh /opt/zentto/goose-deploy-all.sh
+            # Sincronizar scripts de zentto-infra si existe
+            if [ -d /opt/zentto-infra/scripts ]; then
+              cp -f /opt/zentto-infra/scripts/goose-deploy.sh /opt/zentto/goose-deploy.sh
+              cp -f /opt/zentto-infra/scripts/goose-deploy-all.sh /opt/zentto/goose-deploy-all.sh
+              chmod +x /opt/zentto/goose-deploy.sh /opt/zentto/goose-deploy-all.sh
+            fi
             rm -rf /opt/zentto/_deploy_tmp
             PG_DATABASE="$PG_DATABASE" /opt/zentto/goose-deploy-all.sh
 
@@ -221,13 +221,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: appleboy/scp-action@v0.1.7
+      # docker-compose.prod.yml ahora vive en zentto-infra (ya en /opt/zentto-infra/compose/)
+      # El deploy usa el compose del servidor; si no existe aun, se usa fallback local
+      - uses: appleboy/ssh-action@v1.0.3
+        name: Sync compose from zentto-infra
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: docker-compose.prod.yml
-          target: /opt/zentto/
+          script: |
+            if [ -f /opt/zentto-infra/compose/docker-compose.prod.yml ]; then
+              cp -f /opt/zentto-infra/compose/docker-compose.prod.yml /opt/zentto/docker-compose.prod.yml
+              echo "✓ Compose sincronizado desde zentto-infra"
+            else
+              echo "⚠ zentto-infra no encontrado — usando compose existente"
+            fi
 
       - uses: appleboy/ssh-action@v1.0.3
         env:

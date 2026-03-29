@@ -122,6 +122,67 @@ export async function requireJwt(req: Request, res: Response, next: NextFunction
       return res.status(403).json({ error: "invalid_scope", message: "No hay empresa/sucursal activa para este usuario" });
     }
 
+    // ── Resolver BD del tenant (solo PostgreSQL) ──
+    // Prioridad: subdomain > x-company-id header > JWT default
+    let tenantPool;
+    if ((env.dbType ?? "postgres") === "postgres") {
+      try {
+        const { resolveTenantDb } = await import("../db/tenant-resolver.js");
+        const { getTenantPool, getMasterPool } = await import("../db/pg-pool-manager.js");
+
+        // Si viene de un subdomain de tenant, forzar ese CompanyId
+        const subdomainCompanyId = (req as any)._tenantCompanyId as number | undefined;
+        if (subdomainCompanyId) {
+          // SEGURIDAD: el usuario debe tener acceso a este tenant
+          const accesses = (payload.companyAccesses ?? []);
+          const hasAccess = accesses.some((a) => Number(a.companyId) === subdomainCompanyId);
+          if (!hasAccess) {
+            return res.status(403).json({
+              error: "tenant_mismatch",
+              message: "Tu cuenta no tiene acceso a este tenant",
+            });
+          }
+          // Forzar scope al tenant del subdomain
+          const tenantAccess = accesses.find((a) => Number(a.companyId) === subdomainCompanyId);
+          if (tenantAccess) {
+            const tenantScope = toScope(tenantAccess);
+            scope.companyId = tenantScope.companyId;
+            scope.branchId = tenantScope.branchId;
+            scope.companyCode = tenantScope.companyCode;
+            scope.companyName = tenantScope.companyName;
+            scope.branchCode = tenantScope.branchCode;
+            scope.branchName = tenantScope.branchName;
+            scope.countryCode = tenantScope.countryCode;
+            scope.timeZone = tenantScope.timeZone;
+          }
+        }
+
+        // x-db-mode: demo solo permitido desde dominios conocidos (NO desde subdomains de tenant)
+        const dbMode = req.headers["x-db-mode"] as string | undefined;
+        const isTenantSubdomain = !!(req as any)._isTenantSubdomain;
+
+        if (dbMode === "demo" && !isTenantSubdomain) {
+          tenantPool = getMasterPool();
+          scope.dbName = process.env.PG_DATABASE || "zentto_prod";
+          scope.isDemo = true;
+        } else {
+          const tenantDb = await resolveTenantDb(scope.companyId, isTenantSubdomain);
+          tenantPool = getTenantPool(tenantDb);
+          scope.dbName = tenantDb.dbName;
+          scope.isDemo = tenantDb.isDemo ?? false;
+        }
+      } catch (err) {
+        const isTenantSubdomain = !!(req as any)._isTenantSubdomain;
+        if (isTenantSubdomain) {
+          // SEGURIDAD: si es un subdomain de tenant y falla la resolución, rechazar
+          console.error("[auth] Tenant resolver failed for subdomain:", (err as Error).message);
+          return res.status(503).json({ error: "tenant_unavailable", message: "Base de datos del tenant no disponible" });
+        }
+        console.warn("[auth] Tenant resolver not available, using default pool:", (err as Error).message);
+      }
+    }
+
+    // Construir scopedUser DESPUÉS de resolver tenant (scope puede haber cambiado)
     const scopedUser: JwtPayload = {
       ...payload,
       companyId: scope.companyId,
@@ -136,30 +197,6 @@ export async function requireJwt(req: Request, res: Response, next: NextFunction
 
     (req as AuthenticatedRequest).user = scopedUser;
     (req as AuthenticatedRequest).scope = scope;
-
-    // Resolver BD del tenant (solo PostgreSQL, imports lazy para evitar crash en carga)
-    let tenantPool;
-    if ((env.dbType ?? "postgres") === "postgres") {
-      try {
-        const { resolveTenantDb } = await import("../db/tenant-resolver.js");
-        const { getTenantPool, getMasterPool } = await import("../db/pg-pool-manager.js");
-
-        const dbMode = req.headers["x-db-mode"] as string | undefined;
-        if (dbMode === "demo") {
-          tenantPool = getMasterPool();
-          scope.dbName = process.env.PG_DATABASE || "zentto_prod";
-          scope.isDemo = true;
-        } else {
-          const tenantDb = await resolveTenantDb(scope.companyId);
-          tenantPool = getTenantPool(tenantDb);
-          scope.dbName = tenantDb.dbName;
-          scope.isDemo = tenantDb.isDemo ?? false;
-        }
-      } catch (err) {
-        // Si el tenant resolver no está disponible (tabla no creada aún), seguir sin tenant pool
-        console.warn("[auth] Tenant resolver not available, using default pool:", (err as Error).message);
-      }
-    }
 
     return runWithRequestContext({ user: scopedUser, scope, tenantPool }, () => next());
   } catch {

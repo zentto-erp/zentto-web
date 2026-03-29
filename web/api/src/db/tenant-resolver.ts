@@ -18,9 +18,15 @@ const TTL_MS = 5 * 60 * 1000; // 5 minutos
 
 /**
  * Resuelve la config de BD para un CompanyId.
- * Fallback: BD demo si el tenant no tiene BD propia.
+ *
+ * @param companyId - ID de la empresa
+ * @param strictMode - Si true (subdomains de tenant), NUNCA cae a BD demo.
+ *                     Si false (dominios conocidos), fallback a BD demo si no hay tenant.
  */
-export async function resolveTenantDb(companyId: number): Promise<TenantDbConfig> {
+export async function resolveTenantDb(
+  companyId: number,
+  strictMode: boolean = false,
+): Promise<TenantDbConfig> {
   // Check cache
   const cached = cache.get(companyId);
   if (cached && cached.expiresAt > Date.now()) return cached.config;
@@ -47,12 +53,21 @@ export async function resolveTenantDb(companyId: number): Promise<TenantDbConfig
       cache.set(companyId, { config, expiresAt: Date.now() + TTL_MS });
       return config;
     }
-  } catch {
+  } catch (err) {
+    if (strictMode) {
+      // SEGURIDAD: en modo estricto (subdomain de tenant), NO silenciar errores
+      throw new Error(`Tenant DB not found for companyId ${companyId}: ${(err as Error).message}`);
+    }
     // Si la tabla sys.TenantDatabase no existe aún (pre-migración),
-    // o hay error de conexión, fallback silencioso a master
+    // fallback silencioso a master solo para dominios conocidos
   }
 
-  // Fallback: BD master (demo)
+  // strictMode: NUNCA caer a BD demo
+  if (strictMode) {
+    throw new Error(`No tenant database registered for companyId ${companyId}`);
+  }
+
+  // Fallback: BD master (demo) — solo para dominios conocidos (app.zentto.net)
   const masterPool = getMasterPool();
   const fallback: TenantDbConfig = {
     dbName: (masterPool as any).options?.database || process.env.PG_DATABASE || "zentto_prod",

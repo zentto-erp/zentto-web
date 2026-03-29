@@ -31,11 +31,28 @@ function TenantGuard({ children }: { children: React.ReactNode }) {
     if (typeof window === 'undefined') return;
     const host = window.location.hostname;
     const isSubdomain = host.endsWith('.zentto.net') && !ZENTTO_DOMAINS.has(host);
-    if (!isSubdomain) { setOk(true); return; }
+
+    if (!isSubdomain) {
+      // Dominio conocido: limpiar tenant data previo
+      localStorage.removeItem('zentto-tenant');
+      setOk(true);
+      return;
+    }
+
     const subdomain = host.replace('.zentto.net', '');
     fetch(`${API_BASE}/api/tenants/resolve/${subdomain}`)
       .then(r => {
         if (!r.ok) { window.location.href = 'https://zentto.net'; return; }
+        return r.json();
+      })
+      .then(data => {
+        if (!data) return;
+        // Almacenar tenant resuelto para que authHeader() lo envíe
+        localStorage.setItem('zentto-tenant', JSON.stringify({
+          companyId: data.CompanyId,
+          slug: subdomain,
+          name: data.LegalName || data.CompanyCode || subdomain,
+        }));
         setOk(true);
       })
       .catch(() => { window.location.href = 'https://zentto.net'; });
