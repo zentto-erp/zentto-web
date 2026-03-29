@@ -380,10 +380,10 @@ backofficeRouter.get("/dashboard", async (_req, res) => {
     const SUPPORT_REPO = 'zentto-erp/zentto-support';
 
     const [tenantRows, cleanupRows, resourceRows, revenueRows, openIssuesRes, closedIssuesRes] = await Promise.all([
-      callSp<DashboardTenantRow>("usp_Sys_Backoffice_TenantList", { Page: 1, PageSize: 1, Status: null, Plan: null, Search: null }),
-      callSp<DashboardCleanupRow>("usp_Sys_Cleanup_List", { Status: 'PENDING' }),
-      callSp<DashboardResourceRow>("usp_Sys_Cleanup_List", { Status: null }),
-      callSp<RevenueRow>("usp_Sys_Backoffice_RevenueMetrics", {}),
+      callSp<DashboardTenantRow>("usp_Sys_Backoffice_TenantList", { Page: 1, PageSize: 1, Status: null, Plan: null, Search: null }).catch(() => [] as DashboardTenantRow[]),
+      callSp<DashboardCleanupRow>("usp_Sys_Cleanup_List", { Status: 'PENDING' }).catch(() => [] as DashboardCleanupRow[]),
+      callSp<DashboardResourceRow>("usp_Sys_Cleanup_List", { Status: null }).catch(() => [] as DashboardResourceRow[]),
+      callSp<RevenueRow>("usp_Sys_Backoffice_RevenueMetrics", {}).catch(() => [] as RevenueRow[]),
       // Support stats from GitHub
       fetch(`https://api.github.com/repos/${SUPPORT_REPO}/issues?state=open&per_page=100`, {
         headers: { Authorization: `Bearer ${GITHUB_TOKEN}`, Accept: 'application/vnd.github+json' },
@@ -407,11 +407,11 @@ backofficeRouter.get("/dashboard", async (_req, res) => {
     res.json({
       ok: true,
       data: {
-        tenantCount,
-        trialCount,
-        cleanupPending,
-        totalDbSizeMB,
-        estimatedMRR,
+        TotalTenants: tenantCount,
+        TrialCount: trialCount,
+        CleanupPending: cleanupPending,
+        TotalDbMB: totalDbSizeMB,
+        MRR: estimatedMRR,
         // Support stats
         TicketsOpen: openIssues.length,
         TicketsClosed: closedIssues.length,
