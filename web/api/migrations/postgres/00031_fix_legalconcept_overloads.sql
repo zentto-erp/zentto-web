@@ -1,9 +1,10 @@
 -- +goose Up
+
+-- +goose StatementBegin
 -- Fix: DROP ALL overloads of usp_hr_legalconcept_list to avoid "function is not unique"
 -- The pg driver sends all params as 'unknown' type, so PG can't pick which overload to use.
 
 -- Nuclear drop: query pg_proc to find ALL overloads and drop them
--- +goose StatementBegin
 DO $$
 DECLARE
   _oid OID;
@@ -18,7 +19,6 @@ BEGIN
     EXECUTE format('DROP FUNCTION IF EXISTS %s CASCADE', _oid::regprocedure);
   END LOOP;
 END $$;
--- +goose StatementEnd
 
 -- Recreate single canonical version
 CREATE OR REPLACE FUNCTION public.usp_hr_legalconcept_list(
@@ -43,7 +43,6 @@ RETURNS TABLE(
     "orden"         INT,
     "activo"        BOOLEAN
 )
--- +goose StatementBegin
 LANGUAGE plpgsql AS $fn$
 BEGIN
     RETURN QUERY
@@ -71,6 +70,7 @@ BEGIN
     ORDER BY c."ConventionCode", c."CalculationType", c."SortOrder", c."ConceptCode";
 END;
 $fn$;
+
 -- +goose StatementEnd
 
 -- +goose Down

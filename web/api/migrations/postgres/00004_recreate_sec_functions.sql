@@ -1,4 +1,6 @@
 -- +goose Up
+
+-- +goose StatementBegin
 -- Recrear funciones sec que dependen de columnas aÃƒÂ±adidas en 00003.
 -- Las funciones existentes pueden estar "rotas" si fueron compiladas
 -- antes de que las columnas existieran.
@@ -10,7 +12,6 @@ RETURNS TABLE(
   "companyId" INT, "companyCode" VARCHAR, "companyName" VARCHAR,
   "branchId" INT, "branchCode" VARCHAR, "branchName" VARCHAR,
   "countryCode" VARCHAR, "timeZone" VARCHAR, "isDefault" BOOLEAN
--- +goose StatementBegin
 ) LANGUAGE plpgsql AS $$
 BEGIN
   RETURN QUERY
@@ -49,7 +50,6 @@ BEGIN
     c."CompanyId", b."BranchId";
 END;
 $$;
--- +goose StatementEnd
 
 -- Recrear usp_sec_user_listcompanyaccesses_default (versiÃƒÂ³n sin parÃƒÂ¡metro)
 DROP FUNCTION IF EXISTS public.usp_sec_user_listcompanyaccesses_default();
@@ -58,7 +58,6 @@ RETURNS TABLE(
   "companyId" INT, "companyCode" VARCHAR, "companyName" VARCHAR,
   "branchId" INT, "branchCode" VARCHAR, "branchName" VARCHAR,
   "countryCode" VARCHAR, "timeZone" VARCHAR, "isDefault" BOOLEAN
--- +goose StatementBegin
 ) LANGUAGE plpgsql AS $$
 BEGIN
   RETURN QUERY
@@ -92,6 +91,7 @@ BEGIN
   ORDER BY c."CompanyId", b."BranchId";
 END;
 $$;
+
 -- +goose StatementEnd
 
 -- +goose Down

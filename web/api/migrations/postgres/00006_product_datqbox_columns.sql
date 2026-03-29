@@ -1,7 +1,8 @@
 -- +goose Up
--- Add DatqBox legacy columns + Descripcion to master.Product
 
 -- +goose StatementBegin
+-- Add DatqBox legacy columns + Descripcion to master.Product
+
 DO $$
 BEGIN
   -- Clasificacion
@@ -90,6 +91,7 @@ BEGIN
   END IF;
 END
 $$;
+
 -- +goose StatementEnd
 
 -- +goose Down
