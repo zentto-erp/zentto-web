@@ -1,5 +1,5 @@
 # ─────────────────────────────────────────────────────────────────────
-#  Deploy Frontend → DEV environment (app.dev.zentto.net)
+#  Deploy Frontend → DEV environment (appdev.zentto.net)
 #
 #  Trigger: push to developer branch (web/modular-frontend/**)
 #  Target: Same Hetzner server, separate containers + ports
@@ -55,11 +55,11 @@ jobs:
           cache-from: type=gha,scope=frontend-dev
           cache-to: type=gha,mode=max,scope=frontend-dev
           build-args: |
-            NEXT_PUBLIC_API_BASE_URL=https://api.dev.zentto.net
-            NEXT_PUBLIC_API_BASE=https://api.dev.zentto.net
-            NEXT_PUBLIC_API_URL=https://api.dev.zentto.net
-            NEXT_PUBLIC_BACKEND_URL=https://api.dev.zentto.net
-            NEXT_PUBLIC_SHELL_URL=https://app.dev.zentto.net
+            NEXT_PUBLIC_API_BASE_URL=https://apidev.zentto.net
+            NEXT_PUBLIC_API_BASE=https://apidev.zentto.net
+            NEXT_PUBLIC_API_URL=https://apidev.zentto.net
+            NEXT_PUBLIC_BACKEND_URL=https://apidev.zentto.net
+            NEXT_PUBLIC_SHELL_URL=https://appdev.zentto.net
             NEXT_PUBLIC_TURNSTILE_SITE_KEY=0x4AAAAAACsUe-s-UNo9WDiI
             NEXT_PUBLIC_PADDLE_CLIENT_TOKEN=live_8c250213a8ec06eb59974f48296
 
@@ -94,7 +94,7 @@ jobs:
             chmod 600 /opt/zentto-dev/.env.frontend
 
             # Override URLs for dev
-            sed -i 's|^NEXTAUTH_URL=.*|NEXTAUTH_URL=https://app.dev.zentto.net|' /opt/zentto-dev/.env.frontend
+            sed -i 's|^NEXTAUTH_URL=.*|NEXTAUTH_URL=https://appdev.zentto.net|' /opt/zentto-dev/.env.frontend
             sed -i 's|^BACKEND_URL=.*|BACKEND_URL=http://zentto-api-dev:4000|' /opt/zentto-dev/.env.frontend
             sed -i 's|^API_URL=.*|API_URL=http://zentto-api-dev:4000|' /opt/zentto-dev/.env.frontend
 
@@ -125,6 +125,6 @@ jobs:
               ln -sf /etc/nginx/sites-available/zentto-dev.conf /etc/nginx/sites-enabled/zentto-dev.conf
               nginx -t && systemctl reload nginx
             fi
-            echo "✅ Frontend DEV deployed → app.dev.zentto.net"
+            echo "✅ Frontend DEV deployed → appdev.zentto.net"
 
   # set-private omitido — el pre-push hook y los workflows de prod manejan la visibilidad

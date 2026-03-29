@@ -1,5 +1,5 @@
 # ─────────────────────────────────────────────────────────────────────
-#  Deploy API → DEV environment (api.dev.zentto.net)
+#  Deploy API → DEV environment (apidev.zentto.net)
 #
 #  Trigger: push to developer branch (web/api/**)
 #  Target: Same Hetzner server, separate containers + DB + ports
@@ -335,9 +335,9 @@ jobs:
             # Override only what differs for dev
             sed -i 's|^PG_DATABASE=.*|PG_DATABASE=zentto_dev|' /opt/zentto-dev/.env.api
             sed -i 's|^NODE_ENV=.*|NODE_ENV=development|' /opt/zentto-dev/.env.api
-            sed -i 's|^CORS_ORIGINS=.*|CORS_ORIGINS=https://dev.zentto.net,https://app.dev.zentto.net|' /opt/zentto-dev/.env.api
-            sed -i 's|^AUTH_PUBLIC_URL=.*|AUTH_PUBLIC_URL=https://dev.zentto.net|' /opt/zentto-dev/.env.api
-            sed -i 's|^STORE_URL=.*|STORE_URL=https://app.dev.zentto.net|' /opt/zentto-dev/.env.api
+            sed -i 's|^CORS_ORIGINS=.*|CORS_ORIGINS=https://appdev.zentto.net,https://appdev.zentto.net|' /opt/zentto-dev/.env.api
+            sed -i 's|^AUTH_PUBLIC_URL=.*|AUTH_PUBLIC_URL=https://appdev.zentto.net|' /opt/zentto-dev/.env.api
+            sed -i 's|^STORE_URL=.*|STORE_URL=https://appdev.zentto.net|' /opt/zentto-dev/.env.api
 
             # Dev-friendly auth settings
             sed -i 's|^AUTH_REQUIRE_EMAIL_VERIFICATION=.*|AUTH_REQUIRE_EMAIL_VERIFICATION=false|' /opt/zentto-dev/.env.api
@@ -377,6 +377,6 @@ jobs:
             ln -sf /etc/nginx/sites-available/zentto-dev.conf /etc/nginx/sites-enabled/zentto-dev.conf
             nginx -t && systemctl reload nginx
 
-            echo "✅ API DEV deployed → api.dev.zentto.net (espejo de prod con BD zentto_dev)"
+            echo "✅ API DEV deployed → apidev.zentto.net (espejo de prod con BD zentto_dev)"
 
   # set-private omitido — los workflows de prod manejan la visibilidad del repo
