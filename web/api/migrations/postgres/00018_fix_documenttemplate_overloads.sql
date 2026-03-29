@@ -1,5 +1,4 @@
 -- +goose Up
--- +goose StatementBegin
 -- Fix: Eliminar TODAS las sobrecargas de funciones DocumentTemplate
 -- que causan "function is not unique" en cada deploy.
 --
@@ -8,6 +7,7 @@
 -- las creaban con (INT, VARCHAR, VARCHAR). Ambas coexistÃ­an como
 -- sobrecargas separadas, y callSp no podÃ­a resolver cuÃ¡l usar.
 
+-- +goose StatementBegin
 DO $do$
 DECLARE _oid OID;
 BEGIN
@@ -23,6 +23,7 @@ BEGIN
     EXECUTE format('DROP FUNCTION IF EXISTS %s CASCADE', _oid::regprocedure);
   END LOOP;
 END $do$;
+-- +goose StatementEnd
 
 -- Recrear con firma canÃ³nica: VARCHAR sin tamaÃ±o, BIGINT para IDs, TIMESTAMP sin precisiÃ³n
 CREATE OR REPLACE FUNCTION public.usp_hr_documenttemplate_list(
@@ -33,6 +34,7 @@ RETURNS TABLE(
     "TemplateType" VARCHAR, "CountryCode" VARCHAR, "PayrollCode" VARCHAR,
     "IsDefault" BOOLEAN, "IsSystem" BOOLEAN, "IsActive" BOOLEAN, "UpdatedAt" TIMESTAMP
 )
+-- +goose StatementBegin
 LANGUAGE plpgsql AS $fn$
 BEGIN
     RETURN QUERY
@@ -46,6 +48,7 @@ BEGIN
     ORDER BY t."CountryCode", t."TemplateType", t."TemplateName";
 END;
 $fn$;
+-- +goose StatementEnd
 
 CREATE OR REPLACE FUNCTION public.usp_hr_documenttemplate_get(
     p_company_id INT, p_template_code VARCHAR
@@ -56,6 +59,7 @@ RETURNS TABLE(
     "ContentMD" TEXT, "IsDefault" BOOLEAN, "IsSystem" BOOLEAN, "IsActive" BOOLEAN,
     "CreatedAt" TIMESTAMP, "UpdatedAt" TIMESTAMP
 )
+-- +goose StatementBegin
 LANGUAGE plpgsql AS $fn$
 BEGIN
     RETURN QUERY
@@ -67,6 +71,7 @@ BEGIN
     WHERE t."CompanyId" = p_company_id AND t."TemplateCode" = p_template_code;
 END;
 $fn$;
+-- +goose StatementEnd
 
 CREATE OR REPLACE FUNCTION public.usp_hr_documenttemplate_save(
     p_company_id INT, p_template_code VARCHAR, p_template_name VARCHAR,
@@ -74,6 +79,7 @@ CREATE OR REPLACE FUNCTION public.usp_hr_documenttemplate_save(
     p_payroll_code VARCHAR DEFAULT NULL, p_is_default BOOLEAN DEFAULT FALSE,
     OUT p_resultado INT, OUT p_mensaje TEXT
 )
+-- +goose StatementBegin
 LANGUAGE plpgsql AS $fn$
 BEGIN
     p_resultado := 0; p_mensaje := ''::VARCHAR;
@@ -98,11 +104,13 @@ BEGIN
     p_resultado := 1; p_mensaje := 'Plantilla guardada correctamente.'::VARCHAR;
 END;
 $fn$;
+-- +goose StatementEnd
 
 CREATE OR REPLACE FUNCTION public.usp_hr_documenttemplate_delete(
     p_company_id INT, p_template_code VARCHAR,
     OUT p_resultado INT, OUT p_mensaje TEXT
 )
+-- +goose StatementBegin
 LANGUAGE plpgsql AS $fn$
 BEGIN
     p_resultado := 0; p_mensaje := ''::VARCHAR;

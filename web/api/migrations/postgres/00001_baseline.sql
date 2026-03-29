@@ -4155,6 +4155,7 @@ BEGIN
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
+-- +goose StatementEnd
 
 DROP TRIGGER IF EXISTS "TR_inv_ProductBinStock_Available" ON inv."ProductBinStock";
 CREATE TRIGGER "TR_inv_ProductBinStock_Available"
@@ -4269,6 +4270,7 @@ CREATE INDEX IF NOT EXISTS "IX_inv_StockMovement_Type"
 
 COMMIT;
 
+-- +goose StatementBegin
 DO $$ BEGIN RAISE NOTICE '>>> 09_inventory_advanced.sql ejecutado correctamente <<<'; END $$;
 -- +goose StatementEnd
 
@@ -5567,15 +5569,18 @@ BEGIN
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
+-- +goose StatementEnd
 
 -- Funcion reutilizable para auto-actualizar UpdatedAt
 CREATE OR REPLACE FUNCTION trg_set_updated_at()
+-- +goose StatementBegin
 RETURNS TRIGGER AS $$
 BEGIN
     NEW."UpdatedAt" := NOW() AT TIME ZONE 'UTC';
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
+-- +goose StatementEnd
 
 -- ============================================================
 -- sec."User"
@@ -5848,6 +5853,7 @@ ALTER TABLE master."Product" ADD COLUMN IF NOT EXISTS "SearchVector" TSVECTOR;
 
 -- Trigger para actualizar SearchVector automaticamente
 CREATE OR REPLACE FUNCTION trg_product_search_vector()
+-- +goose StatementBegin
 RETURNS TRIGGER AS $$
 BEGIN
     NEW."SearchVector" :=
@@ -5858,6 +5864,7 @@ BEGIN
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
+-- +goose StatementEnd
 
 DROP TRIGGER IF EXISTS "trg_master_Product_search" ON master."Product";
 CREATE TRIGGER "trg_master_Product_search"
@@ -6401,6 +6408,7 @@ CREATE TABLE IF NOT EXISTS master."AlternateStock" (
   Seed data: categorias para VE y ES
 */
 
+-- +goose StatementBegin
 DO $$
 DECLARE
   v_seed_company_id INT;
@@ -8125,6 +8133,7 @@ END $$;
 -- y centros de costo iniciales.
 -- ============================================================
 
+-- +goose StatementBegin
 DO $body$
 BEGIN
 
@@ -8324,6 +8333,7 @@ EXCEPTION WHEN OTHERS THEN
     RAISE EXCEPTION 'Error create_contabilidad_general.sql: %', SQLERRM;
 END;
 $body$;
+-- +goose StatementEnd
 
 -- Source: includes/sp/create_fiscal_tributaria.sql
 /*
@@ -9226,6 +9236,7 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA acct, ap, ar, audit, cfg, doc, fin, fiscal, h
 -- Igual que run-functions.sql: borra todos los overloads de usp_* que
 -- tengan >1 version, para que el estado final sea limpio.
 -- ====================================================================
+-- +goose StatementBegin
 DO $cleanup$
 DECLARE
   _func_name TEXT;
@@ -9258,6 +9269,7 @@ BEGIN
     RAISE NOTICE 'No duplicate overloads found';
   END IF;
 END $cleanup$;
+-- +goose StatementEnd
 
 -- Re-cargar funciones con tipos correctos (después de limpiar overloads)
 

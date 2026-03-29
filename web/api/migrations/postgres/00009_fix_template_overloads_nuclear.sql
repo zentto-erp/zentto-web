@@ -1,7 +1,7 @@
 -- +goose Up
--- +goose StatementBegin
 -- Nuclear drop ALL overloads of document template functions to prevent "not unique" errors
 
+-- +goose StatementBegin
 DO $do$
 DECLARE _oid OID;
 BEGIN
@@ -14,6 +14,7 @@ BEGIN
     EXECUTE format('DROP FUNCTION IF EXISTS %s CASCADE', _oid::regprocedure);
   END LOOP;
 END $do$;
+-- +goose StatementEnd
 
 -- Recreate with correct types
 CREATE OR REPLACE FUNCTION public.usp_hr_documenttemplate_list(
@@ -24,6 +25,7 @@ RETURNS TABLE(
     "TemplateType" VARCHAR, "CountryCode" VARCHAR, "PayrollCode" VARCHAR,
     "IsDefault" BOOLEAN, "IsSystem" BOOLEAN, "IsActive" BOOLEAN, "UpdatedAt" TIMESTAMP
 )
+-- +goose StatementBegin
 LANGUAGE plpgsql AS $fn$
 BEGIN
     RETURN QUERY
@@ -37,6 +39,7 @@ BEGIN
     ORDER BY t."CountryCode", t."TemplateType", t."TemplateName";
 END;
 $fn$;
+-- +goose StatementEnd
 
 CREATE OR REPLACE FUNCTION public.usp_hr_documenttemplate_get(
     p_company_id INT, p_template_code VARCHAR
@@ -47,6 +50,7 @@ RETURNS TABLE(
     "ContentMD" TEXT, "IsDefault" BOOLEAN, "IsSystem" BOOLEAN, "IsActive" BOOLEAN,
     "CreatedAt" TIMESTAMP, "UpdatedAt" TIMESTAMP
 )
+-- +goose StatementBegin
 LANGUAGE plpgsql AS $fn$
 BEGIN
     RETURN QUERY
@@ -57,6 +61,7 @@ BEGIN
     WHERE t."CompanyId" = p_company_id AND t."TemplateCode" = p_template_code;
 END;
 $fn$;
+-- +goose StatementEnd
 
 CREATE OR REPLACE FUNCTION public.usp_hr_documenttemplate_save(
     p_company_id INT, p_template_code VARCHAR, p_template_name VARCHAR,
@@ -64,6 +69,7 @@ CREATE OR REPLACE FUNCTION public.usp_hr_documenttemplate_save(
     p_payroll_code VARCHAR DEFAULT NULL, p_is_default BOOLEAN DEFAULT FALSE,
     OUT p_resultado INT, OUT p_mensaje TEXT
 )
+-- +goose StatementBegin
 LANGUAGE plpgsql AS $fn$
 BEGIN
     p_resultado := 0; p_mensaje := '';
