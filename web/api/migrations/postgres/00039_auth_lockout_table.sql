@@ -6,12 +6,12 @@
 CREATE TABLE IF NOT EXISTS zsys."SecLoginSecurity" (
   "UserCode"         VARCHAR(50) NOT NULL,
   "FailedAttempts"   INT NOT NULL DEFAULT 0,
-  "LockoutUntilUtc"  TIMESTAMPTZ NULL,
-  "LastFailedAtUtc"  TIMESTAMPTZ NULL,
-  "LastSuccessAtUtc"  TIMESTAMPTZ NULL,
+  "LockoutUntilUtc"  TIMESTAMP NULL,
+  "LastFailedAtUtc"  TIMESTAMP NULL,
+  "LastSuccessAtUtc"  TIMESTAMP NULL,
   "LastFailedIp"     VARCHAR(45) NULL,
-  "CreatedAtUtc"     TIMESTAMPTZ NOT NULL DEFAULT (NOW() AT TIME ZONE 'UTC'),
-  "UpdatedAtUtc"     TIMESTAMPTZ NOT NULL DEFAULT (NOW() AT TIME ZONE 'UTC'),
+  "CreatedAtUtc"     TIMESTAMP NOT NULL DEFAULT (NOW() AT TIME ZONE 'UTC'),
+  "UpdatedAtUtc"     TIMESTAMP NOT NULL DEFAULT (NOW() AT TIME ZONE 'UTC'),
   CONSTRAINT "PK_SecLoginSecurity" PRIMARY KEY ("UserCode")
 );
 
@@ -23,13 +23,13 @@ CREATE OR REPLACE FUNCTION zsys."usp_Sec_Auth_GetLoginSecurityState"(
 )
 RETURNS TABLE(
   "IsRegistrationPending" BOOLEAN,
-  "EmailVerifiedAtUtc" TIMESTAMPTZ,
-  "LockoutUntilUtc" TIMESTAMPTZ
+  "EmailVerifiedAtUtc" TIMESTAMP,
+  "LockoutUntilUtc" TIMESTAMP
 ) AS $$
 DECLARE
-  v_lockout TIMESTAMPTZ;
+  v_lockout TIMESTAMP;
   v_pending BOOLEAN := FALSE;
-  v_verified TIMESTAMPTZ;
+  v_verified TIMESTAMP;
 BEGIN
   -- Check lockout
   SELECT s."LockoutUntilUtc" INTO v_lockout
