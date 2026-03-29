@@ -150,18 +150,21 @@ export default function ReportesContablesPage() {
         <TabPanel value={tab} index={1}>
           {!run ? <Alert severity="info">Seleccione rango de fechas y presione &quot;Generar&quot;</Alert>
           : libroMayor.isLoading ? <Box display="flex" justifyContent="center" p={4}><CircularProgress /></Box>
+          : libroMayor.error ? <Alert severity="error">Error al cargar libro mayor</Alert>
           : <zentto-grid ref={mayorGridRef} default-currency="VES" export-filename="libro-mayor" height="100%" show-totals
               enable-toolbar enable-header-menu enable-header-filters enable-clipboard enable-quick-search enable-context-menu enable-status-bar enable-configurator></zentto-grid>}
         </TabPanel>
         <TabPanel value={tab} index={2}>
           {!run ? <Alert severity="info">Seleccione rango de fechas y presione &quot;Generar&quot;</Alert>
           : balance.isLoading ? <Box display="flex" justifyContent="center" p={4}><CircularProgress /></Box>
+          : balance.error ? <Alert severity="error">Error al cargar balance de comprobacion</Alert>
           : <zentto-grid ref={balanceGridRef} default-currency="VES" export-filename="balance-comprobacion" height="100%" show-totals
               enable-toolbar enable-header-menu enable-header-filters enable-clipboard enable-quick-search enable-context-menu enable-status-bar enable-configurator></zentto-grid>}
         </TabPanel>
         <TabPanel value={tab} index={3}>
           {!run ? <Alert severity="info">Seleccione rango de fechas y presione &quot;Generar&quot;</Alert>
           : resultado.isLoading ? <Box display="flex" justifyContent="center" p={4}><CircularProgress /></Box>
+          : resultado.error ? <Alert severity="error">Error al cargar estado de resultados</Alert>
           : resultado.data ? (
             <Box p={2} sx={{ overflow: "auto" }}>
               <SectionHeader title="INGRESOS" total={resultado.data.resumen?.ingresos} />
@@ -192,6 +195,7 @@ export default function ReportesContablesPage() {
         <TabPanel value={tab} index={4}>
           {!run ? <Alert severity="info">Seleccione fecha de corte y presione &quot;Generar&quot;</Alert>
           : balanceGral.isLoading ? <Box display="flex" justifyContent="center" p={4}><CircularProgress /></Box>
+          : balanceGral.error ? <Alert severity="error">Error al cargar balance general</Alert>
           : balanceGral.data ? (
             <Box p={2} sx={{ overflow: "auto" }}>
               {["A","P","C"].map((tipo, secIdx) => {
