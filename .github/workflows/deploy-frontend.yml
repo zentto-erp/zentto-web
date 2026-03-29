@@ -9,8 +9,7 @@ on:
       - 'web/modular-frontend/**'
       - 'docker/Dockerfile.frontend'
       - 'docker/pm2.config.cjs'
-      - 'docker-compose.prod.yml'
-      - 'nginx/zentto.conf'
+      # docker-compose.prod.yml y nginx/zentto.conf ahora viven en zentto-infra
   workflow_dispatch:
 
 concurrency:
@@ -96,12 +95,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # docker-compose y nginx ahora viven en zentto-infra
+      # Solo copiamos pm2.config.cjs (ligado al codigo de la app)
       - uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: docker-compose.prod.yml,nginx/zentto.conf,docker/pm2.config.cjs
+          source: docker/pm2.config.cjs
           target: /opt/zentto/
 
       - uses: appleboy/ssh-action@v1.0.3
@@ -125,14 +126,20 @@ jobs:
                 || echo "AUTH_SECRET=$AUTH_SECRET" >> "$ENV_FE"
               echo "✓ AUTH_SECRET sincronizado"
             fi
+            # Sincronizar compose y nginx desde zentto-infra
+            if [ -f /opt/zentto-infra/compose/docker-compose.prod.yml ]; then
+              cp -f /opt/zentto-infra/compose/docker-compose.prod.yml /opt/zentto/docker-compose.prod.yml
+            fi
             echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
             docker compose -f docker-compose.prod.yml pull frontend
             docker compose -f docker-compose.prod.yml up -d --no-deps frontend
             docker image prune -f
-            if [ -f /opt/zentto/nginx/zentto.conf ]; then
-              cp /opt/zentto/nginx/zentto.conf /etc/nginx/sites-available/zentto.conf 2>/dev/null || true
+            # Nginx config viene de zentto-infra
+            if [ -f /opt/zentto-infra/nginx/zentto.conf ]; then
+              cp -f /opt/zentto-infra/nginx/zentto.conf /etc/nginx/sites-available/zentto.conf
+              cp -f /opt/zentto-infra/nginx/zentto-proxy.conf /etc/nginx/zentto-proxy.conf 2>/dev/null || true
               nginx -t && systemctl reload nginx 2>/dev/null || true
-              echo "✓ Nginx config actualizada"
+              echo "✓ Nginx config actualizada desde zentto-infra"
             fi
             echo "✓ Frontend desplegado: $(date -u)"
 

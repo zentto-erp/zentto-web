@@ -20,12 +20,13 @@ const runtimeEnv = {
   AUTH_TRUST_HOST: process.env.AUTH_TRUST_HOST || 'true',
 };
 
-// Shell-specific: hereda AUTH_SECRET, AUTH_TRUST_HOST, NEXTAUTH_URL del contenedor
+// Shell-specific: hereda AUTH_SECRET, AUTH_TRUST_HOST del contenedor
+// NEXTAUTH_URL eliminado: AUTH_TRUST_HOST=true permite que NextAuth infiera
+// la URL del Host header (necesario para multi-tenant *.zentto.net)
 const shellEnv = {
   ...runtimeEnv,
   AUTH_SECRET: process.env.AUTH_SECRET,
-  AUTH_TRUST_HOST: process.env.AUTH_TRUST_HOST || 'true',
-  NEXTAUTH_URL: process.env.NEXTAUTH_URL || 'https://zentto.net',
+  AUTH_TRUST_HOST: 'true',
 };
 
 module.exports = {
