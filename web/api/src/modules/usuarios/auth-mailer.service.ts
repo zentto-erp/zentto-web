@@ -1,26 +1,24 @@
+import { createTransport, type Transporter } from "nodemailer";
+
 type AuthMailPayload = {
   to: string;
   subject: string;
   text: string;
   html: string;
+  from?: string;
 };
 
 type AuthMailResult = {
   sent: boolean;
-  channel: "webhook" | "console";
+  channel: "smtp" | "webhook" | "console";
+  messageId?: string;
 };
+
+// ─── Config ────────────────────────────────────────────
 
 function isDevelopment() {
   const nodeEnv = String(process.env.NODE_ENV || "development").toLowerCase();
   return nodeEnv !== "production";
-}
-
-function getMailWebhookUrl() {
-  return String(process.env.AUTH_MAIL_WEBHOOK_URL || "").trim();
-}
-
-function getMailWebhookToken() {
-  return String(process.env.AUTH_MAIL_WEBHOOK_TOKEN || "").trim();
 }
 
 export function getAuthPublicBaseUrl() {
@@ -33,37 +31,117 @@ export function getAuthPublicBaseUrl() {
   return String(raw).replace(/\/+$/, "");
 }
 
+const MAIL_FROM = process.env.MAIL_FROM || "Zentto <no-reply@zentto.net>";
+
+// ─── SMTP Transport (envío directo desde el servidor) ──
+
+let _transporter: Transporter | null = null;
+
+function getTransporter(): Transporter | null {
+  if (_transporter) return _transporter;
+
+  const smtpHost = process.env.SMTP_HOST || "";
+  const smtpPort = Number(process.env.SMTP_PORT || 587);
+  const smtpUser = process.env.SMTP_USER || "";
+  const smtpPass = process.env.SMTP_PASS || "";
+
+  if (smtpHost) {
+    // SMTP relay configurado (ej: tu propio servidor SMTP, o futuro CRM)
+    _transporter = createTransport({
+      host: smtpHost,
+      port: smtpPort,
+      secure: smtpPort === 465,
+      auth: smtpUser ? { user: smtpUser, pass: smtpPass } : undefined,
+      tls: { rejectUnauthorized: false },
+    });
+  } else {
+    // Envío directo: el servidor actúa como su propio MTA
+    // Resuelve MX del destinatario y entrega directo
+    _transporter = createTransport({
+      direct: true,
+      name: "zentto.net",
+    } as any);
+  }
+
+  return _transporter;
+}
+
+async function sendBySmtp(payload: AuthMailPayload): Promise<{ sent: boolean; messageId?: string }> {
+  const transporter = getTransporter();
+  if (!transporter) return { sent: false };
+
+  try {
+    const info = await transporter.sendMail({
+      from: payload.from || MAIL_FROM,
+      to: payload.to,
+      subject: payload.subject,
+      text: payload.text,
+      html: payload.html,
+    });
+
+    console.info(`[MAIL] Sent to ${payload.to} — messageId: ${info.messageId}`);
+    return { sent: true, messageId: info.messageId };
+  } catch (err: any) {
+    console.error(`[MAIL] Failed to send to ${payload.to}:`, err.message);
+    return { sent: false };
+  }
+}
+
+// ─── Webhook fallback (compatibilidad con sistema anterior) ──
+
 async function sendByWebhook(payload: AuthMailPayload): Promise<boolean> {
-  const url = getMailWebhookUrl();
+  const url = String(process.env.AUTH_MAIL_WEBHOOK_URL || "").trim();
   if (!url) return false;
 
-  const token = getMailWebhookToken();
+  const token = String(process.env.AUTH_MAIL_WEBHOOK_TOKEN || "").trim();
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+    headers["X-API-Key"] = token; // zentto-notify compatibility
+  }
+
   const response = await fetch(url, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-    body: JSON.stringify(payload),
+    headers,
+    body: JSON.stringify({
+      ...payload,
+      from: payload.from || MAIL_FROM,
+      track: true,
+    }),
   });
 
   return response.ok;
 }
 
+// ─── Envío principal ────────────────────────────────────
+
 export async function sendAuthMail(payload: AuthMailPayload): Promise<AuthMailResult> {
+  // 1. Intentar SMTP (directo o relay)
+  try {
+    const smtp = await sendBySmtp(payload);
+    if (smtp.sent) return { sent: true, channel: "smtp", messageId: smtp.messageId };
+  } catch {
+    // fallback
+  }
+
+  // 2. Intentar webhook (compatibilidad)
   try {
     const sent = await sendByWebhook(payload);
     if (sent) return { sent: true, channel: "webhook" };
   } catch {
-    // fallback to console below
+    // fallback
   }
 
+  // 3. Console (desarrollo)
   if (isDevelopment()) {
     console.info("[AUTH_MAIL_FALLBACK]", {
       to: payload.to,
       subject: payload.subject,
-      text: payload.text,
+      text: payload.text.substring(0, 200),
     });
+  } else {
+    console.warn(`[MAIL] Could not deliver email to ${payload.to}: ${payload.subject}`);
   }
-  return { sent: true, channel: "console" };
+
+  return { sent: false, channel: "console" };
 }

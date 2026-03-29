@@ -8,6 +8,7 @@ import {
     IconButton,
     Divider,
     Button,
+    Tooltip,
 } from '@mui/material';
 import dynamic from 'next/dynamic';
 import { usePosStore } from '@zentto/shared-api';
@@ -119,21 +120,23 @@ export function PosCart({
                                 <Typography variant="body2" fontWeight="medium">
                                     {symP} {item.total.toFixed(2)}
                                 </Typography>
-                                <IconButton
-                                    size="small"
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        onRemoveItem(item.id);
-                                    }}
-                                    sx={{
-                                        p: 0.5,
-                                        opacity: 0,
-                                        '&:hover': { opacity: 1 },
-                                        '.MuiBox-root:hover &': { opacity: 1 }
-                                    }}
-                                >
-                                    <CloseIcon fontSize="small" />
-                                </IconButton>
+                                <Tooltip title="Eliminar del carrito">
+                                    <IconButton
+                                        size="small"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            onRemoveItem(item.id);
+                                        }}
+                                        sx={{
+                                            p: 0.5,
+                                            opacity: 0,
+                                            '&:hover': { opacity: 1 },
+                                            '.MuiBox-root:hover &': { opacity: 1 }
+                                        }}
+                                    >
+                                        <CloseIcon fontSize="small" />
+                                    </IconButton>
+                                </Tooltip>
                             </Box>
                         </Box>
                     ))

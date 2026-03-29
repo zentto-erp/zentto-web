@@ -77,4 +77,15 @@ router.patch('/mensajes/:id/leido', async (req, res) => {
     }
 });
 
+// /v1/sistema/alertas/procesar — dispara verificación manual de alertas
+router.post('/alertas/procesar', async (_req, res) => {
+    try {
+        const { processSystemAlerts } = await import('./alertas-automaticas.service.js');
+        const result = await processSystemAlerts();
+        res.json({ ok: true, ...result });
+    } catch (e: any) {
+        res.status(500).json({ ok: false, error: e.message });
+    }
+});
+
 export const sistemaRouter = router;

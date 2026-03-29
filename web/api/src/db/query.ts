@@ -9,6 +9,12 @@
 import { env } from "../config/env.js";
 import { sql, getPool } from "./mssql.js";
 import { getPgPool } from "./pg.js";
+import { getTenantPoolFromContext } from "../context/request-context.js";
+
+/** Pool del tenant actual (context) o default pool (fallback seguro) */
+function getActivePgPool() {
+  return getTenantPoolFromContext() ?? getPgPool();
+}
 import { xmlParamToJson } from "../utils/xml.js";
 
 // ── Utilidades de conversión de nombres ───────────────────────────────────────
@@ -80,10 +86,10 @@ function adaptParamsForPg(
   if (!inputs) return inputs;
   const out: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(inputs)) {
-    if (key.endsWith("Xml") && typeof value === "string") {
-      // Renombrar *Xml → *Json y convertir XML → JSON string
+    if (key.endsWith("Xml")) {
+      // Renombrar *Xml → *Json, convertir XML → JSON string (o null si valor es null/undefined)
       const jsonKey = key.slice(0, -3) + "Json";
-      out[jsonKey] = xmlParamToJson(value);
+      out[jsonKey] = (typeof value === "string") ? xmlParamToJson(value) : null;
     } else {
       out[key] = value;
     }
@@ -97,7 +103,7 @@ async function pgCallSp<T>(
   spName: string,
   inputs?: Record<string, unknown>
 ): Promise<T[]> {
-  const pool = getPgPool();
+  const pool = getActivePgPool();
 
   // Construir: SELECT * FROM spName(p_key1 => $1, p_key2 => $2, ...)
   const adapted = adaptParamsForPg(inputs);
@@ -107,8 +113,10 @@ async function pgCallSp<T>(
     .join(", ");
   const values = entries.map(([, v]) => v);
 
+  // Strip dbo. prefix: PG no tiene schema dbo, funciones viven en public
+  const pgName = spName.replace(/^dbo\./i, '');
   // Sin comillas dobles: PG auto-lowercase el nombre → compatible con callSp('usp_Foo_Bar', ...)
-  const sql_text = `SELECT * FROM ${spName}(${namedArgs})`;
+  const sql_text = `SELECT * FROM ${pgName}(${namedArgs})`;
 
   const result = await pool.query(sql_text, values);
   return result.rows.map(normalizePgRow) as T[];
@@ -119,7 +127,7 @@ async function pgCallSpOut<T>(
   inputs?: Record<string, unknown>,
   outputs?: Record<string, unknown>
 ): Promise<{ rows: T[]; output: Record<string, unknown>; rowsAffected: number[] }> {
-  const pool = getPgPool();
+  const pool = getActivePgPool();
 
   const adapted = adaptParamsForPg(inputs);
   const entries = adapted ? Object.entries(adapted).filter(([, v]) => v !== undefined) : [];
@@ -128,7 +136,8 @@ async function pgCallSpOut<T>(
     .join(", ");
   const values = entries.map(([, v]) => v);
 
-  const sql_text = `SELECT * FROM ${spName}(${namedArgs})`;
+  const pgName = spName.replace(/^dbo\./i, '');
+  const sql_text = `SELECT * FROM ${pgName}(${namedArgs})`;
 
   const result = await pool.query(sql_text, values);
   const firstRow = result.rows[0] ?? {};
@@ -243,7 +252,7 @@ export async function query<T>(
   params?: Record<string, unknown>
 ): Promise<T[]> {
   if (usePg()) {
-    const pool = getPgPool();
+    const pool = getActivePgPool();
     const entries = params ? Object.entries(params) : [];
     // Reemplazar @ParamName → $1, $2, ... en orden de aparición
     let pg_sql = statement;
@@ -277,7 +286,7 @@ export async function execute(
   params?: Record<string, unknown>
 ): Promise<{ rowsAffected: number[]; recordset: unknown[] }> {
   if (usePg()) {
-    const pool = getPgPool();
+    const pool = getActivePgPool();
     const entries = params ? Object.entries(params) : [];
     let pg_sql = statement;
     const values: unknown[] = [];

@@ -4,6 +4,7 @@
 -- DEPRECATED: Usa tablas legacy
 -- =============================================
 
+DROP FUNCTION IF EXISTS sp_anular_presupuesto_tx(VARCHAR(60), VARCHAR(60), VARCHAR(500)) CASCADE;
 CREATE OR REPLACE FUNCTION sp_anular_presupuesto_tx(
     p_num_fact    VARCHAR(60),
     p_cod_usuario VARCHAR(60) DEFAULT 'API',
@@ -38,7 +39,7 @@ BEGIN
     -- 1. Marcar presupuesto como anulado
     UPDATE "Presupuestos"
     SET "ANULADA" = TRUE,
-        "OBSERV" = COALESCE("OBSERV", '') || ' [ANULADA: ' || TO_CHAR(v_fecha_anulacion, 'YYYY-MM-DD HH24:MI:SS') || ']'
+        "OBSERV" = COALESCE("OBSERV",''::VARCHAR) || ' [ANULADA: ' || TO_CHAR(v_fecha_anulacion, 'YYYY-MM-DD HH24:MI:SS') || ']'
     WHERE "NUM_FACT" = p_num_fact;
 
     -- 2. Anular detalle

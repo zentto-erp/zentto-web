@@ -8,6 +8,8 @@ const AddCardIcon = dynamic(() => import('@mui/icons-material/AddCard'), { ssr: 
 const CompareArrowsIcon = dynamic(() => import('@mui/icons-material/CompareArrows'), { ssr: false });
 const PlaylistAddCheckIcon = dynamic(() => import('@mui/icons-material/PlaylistAddCheck'), { ssr: false });
 const LocalAtmIcon = dynamic(() => import('@mui/icons-material/LocalAtm'), { ssr: false });
+const PrintIcon = dynamic(() => import('@mui/icons-material/Print'), { ssr: false });
+
 
 export function buildNav(isAdmin: boolean, modulos: string[]): Array<Record<string, unknown>> {
     const nav: Array<Record<string, unknown>> = [];
@@ -17,12 +19,15 @@ export function buildNav(isAdmin: boolean, modulos: string[]): Array<Record<stri
         nav.push({ kind: 'header', title: 'Bancos e Instituciones' });
         nav.push({ kind: 'page', segment: '', title: 'Dashboard', icon: <DashboardIcon /> });
         nav.push({ kind: 'page', segment: 'entidades', title: 'Bancos', icon: <AccountBalanceIcon /> });
-        nav.push({ kind: 'page', segment: 'cuentas', title: 'Cuentas Bancarias', icon: <CreditCardIcon /> });
-        nav.push({ kind: 'page', segment: 'movimientos/generar', title: 'Generar Movimiento', icon: <AddCardIcon /> });
+        nav.push({ kind: 'page', segment: 'cuentas', title: 'Cuentas bancarias', icon: <CreditCardIcon /> });
+        nav.push({ kind: 'page', segment: 'movimientos/generar', title: 'Generar movimiento', icon: <AddCardIcon /> });
         nav.push({ kind: 'page', segment: 'conciliacion', title: 'Conciliaciones', icon: <CompareArrowsIcon /> });
-        nav.push({ kind: 'page', segment: 'conciliacion/wizard', title: 'Nueva Conciliación', icon: <PlaylistAddCheckIcon /> });
-        nav.push({ kind: 'page', segment: 'caja-chica', title: 'Caja Chica', icon: <LocalAtmIcon /> });
+        nav.push({ kind: 'page', segment: 'conciliacion/wizard', title: 'Nueva conciliación', icon: <PlaylistAddCheckIcon /> });
+        nav.push({ kind: 'page', segment: 'caja-chica', title: 'Caja chica', icon: <LocalAtmIcon /> });
     }
+
+    nav.push({ kind: 'divider' });
+    nav.push({ kind: 'page', segment: 'reportes', title: 'Reportes', icon: <PrintIcon /> });
 
     return nav;
 }

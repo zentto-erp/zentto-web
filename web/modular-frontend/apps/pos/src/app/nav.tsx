@@ -43,7 +43,7 @@ export function buildPosNav(isAdmin: boolean, modulos: string[]): Array<Record<s
         nav.push({ 
             kind: 'page', 
             segment: 'cierre-caja', 
-            title: 'Cierre de Caja', 
+            title: 'Cierre de caja', 
             icon: <AccountBalanceWalletIcon /> 
         });
 
@@ -58,7 +58,7 @@ export function buildPosNav(isAdmin: boolean, modulos: string[]): Array<Record<s
         nav.push({
             kind: 'page',
             segment: 'fiscal',
-            title: 'Módulo Fiscal',
+            title: 'Módulo fiscal',
             icon: <ReceiptLongIcon />,
         });
 
@@ -66,7 +66,7 @@ export function buildPosNav(isAdmin: boolean, modulos: string[]): Array<Record<s
         nav.push({
             kind: 'page',
             segment: 'correlativos-fiscales',
-            title: 'Correlativos Fiscales',
+            title: 'Correlativos fiscales',
             icon: <SettingsIcon />,
         });
 

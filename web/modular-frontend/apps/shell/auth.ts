@@ -1,5 +1,6 @@
 ﻿import NextAuth from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
+import Google from 'next-auth/providers/google';
 import type { Provider } from 'next-auth/providers';
 import { AuthError } from 'next-auth';
 
@@ -40,6 +41,16 @@ const PUBLIC_ROUTES = [
 ];
 
 const providers: Provider[] = [
+  Google({
+    clientId: process.env.AUTH_GOOGLE_ID,
+    clientSecret: process.env.AUTH_GOOGLE_SECRET,
+    authorization: {
+      params: {
+        prompt: 'consent',
+        access_type: 'offline',
+      },
+    },
+  }),
   Credentials({
     credentials: {
       username: { label: 'Usuario', type: 'text' },
@@ -77,7 +88,7 @@ const providers: Provider[] = [
           typeof incoming?.branchId === 'string' ? Number(incoming.branchId) : undefined;
 
         const userData = {
-          usuario: username.includes('@') ? username.split('@')[0] : username,
+          usuario: username.trim().toUpperCase(),
           clave: password || '',
           companyId: Number.isFinite(companyId) && Number(companyId) > 0 ? Number(companyId) : undefined,
           branchId: Number.isFinite(branchId) && Number(branchId) > 0 ? Number(branchId) : undefined,
@@ -143,7 +154,36 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     error: '/authentication/login',
   },
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, account }) {
+      // Google OAuth: intercambiar token de Google por token del backend
+      if (account?.provider === 'google' && account.id_token) {
+        try {
+          const BACKEND_URL =
+            process.env.BACKEND_URL ||
+            process.env.NEXT_PUBLIC_API_BASE_URL ||
+            'http://localhost:4000';
+
+          const res = await fetch(`${BACKEND_URL}/store/auth/google`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ idToken: account.id_token }),
+          });
+
+          if (res.ok) {
+            const data = await res.json();
+            if (data.token) {
+              token.accessToken = data.token;
+              token.accessTokenExpires = getJwtExpMs(data.token);
+              token.isAdmin = false;
+              token.modulos = ['ecommerce'];
+              return token;
+            }
+          }
+        } catch {
+          // Si falla el backend, continuar con sesión básica de Google
+        }
+      }
+
       if (user) {
         // @ts-ignore
         token.accessToken = user.token;

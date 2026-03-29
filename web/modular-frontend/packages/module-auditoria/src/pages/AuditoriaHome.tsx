@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Box,
@@ -12,6 +12,7 @@ import {
   Card,
   CardActionArea,
   CardContent,
+  CircularProgress,
 } from "@mui/material";
 import ListAltIcon from "@mui/icons-material/ListAlt";
 import SettingsIcon from "@mui/icons-material/Settings";
@@ -22,11 +23,13 @@ import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import BlockIcon from "@mui/icons-material/Block";
 import LoginIcon from "@mui/icons-material/Login";
-import { formatCurrency, toDateOnly, formatDateTime } from "@zentto/shared-api";
+import { formatCurrency, toDateOnly, formatDateTime, useGridLayoutSync } from "@zentto/shared-api";
 import { ContextActionHeader } from "@zentto/shared-ui";
 import { useTimezone } from "@zentto/shared-auth";
 import { useAuditDashboard } from "../hooks/useAuditoria";
 import { brandColors } from "@zentto/shared-ui";
+import type { ColumnDef, GridRow } from "@zentto/datagrid-core";
+import { buildAuditoriaGridId, useAuditoriaGridRegistration } from "../components/zenttoGridPersistence";
 
 const ACTION_COLORS: Record<string, "success" | "info" | "warning" | "error" | "default"> = {
   CREATE: "success",
@@ -44,14 +47,45 @@ const ACTION_ICONS: Record<string, React.ReactElement> = {
   LOGIN: <LoginIcon fontSize="small" />,
 };
 
+const logColumns: ColumnDef[] = [
+  { field: "CreatedAt", header: "Fecha", flex: 1.2, renderCell: (value: unknown) => value ? formatDateTime(value as string, {}) : "-" },
+  { field: "UserName", header: "Usuario", flex: 1, renderCell: (value: unknown) => (value as string) ?? "-" },
+  { field: "ModuleName", header: "Módulo", flex: 1 },
+  {
+    field: "ActionType",
+    header: "Acción",
+    flex: 1,
+    renderCell: ((value: unknown) => (
+      <Chip
+        icon={ACTION_ICONS[value as string]}
+        label={value as string}
+        size="small"
+        color={ACTION_COLORS[value as string] ?? "default"}
+        variant="outlined"
+      />
+    )) as unknown as ColumnDef["renderCell"],
+  },
+  { field: "Summary", header: "Descripción", flex: 2, renderCell: (value: unknown, row: GridRow) => (value as string) ?? `${row.EntityName} ${row.EntityId ?? ""}` },
+];
+
+const RECENT_LOGS_GRID_ID = buildAuditoriaGridId("home", "recent-logs");
+
 export default function AuditoriaHome() {
   const router = useRouter();
   const { timeZone } = useTimezone();
+  const gridRef = useRef<any>(null);
   const now = new Date();
   const fechaDesde = toDateOnly(new Date(now.getFullYear(), 0, 1), timeZone);
   const fechaHasta = toDateOnly(now, timeZone);
+  const { ready: layoutReady } = useGridLayoutSync(RECENT_LOGS_GRID_ID);
+  const { registered } = useAuditoriaGridRegistration(layoutReady);
 
   const { data, isLoading } = useAuditDashboard(fechaDesde, fechaHasta);
+
+  const rows = ((data as any)?.ultimosLogs ?? []).map((l: any, i: number) => ({
+    id: l.AuditLogId ?? i,
+    ...l,
+  }));
 
   const stats = [
     { label: "Logs (24h)", value: data?.logsUltimas24h ?? 0, color: brandColors.statBlue },
@@ -66,6 +100,23 @@ export default function AuditoriaHome() {
     { label: "Registros Fiscales", icon: <ReceiptLongIcon />, path: "/auditoria/fiscal-records" },
     { label: "Reportes", icon: <AssessmentIcon />, path: "/auditoria/reportes" },
   ];
+
+  // Bind data to zentto-grid web component
+
+  useEffect(() => {
+
+    const el = gridRef.current;
+
+    if (!el || !registered) return;
+
+    el.columns = logColumns;
+
+    el.rows = rows;
+
+    el.loading = isLoading;
+
+  }, [rows, isLoading, registered]);
+
 
   return (
     <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
@@ -123,36 +174,17 @@ export default function AuditoriaHome() {
                   </Typography>
                 </Box>
               ) : (
-                <Box component="table" sx={{ width: "100%", borderCollapse: "collapse", "& td, & th": { px: 1.5, py: 1, fontSize: "0.85rem", borderBottom: "1px solid", borderColor: "divider" } }}>
-                  <thead>
-                    <tr>
-                      <th style={{ textAlign: "left" }}>Fecha</th>
-                      <th style={{ textAlign: "left" }}>Usuario</th>
-                      <th style={{ textAlign: "left" }}>Módulo</th>
-                      <th style={{ textAlign: "left" }}>Acción</th>
-                      <th style={{ textAlign: "left" }}>Descripción</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {(data?.ultimosLogs ?? []).slice(0, 10).map((log: any, i: number) => (
-                      <tr key={log.AuditLogId ?? i}>
-                        <td>{log.CreatedAt ? formatDateTime(log.CreatedAt, { timeZone }) : "-"}</td>
-                        <td>{log.UserName ?? "-"}</td>
-                        <td>{log.ModuleName}</td>
-                        <td>
-                          <Chip
-                            icon={ACTION_ICONS[log.ActionType]}
-                            label={log.ActionType}
-                            size="small"
-                            color={ACTION_COLORS[log.ActionType] ?? "default"}
-                            variant="outlined"
-                          />
-                        </td>
-                        <td>{log.Summary ?? `${log.EntityName} ${log.EntityId ?? ""}`}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </Box>
+                <zentto-grid
+        grid-id={RECENT_LOGS_GRID_ID}
+        ref={gridRef}
+        height="400px"
+        enable-header-menu
+        enable-clipboard
+        enable-quick-search
+        enable-context-menu
+        enable-status-bar
+        enable-configurator
+      ></zentto-grid>
               )}
             </Paper>
           </Box>
@@ -190,4 +222,12 @@ function Row({ label, value }: { label: string; value: number | string }) {
       <Typography variant="body2" fontWeight={600}>{value}</Typography>
     </Stack>
   );
+}
+
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'zentto-grid': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & Record<string, any>, HTMLElement>;
+    }
+  }
 }

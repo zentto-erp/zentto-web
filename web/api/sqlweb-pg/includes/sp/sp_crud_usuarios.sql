@@ -6,6 +6,8 @@
 -- =============================================
 
 -- ---------- 1. List ----------
+-- NOTE: Avatar column is TEXT in sec."User", must match return type
+DROP FUNCTION IF EXISTS usp_usuarios_list(character varying, character varying, integer, integer) CASCADE;
 CREATE OR REPLACE FUNCTION usp_usuarios_list(
     p_search VARCHAR(100) DEFAULT NULL,
     p_tipo   VARCHAR(50)  DEFAULT NULL,
@@ -26,7 +28,7 @@ RETURNS TABLE (
     "PrecioMinimo"  BOOLEAN,
     "Credito"       BOOLEAN,
     "IsAdmin"       BOOLEAN,
-    "Avatar"        VARCHAR
+    "Avatar"        TEXT
 ) LANGUAGE plpgsql AS $$
 DECLARE
     v_offset  INT;
@@ -54,10 +56,10 @@ BEGIN
     RETURN QUERY
     SELECT
         v_total,
-        u."UserCode"        AS "Cod_Usuario",
-        u."PasswordHash"    AS "Password",
-        u."UserName"        AS "Nombre",
-        u."UserType"        AS "Tipo",
+        u."UserCode"::VARCHAR        AS "Cod_Usuario",
+        u."PasswordHash"::VARCHAR    AS "Password",
+        u."UserName"::VARCHAR        AS "Nombre",
+        u."UserType"::VARCHAR        AS "Tipo",
         u."CanUpdate"       AS "Updates",
         u."CanCreate"       AS "Addnews",
         u."CanDelete"       AS "Deletes",
@@ -77,6 +79,8 @@ END;
 $$;
 
 -- ---------- 2. Get by Codigo ----------
+-- NOTE: Avatar column is TEXT in sec."User", must match return type
+DROP FUNCTION IF EXISTS usp_usuarios_getbycodigo(character varying) CASCADE;
 CREATE OR REPLACE FUNCTION usp_usuarios_getbycodigo(
     p_cod_usuario VARCHAR(50)
 )
@@ -93,15 +97,15 @@ RETURNS TABLE (
     "PrecioMinimo"  BOOLEAN,
     "Credito"       BOOLEAN,
     "IsAdmin"       BOOLEAN,
-    "Avatar"        VARCHAR
+    "Avatar"        TEXT
 ) LANGUAGE plpgsql AS $$
 BEGIN
     RETURN QUERY
     SELECT
-        u."UserCode"       AS "Cod_Usuario",
-        u."PasswordHash"   AS "Password",
-        u."UserName"       AS "Nombre",
-        u."UserType"       AS "Tipo",
+        u."UserCode"::VARCHAR       AS "Cod_Usuario",
+        u."PasswordHash"::VARCHAR   AS "Password",
+        u."UserName"::VARCHAR       AS "Nombre",
+        u."UserType"::VARCHAR       AS "Tipo",
         u."CanUpdate"      AS "Updates",
         u."CanCreate"      AS "Addnews",
         u."CanDelete"      AS "Deletes",
@@ -117,6 +121,8 @@ END;
 $$;
 
 -- ---------- 3. Insert ----------
+-- NOTE: Handles upsert for soft-deleted users to avoid unique constraint violation
+DROP FUNCTION IF EXISTS usp_usuarios_insert(jsonb) CASCADE;
 CREATE OR REPLACE FUNCTION usp_usuarios_insert(
     p_row_json JSONB
 )
@@ -127,37 +133,60 @@ RETURNS TABLE (
 DECLARE
     v_cod_usuario VARCHAR(50);
 BEGIN
-    v_cod_usuario := NULLIF(p_row_json->>'Cod_Usuario', '');
+    v_cod_usuario := NULLIF(p_row_json->>'Cod_Usuario', ''::VARCHAR);
 
+    -- Check if active user already exists
     IF EXISTS (SELECT 1 FROM sec."User" WHERE "UserCode" = v_cod_usuario AND "IsDeleted" = FALSE) THEN
         RETURN QUERY SELECT -1, 'Usuario ya existe'::VARCHAR;
         RETURN;
     END IF;
 
     BEGIN
-        INSERT INTO sec."User" (
-            "UserCode", "PasswordHash", "UserName", "UserType",
-            "CanUpdate", "CanCreate", "CanDelete", "IsCreator",
-            "CanChangePwd", "CanChangePrice", "CanGiveCredit",
-            "IsAdmin", "IsActive", "CreatedAt", "UpdatedAt", "IsDeleted"
-        ) VALUES (
-            v_cod_usuario,
-            NULLIF(p_row_json->>'Password', ''),
-            NULLIF(p_row_json->>'Nombre', ''),
-            COALESCE(NULLIF(p_row_json->>'Tipo', ''), 'USER'),
-            COALESCE((p_row_json->>'Updates')::BOOLEAN, TRUE),
-            COALESCE((p_row_json->>'Addnews')::BOOLEAN, TRUE),
-            COALESCE((p_row_json->>'Deletes')::BOOLEAN, FALSE),
-            COALESCE((p_row_json->>'Creador')::BOOLEAN, FALSE),
-            COALESCE((p_row_json->>'Cambiar')::BOOLEAN, TRUE),
-            COALESCE((p_row_json->>'PrecioMinimo')::BOOLEAN, FALSE),
-            COALESCE((p_row_json->>'Credito')::BOOLEAN, FALSE),
-            COALESCE((p_row_json->>'IsAdmin')::BOOLEAN, FALSE),
-            TRUE,
-            NOW() AT TIME ZONE 'UTC',
-            NOW() AT TIME ZONE 'UTC',
-            FALSE
-        );
+        -- If soft-deleted record exists, restore it with new data
+        IF EXISTS (SELECT 1 FROM sec."User" WHERE "UserCode" = v_cod_usuario AND "IsDeleted" = TRUE) THEN
+            UPDATE sec."User" SET
+                "PasswordHash"   = NULLIF(p_row_json->>'Password', ''::VARCHAR),
+                "UserName"       = NULLIF(p_row_json->>'Nombre', ''::VARCHAR),
+                "UserType"       = COALESCE(NULLIF(p_row_json->>'Tipo', ''::VARCHAR), 'USER'),
+                "CanUpdate"      = COALESCE((p_row_json->>'Updates')::BOOLEAN, TRUE),
+                "CanCreate"      = COALESCE((p_row_json->>'Addnews')::BOOLEAN, TRUE),
+                "CanDelete"      = COALESCE((p_row_json->>'Deletes')::BOOLEAN, FALSE),
+                "IsCreator"      = COALESCE((p_row_json->>'Creador')::BOOLEAN, FALSE),
+                "CanChangePwd"   = COALESCE((p_row_json->>'Cambiar')::BOOLEAN, TRUE),
+                "CanChangePrice" = COALESCE((p_row_json->>'PrecioMinimo')::BOOLEAN, FALSE),
+                "CanGiveCredit"  = COALESCE((p_row_json->>'Credito')::BOOLEAN, FALSE),
+                "IsAdmin"        = COALESCE((p_row_json->>'IsAdmin')::BOOLEAN, FALSE),
+                "IsActive"       = TRUE,
+                "IsDeleted"      = FALSE,
+                "DeletedAt"      = NULL,
+                "DeletedByUserId" = NULL,
+                "UpdatedAt"      = NOW() AT TIME ZONE 'UTC'
+            WHERE "UserCode" = v_cod_usuario;
+        ELSE
+            INSERT INTO sec."User" (
+                "UserCode", "PasswordHash", "UserName", "UserType",
+                "CanUpdate", "CanCreate", "CanDelete", "IsCreator",
+                "CanChangePwd", "CanChangePrice", "CanGiveCredit",
+                "IsAdmin", "IsActive", "CreatedAt", "UpdatedAt", "IsDeleted"
+            ) VALUES (
+                v_cod_usuario,
+                NULLIF(p_row_json->>'Password', ''::VARCHAR),
+                NULLIF(p_row_json->>'Nombre', ''::VARCHAR),
+                COALESCE(NULLIF(p_row_json->>'Tipo', ''::VARCHAR), 'USER'),
+                COALESCE((p_row_json->>'Updates')::BOOLEAN, TRUE),
+                COALESCE((p_row_json->>'Addnews')::BOOLEAN, TRUE),
+                COALESCE((p_row_json->>'Deletes')::BOOLEAN, FALSE),
+                COALESCE((p_row_json->>'Creador')::BOOLEAN, FALSE),
+                COALESCE((p_row_json->>'Cambiar')::BOOLEAN, TRUE),
+                COALESCE((p_row_json->>'PrecioMinimo')::BOOLEAN, FALSE),
+                COALESCE((p_row_json->>'Credito')::BOOLEAN, FALSE),
+                COALESCE((p_row_json->>'IsAdmin')::BOOLEAN, FALSE),
+                TRUE,
+                NOW() AT TIME ZONE 'UTC',
+                NOW() AT TIME ZONE 'UTC',
+                FALSE
+            );
+        END IF;
 
         RETURN QUERY SELECT 1, 'OK'::VARCHAR;
     EXCEPTION WHEN OTHERS THEN
@@ -183,9 +212,9 @@ BEGIN
 
     BEGIN
         UPDATE sec."User" SET
-            "PasswordHash"   = COALESCE(NULLIF(p_row_json->>'Password', ''), "PasswordHash"),
-            "UserName"       = COALESCE(NULLIF(p_row_json->>'Nombre', ''), "UserName"),
-            "UserType"       = COALESCE(NULLIF(p_row_json->>'Tipo', ''), "UserType"),
+            "PasswordHash"   = COALESCE(NULLIF(p_row_json->>'Password', ''::VARCHAR), "PasswordHash"),
+            "UserName"       = COALESCE(NULLIF(p_row_json->>'Nombre', ''::VARCHAR), "UserName"),
+            "UserType"       = COALESCE(NULLIF(p_row_json->>'Tipo', ''::VARCHAR), "UserType"),
             "IsAdmin"        = COALESCE((p_row_json->>'IsAdmin')::BOOLEAN, "IsAdmin"),
             "CanUpdate"      = COALESCE((p_row_json->>'Updates')::BOOLEAN, "CanUpdate"),
             "CanCreate"      = COALESCE((p_row_json->>'Addnews')::BOOLEAN, "CanCreate"),

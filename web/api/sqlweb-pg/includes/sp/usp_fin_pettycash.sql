@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS fin."PettyCashBox" (
     "CurrentBalance"  NUMERIC(18,2) NOT NULL DEFAULT 0,
     "Responsible"     VARCHAR(100),
     "Status"          VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
-    "CreatedAt"       TIMESTAMPTZ NOT NULL DEFAULT (NOW() AT TIME ZONE 'UTC'),
+    "CreatedAt"       TIMESTAMP NOT NULL DEFAULT (NOW() AT TIME ZONE 'UTC'),
     "CreatedByUserId" INT
 );
 
@@ -35,8 +35,8 @@ CREATE TABLE IF NOT EXISTS fin."PettyCashSession" (
     "ClosingAmount"   NUMERIC(18,2),
     "TotalExpenses"   NUMERIC(18,2) NOT NULL DEFAULT 0,
     "Status"          VARCHAR(20) NOT NULL DEFAULT 'OPEN',
-    "OpenedAt"        TIMESTAMPTZ NOT NULL DEFAULT (NOW() AT TIME ZONE 'UTC'),
-    "ClosedAt"        TIMESTAMPTZ,
+    "OpenedAt"        TIMESTAMP NOT NULL DEFAULT (NOW() AT TIME ZONE 'UTC'),
+    "ClosedAt"        TIMESTAMP,
     "OpenedByUserId"  INT,
     "ClosedByUserId"  INT,
     "Notes"           VARCHAR(500)
@@ -55,13 +55,14 @@ CREATE TABLE IF NOT EXISTS fin."PettyCashExpense" (
     "Beneficiary"     VARCHAR(150),
     "ReceiptNumber"   VARCHAR(50),
     "AccountCode"     VARCHAR(20),
-    "CreatedAt"       TIMESTAMPTZ NOT NULL DEFAULT (NOW() AT TIME ZONE 'UTC'),
+    "CreatedAt"       TIMESTAMP NOT NULL DEFAULT (NOW() AT TIME ZONE 'UTC'),
     "CreatedByUserId" INT
 );
 
 -- =============================================
 -- 4. usp_Fin_PettyCash_Box_List
 -- =============================================
+DROP FUNCTION IF EXISTS usp_fin_pettycash_box_list(INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_fin_pettycash_box_list(
     p_company_id INT
 )
@@ -75,7 +76,7 @@ RETURNS TABLE(
     "CurrentBalance"  NUMERIC(18,2),
     "Responsible"     VARCHAR(100),
     "Status"          VARCHAR(20),
-    "CreatedAt"       TIMESTAMPTZ,
+    "CreatedAt"       TIMESTAMP,
     "CreatedByUserId" INT
 )
 LANGUAGE plpgsql
@@ -83,9 +84,9 @@ AS $$
 BEGIN
     RETURN QUERY
     SELECT
-        b."Id", b."CompanyId", b."BranchId", b."Name",
-        b."AccountCode", b."MaxAmount", b."CurrentBalance",
-        b."Responsible", b."Status", b."CreatedAt", b."CreatedByUserId"
+        b."Id"::INT, b."CompanyId"::INT, b."BranchId"::INT, b."Name"::VARCHAR(100),
+        b."AccountCode"::VARCHAR(20), b."MaxAmount"::NUMERIC(18,2), b."CurrentBalance"::NUMERIC(18,2),
+        b."Responsible"::VARCHAR(100), b."Status"::VARCHAR(20), b."CreatedAt"::TIMESTAMP, b."CreatedByUserId"::INT
     FROM fin."PettyCashBox" b
     WHERE b."CompanyId" = p_company_id
     ORDER BY b."Name";
@@ -95,6 +96,7 @@ $$;
 -- =============================================
 -- 5. usp_Fin_PettyCash_Box_Create
 -- =============================================
+DROP FUNCTION IF EXISTS usp_fin_pettycash_box_create(INT, INT, VARCHAR(100), VARCHAR(20), NUMERIC(18,2), VARCHAR(100), INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_fin_pettycash_box_create(
     p_company_id       INT,
     p_branch_id        INT,
@@ -142,6 +144,7 @@ $$;
 -- =============================================
 -- 6. usp_Fin_PettyCash_Session_Open
 -- =============================================
+DROP FUNCTION IF EXISTS usp_fin_pettycash_session_open(INT, NUMERIC(18,2), INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_fin_pettycash_session_open(
     p_box_id          INT,
     p_opening_amount  NUMERIC(18,2),
@@ -201,6 +204,7 @@ $$;
 -- =============================================
 -- 7. usp_Fin_PettyCash_Session_Close
 -- =============================================
+DROP FUNCTION IF EXISTS usp_fin_pettycash_session_close(INT, INT, VARCHAR(500)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_fin_pettycash_session_close(
     p_box_id           INT,
     p_closed_by_user_id INT DEFAULT NULL,
@@ -254,6 +258,7 @@ $$;
 -- =============================================
 -- 8. usp_Fin_PettyCash_Session_GetActive
 -- =============================================
+DROP FUNCTION IF EXISTS usp_fin_pettycash_session_getactive(INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_fin_pettycash_session_getactive(
     p_box_id INT
 )
@@ -264,8 +269,8 @@ RETURNS TABLE(
     "ClosingAmount"    NUMERIC(18,2),
     "TotalExpenses"    NUMERIC(18,2),
     "Status"           VARCHAR(20),
-    "OpenedAt"         TIMESTAMPTZ,
-    "ClosedAt"         TIMESTAMPTZ,
+    "OpenedAt"         TIMESTAMP,
+    "ClosedAt"         TIMESTAMP,
     "OpenedByUserId"   INT,
     "ClosedByUserId"   INT,
     "Notes"            VARCHAR(500),
@@ -278,9 +283,11 @@ BEGIN
     RETURN QUERY
     SELECT
         s."Id", s."BoxId", s."OpeningAmount", s."ClosingAmount",
-        s."TotalExpenses", s."Status", s."OpenedAt", s."ClosedAt",
+        s."TotalExpenses", s."Status",
+        s."OpenedAt"::TIMESTAMP,
+        s."ClosedAt"::TIMESTAMP,
         s."OpenedByUserId", s."ClosedByUserId", s."Notes",
-        (s."OpeningAmount" - s."TotalExpenses"),
+        (s."OpeningAmount" - s."TotalExpenses")::NUMERIC(18,2),
         (SELECT COUNT(1) FROM fin."PettyCashExpense" e WHERE e."SessionId" = s."Id")
     FROM fin."PettyCashSession" s
     WHERE s."BoxId" = p_box_id
@@ -291,6 +298,7 @@ $$;
 -- =============================================
 -- 9. usp_Fin_PettyCash_Expense_Add
 -- =============================================
+DROP FUNCTION IF EXISTS usp_fin_pettycash_expense_add(INT, INT, VARCHAR(50), VARCHAR(255), NUMERIC(18,2), VARCHAR(150), VARCHAR(50), VARCHAR(20), INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_fin_pettycash_expense_add(
     p_session_id       INT,
     p_box_id           INT,
@@ -369,6 +377,7 @@ $$;
 -- =============================================
 -- 10. usp_Fin_PettyCash_Expense_List
 -- =============================================
+DROP FUNCTION IF EXISTS usp_fin_pettycash_expense_list(INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_fin_pettycash_expense_list(
     p_box_id     INT,
     p_session_id INT DEFAULT NULL
@@ -383,7 +392,7 @@ RETURNS TABLE(
     "Beneficiary"     VARCHAR(150),
     "ReceiptNumber"   VARCHAR(50),
     "AccountCode"     VARCHAR(20),
-    "CreatedAt"       TIMESTAMPTZ,
+    "CreatedAt"       TIMESTAMP,
     "CreatedByUserId" INT
 )
 LANGUAGE plpgsql
@@ -393,7 +402,7 @@ BEGIN
     SELECT
         e."Id", e."SessionId", e."BoxId", e."Category", e."Description",
         e."Amount", e."Beneficiary", e."ReceiptNumber", e."AccountCode",
-        e."CreatedAt", e."CreatedByUserId"
+        e."CreatedAt"::TIMESTAMP, e."CreatedByUserId"
     FROM fin."PettyCashExpense" e
     WHERE e."BoxId" = p_box_id
       AND (p_session_id IS NULL OR e."SessionId" = p_session_id)
@@ -404,6 +413,7 @@ $$;
 -- =============================================
 -- 11. usp_Fin_PettyCash_Summary
 -- =============================================
+DROP FUNCTION IF EXISTS usp_fin_pettycash_summary_box(INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_fin_pettycash_summary_box(
     p_box_id INT
 )
@@ -417,7 +427,7 @@ RETURNS TABLE(
     "CurrentBalance"  NUMERIC(18,2),
     "Responsible"     VARCHAR(100),
     "Status"          VARCHAR(20),
-    "CreatedAt"       TIMESTAMPTZ
+    "CreatedAt"       TIMESTAMP
 )
 LANGUAGE plpgsql
 AS $$
@@ -432,6 +442,7 @@ BEGIN
 END;
 $$;
 
+DROP FUNCTION IF EXISTS usp_fin_pettycash_summary_session(INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_fin_pettycash_summary_session(
     p_box_id INT
 )
@@ -440,7 +451,7 @@ RETURNS TABLE(
     "OpeningAmount"    NUMERIC(18,2),
     "TotalExpenses"    NUMERIC(18,2),
     "AvailableBalance" NUMERIC(18,2),
-    "OpenedAt"         TIMESTAMPTZ,
+    "OpenedAt"         TIMESTAMP,
     "OpenedByUserId"   INT,
     "ExpenseCount"     BIGINT
 )
@@ -462,6 +473,7 @@ BEGIN
 END;
 $$;
 
+DROP FUNCTION IF EXISTS usp_fin_pettycash_summary_categories(INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_fin_pettycash_summary_categories(
     p_box_id INT
 )
@@ -484,6 +496,106 @@ BEGIN
       AND s."Status" = 'OPEN'
     GROUP BY e."Category"
     ORDER BY SUM(e."Amount") DESC;
+END;
+$$;
+
+-- =============================================
+-- WRAPPERS en schema fin (requeridos por la API que llama fin.usp_Fin_PettyCash_*)
+-- =============================================
+DO $$ BEGIN
+  EXECUTE 'GRANT CREATE ON SCHEMA fin TO zentto_app';
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
+
+DROP FUNCTION IF EXISTS fin.usp_fin_pettycash_box_list(INTEGER) CASCADE;
+CREATE OR REPLACE FUNCTION fin.usp_fin_pettycash_box_list(p_company_id INTEGER)
+RETURNS TABLE("Id" INT,"CompanyId" INT,"BranchId" INT,"Name" VARCHAR(100),
+    "AccountCode" VARCHAR(20),"MaxAmount" NUMERIC(18,2),"CurrentBalance" NUMERIC(18,2),
+    "Responsible" VARCHAR(100),"Status" VARCHAR(20),"CreatedAt" TIMESTAMP,"CreatedByUserId" INT)
+LANGUAGE plpgsql AS $$
+BEGIN RETURN QUERY SELECT * FROM public.usp_fin_pettycash_box_list(p_company_id); END;
+$$;
+
+DROP FUNCTION IF EXISTS fin.usp_fin_pettycash_box_create(INTEGER, INTEGER, VARCHAR, VARCHAR, NUMERIC, VARCHAR, INTEGER) CASCADE;
+CREATE OR REPLACE FUNCTION fin.usp_fin_pettycash_box_create(
+    p_company_id INTEGER, p_branch_id INTEGER, p_name VARCHAR,
+    p_account_code VARCHAR DEFAULT NULL, p_max_amount NUMERIC DEFAULT 0,
+    p_responsible VARCHAR DEFAULT NULL, p_created_by_user_id INTEGER DEFAULT NULL)
+RETURNS TABLE("Resultado" INTEGER, "Mensaje" VARCHAR)
+LANGUAGE plpgsql AS $$
+BEGIN RETURN QUERY SELECT * FROM public.usp_fin_pettycash_box_create(
+    p_company_id, p_branch_id, p_name, p_account_code,
+    p_max_amount, p_responsible, p_created_by_user_id); END;
+$$;
+
+DROP FUNCTION IF EXISTS fin.usp_fin_pettycash_session_open(INTEGER, NUMERIC, INTEGER) CASCADE;
+CREATE OR REPLACE FUNCTION fin.usp_fin_pettycash_session_open(
+    p_box_id INTEGER, p_opening_amount NUMERIC, p_opened_by_user_id INTEGER DEFAULT NULL)
+RETURNS TABLE("Resultado" INTEGER, "Mensaje" VARCHAR)
+LANGUAGE plpgsql AS $$
+BEGIN RETURN QUERY SELECT * FROM public.usp_fin_pettycash_session_open(
+    p_box_id, p_opening_amount, p_opened_by_user_id); END;
+$$;
+
+DROP FUNCTION IF EXISTS fin.usp_fin_pettycash_session_close(INTEGER, INTEGER, VARCHAR) CASCADE;
+CREATE OR REPLACE FUNCTION fin.usp_fin_pettycash_session_close(
+    p_box_id INTEGER, p_closed_by_user_id INTEGER DEFAULT NULL, p_notes VARCHAR DEFAULT NULL)
+RETURNS TABLE("Resultado" INTEGER, "Mensaje" VARCHAR)
+LANGUAGE plpgsql AS $$
+BEGIN RETURN QUERY SELECT * FROM public.usp_fin_pettycash_session_close(
+    p_box_id, p_closed_by_user_id, p_notes); END;
+$$;
+
+DROP FUNCTION IF EXISTS fin.usp_fin_pettycash_session_getactive(INTEGER) CASCADE;
+CREATE OR REPLACE FUNCTION fin.usp_fin_pettycash_session_getactive(p_box_id INTEGER)
+RETURNS TABLE("Id" INTEGER,"BoxId" INTEGER,"OpeningAmount" NUMERIC,"ClosingAmount" NUMERIC,
+    "TotalExpenses" NUMERIC,"Status" VARCHAR,"OpenedAt" TIMESTAMP,"ClosedAt" TIMESTAMP,
+    "OpenedByUserId" INTEGER,"ClosedByUserId" INTEGER,"Notes" VARCHAR,
+    "AvailableBalance" NUMERIC,"ExpenseCount" BIGINT)
+LANGUAGE plpgsql AS $$
+BEGIN RETURN QUERY SELECT * FROM public.usp_fin_pettycash_session_getactive(p_box_id); END;
+$$;
+
+DROP FUNCTION IF EXISTS fin.usp_fin_pettycash_expense_add(INTEGER, INTEGER, VARCHAR, VARCHAR, NUMERIC, VARCHAR, VARCHAR, VARCHAR, INTEGER) CASCADE;
+CREATE OR REPLACE FUNCTION fin.usp_fin_pettycash_expense_add(
+    p_session_id INTEGER, p_box_id INTEGER, p_category VARCHAR, p_description VARCHAR,
+    p_amount NUMERIC, p_beneficiary VARCHAR DEFAULT NULL, p_receipt_number VARCHAR DEFAULT NULL,
+    p_account_code VARCHAR DEFAULT NULL, p_created_by_user_id INTEGER DEFAULT NULL)
+RETURNS TABLE("Resultado" INTEGER, "Mensaje" VARCHAR)
+LANGUAGE plpgsql AS $$
+BEGIN RETURN QUERY SELECT * FROM public.usp_fin_pettycash_expense_add(
+    p_session_id, p_box_id, p_category, p_description, p_amount,
+    p_beneficiary, p_receipt_number, p_account_code, p_created_by_user_id); END;
+$$;
+
+DROP FUNCTION IF EXISTS fin.usp_fin_pettycash_expense_list(INTEGER, INTEGER) CASCADE;
+CREATE OR REPLACE FUNCTION fin.usp_fin_pettycash_expense_list(
+    p_box_id INTEGER, p_session_id INTEGER DEFAULT NULL)
+RETURNS TABLE("Id" INTEGER,"SessionId" INTEGER,"BoxId" INTEGER,"Category" VARCHAR,
+    "Description" VARCHAR,"Amount" NUMERIC,"Beneficiary" VARCHAR,"ReceiptNumber" VARCHAR,
+    "AccountCode" VARCHAR,"CreatedAt" TIMESTAMP,"CreatedByUserId" INTEGER)
+LANGUAGE plpgsql AS $$
+BEGIN RETURN QUERY SELECT * FROM public.usp_fin_pettycash_expense_list(p_box_id, p_session_id); END;
+$$;
+
+-- Combined summary (API calls fin.usp_Fin_PettyCash_Summary)
+DROP FUNCTION IF EXISTS fin.usp_fin_pettycash_summary(INTEGER) CASCADE;
+CREATE OR REPLACE FUNCTION fin.usp_fin_pettycash_summary(p_box_id INTEGER)
+RETURNS TABLE(
+    "BoxId" INTEGER, "BoxName" VARCHAR, "MaxAmount" NUMERIC, "CurrentBalance" NUMERIC,
+    "Status" VARCHAR, "SessionId" INTEGER, "OpeningAmount" NUMERIC, "TotalExpenses" NUMERIC,
+    "AvailableBalance" NUMERIC, "OpenedAt" TIMESTAMP, "ExpenseCount" BIGINT)
+LANGUAGE plpgsql AS $$
+BEGIN
+    RETURN QUERY
+    SELECT b."Id", b."Name"::VARCHAR, b."MaxAmount", b."CurrentBalance", b."Status"::VARCHAR,
+        s."Id", s."OpeningAmount", s."TotalExpenses",
+        COALESCE(s."OpeningAmount" - s."TotalExpenses", 0::NUMERIC),
+        s."OpenedAt"::TIMESTAMP,
+        (SELECT COUNT(1) FROM fin."PettyCashExpense" e WHERE e."SessionId" = s."Id")
+    FROM fin."PettyCashBox" b
+    LEFT JOIN fin."PettyCashSession" s ON s."BoxId" = b."Id" AND s."Status" = 'OPEN'
+    WHERE b."Id" = p_box_id;
 END;
 $$;
 

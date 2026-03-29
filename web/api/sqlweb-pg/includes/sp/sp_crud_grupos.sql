@@ -48,6 +48,7 @@ END;
 $$;
 
 -- ---------- 2. Get by Codigo ----------
+DROP FUNCTION IF EXISTS usp_grupos_getbycodigo(INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_grupos_getbycodigo(
     p_codigo INT
 )
@@ -87,9 +88,9 @@ DECLARE
     v_porcentaje   DOUBLE PRECISION;
     v_nuevo_codigo INT;
 BEGIN
-    v_descripcion    := NULLIF(p_row_json->>'Descripcion', '');
-    v_co_usuario     := NULLIF(p_row_json->>'Co_Usuario', '');
-    v_porcentaje_str := NULLIF(p_row_json->>'Porcentaje', '');
+    v_descripcion    := NULLIF(p_row_json->>'Descripcion', ''::VARCHAR);
+    v_co_usuario     := NULLIF(p_row_json->>'Co_Usuario', ''::VARCHAR);
+    v_porcentaje_str := NULLIF(p_row_json->>'Porcentaje', ''::VARCHAR);
     v_porcentaje     := CASE
                             WHEN v_porcentaje_str IS NOT NULL AND v_porcentaje_str ~ '^\d+(\.\d+)?$'
                             THEN v_porcentaje_str::DOUBLE PRECISION
@@ -128,9 +129,9 @@ BEGIN
         RETURN;
     END IF;
 
-    v_descripcion    := NULLIF(p_row_json->>'Descripcion', '');
-    v_co_usuario     := NULLIF(p_row_json->>'Co_Usuario', '');
-    v_porcentaje_str := NULLIF(p_row_json->>'Porcentaje', '');
+    v_descripcion    := NULLIF(p_row_json->>'Descripcion', ''::VARCHAR);
+    v_co_usuario     := NULLIF(p_row_json->>'Co_Usuario', ''::VARCHAR);
+    v_porcentaje_str := NULLIF(p_row_json->>'Porcentaje', ''::VARCHAR);
     v_porcentaje     := CASE
                             WHEN v_porcentaje_str IS NOT NULL AND v_porcentaje_str ~ '^\d+(\.\d+)?$'
                             THEN v_porcentaje_str::DOUBLE PRECISION

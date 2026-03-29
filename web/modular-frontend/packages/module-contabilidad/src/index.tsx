@@ -106,11 +106,12 @@ export {
   useCalcularDeclaracion, useDeclaracionesList, useDeclaracionDetalle,
   usePresentarDeclaracion, useEnmendarDeclaracion, useExportarDeclaracion,
   useGenerarRetencion, useRetencionesList, useRetencionDetalle,
+  useConceptosList, useConceptoUpsert, useTaxUnitList, useTaxUnitUpsert, useCalcularRetencion,
 } from "./hooks/useFiscalTributaria";
 
 export type {
-  TaxBookEntry, TaxBookSummary, TaxDeclaration, WithholdingVoucher,
-  TaxBookFilter, DeclarationFilter, WithholdingFilter,
+  TaxBookEntry, TaxBookSummary, TaxDeclaration, WithholdingVoucher, WithholdingConcept, TaxUnit,
+  TaxBookFilter, DeclarationFilter, WithholdingFilter, ConceptoFilter,
 } from "./hooks/useFiscalTributaria";
 
 // ─── Componentes Activos Fijos y Fiscal ─────────────────────

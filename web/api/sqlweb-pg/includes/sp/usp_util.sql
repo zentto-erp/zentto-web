@@ -6,12 +6,13 @@
  *  CRUD Generico, Inventario Cache, Metadata, Scope, Auth-Security, Bancos, Media.
  *
  *  Traducido de SQL Server -> PostgreSQL.
- *  Patron: CREATE OR REPLACE FUNCTION (idempotente)
+ *  Patron: DROP FUNCTION IF EXISTS (idempotente)
  * ============================================================================ */
 
 -- ============================================================================
 -- 1. CONFIG: usp_cfg_exchangerate_upsert
 -- ============================================================================
+DROP FUNCTION IF EXISTS usp_cfg_exchangerate_upsert(DATE, NUMERIC(18,6), NUMERIC(18,6), VARCHAR(120)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_cfg_exchangerate_upsert(
     p_rate_date    DATE,
     p_tasa_usd     NUMERIC(18,6),
@@ -36,8 +37,29 @@ END;
 $$;
 
 -- ============================================================================
+-- 1b. CONFIG: usp_cfg_exchangerate_getlatest
+-- ============================================================================
+DROP FUNCTION IF EXISTS usp_cfg_exchangerate_getlatest() CASCADE;
+CREATE OR REPLACE FUNCTION usp_cfg_exchangerate_getlatest()
+RETURNS TABLE("CurrencyCode" VARCHAR, "RateToBase" NUMERIC(18,6), "RateDate" DATE, "SourceName" VARCHAR)
+LANGUAGE plpgsql AS $$
+BEGIN
+    RETURN QUERY
+    SELECT DISTINCT ON (e."CurrencyCode")
+           e."CurrencyCode"::VARCHAR,
+           e."RateToBase",
+           e."RateDate",
+           e."SourceName"::VARCHAR
+      FROM cfg."ExchangeRateDaily" e
+     WHERE e."CurrencyCode" IN ('USD', 'EUR')
+     ORDER BY e."CurrencyCode", e."RateDate" DESC;
+END;
+$$;
+
+-- ============================================================================
 -- 2. FISCAL: usp_cfg_fiscal_hastable
 -- ============================================================================
+DROP FUNCTION IF EXISTS usp_cfg_fiscal_hastable() CASCADE;
 CREATE OR REPLACE FUNCTION usp_cfg_fiscal_hastable()
 RETURNS TABLE("hasTable" INT)
 LANGUAGE plpgsql AS $$
@@ -53,6 +75,7 @@ $$;
 -- ============================================================================
 -- 2b. FISCAL: usp_cfg_fiscal_hasrecordstable
 -- ============================================================================
+DROP FUNCTION IF EXISTS usp_cfg_fiscal_hasrecordstable() CASCADE;
 CREATE OR REPLACE FUNCTION usp_cfg_fiscal_hasrecordstable()
 RETURNS TABLE("hasTable" INT)
 LANGUAGE plpgsql AS $$
@@ -68,6 +91,7 @@ $$;
 -- ============================================================================
 -- 2c. FISCAL: usp_cfg_fiscal_getlatestrecord
 -- ============================================================================
+DROP FUNCTION IF EXISTS usp_cfg_fiscal_getlatestrecord(INT, INT, VARCHAR(10)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_cfg_fiscal_getlatestrecord(
     p_empresa_id   INT,
     p_sucursal_id  INT,
@@ -105,6 +129,7 @@ $$;
 -- ============================================================================
 -- 2d. FISCAL: usp_cfg_fiscal_infercountry
 -- ============================================================================
+DROP FUNCTION IF EXISTS usp_cfg_fiscal_infercountry(INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_cfg_fiscal_infercountry(
     p_empresa_id  INT,
     p_sucursal_id INT
@@ -126,6 +151,7 @@ $$;
 -- ============================================================================
 -- 2e. FISCAL: usp_cfg_fiscal_getconfig
 -- ============================================================================
+DROP FUNCTION IF EXISTS usp_cfg_fiscal_getconfig(INT, INT, VARCHAR(10)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_cfg_fiscal_getconfig(
     p_empresa_id   INT,
     p_sucursal_id  INT,
@@ -146,8 +172,9 @@ LANGUAGE plpgsql AS $$
 BEGIN
     RETURN QUERY
     SELECT
-        fc."CompanyId", fc."BranchId", fc."CountryCode",
-        fc."Currency", fc."TaxRegime", fc."DefaultTaxCode",
+        fc."CompanyId", fc."BranchId",
+        fc."CountryCode"::VARCHAR, fc."Currency"::VARCHAR,
+        fc."TaxRegime", fc."DefaultTaxCode",
         fc."DefaultTaxRate", fc."FiscalPrinterEnabled",
         fc."PrinterBrand", fc."PrinterPort",
         fc."VerifactuEnabled", fc."VerifactuMode",
@@ -166,6 +193,7 @@ $$;
 -- ============================================================================
 -- 2f. FISCAL: usp_cfg_fiscal_upsertconfig
 -- ============================================================================
+DROP FUNCTION IF EXISTS usp_cfg_fiscal_upsertconfig(INT, INT, VARCHAR(10), VARCHAR(10), VARCHAR(60), VARCHAR(30), NUMERIC(18,6), BOOLEAN, VARCHAR(60), VARCHAR(60), BOOLEAN, VARCHAR(20), VARCHAR(500), VARCHAR(500), VARCHAR(500), VARCHAR(30), VARCHAR(30), VARCHAR(60), VARCHAR(120), VARCHAR(30), BOOLEAN, BOOLEAN) CASCADE;
 CREATE OR REPLACE FUNCTION usp_cfg_fiscal_upsertconfig(
     p_empresa_id             INT,
     p_sucursal_id            INT,
@@ -239,6 +267,7 @@ $$;
 -- ============================================================================
 -- 2g. FISCAL: usp_cfg_fiscal_insertrecord
 -- ============================================================================
+DROP FUNCTION IF EXISTS usp_cfg_fiscal_insertrecord(INT, INT, VARCHAR(10), INT, VARCHAR(30), VARCHAR(60), TIMESTAMP, VARCHAR(60), NUMERIC(18,2), VARCHAR(200), VARCHAR(200), TEXT, TEXT, TEXT, BOOLEAN, TIMESTAMP, TEXT, VARCHAR(30), VARCHAR(60), VARCHAR(60), INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_cfg_fiscal_insertrecord(
     p_empresa_id           INT,
     p_sucursal_id          INT,
@@ -288,6 +317,7 @@ $$;
 -- ============================================================================
 -- 3. SISTEMA: usp_sys_notificacion_list
 -- ============================================================================
+DROP FUNCTION IF EXISTS usp_sys_notificacion_list(VARCHAR(60)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_sys_notificacion_list(
     p_usuario_id VARCHAR(60) DEFAULT NULL
 )
@@ -310,6 +340,7 @@ $$;
 -- ============================================================================
 -- 3b. SISTEMA: usp_sys_notificacion_markread
 -- ============================================================================
+DROP FUNCTION IF EXISTS usp_sys_notificacion_markread(TEXT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_sys_notificacion_markread(
     p_ids_csv TEXT
 )
@@ -331,6 +362,7 @@ $$;
 -- ============================================================================
 -- 3c. SISTEMA: usp_sys_tarea_list
 -- ============================================================================
+DROP FUNCTION IF EXISTS usp_sys_tarea_list(VARCHAR(60)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_sys_tarea_list(
     p_asignado_a VARCHAR(60) DEFAULT NULL
 )
@@ -356,6 +388,7 @@ $$;
 -- ============================================================================
 -- 3d. SISTEMA: usp_sys_tarea_toggle
 -- ============================================================================
+DROP FUNCTION IF EXISTS usp_sys_tarea_toggle(INT, BOOLEAN, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_sys_tarea_toggle(
     p_id         INT,
     p_completado BOOLEAN,
@@ -374,6 +407,7 @@ $$;
 -- ============================================================================
 -- 3e. SISTEMA: usp_sys_mensaje_list
 -- ============================================================================
+DROP FUNCTION IF EXISTS usp_sys_mensaje_list(VARCHAR(60)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_sys_mensaje_list(
     p_destinatario_id VARCHAR(60)
 )
@@ -396,6 +430,7 @@ $$;
 -- ============================================================================
 -- 3f. SISTEMA: usp_sys_mensaje_markread
 -- ============================================================================
+DROP FUNCTION IF EXISTS usp_sys_mensaje_markread(INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_sys_mensaje_markread(p_id INT)
 RETURNS VOID
 LANGUAGE plpgsql AS $$
@@ -407,6 +442,7 @@ $$;
 -- ============================================================================
 -- 5. RETENCIONES: usp_tax_retention_list
 -- ============================================================================
+DROP FUNCTION IF EXISTS usp_tax_retention_list(VARCHAR(200), VARCHAR(60), INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_tax_retention_list(
     p_search VARCHAR(200) DEFAULT NULL,
     p_tipo   VARCHAR(60)  DEFAULT NULL,
@@ -422,7 +458,7 @@ BEGIN
     RETURN QUERY
     SELECT
         tr."RetentionId", tr."RetentionCode", tr."Description",
-        tr."RetentionType", tr."RetentionRate", tr."CountryCode", tr."IsActive"
+        tr."RetentionType", tr."RetentionRate", tr."CountryCode"::VARCHAR, tr."IsActive"
     FROM master."TaxRetention" tr
     WHERE tr."IsDeleted" = FALSE
       AND (p_search IS NULL OR (tr."RetentionCode" ILIKE '%' || p_search || '%' OR tr."Description" ILIKE '%' || p_search || '%'))
@@ -435,6 +471,7 @@ $$;
 -- ============================================================================
 -- 5b. RETENCIONES: usp_tax_retention_count
 -- ============================================================================
+DROP FUNCTION IF EXISTS usp_tax_retention_count(VARCHAR(200), VARCHAR(60)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_tax_retention_count(
     p_search VARCHAR(200) DEFAULT NULL,
     p_tipo   VARCHAR(60)  DEFAULT NULL
@@ -454,6 +491,7 @@ $$;
 -- ============================================================================
 -- 5c. RETENCIONES: usp_tax_retention_getbycode
 -- ============================================================================
+DROP FUNCTION IF EXISTS usp_tax_retention_getbycode(VARCHAR(60)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_tax_retention_getbycode(p_codigo VARCHAR(60))
 RETURNS TABLE(
     "RetentionId" INT, "Codigo" VARCHAR, "Descripcion" VARCHAR,
@@ -473,6 +511,7 @@ $$;
 -- ============================================================================
 -- 6. EMPLEADOS: usp_hr_employee_getdefaultcompany
 -- ============================================================================
+DROP FUNCTION IF EXISTS usp_hr_employee_getdefaultcompany() CASCADE;
 CREATE OR REPLACE FUNCTION usp_hr_employee_getdefaultcompany()
 RETURNS TABLE("CompanyId" INT)
 LANGUAGE plpgsql AS $$
@@ -489,6 +528,7 @@ $$;
 -- ============================================================================
 -- 6b. EMPLEADOS: usp_hr_employee_list
 -- ============================================================================
+DROP FUNCTION IF EXISTS usp_hr_employee_list(INT, VARCHAR(200), VARCHAR(20), INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_hr_employee_list(
     p_company_id INT,
     p_search     VARCHAR(200) DEFAULT NULL,
@@ -520,6 +560,7 @@ $$;
 -- ============================================================================
 -- 6c. EMPLEADOS: usp_hr_employee_count
 -- ============================================================================
+DROP FUNCTION IF EXISTS usp_hr_employee_count(INT, VARCHAR(200), VARCHAR(20)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_hr_employee_count(
     p_company_id INT,
     p_search     VARCHAR(200) DEFAULT NULL,
@@ -543,6 +584,7 @@ $$;
 -- ============================================================================
 -- 6d. EMPLEADOS: usp_hr_employee_getbycode
 -- ============================================================================
+DROP FUNCTION IF EXISTS usp_hr_employee_getbycode(INT, VARCHAR(60)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_hr_employee_getbycode(p_company_id INT, p_cedula VARCHAR(60))
 RETURNS TABLE("EmployeeCode" VARCHAR, "EmployeeName" VARCHAR, "FiscalId" VARCHAR, "HireDate" DATE, "TerminationDate" DATE, "IsActive" BOOLEAN)
 LANGUAGE plpgsql AS $$
@@ -558,6 +600,7 @@ $$;
 -- ============================================================================
 -- 6e. EMPLEADOS: usp_hr_employee_existsbycode
 -- ============================================================================
+DROP FUNCTION IF EXISTS usp_hr_employee_existsbycode(INT, VARCHAR(60)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_hr_employee_existsbycode(p_company_id INT, p_code VARCHAR(60))
 RETURNS TABLE("EmployeeId" BIGINT)
 LANGUAGE plpgsql AS $$
@@ -573,6 +616,7 @@ $$;
 -- ============================================================================
 -- 6f. EMPLEADOS: usp_hr_employee_insert
 -- ============================================================================
+DROP FUNCTION IF EXISTS usp_hr_employee_insert(INT, VARCHAR(60), VARCHAR(200), VARCHAR(60), DATE, DATE, BOOLEAN) CASCADE;
 CREATE OR REPLACE FUNCTION usp_hr_employee_insert(
     p_company_id       INT,
     p_code             VARCHAR(60),
@@ -595,6 +639,7 @@ $$;
 -- ============================================================================
 -- 6g. EMPLEADOS: usp_hr_employee_update
 -- ============================================================================
+DROP FUNCTION IF EXISTS usp_hr_employee_update(INT, VARCHAR(60), VARCHAR(200), VARCHAR(60), DATE, DATE, BOOLEAN) CASCADE;
 CREATE OR REPLACE FUNCTION usp_hr_employee_update(
     p_company_id       INT,
     p_cedula           VARCHAR(60),
@@ -623,6 +668,7 @@ $$;
 -- ============================================================================
 -- 6h. EMPLEADOS: usp_hr_employee_delete
 -- ============================================================================
+DROP FUNCTION IF EXISTS usp_hr_employee_delete(INT, VARCHAR(60)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_hr_employee_delete(p_company_id INT, p_cedula VARCHAR(60))
 RETURNS VOID
 LANGUAGE plpgsql AS $$
@@ -637,6 +683,7 @@ $$;
 -- ============================================================================
 -- 7. SUPERVISOR BIOMETRIC: usp_sec_supervisor_biometric_hasactive
 -- ============================================================================
+DROP FUNCTION IF EXISTS usp_sec_supervisor_biometric_hasactive(VARCHAR(60), VARCHAR(128)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_sec_supervisor_biometric_hasactive(
     p_supervisor_user VARCHAR(60),
     p_credential_hash VARCHAR(128)
@@ -657,6 +704,7 @@ $$;
 -- ============================================================================
 -- 7b. SUPERVISOR BIOMETRIC: usp_sec_supervisor_biometric_touch
 -- ============================================================================
+DROP FUNCTION IF EXISTS usp_sec_supervisor_biometric_touch(VARCHAR(60), VARCHAR(128)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_sec_supervisor_biometric_touch(
     p_supervisor_user VARCHAR(60),
     p_credential_hash VARCHAR(128)
@@ -676,6 +724,7 @@ $$;
 -- ============================================================================
 -- 7c. SUPERVISOR BIOMETRIC: usp_sec_supervisor_biometric_enroll
 -- ============================================================================
+DROP FUNCTION IF EXISTS usp_sec_supervisor_biometric_enroll(VARCHAR(60), VARCHAR(128), VARCHAR(500), VARCHAR(120), VARCHAR(300), VARCHAR(60)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_sec_supervisor_biometric_enroll(
     p_supervisor_user  VARCHAR(60),
     p_credential_hash  VARCHAR(128),
@@ -720,6 +769,7 @@ $$;
 -- ============================================================================
 -- 7d. SUPERVISOR BIOMETRIC: usp_sec_supervisor_biometric_list
 -- ============================================================================
+DROP FUNCTION IF EXISTS usp_sec_supervisor_biometric_list(VARCHAR(60)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_sec_supervisor_biometric_list(
     p_supervisor_user VARCHAR(60) DEFAULT ''
 )
@@ -746,6 +796,7 @@ $$;
 -- ============================================================================
 -- 7e. SUPERVISOR BIOMETRIC: usp_sec_supervisor_biometric_deactivate
 -- ============================================================================
+DROP FUNCTION IF EXISTS usp_sec_supervisor_biometric_deactivate(VARCHAR(60), VARCHAR(128), VARCHAR(60)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_sec_supervisor_biometric_deactivate(
     p_supervisor_user VARCHAR(60),
     p_credential_hash VARCHAR(128),
@@ -769,6 +820,7 @@ $$;
 -- ============================================================================
 -- 8. SUPERVISOR OVERRIDE: usp_sec_supervisor_getrecord
 -- ============================================================================
+DROP FUNCTION IF EXISTS usp_sec_supervisor_getrecord(VARCHAR(60)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_sec_supervisor_getrecord(p_supervisor_user VARCHAR(60))
 RETURNS TABLE("codUsuario" VARCHAR, "nombre" VARCHAR, "tipo" VARCHAR, "isAdmin" BOOLEAN, "canDelete" BOOLEAN, "passwordHash" VARCHAR)
 LANGUAGE plpgsql AS $$
@@ -784,6 +836,7 @@ $$;
 -- ============================================================================
 -- 8b. SUPERVISOR OVERRIDE: usp_sec_supervisor_override_create
 -- ============================================================================
+DROP FUNCTION IF EXISTS usp_sec_supervisor_override_create(VARCHAR(60), VARCHAR(60), VARCHAR(20), INT, INT, VARCHAR(60), VARCHAR(60), VARCHAR(300), TEXT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_sec_supervisor_override_create(
     p_module_code          VARCHAR(60),
     p_action_code          VARCHAR(60),
@@ -818,6 +871,7 @@ $$;
 -- ============================================================================
 -- 8c. SUPERVISOR OVERRIDE: usp_sec_supervisor_override_consume
 -- ============================================================================
+DROP FUNCTION IF EXISTS usp_sec_supervisor_override_consume(INT, VARCHAR(60), VARCHAR(60), VARCHAR(60), INT, INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_sec_supervisor_override_consume(
     p_override_id        INT,
     p_module_code        VARCHAR(60),
@@ -849,6 +903,7 @@ $$;
 -- ============================================================================
 -- 9. PAYMENT ENGINE: usp_pay_transaction_resolveconfig
 -- ============================================================================
+DROP FUNCTION IF EXISTS usp_pay_transaction_resolveconfig(INT, INT, VARCHAR(30)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_pay_transaction_resolveconfig(
     p_empresa_id    INT,
     p_sucursal_id   INT,
@@ -871,6 +926,7 @@ $$;
 -- ============================================================================
 -- 9b. PAYMENT ENGINE: usp_pay_transaction_insert
 -- ============================================================================
+DROP FUNCTION IF EXISTS usp_pay_transaction_insert(VARCHAR(36), INT, INT, VARCHAR(30), INT, VARCHAR(50), VARCHAR(30), INT, VARCHAR(3), NUMERIC(18,2), VARCHAR(20), VARCHAR(20), VARCHAR(100), VARCHAR(50), TEXT, VARCHAR(500), VARCHAR(4), VARCHAR(20), VARCHAR(20), VARCHAR(10), VARCHAR(50), VARCHAR(50), VARCHAR(20), VARCHAR(45)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_pay_transaction_insert(
     p_transaction_uuid    VARCHAR(36),
     p_empresa_id          INT,
@@ -925,6 +981,7 @@ $$;
 -- ============================================================================
 -- 9c. PAYMENT ENGINE: usp_pay_transaction_updatestatus
 -- ============================================================================
+DROP FUNCTION IF EXISTS usp_pay_transaction_updatestatus(VARCHAR(36), VARCHAR(20), VARCHAR(100), VARCHAR(50), TEXT, VARCHAR(500)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_pay_transaction_updatestatus(
     p_transaction_uuid VARCHAR(36),
     p_status           VARCHAR(20),
@@ -950,6 +1007,7 @@ $$;
 -- ============================================================================
 -- 9d. PAYMENT ENGINE: usp_pay_transaction_search
 -- ============================================================================
+DROP FUNCTION IF EXISTS usp_pay_transaction_search(INT, INT, VARCHAR(30), VARCHAR(30), VARCHAR(50), VARCHAR(20), TIMESTAMP, TIMESTAMP, INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_pay_transaction_search(
     p_empresa_id    INT,
     p_sucursal_id   INT          DEFAULT NULL,
@@ -985,6 +1043,7 @@ $$;
 -- ============================================================================
 -- 9e. PAYMENT ENGINE: usp_pay_transaction_searchcount
 -- ============================================================================
+DROP FUNCTION IF EXISTS usp_pay_transaction_searchcount(INT, INT, VARCHAR(30), VARCHAR(30), VARCHAR(50), VARCHAR(20), TIMESTAMP, TIMESTAMP) CASCADE;
 CREATE OR REPLACE FUNCTION usp_pay_transaction_searchcount(
     p_empresa_id    INT,
     p_sucursal_id   INT          DEFAULT NULL,
@@ -1016,6 +1075,7 @@ $$;
 -- ============================================================================
 -- 11. INVENTARIO CACHE: usp_inventario_cacheload
 -- ============================================================================
+DROP FUNCTION IF EXISTS usp_inventario_cacheload(INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_inventario_cacheload(p_company_id INT)
 RETURNS TABLE(
     "ProductId" BIGINT, "ProductCode" VARCHAR, "ProductName" VARCHAR,
@@ -1039,6 +1099,7 @@ $$;
 -- ============================================================================
 -- 11b. INVENTARIO CACHE: usp_inventario_getbycode
 -- ============================================================================
+DROP FUNCTION IF EXISTS usp_inventario_getbycode(INT, VARCHAR(60)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_inventario_getbycode(p_company_id INT, p_codigo VARCHAR(60))
 RETURNS TABLE(
     "ProductId" BIGINT, "ProductCode" VARCHAR, "ProductName" VARCHAR,
@@ -1062,6 +1123,7 @@ $$;
 -- ============================================================================
 -- 13. METADATA: usp_sys_metadata_tables
 -- ============================================================================
+DROP FUNCTION IF EXISTS usp_sys_metadata_tables() CASCADE;
 CREATE OR REPLACE FUNCTION usp_sys_metadata_tables()
 RETURNS TABLE("TABLE_SCHEMA" VARCHAR, "TABLE_NAME" VARCHAR)
 LANGUAGE plpgsql AS $$
@@ -1078,6 +1140,7 @@ $$;
 -- ============================================================================
 -- 13b. METADATA: usp_sys_metadata_columns
 -- ============================================================================
+DROP FUNCTION IF EXISTS usp_sys_metadata_columns() CASCADE;
 CREATE OR REPLACE FUNCTION usp_sys_metadata_columns()
 RETURNS TABLE(
     "TABLE_SCHEMA" VARCHAR, "TABLE_NAME" VARCHAR, "COLUMN_NAME" VARCHAR,
@@ -1101,6 +1164,7 @@ $$;
 -- ============================================================================
 -- 13c. METADATA: usp_sys_metadata_primarykeys
 -- ============================================================================
+DROP FUNCTION IF EXISTS usp_sys_metadata_primarykeys() CASCADE;
 CREATE OR REPLACE FUNCTION usp_sys_metadata_primarykeys()
 RETURNS TABLE("TABLE_SCHEMA" VARCHAR, "TABLE_NAME" VARCHAR, "COLUMN_NAME" VARCHAR, "ORDINAL_POSITION" INT)
 LANGUAGE plpgsql AS $$
@@ -1122,6 +1186,7 @@ $$;
 -- ============================================================================
 -- 15. SCOPE: usp_cfg_scope_getdefault
 -- ============================================================================
+DROP FUNCTION IF EXISTS usp_cfg_scope_getdefault() CASCADE;
 CREATE OR REPLACE FUNCTION usp_cfg_scope_getdefault()
 RETURNS TABLE("companyId" INT, "branchId" INT, "systemUserId" INT)
 LANGUAGE plpgsql AS $$
@@ -1140,6 +1205,7 @@ $$;
 -- ============================================================================
 -- 15b. SCOPE: usp_cfg_scope_getdefaultcompanyuser
 -- ============================================================================
+DROP FUNCTION IF EXISTS usp_cfg_scope_getdefaultcompanyuser() CASCADE;
 CREATE OR REPLACE FUNCTION usp_cfg_scope_getdefaultcompanyuser()
 RETURNS TABLE("companyId" INT, "systemUserId" INT)
 LANGUAGE plpgsql AS $$
@@ -1157,6 +1223,7 @@ $$;
 -- ============================================================================
 -- 15c. USER: usp_sec_user_resolvebycode
 -- ============================================================================
+DROP FUNCTION IF EXISTS usp_sec_user_resolvebycode(VARCHAR(60)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_sec_user_resolvebycode(p_code VARCHAR(60))
 RETURNS TABLE("userId" INT)
 LANGUAGE plpgsql AS $$
@@ -1169,6 +1236,7 @@ $$;
 -- ============================================================================
 -- 15d. USER: usp_sec_user_resolvebycodeactive
 -- ============================================================================
+DROP FUNCTION IF EXISTS usp_sec_user_resolvebycodeactive(VARCHAR(60)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_sec_user_resolvebycodeactive(p_code VARCHAR(60))
 RETURNS TABLE("userId" INT)
 LANGUAGE plpgsql AS $$
@@ -1183,13 +1251,14 @@ $$;
 -- ============================================================================
 -- 16. BANCOS: usp_fin_bank_list
 -- ============================================================================
+DROP FUNCTION IF EXISTS usp_fin_bank_list(INT, VARCHAR(100), INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_fin_bank_list(
     p_company_id INT,
     p_search     VARCHAR(100) DEFAULT NULL,
     p_offset     INT DEFAULT 0,
     p_limit      INT DEFAULT 50
 )
-RETURNS TABLE("TotalCount" BIGINT, "Nombre" VARCHAR, "Contacto" VARCHAR, "Direccion" VARCHAR, "Telefonos" VARCHAR)
+RETURNS TABLE("TotalCount" BIGINT, "BankId" BIGINT, "Nombre" VARCHAR, "Contacto" VARCHAR, "Direccion" VARCHAR, "Telefonos" VARCHAR)
 LANGUAGE plpgsql AS $$
 DECLARE v_total BIGINT;
 BEGIN
@@ -1198,7 +1267,7 @@ BEGIN
       AND (p_search IS NULL OR "BankName" ILIKE p_search OR "ContactName" ILIKE p_search);
 
     RETURN QUERY
-    SELECT v_total, b."BankName", b."ContactName", b."AddressLine", b."Phones"
+    SELECT v_total, b."BankId", b."BankName", b."ContactName", b."AddressLine", b."Phones"
     FROM fin."Bank" b
     WHERE b."CompanyId" = p_company_id AND b."IsActive" = TRUE
       AND (p_search IS NULL OR b."BankName" ILIKE p_search OR b."ContactName" ILIKE p_search)
@@ -1210,6 +1279,7 @@ $$;
 -- ============================================================================
 -- 16b. BANCOS: usp_fin_bank_getbyname
 -- ============================================================================
+DROP FUNCTION IF EXISTS usp_fin_bank_getbyname(INT, VARCHAR(100)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_fin_bank_getbyname(p_company_id INT, p_bank_name VARCHAR(100))
 RETURNS TABLE("Nombre" VARCHAR, "Contacto" VARCHAR, "Direccion" VARCHAR, "Telefonos" VARCHAR)
 LANGUAGE plpgsql AS $$
@@ -1225,6 +1295,7 @@ $$;
 -- ============================================================================
 -- 16c. BANCOS: usp_fin_bank_insert
 -- ============================================================================
+DROP FUNCTION IF EXISTS usp_fin_bank_insert(INT, VARCHAR(30), VARCHAR(100), VARCHAR(100), VARCHAR(255), VARCHAR(100), INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_fin_bank_insert(
     p_company_id  INT, p_bank_code VARCHAR(30), p_bank_name VARCHAR(100),
     p_contact_name VARCHAR(100) DEFAULT NULL, p_address_line VARCHAR(255) DEFAULT NULL,
@@ -1248,6 +1319,7 @@ $$;
 -- ============================================================================
 -- 16d. BANCOS: usp_fin_bank_update
 -- ============================================================================
+DROP FUNCTION IF EXISTS usp_fin_bank_update(INT, VARCHAR(100), VARCHAR(100), VARCHAR(255), VARCHAR(100), INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_fin_bank_update(
     p_company_id INT, p_bank_name VARCHAR(100),
     p_contact_name VARCHAR(100) DEFAULT NULL, p_address_line VARCHAR(255) DEFAULT NULL,
@@ -1277,6 +1349,7 @@ $$;
 -- ============================================================================
 -- 16e. BANCOS: usp_fin_bank_delete
 -- ============================================================================
+DROP FUNCTION IF EXISTS usp_fin_bank_delete(INT, VARCHAR(100), INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_fin_bank_delete(p_company_id INT, p_bank_name VARCHAR(100), p_user_id INT DEFAULT NULL)
 RETURNS TABLE("Success" BOOLEAN, "Message" TEXT)
 LANGUAGE plpgsql AS $$
@@ -1298,6 +1371,7 @@ $$;
 -- ============================================================================
 -- 17. MEDIA: usp_cfg_mediaasset_insert
 -- ============================================================================
+DROP FUNCTION IF EXISTS usp_cfg_mediaasset_insert(INT, INT, VARCHAR(500), VARCHAR(1000), VARCHAR(255), VARCHAR(100), VARCHAR(20), BIGINT, VARCHAR(64), VARCHAR(500), INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_cfg_mediaasset_insert(
     p_company_id INT, p_branch_id INT,
     p_storage_key VARCHAR(500), p_public_url VARCHAR(1000),
@@ -1327,6 +1401,7 @@ $$;
 -- ============================================================================
 -- 17b. MEDIA: usp_cfg_mediaasset_getbyid
 -- ============================================================================
+DROP FUNCTION IF EXISTS usp_cfg_mediaasset_getbyid(INT, INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_cfg_mediaasset_getbyid(p_company_id INT, p_branch_id INT, p_media_asset_id INT)
 RETURNS TABLE("mediaAssetId" INT, "storageKey" VARCHAR, "publicUrl" VARCHAR, "mimeType" VARCHAR, "originalFileName" VARCHAR, "fileSizeBytes" BIGINT, "isActive" BOOLEAN, "isDeleted" BOOLEAN)
 LANGUAGE plpgsql AS $$
@@ -1342,6 +1417,7 @@ $$;
 -- ============================================================================
 -- 17c. MEDIA: usp_cfg_mediaasset_getbystoragekey
 -- ============================================================================
+DROP FUNCTION IF EXISTS usp_cfg_mediaasset_getbystoragekey(INT, INT, VARCHAR(500)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_cfg_mediaasset_getbystoragekey(p_company_id INT, p_branch_id INT, p_storage_key VARCHAR(500))
 RETURNS TABLE("mediaAssetId" INT)
 LANGUAGE plpgsql AS $$
@@ -1357,6 +1433,7 @@ $$;
 -- ============================================================================
 -- 17d. MEDIA: usp_cfg_entityimage_link
 -- ============================================================================
+DROP FUNCTION IF EXISTS usp_cfg_entityimage_link(INT, INT, VARCHAR(50), INT, INT, VARCHAR(30), INT, BOOLEAN, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_cfg_entityimage_link(
     p_company_id INT, p_branch_id INT, p_entity_type VARCHAR(50), p_entity_id INT,
     p_media_asset_id INT, p_role_code VARCHAR(30) DEFAULT NULL,
@@ -1395,6 +1472,7 @@ $$;
 -- ============================================================================
 -- 17e. MEDIA: usp_cfg_entityimage_list
 -- ============================================================================
+DROP FUNCTION IF EXISTS usp_cfg_entityimage_list(INT, INT, VARCHAR(50), INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_cfg_entityimage_list(p_company_id INT, p_branch_id INT, p_entity_type VARCHAR(50), p_entity_id INT)
 RETURNS TABLE("entityImageId" INT, "entityType" VARCHAR, "entityId" INT, "mediaAssetId" INT, "roleCode" VARCHAR, "sortOrder" INT, "isPrimary" BOOLEAN, "publicUrl" VARCHAR, "originalFileName" VARCHAR, "mimeType" VARCHAR, "fileSizeBytes" BIGINT, "altText" VARCHAR, "createdAt" TIMESTAMP)
 LANGUAGE plpgsql AS $$
@@ -1411,6 +1489,7 @@ $$;
 -- ============================================================================
 -- 17f. MEDIA: usp_cfg_entityimage_setprimary
 -- ============================================================================
+DROP FUNCTION IF EXISTS usp_cfg_entityimage_setprimary(INT, INT, VARCHAR(50), INT, INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_cfg_entityimage_setprimary(p_company_id INT, p_branch_id INT, p_entity_type VARCHAR(50), p_entity_id INT, p_entity_image_id INT, p_actor_user_id INT DEFAULT NULL)
 RETURNS TABLE("affected" INT)
 LANGUAGE plpgsql AS $$
@@ -1430,6 +1509,7 @@ $$;
 -- ============================================================================
 -- 17g. MEDIA: usp_cfg_entityimage_unlink
 -- ============================================================================
+DROP FUNCTION IF EXISTS usp_cfg_entityimage_unlink(INT, INT, VARCHAR(50), INT, INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_cfg_entityimage_unlink(p_company_id INT, p_branch_id INT, p_entity_type VARCHAR(50), p_entity_id INT, p_entity_image_id INT, p_actor_user_id INT DEFAULT NULL)
 RETURNS TABLE("ok" INT)
 LANGUAGE plpgsql AS $$
@@ -1459,6 +1539,7 @@ $$;
 -- ============================================================================
 -- 18. AUTH-SECURITY: usp_sec_authstore_check
 -- ============================================================================
+DROP FUNCTION IF EXISTS usp_sec_authstore_check() CASCADE;
 CREATE OR REPLACE FUNCTION usp_sec_authstore_check()
 RETURNS TABLE("hasStore" INT)
 LANGUAGE plpgsql AS $$
@@ -1474,6 +1555,7 @@ $$;
 -- ============================================================================
 -- 18b. AUTH-SECURITY: usp_sec_auth_userexistslegacy
 -- ============================================================================
+DROP FUNCTION IF EXISTS usp_sec_auth_userexistslegacy(VARCHAR(60)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_sec_auth_userexistslegacy(p_user_code VARCHAR(60))
 RETURNS TABLE("existsFlag" INT)
 LANGUAGE plpgsql AS $$
@@ -1486,6 +1568,7 @@ $$;
 -- ============================================================================
 -- 18c. AUTH-SECURITY: usp_sec_auth_emailexists
 -- ============================================================================
+DROP FUNCTION IF EXISTS usp_sec_auth_emailexists(VARCHAR(200)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_sec_auth_emailexists(p_email_normalized VARCHAR(200))
 RETURNS TABLE("existsFlag" INT)
 LANGUAGE plpgsql AS $$
@@ -1498,6 +1581,7 @@ $$;
 -- ============================================================================
 -- 18d. AUTH-SECURITY: usp_sec_authidentity_upsert
 -- ============================================================================
+DROP FUNCTION IF EXISTS usp_sec_authidentity_upsert(VARCHAR(60), VARCHAR(200), VARCHAR(200), BOOLEAN) CASCADE;
 CREATE OR REPLACE FUNCTION usp_sec_authidentity_upsert(
     p_user_code VARCHAR(60), p_email VARCHAR(200), p_email_normalized VARCHAR(200), p_pending BOOLEAN
 )
@@ -1526,6 +1610,7 @@ $$;
 -- ============================================================================
 -- 18e. AUTH-SECURITY: usp_sec_authtoken_issue
 -- ============================================================================
+DROP FUNCTION IF EXISTS usp_sec_authtoken_issue(VARCHAR(60), VARCHAR(30), VARCHAR(64), VARCHAR(200), INT, VARCHAR(50), VARCHAR(500)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_sec_authtoken_issue(
     p_user_code VARCHAR(60), p_token_type VARCHAR(30), p_token_hash VARCHAR(64),
     p_email_normalized VARCHAR(200), p_ttl_minutes INT,
@@ -1542,6 +1627,7 @@ $$;
 -- ============================================================================
 -- 18f. AUTH-SECURITY: usp_sec_auth_getloginsecuritystate
 -- ============================================================================
+DROP FUNCTION IF EXISTS usp_sec_auth_getloginsecuritystate(VARCHAR(60)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_sec_auth_getloginsecuritystate(p_user_code VARCHAR(60))
 RETURNS TABLE("IsRegistrationPending" BOOLEAN, "EmailVerifiedAtUtc" TIMESTAMP, "LockoutUntilUtc" TIMESTAMP)
 LANGUAGE plpgsql AS $$
@@ -1555,6 +1641,7 @@ $$;
 -- ============================================================================
 -- 18g. AUTH-SECURITY: usp_sec_auth_registerloginfailure
 -- ============================================================================
+DROP FUNCTION IF EXISTS usp_sec_auth_registerloginfailure(VARCHAR(60), VARCHAR(50), INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_sec_auth_registerloginfailure(
     p_user_code VARCHAR(60), p_ip VARCHAR(50) DEFAULT NULL, p_max_attempts INT DEFAULT 5, p_lockout_minutes INT DEFAULT 15
 )
@@ -1578,6 +1665,7 @@ $$;
 -- ============================================================================
 -- 18h. AUTH-SECURITY: usp_sec_auth_registerloginsuccess
 -- ============================================================================
+DROP FUNCTION IF EXISTS usp_sec_auth_registerloginsuccess(VARCHAR(60)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_sec_auth_registerloginsuccess(p_user_code VARCHAR(60))
 RETURNS VOID
 LANGUAGE plpgsql AS $$
@@ -1591,6 +1679,7 @@ $$;
 -- ============================================================================
 -- 18i. AUTH-SECURITY: usp_sec_auth_consumetoken
 -- ============================================================================
+DROP FUNCTION IF EXISTS usp_sec_auth_consumetoken(VARCHAR(64), VARCHAR(30)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_sec_auth_consumetoken(p_token_hash VARCHAR(64), p_token_type VARCHAR(30))
 RETURNS TABLE("UserCode" VARCHAR, "EmailNormalized" VARCHAR)
 LANGUAGE plpgsql AS $$
@@ -1611,6 +1700,7 @@ $$;
 -- ============================================================================
 -- 18j. AUTH-SECURITY: usp_sec_auth_verifyemail
 -- ============================================================================
+DROP FUNCTION IF EXISTS usp_sec_auth_verifyemail(VARCHAR(60)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_sec_auth_verifyemail(p_user_code VARCHAR(60))
 RETURNS VOID
 LANGUAGE plpgsql AS $$
@@ -1625,6 +1715,7 @@ $$;
 -- ============================================================================
 -- 18k. AUTH-SECURITY: usp_sec_auth_resolvebyidentifier
 -- ============================================================================
+DROP FUNCTION IF EXISTS usp_sec_auth_resolvebyidentifier(VARCHAR(60), VARCHAR(200), BOOLEAN) CASCADE;
 CREATE OR REPLACE FUNCTION usp_sec_auth_resolvebyidentifier(p_user_code VARCHAR(60), p_email_normalized VARCHAR(200), p_is_email BOOLEAN)
 RETURNS TABLE("UserCode" VARCHAR, "Email" VARCHAR, "EmailNormalized" VARCHAR, "IsRegistrationPending" BOOLEAN, "EmailVerifiedAtUtc" TIMESTAMP)
 LANGUAGE plpgsql AS $$
@@ -1641,6 +1732,7 @@ $$;
 -- ============================================================================
 -- 18l. AUTH-SECURITY: usp_sec_auth_invalidatetokens
 -- ============================================================================
+DROP FUNCTION IF EXISTS usp_sec_auth_invalidatetokens(VARCHAR(60), VARCHAR(30)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_sec_auth_invalidatetokens(p_user_code VARCHAR(60), p_token_type VARCHAR(30))
 RETURNS VOID
 LANGUAGE plpgsql AS $$
@@ -1654,6 +1746,7 @@ $$;
 -- ============================================================================
 -- 18m. AUTH-SECURITY: usp_sec_auth_registeruser
 -- ============================================================================
+DROP FUNCTION IF EXISTS usp_sec_auth_registeruser(VARCHAR(60), VARCHAR(200), VARCHAR(100)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_sec_auth_registeruser(p_user_code VARCHAR(60), p_password_hash VARCHAR(200), p_nombre VARCHAR(100))
 RETURNS VOID
 LANGUAGE plpgsql AS $$
@@ -1666,6 +1759,7 @@ $$;
 -- ============================================================================
 -- 18n. AUTH-SECURITY: usp_sec_auth_updatepassword
 -- ============================================================================
+DROP FUNCTION IF EXISTS usp_sec_auth_updatepassword(VARCHAR(60), VARCHAR(200)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_sec_auth_updatepassword(p_user_code VARCHAR(60), p_password_hash VARCHAR(200))
 RETURNS VOID
 LANGUAGE plpgsql AS $$
@@ -1677,6 +1771,7 @@ $$;
 -- ============================================================================
 -- 18o. AUTH-SECURITY: usp_sec_auth_resetlockout
 -- ============================================================================
+DROP FUNCTION IF EXISTS usp_sec_auth_resetlockout(VARCHAR(60)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_sec_auth_resetlockout(p_user_code VARCHAR(60))
 RETURNS VOID
 LANGUAGE plpgsql AS $$
@@ -1695,6 +1790,7 @@ $$;
 --    Lista con paginacion, filtro de busqueda en columnas de texto.
 --    Usa SQL dinamico seguro con quote_ident para tabla y columnas.
 -- ============================================================================
+DROP FUNCTION IF EXISTS usp_master_generic_list(VARCHAR(128), VARCHAR(128), VARCHAR(200), VARCHAR(128), INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_master_generic_list(
     p_schema_name  VARCHAR(128),
     p_table_name   VARCHAR(128),
@@ -1743,6 +1839,7 @@ $$;
 -- ============================================================================
 -- 20. CRUD GENERICO: usp_sys_genericlist
 -- ============================================================================
+DROP FUNCTION IF EXISTS usp_sys_genericlist(VARCHAR(128), VARCHAR(128), VARCHAR(128), VARCHAR(4), INT, INT, JSONB) CASCADE;
 CREATE OR REPLACE FUNCTION usp_sys_genericlist(
     p_schema_name  VARCHAR(128),
     p_table_name   VARCHAR(128),
@@ -1786,6 +1883,7 @@ $$;
 -- ============================================================================
 -- 20b. CRUD GENERICO: usp_sys_genericgetbykey
 -- ============================================================================
+DROP FUNCTION IF EXISTS usp_sys_genericgetbykey(VARCHAR(128), VARCHAR(128), JSONB) CASCADE;
 CREATE OR REPLACE FUNCTION usp_sys_genericgetbykey(
     p_schema_name VARCHAR(128),
     p_table_name  VARCHAR(128),
@@ -1812,6 +1910,7 @@ $$;
 -- ============================================================================
 -- 20c. CRUD GENERICO: usp_sys_genericinsert
 -- ============================================================================
+DROP FUNCTION IF EXISTS usp_sys_genericinsert(VARCHAR(128), VARCHAR(128), JSONB) CASCADE;
 CREATE OR REPLACE FUNCTION usp_sys_genericinsert(
     p_schema_name VARCHAR(128),
     p_table_name  VARCHAR(128),
@@ -1850,6 +1949,7 @@ $$;
 -- ============================================================================
 -- 20d. CRUD GENERICO: usp_sys_genericupdate
 -- ============================================================================
+DROP FUNCTION IF EXISTS usp_sys_genericupdate(VARCHAR(128), VARCHAR(128), JSONB, JSONB) CASCADE;
 CREATE OR REPLACE FUNCTION usp_sys_genericupdate(
     p_schema_name VARCHAR(128),
     p_table_name  VARCHAR(128),
@@ -1900,6 +2000,7 @@ $$;
 -- ============================================================================
 -- 20e. CRUD GENERICO: usp_sys_genericdelete
 -- ============================================================================
+DROP FUNCTION IF EXISTS usp_sys_genericdelete(VARCHAR(128), VARCHAR(128), JSONB) CASCADE;
 CREATE OR REPLACE FUNCTION usp_sys_genericdelete(
     p_schema_name VARCHAR(128),
     p_table_name  VARCHAR(128),
@@ -1932,6 +2033,7 @@ $$;
 --     Inserta cabecera + detalle en una transaccion (auto-tx en PG).
 --     Recibe datos como JSONB.
 -- ============================================================================
+DROP FUNCTION IF EXISTS usp_sys_headerdetailtx(VARCHAR(260), VARCHAR(260), JSONB, JSONB, VARCHAR(500)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_sys_headerdetailtx(
     p_header_table    VARCHAR(260),
     p_detail_table    VARCHAR(260),
@@ -2020,6 +2122,7 @@ $$;
 -- 22. META: usp_sys_meta_relations
 --     Lista relaciones FK de la base de datos.
 -- ============================================================================
+DROP FUNCTION IF EXISTS usp_sys_meta_relations() CASCADE;
 CREATE OR REPLACE FUNCTION usp_sys_meta_relations()
 RETURNS TABLE(
     "fkName"       TEXT,
@@ -2058,6 +2161,7 @@ $$;
 --      Lista tablas y columnas para el endpoint /meta/schema.
 --      Multi-recordset => split en 2 funciones.
 -- ============================================================================
+DROP FUNCTION IF EXISTS usp_sys_meta_tablesandcolumns_tables() CASCADE;
 CREATE OR REPLACE FUNCTION usp_sys_meta_tablesandcolumns_tables()
 RETURNS TABLE("schema" TEXT, "table" TEXT)
 LANGUAGE plpgsql AS $$
@@ -2071,6 +2175,7 @@ BEGIN
 END;
 $$;
 
+DROP FUNCTION IF EXISTS usp_sys_meta_tablesandcolumns_columns() CASCADE;
 CREATE OR REPLACE FUNCTION usp_sys_meta_tablesandcolumns_columns()
 RETURNS TABLE("schema" TEXT, "table" TEXT, "column" TEXT, "type" TEXT, "nullable" TEXT)
 LANGUAGE plpgsql AS $$

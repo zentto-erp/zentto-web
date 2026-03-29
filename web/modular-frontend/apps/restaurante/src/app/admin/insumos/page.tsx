@@ -1,14 +1,16 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
     Box, Paper, TextField, Typography,
-    Button, Dialog, DialogTitle, DialogContent, DialogActions, Grid, Alert
+    Button, Dialog, DialogTitle, DialogContent, DialogActions, Grid, Alert, CircularProgress
 } from '@mui/material';
+import { useGridLayoutSync } from '@zentto/shared-api';
 import { useUpsertProductoAdminMutation } from '@/hooks/useRestauranteAdmin';
-import { GridColDef } from '@mui/x-data-grid';
-import { EditableDataGrid } from '@zentto/module-admin';
+import type { ColumnDef } from '@zentto/datagrid-core';
 import { useInsumosAdminQuery, useProductosAdminQuery } from '@/hooks/useRestauranteAdmin';
+import { useScopedGridId } from '@/lib/zentto-grid';
+
 
 type InsumoRow = {
     id?: number;
@@ -32,7 +34,10 @@ type ProductoAdminRow = {
 };
 
 export default function AdminInsumosPage() {
-
+    const gridRef = useRef<any>(null);
+    const [registered, setRegistered] = useState(false);
+    const gridId = useScopedGridId('insumos-main');
+    const { ready: layoutReady } = useGridLayoutSync(gridId);
     const [search, setSearch] = useState('');
     const { data, isLoading } = useInsumosAdminQuery(search);
     const { data: productosData } = useProductosAdminQuery();
@@ -40,6 +45,11 @@ export default function AdminInsumosPage() {
     const [form, setForm] = useState({ codigo: '', nombre: '', unidad: '', descripcion: '' });
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
     const upsertMutation = useUpsertProductoAdminMutation();
+
+    useEffect(() => {
+        if (!layoutReady) return;
+        import('@zentto/datagrid').then(() => setRegistered(true));
+    }, [layoutReady]);
 
     const productos = (productosData?.rows ?? []) as unknown as ProductoAdminRow[];
     const productoByCodigo = useMemo(() => {
@@ -65,59 +75,51 @@ export default function AdminInsumosPage() {
             const descripcionProducto = String(matched?.nombre ?? matched?.descripcion ?? '').trim();
             return {
                 ...row,
-                id: matched ? Number(matched.id ?? 0) || undefined : undefined,
+                id: String((row as InsumoRow).codigo),
                 descripcion: descripcionProducto || row.descripcion,
-            } satisfies InsumoRow;
+                existencia: Number(row.existencia ?? 0),
+            };
         });
     }, [data?.rows, productoByCodigo]);
-    const page = 1;
-    const pageSize = 100;
 
-    const columns = useMemo<GridColDef[]>(() => [
-        { field: 'codigo', headerName: 'Código', minWidth: 160, flex: 0.8 },
-        { field: 'descripcion', headerName: 'Descripción', minWidth: 340, flex: 1.8, editable: true },
-        { field: 'unidad', headerName: 'Unidad', minWidth: 120, flex: 0.6 },
+    const columns = useMemo<ColumnDef[]>(() => [
+        { field: 'codigo', header: 'Codigo', width: 160, sortable: true },
+        { field: 'descripcion', header: 'Descripcion', flex: 1, minWidth: 340, sortable: true },
+        { field: 'unidad', header: 'Unidad', width: 120, sortable: true },
+        { field: 'existencia', header: 'Existencia', width: 140, type: 'number', sortable: true },
         {
-            field: 'existencia',
-            headerName: 'Existencia',
-            minWidth: 140,
-            flex: 0.7,
-            valueFormatter: (value) => Number(value ?? 0).toFixed(3),
+            field: 'actions', header: 'Acciones', type: 'actions', width: 100, pin: 'right',
+            actions: [
+                { icon: 'edit', label: 'Editar', action: 'edit', color: '#1976d2' },
+                { icon: 'delete', label: 'Eliminar', action: 'delete', color: '#d32f2f' },
+            ],
         },
     ], []);
 
-    const handleUpdateRow = async (row: Record<string, unknown>) => {
-        const codigoInsumo = String(row.codigo ?? '').trim();
-        const descripcion = String(row.descripcion ?? '').trim();
+    useEffect(() => {
+        const el = gridRef.current;
+        if (!el || !registered) return;
+        el.columns = columns;
+        el.rows = rows;
+        el.loading = isLoading;
+    }, [rows, isLoading, registered, columns]);
 
-        if (!codigoInsumo || !descripcion) {
-            throw new Error('Código y descripción son obligatorios para guardar.');
-        }
-
-        const matched = productoByCodigo.get(codigoInsumo);
-        const matchedId = Number(matched?.id ?? row.id ?? 0) || undefined;
-        const productoCodigo = String(matched?.codigo ?? codigoInsumo).trim();
-        const articuloInventarioId = String(matched?.articuloInventarioId ?? codigoInsumo).trim();
-
-        await upsertMutation.mutateAsync({
-            id: matchedId,
-            codigo: productoCodigo,
-            nombre: descripcion,
-            descripcion,
-            precio: Number(matched?.precio ?? 0),
-            iva: Number(matched?.iva ?? 16),
-            categoriaId: matched?.categoriaId ? Number(matched.categoriaId) : undefined,
-            disponible: matched?.disponible !== false,
-            articuloInventarioId: articuloInventarioId || undefined,
-            esCompuesto: matched?.esCompuesto === true,
-        });
-
-        return {
-            ...row,
-            id: matchedId,
-            descripcion,
+    useEffect(() => {
+        const el = gridRef.current;
+        if (!el || !registered) return;
+        const handler = (e: CustomEvent) => {
+            const { action, row } = e.detail;
+            if (action === "edit") {
+                setForm({ codigo: row.codigo ?? '', nombre: row.descripcion ?? '', unidad: row.unidad ?? '', descripcion: '' });
+                setErrorMsg(null);
+                setModalOpen(true);
+            } else if (action === "delete") {
+                console.log("Eliminar insumo:", row);
+            }
         };
-    };
+        el.addEventListener("action-click", handler);
+        return () => el.removeEventListener("action-click", handler);
+    }, [registered]);
 
     const handleOpenModal = () => {
         setForm({ codigo: '', nombre: '', unidad: '', descripcion: '' });
@@ -135,7 +137,7 @@ export default function AdminInsumosPage() {
 
     const handleSubmit = async () => {
         if (!form.codigo.trim() || !form.nombre.trim()) {
-            setErrorMsg('Código y nombre son obligatorios');
+            setErrorMsg('Codigo y nombre son obligatorios');
             return;
         }
         setErrorMsg(null);
@@ -155,8 +157,12 @@ export default function AdminInsumosPage() {
         }
     };
 
+    if (!layoutReady || !registered) {
+        return <Box sx={{ display: 'flex', justifyContent: 'center', mt: 10 }}><CircularProgress /></Box>;
+    }
+
     return (
-        <Box sx={{ p: 3 }}>
+        <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', height: '100%' }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                 <Typography variant="h4" fontWeight="bold">
                     Insumos Restaurante
@@ -171,7 +177,7 @@ export default function AdminInsumosPage() {
                     fullWidth
                     size="medium"
                     label="Buscar Insumo"
-                    placeholder="Código o descripción"
+                    placeholder="Codigo o descripcion"
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     InputLabelProps={{ shrink: true, style: { fontWeight: 600 } }}
@@ -179,16 +185,18 @@ export default function AdminInsumosPage() {
                 />
             </Paper>
 
-            <EditableDataGrid
-                rows={rows}
-                columns={columns}
-                loading={isLoading}
-                page={page}
-                pageSize={pageSize}
-                rowCount={rows.length}
-                onPageChange={() => { }}
-                onUpdateRow={handleUpdateRow}
-                getRowId={(row) => String((row as InsumoRow).codigo)}
+            <zentto-grid
+                ref={gridRef}
+                grid-id={gridId}
+                height="calc(100vh - 300px)"
+                enable-toolbar
+                enable-header-menu
+                enable-header-filters
+                enable-clipboard
+                enable-quick-search
+                enable-context-menu
+                enable-status-bar
+                enable-configurator
             />
 
             <Dialog open={modalOpen} onClose={handleCloseModal} maxWidth="xs" fullWidth>
@@ -198,7 +206,7 @@ export default function AdminInsumosPage() {
                         <Grid item xs={12}>
                             <TextField
                                 name="codigo"
-                                label="Código"
+                                label="Codigo"
                                 value={form.codigo}
                                 onChange={handleFormChange}
                                 fullWidth
@@ -233,7 +241,7 @@ export default function AdminInsumosPage() {
                         <Grid item xs={12}>
                             <TextField
                                 name="descripcion"
-                                label="Descripción"
+                                label="Descripcion"
                                 value={form.descripcion}
                                 onChange={handleFormChange}
                                 fullWidth
@@ -253,4 +261,12 @@ export default function AdminInsumosPage() {
             </Dialog>
         </Box>
     );
+}
+
+declare global {
+    namespace JSX {
+        interface IntrinsicElements {
+            'zentto-grid': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & Record<string, any>, HTMLElement>;
+        }
+    }
 }

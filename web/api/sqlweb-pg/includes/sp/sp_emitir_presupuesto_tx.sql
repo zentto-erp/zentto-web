@@ -58,14 +58,14 @@ DECLARE
     v_detalle_rows    INT;
 BEGIN
     -- Parsear cabecera (soporta nodos presupuesto y factura por compat)
-    v_num_fact := COALESCE(NULLIF(TRIM(p_presupuesto_json->>'NUM_FACT'), ''), NULL);
-    v_codigo := NULLIF(TRIM(p_presupuesto_json->>'CODIGO'), '');
-    v_pago := UPPER(COALESCE(NULLIF(TRIM(p_presupuesto_json->>'PAGO'), ''), ''));
-    v_cod_usuario := COALESCE(NULLIF(TRIM(p_presupuesto_json->>'COD_USUARIO'), ''), 'API');
-    v_serial_tipo := COALESCE(NULLIF(TRIM(p_presupuesto_json->>'SERIALTIPO'), ''), '');
-    v_tipo_orden := COALESCE(NULLIF(TRIM(p_presupuesto_json->>'TIPO_ORDEN'), ''),
-                    COALESCE(NULLIF(TRIM(p_presupuesto_json->>'Tipo_orden'), ''), '1'));
-    v_observ := NULLIF(TRIM(p_presupuesto_json->>'OBSERV'), '');
+    v_num_fact := COALESCE(NULLIF(TRIM(p_presupuesto_json->>'NUM_FACT'), ''::VARCHAR), NULL);
+    v_codigo := NULLIF(TRIM(p_presupuesto_json->>'CODIGO'), ''::VARCHAR);
+    v_pago := UPPER(COALESCE(NULLIF(TRIM(p_presupuesto_json->>'PAGO'), ''::VARCHAR),''::VARCHAR));
+    v_cod_usuario := COALESCE(NULLIF(TRIM(p_presupuesto_json->>'COD_USUARIO'), ''::VARCHAR), 'API');
+    v_serial_tipo := COALESCE(NULLIF(TRIM(p_presupuesto_json->>'SERIALTIPO'), ''::VARCHAR),''::VARCHAR);
+    v_tipo_orden := COALESCE(NULLIF(TRIM(p_presupuesto_json->>'TIPO_ORDEN'), ''::VARCHAR),
+                    COALESCE(NULLIF(TRIM(p_presupuesto_json->>'Tipo_orden'), ''::VARCHAR), '1'));
+    v_observ := NULLIF(TRIM(p_presupuesto_json->>'OBSERV'), ''::VARCHAR);
 
     BEGIN
         v_fecha := (p_presupuesto_json->>'FECHA')::TIMESTAMP;
@@ -120,10 +120,10 @@ BEGIN
         "DiscountedPrice", "RelatedRef", "AlternateCode"
     )
     SELECT
-        COALESCE(NULLIF(TRIM(d->>'NUM_FACT'), ''), v_num_fact),
-        COALESCE(NULLIF(TRIM(d->>'SERIALTIPO'), ''), v_serial_tipo),
+        COALESCE(NULLIF(TRIM(d->>'NUM_FACT'), ''::VARCHAR), v_num_fact),
+        COALESCE(NULLIF(TRIM(d->>'SERIALTIPO'), ''::VARCHAR), v_serial_tipo),
         v_tipo_orden, 'PRESUP',
-        NULLIF(TRIM(d->>'COD_SERV'), ''),
+        NULLIF(TRIM(d->>'COD_SERV'), ''::VARCHAR),
         COALESCE((d->>'CANTIDAD')::NUMERIC(18,4), 0),
         COALESCE((d->>'PRECIO')::NUMERIC(18,4), 0),
         COALESCE((d->>'ALICUOTA')::NUMERIC(18,4), 0),
@@ -135,8 +135,8 @@ BEGIN
             (d->>'PRECIO_DESCUENTO')::NUMERIC(18,4),
             COALESCE((d->>'PRECIO')::NUMERIC(18,4), 0)
         ),
-        COALESCE(NULLIF(TRIM(d->>'RELACIONADA'), ''), '0'),
-        NULLIF(TRIM(d->>'COD_ALTERNO'), '')
+        COALESCE(NULLIF(TRIM(d->>'RELACIONADA'), ''::VARCHAR), '0'),
+        NULLIF(TRIM(d->>'COD_ALTERNO'), ''::VARCHAR)
     FROM jsonb_array_elements(p_detalle_json) AS d;
 
     SELECT COUNT(*) INTO v_detalle_rows FROM jsonb_array_elements(p_detalle_json);
@@ -158,13 +158,13 @@ BEGIN
         )
         SELECT
             COALESCE((fp->>'tasacambio')::NUMERIC(18,6), 1),
-            NULLIF(TRIM(fp->>'tipo'), ''),
+            NULLIF(TRIM(fp->>'tipo'), ''::VARCHAR),
             v_num_fact,
             COALESCE((fp->>'monto')::NUMERIC(18,4), 0),
-            COALESCE(NULLIF(TRIM(fp->>'banco'), ''), ' '),
-            COALESCE(NULLIF(TRIM(fp->>'cuenta'), ''), ' '),
+            COALESCE(NULLIF(TRIM(fp->>'banco'), ''::VARCHAR), ' '),
+            COALESCE(NULLIF(TRIM(fp->>'cuenta'), ''::VARCHAR), ' '),
             v_fecha,
-            COALESCE(NULLIF(TRIM(fp->>'numero'), ''), '0'),
+            COALESCE(NULLIF(TRIM(fp->>'numero'), ''::VARCHAR), '0'),
             v_memoria, v_serial_tipo, 'PRESUP'
         FROM jsonb_array_elements(p_formas_pago_json) AS fp;
 
@@ -180,13 +180,13 @@ BEGIN
         INSERT INTO acct."BankDeposit" ("Amount", "CheckNumber", "BankAccount", "CustomerCode", "IsRelated", "BankName", "DocumentRef", "OperationType")
         SELECT
             COALESCE((fp->>'monto')::NUMERIC(18,4), 0),
-            COALESCE(NULLIF(TRIM(fp->>'numero'), ''), '0'),
-            COALESCE(NULLIF(TRIM(fp->>'cuenta'), ''), ' '),
+            COALESCE(NULLIF(TRIM(fp->>'numero'), ''::VARCHAR), '0'),
+            COALESCE(NULLIF(TRIM(fp->>'cuenta'), ''::VARCHAR), ' '),
             v_codigo, FALSE,
-            COALESCE(NULLIF(TRIM(fp->>'banco'), ''), ' '),
+            COALESCE(NULLIF(TRIM(fp->>'banco'), ''::VARCHAR), ' '),
             v_num_fact, 'PRESUP'
         FROM jsonb_array_elements(p_formas_pago_json) AS fp
-        WHERE UPPER(COALESCE(fp->>'tipo', '')) = 'CHEQUE';
+        WHERE UPPER(COALESCE(fp->>'tipo',''::VARCHAR)) = 'CHEQUE';
     END IF;
 
     v_abono := v_total - v_saldo_pendiente;
@@ -217,31 +217,31 @@ BEGIN
     -- 5. Inventario
     IF p_actualizar_inventario THEN
         INSERT INTO master."InventoryMovement" ("CompanyId", "ProductCode", "DocumentRef", "MovementType", "MovementDate", "Quantity", "UnitCost", "TotalCost", "Notes")
-        SELECT v_default_company_id, NULLIF(TRIM(d->>'COD_SERV'), ''), v_num_fact, 'SALIDA', v_fecha::DATE,
+        SELECT v_default_company_id, NULLIF(TRIM(d->>'COD_SERV'), ''::VARCHAR), v_num_fact, 'SALIDA', v_fecha::DATE,
             COALESCE((d->>'CANTIDAD')::NUMERIC(18,4), 0),
             COALESCE(i."COSTO_REFERENCIA", 0),
             COALESCE((d->>'CANTIDAD')::NUMERIC(18,4), 0) * COALESCE(i."COSTO_REFERENCIA", 0),
             'Presup:' || v_num_fact
         FROM jsonb_array_elements(p_detalle_json) AS d
-        INNER JOIN master."Product" i ON i."ProductCode" = NULLIF(TRIM(d->>'COD_SERV'), '')
-        WHERE NULLIF(TRIM(d->>'COD_SERV'), '') IS NOT NULL AND COALESCE((d->>'CANTIDAD')::NUMERIC(18,4), 0) > 0;
+        INNER JOIN master."Product" i ON i."ProductCode" = NULLIF(TRIM(d->>'COD_SERV'), ''::VARCHAR)
+        WHERE NULLIF(TRIM(d->>'COD_SERV'), ''::VARCHAR) IS NOT NULL AND COALESCE((d->>'CANTIDAD')::NUMERIC(18,4), 0) > 0;
 
         UPDATE master."Product" AS p
            SET "StockQty" = COALESCE(p."StockQty", 0) - agg."Total"
           FROM (
-              SELECT NULLIF(TRIM(d->>'COD_SERV'), '') AS cod_serv, SUM(COALESCE((d->>'CANTIDAD')::NUMERIC(18,4), 0)) AS "Total"
+              SELECT NULLIF(TRIM(d->>'COD_SERV'), ''::VARCHAR) AS cod_serv, SUM(COALESCE((d->>'CANTIDAD')::NUMERIC(18,4), 0)) AS "Total"
                 FROM jsonb_array_elements(p_detalle_json) AS d
-               GROUP BY NULLIF(TRIM(d->>'COD_SERV'), '')
+               GROUP BY NULLIF(TRIM(d->>'COD_SERV'), ''::VARCHAR)
           ) agg
          WHERE p."ProductCode" = agg.cod_serv;
 
         UPDATE master."AlternateStock" AS a
            SET "StockQty" = COALESCE(a."StockQty", 0) - agg."Total"
           FROM (
-              SELECT NULLIF(TRIM(d->>'COD_ALTERNO'), '') AS cod_alterno, SUM(COALESCE((d->>'CANTIDAD')::NUMERIC(18,4), 0)) AS "Total"
+              SELECT NULLIF(TRIM(d->>'COD_ALTERNO'), ''::VARCHAR) AS cod_alterno, SUM(COALESCE((d->>'CANTIDAD')::NUMERIC(18,4), 0)) AS "Total"
                 FROM jsonb_array_elements(p_detalle_json) AS d
                WHERE COALESCE((d->>'RELACIONADA')::INT, 0) = 1
-               GROUP BY NULLIF(TRIM(d->>'COD_ALTERNO'), '')
+               GROUP BY NULLIF(TRIM(d->>'COD_ALTERNO'), ''::VARCHAR)
           ) agg
          WHERE a."ProductCode" = agg.cod_alterno;
     END IF;

@@ -3,6 +3,13 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiGet, apiPut } from "@zentto/shared-api";
 
+function unwrapPayload<T>(payload: T | { ok?: boolean; data?: T }): T {
+  if (payload && typeof payload === 'object' && 'data' in (payload as Record<string, unknown>)) {
+    return ((payload as { data?: T }).data ?? payload) as T;
+  }
+  return payload as T;
+}
+
 // ─── Query Keys ───────────────────────────────────
 const QK_AUDIT_LOGS = "auditoria-logs";
 const QK_AUDIT_DASHBOARD = "auditoria-dashboard";
@@ -95,7 +102,7 @@ export function useFiscalRecords(filter?: FiscalRecordFilter) {
 export function useFiscalConfig(params?: { empresaId?: number; sucursalId?: number; countryCode?: string }) {
   return useQuery({
     queryKey: [QK_FISCAL_CONFIG, params],
-    queryFn: () => apiGet("/v1/fiscal/config", params as any),
+    queryFn: async () => unwrapPayload(await apiGet("/v1/fiscal/config", params as any)),
   });
 }
 
@@ -111,7 +118,7 @@ export function useSaveFiscalConfig() {
 export function useFiscalCountries() {
   return useQuery({
     queryKey: [QK_FISCAL_COUNTRIES],
-    queryFn: () => apiGet("/v1/fiscal/countries"),
+    queryFn: async () => unwrapPayload(await apiGet("/v1/fiscal/countries")),
     staleTime: 5 * 60 * 1000,
   });
 }
@@ -119,7 +126,7 @@ export function useFiscalCountries() {
 export function useFiscalCountryProfile(code: string | null) {
   return useQuery({
     queryKey: [QK_FISCAL_COUNTRIES, "profile", code],
-    queryFn: () => apiGet(`/v1/fiscal/countries/${code}`),
+    queryFn: async () => unwrapPayload(await apiGet(`/v1/fiscal/countries/${code}`)),
     enabled: !!code,
   });
 }
@@ -127,7 +134,7 @@ export function useFiscalCountryProfile(code: string | null) {
 export function useFiscalTaxRates(code: string | null) {
   return useQuery({
     queryKey: [QK_FISCAL_COUNTRIES, "tax-rates", code],
-    queryFn: () => apiGet(`/v1/fiscal/countries/${code}/tax-rates`),
+    queryFn: async () => unwrapPayload(await apiGet(`/v1/fiscal/countries/${code}/tax-rates`)),
     enabled: !!code,
   });
 }
@@ -135,7 +142,7 @@ export function useFiscalTaxRates(code: string | null) {
 export function useFiscalInvoiceTypes(code: string | null) {
   return useQuery({
     queryKey: [QK_FISCAL_COUNTRIES, "invoice-types", code],
-    queryFn: () => apiGet(`/v1/fiscal/countries/${code}/invoice-types`),
+    queryFn: async () => unwrapPayload(await apiGet(`/v1/fiscal/countries/${code}/invoice-types`)),
     enabled: !!code,
   });
 }

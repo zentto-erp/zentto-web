@@ -1,7 +1,9 @@
 'use client';
 import { createTheme } from '@mui/material/styles';
 import { red } from '@mui/material/colors';
-import type { } from '@mui/x-data-grid/themeAugmentation';
+import { esES as coreEsES } from '@mui/material/locale';
+
+// @mui/x-data-grid theme augmentation and locale removed (legacy — migrated to native <zentto-grid>)
 
 /* ── Zentto Brand Colors (derivados del ecommerce) ── */
 export const brandColors = {
@@ -35,7 +37,7 @@ export const brandColors = {
   shortcutOrange: '#ff9900',
 };
 
-const theme = createTheme({
+const baseThemeOptions = {
   cssVariables: {
     colorSchemeSelector: 'data-toolpad-color-scheme',
   },
@@ -120,8 +122,15 @@ const theme = createTheme({
         density: 'compact',
         disableColumnMenu: false,
         showCellVerticalBorder: false,
-        rowHeight: 40,
+        rowHeight: 44,
         columnHeaderHeight: 48,
+        localeText: {
+          toolbarDensity: 'Tamaño',
+          toolbarDensityLabel: 'Tamaño de fila',
+          toolbarDensityCompact: 'Compacto',
+          toolbarDensityStandard: 'Estándar',
+          toolbarDensityComfortable: 'Grande',
+        },
       },
       styleOverrides: {
         root: {
@@ -176,39 +185,44 @@ const theme = createTheme({
         },
       },
     },
+    // Inputs: defaults funcionales — sin sobreescribir estilos de MUI
+    MuiFormControl: {
+      defaultProps: { size: 'small', fullWidth: true },
+    },
+    MuiInputLabel: {
+      defaultProps: { size: 'small' },
+    },
+    MuiSelect: {
+      defaultProps: { size: 'small' },
+    },
     MuiTextField: {
       defaultProps: {
         variant: 'outlined',
-      },
-      styleOverrides: {
-        root: {
-          '& .MuiOutlinedInput-root': {
-            borderRadius: 6,
-            backgroundColor: 'var(--mui-palette-background-paper)',
-            minHeight: 40,
-            '& fieldset': {
-              borderColor: 'var(--mui-palette-divider)',
-            },
-            '&:hover fieldset': {
-              borderColor: 'var(--mui-palette-text-secondary)',
-            },
-            '&.Mui-focused fieldset': {
-              borderColor: 'var(--mui-palette-primary-main)',
-              borderWidth: '1px',
-            },
-            '&.MuiInputBase-sizeSmall': {
-              minHeight: 36,
-            },
-          },
-        },
+        size: 'small',
+        fullWidth: true,
       },
     },
     MuiOutlinedInput: {
       styleOverrides: {
         input: {
-          padding: '8px 12px',
+          // Ocultar spinners en inputs numéricos
+          '&[type="number"]': {
+            textAlign: 'left',
+            MozAppearance: 'textfield',
+          },
+          '&[type="number"]::-webkit-outer-spin-button, &[type="number"]::-webkit-inner-spin-button': {
+            WebkitAppearance: 'none',
+            margin: 0,
+          },
         },
       },
+    },
+    // DatePicker — misma altura y estilo que TextField
+    MuiPickersTextField: {
+      defaultProps: { size: 'medium', fullWidth: true },
+    },
+    MuiAutocomplete: {
+      defaultProps: { size: 'medium', fullWidth: true },
     },
     MuiCheckbox: {
       defaultProps: { color: 'primary' },
@@ -226,20 +240,49 @@ const theme = createTheme({
         },
       },
     },
-    MuiInputLabel: {
-      styleOverrides: {
-        root: {
-          transform: 'translate(14px, 10px) scale(1)',
-          '&.MuiInputLabel-shrink': {
-            transform: 'translate(14px, -9px) scale(0.75)',
-            backgroundColor: 'var(--mui-palette-background-paper)',
-            padding: '0 4px',
-          },
-        },
-      },
-    },
   },
-});
+};
+
+const theme = createTheme(baseThemeOptions as any, coreEsES);
 
 export default theme;
+
+/* ── Runtime branding: theme factory ── */
+
+export interface BrandingColors {
+  primaryColor: string;
+  primaryDark: string;
+  secondaryColor: string;
+  secondaryDark: string;
+  accentColor: string;
+}
+
+const DEFAULT_BRANDING: BrandingColors = {
+  primaryColor: '#ff9900',
+  primaryDark: '#e68a00',
+  secondaryColor: '#232f3e',
+  secondaryDark: '#131921',
+  accentColor: '#ff9900',
+};
+
+export { DEFAULT_BRANDING, baseThemeOptions };
+
+/** Create a MUI theme with tenant-specific colors (runtime, no rebuild). */
+export function createBrandedTheme(overrides: Partial<BrandingColors> = {}) {
+  const b = { ...DEFAULT_BRANDING, ...overrides };
+  const opts = structuredClone(baseThemeOptions) as typeof baseThemeOptions;
+  // Light
+  opts.colorSchemes.light.palette.primary = {
+    main: b.primaryColor, light: b.primaryColor + '33', dark: b.primaryDark, contrastText: b.secondaryDark,
+  };
+  opts.colorSchemes.light.palette.secondary = {
+    main: b.secondaryColor, light: b.secondaryColor + '1a', dark: b.secondaryDark, contrastText: '#fff',
+  };
+  // Dark
+  opts.colorSchemes.dark.palette.primary = {
+    main: b.primaryColor, light: b.primaryColor + '33', dark: b.primaryDark, contrastText: b.secondaryDark,
+  };
+  opts.colorSchemes.dark.palette.background = { default: b.secondaryDark, paper: b.secondaryColor + '99' };
+  return createTheme(opts as any, coreEsES);
+}
 

@@ -1,7 +1,7 @@
--- ═══════════════════════════════════════════════════════════════════
--- DatqBox Restaurante — Subsistema Administrativo Completo
+-- Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
+-- DatqBox Restaurante Ã¢â‚¬â€ Subsistema Administrativo Completo
 -- Traducido de SQL Server a PostgreSQL
--- ═══════════════════════════════════════════════════════════════════
+-- Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
 
 -- =============================================
 -- 1. AMBIENTES (Salon, Terraza, Barra, etc.)
@@ -237,11 +237,11 @@ BEGIN
 END;
 $$;
 
--- ═══════════════════════════════════════════════════════════════════
--- FUNCIONES — ADMINISTRATIVOS DEL RESTAURANTE
--- ═══════════════════════════════════════════════════════════════════
+-- Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
+-- FUNCIONES Ã¢â‚¬â€ ADMINISTRATIVOS DEL RESTAURANTE
+-- Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
 
--- ─── Ambientes ───
+-- Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ Ambientes Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 CREATE OR REPLACE FUNCTION usp_rest_ambientes_list()
 RETURNS TABLE(
     "id"     INT,
@@ -280,7 +280,7 @@ BEGIN
 END;
 $$;
 
--- ─── Categorias del Menu ───
+-- Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ Categorias del Menu Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 CREATE OR REPLACE FUNCTION usp_rest_categorias_list()
 RETURNS TABLE(
     "id"           INT,
@@ -323,7 +323,7 @@ BEGIN
 END;
 $$;
 
--- ─── Productos del Menu ───
+-- Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ Productos del Menu Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 CREATE OR REPLACE FUNCTION usp_rest_productos_list(
     p_categoria_id     INT DEFAULT NULL,
     p_search           VARCHAR(100) DEFAULT NULL,
@@ -508,7 +508,7 @@ BEGIN
 END;
 $$;
 
--- ─── Componentes de Producto ───
+-- Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ Componentes de Producto Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 CREATE OR REPLACE FUNCTION usp_rest_componente_upsert(
     p_id          INT DEFAULT 0,
     p_producto_id INT DEFAULT 0,
@@ -559,7 +559,7 @@ BEGIN
 END;
 $$;
 
--- ─── Compras Restaurante ───
+-- Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ Compras Restaurante Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 CREATE OR REPLACE FUNCTION usp_rest_compras_list(
     p_estado VARCHAR(20) DEFAULT NULL,
     p_from   TIMESTAMP   DEFAULT NULL,
@@ -612,7 +612,7 @@ DECLARE
     v_seq        INT;
 BEGIN
     SELECT COALESCE(MAX("Id"), 0) + 1 INTO v_seq FROM "RestauranteCompras";
-    v_num_compra := 'RC-' || REPLACE(TO_CHAR(NOW() AT TIME ZONE 'UTC', 'YYYY-MM'), '-', '') || '-' || LPAD(v_seq::TEXT, 4, '0');
+    v_num_compra := 'RC-' || REPLACE(TO_CHAR(NOW() AT TIME ZONE 'UTC', 'YYYY-MM'), '-',''::VARCHAR) || '-' || LPAD(v_seq::TEXT, 4, '0');
 
     INSERT INTO "RestauranteCompras" ("NumCompra", "ProveedorId", "Estado", "Observaciones", "CodUsuario")
     VALUES (v_num_compra, p_proveedor_id, 'pendiente', p_observaciones, p_cod_usuario)
@@ -642,7 +642,7 @@ EXCEPTION WHEN OTHERS THEN
 END;
 $$;
 
--- ─── Receta (ingredientes) ───
+-- Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ Receta (ingredientes) Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 CREATE OR REPLACE FUNCTION usp_rest_receta_upsert(
     p_id            INT DEFAULT 0,
     p_producto_id   INT DEFAULT 0,

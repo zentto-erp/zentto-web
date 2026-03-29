@@ -31,13 +31,14 @@ interface Props {
 }
 
 export default function StoreLayout({ children, onNavigate }: Props) {
-  const [cartOpen, setCartOpen] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [userMenuAnchor, setUserMenuAnchor] = useState<null | HTMLElement>(null);
   const [searchFocused, setSearchFocused] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
 
+  const cartOpen = useCartStore((s) => s.cartOpen);
+  const setCartOpen = useCartStore((s) => s.setCartOpen);
   const getItemCount = useCartStore((s) => s.getItemCount);
   const getTotal = useCartStore((s) => s.getTotal);
   const customerToken = useCartStore((s) => s.customerToken);
@@ -435,16 +436,27 @@ export default function StoreLayout({ children, onNavigate }: Props) {
         <Container maxWidth="xl">
           <Box sx={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", gap: 4 }}>
             {[
-              { title: "Conócenos", items: ["Acerca de Zentto", "Trabaja con nosotros", "Prensa"] },
-              { title: "Gana dinero", items: ["Vende en Zentto Store", "Programa de afiliados"] },
-              { title: "Ayuda", items: ["Centro de ayuda", "Devoluciones", "Contacto"] },
+              { title: "Conócenos", items: [
+                { label: "Acerca de Zentto", href: "/ecommerce/acerca" },
+                { label: "Trabaja con nosotros", href: "/ecommerce/trabaja-con-nosotros" },
+                { label: "Prensa", href: "/ecommerce/prensa" },
+              ]},
+              { title: "Gana dinero", items: [
+                { label: "Vende en Zentto Store", href: "/ecommerce/vende" },
+                { label: "Programa de afiliados", href: "/ecommerce/afiliados" },
+              ]},
+              { title: "Ayuda", items: [
+                { label: "Centro de ayuda", href: "/ecommerce/centro-de-ayuda" },
+                { label: "Devoluciones", href: "/ecommerce/devoluciones" },
+                { label: "Contacto", href: "/ecommerce/contacto" },
+              ]},
             ].map((col) => (
               <Box key={col.title}>
                 <Typography variant="subtitle2" fontWeight="bold" sx={{ mb: 1, fontSize: 14 }}>{col.title}</Typography>
                 {col.items.map((item) => (
-                  <Typography key={item} variant="body2" sx={{ color: "#ddd", mb: 0.5, cursor: "pointer", fontSize: 13, "&:hover": { textDecoration: "underline" } }}>
-                    {item}
-                  </Typography>
+                  <Box key={item.label} component="a" href={item.href} sx={{ display: "block", color: "#ddd", mb: 0.5, cursor: "pointer", fontSize: 13, textDecoration: "none", "&:hover": { textDecoration: "underline" } }}>
+                    <Typography variant="body2" sx={{ color: "inherit", fontSize: 13 }}>{item.label}</Typography>
+                  </Box>
                 ))}
               </Box>
             ))}

@@ -1,9 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Box,
-  Paper,
   Button,
   TextField,
   Stack,
@@ -15,22 +14,37 @@ import {
   Select,
   FormControl,
   InputLabel,
-  IconButton,
-  Tooltip,
   FormControlLabel,
   Switch,
   Divider,
   Typography,
   Collapse,
 } from "@mui/material";
-import { DataGrid, type GridColDef } from "@mui/x-data-grid";
-import AddIcon from "@mui/icons-material/Add";
-import EditIcon from "@mui/icons-material/Edit";
-import DeleteIcon from "@mui/icons-material/Delete";
+
+import type { ColumnDef } from "@zentto/datagrid-core";
+import { useGridLayoutSync, useLookup } from "@zentto/shared-api";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import { useConceptosList, useSaveConcepto, useDeleteConcepto, type ConceptoFilter, type ConceptoInput } from "../hooks/useNomina";
 import FormulaEditor from "./FormulaEditor";
+import { buildNominaGridId, useNominaGridId, useNominaGridRegistration } from "./zenttoGridPersistence";
+
+const COLUMNS: ColumnDef[] = [
+  { field: "codigo", header: "Código", width: 100, sortable: true },
+  { field: "codigoNomina", header: "Cód. Nómina", width: 120, sortable: true },
+  { field: "nombre", header: "Nombre", flex: 1, minWidth: 200, sortable: true },
+  { field: "tipo", header: "Tipo", width: 120, sortable: true, groupable: true },
+  { field: "clase", header: "Clase", width: 100, sortable: true, groupable: true },
+  { field: "formula", header: "Fórmula", width: 150 },
+  { field: "valorDefecto", header: "Valor Def.", width: 110, type: "number" },
+  {
+    field: "actions", header: "Acciones", type: "actions", width: 100, pin: "right",
+    actions: [
+      { icon: "edit", label: "Editar", action: "edit", color: "#1976d2" },
+      { icon: "delete", label: "Eliminar", action: "delete", color: "#dc2626" },
+    ],
+  },
+];
 
 const emptyForm: ConceptoInput = {
   codigo: "",
@@ -39,7 +53,12 @@ const emptyForm: ConceptoInput = {
   tipo: "ASIGNACION",
 };
 
+const GRID_ID = buildNominaGridId("conceptos");
+
+
+
 export default function ConceptosPage() {
+  const gridRef = useRef<any>(null);
   const [filter, setFilter] = useState<ConceptoFilter>({ page: 1, limit: 50 });
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editMode, setEditMode] = useState(false);
@@ -49,8 +68,21 @@ export default function ConceptosPage() {
   const { data, isLoading } = useConceptosList(filter);
   const saveMutation = useSaveConcepto();
   const deleteMutation = useDeleteConcepto();
+  const { data: frequencies = [] } = useLookup('PAYROLL_FREQUENCY');
+  const { ready: layoutReady } = useGridLayoutSync(GRID_ID);
+  useNominaGridId(gridRef, GRID_ID);
+  const { registered } = useNominaGridRegistration(layoutReady);
 
   const rows = data?.data ?? data?.rows ?? [];
+
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+    el.columns = COLUMNS;
+    el.rows = rows;
+    el.loading = isLoading;
+    el.getRowId = (r: any) => `${r.codigo ?? r.Codigo}_${r.codigoNomina ?? r.CodigoNomina ?? ""}`;
+  }, [rows, isLoading, registered]);
 
   const handleNew = () => {
     setForm({ ...emptyForm });
@@ -86,36 +118,19 @@ export default function ConceptosPage() {
     await deleteMutation.mutateAsync(codigo);
   };
 
-  const columns: GridColDef[] = [
-    { field: "codigo", headerName: "Código", width: 100 },
-    { field: "codigoNomina", headerName: "Cód. Nómina", width: 120 },
-    { field: "nombre", headerName: "Nombre", flex: 1, minWidth: 200 },
-    { field: "tipo", headerName: "Tipo", width: 120 },
-    { field: "clase", headerName: "Clase", width: 100 },
-    { field: "formula", headerName: "Fórmula", width: 150 },
-    { field: "valorDefecto", headerName: "Valor Def.", width: 110, type: "number" },
-    {
-      field: "actions",
-      headerName: "Acciones",
-      width: 110,
-      sortable: false,
-      filterable: false,
-      renderCell: (params) => (
-        <Stack direction="row" spacing={0.5}>
-          <Tooltip title="Editar">
-            <IconButton size="small" color="primary" onClick={() => handleEdit(params.row)}>
-              <EditIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="Eliminar">
-            <IconButton size="small" color="error" onClick={() => handleDelete(params.row)}>
-              <DeleteIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-        </Stack>
-      ),
-    },
-  ];
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+    const handler = (e: CustomEvent) => {
+      const { action, row } = e.detail;
+      if (action === "edit") handleEdit(row);
+      if (action === "delete") handleDelete(row);
+    };
+    el.addEventListener("action-click", handler);
+    const createHandler = () => handleNew();
+    el.addEventListener("create-click", createHandler);
+    return () => { el.removeEventListener("action-click", handler); el.removeEventListener("create-click", createHandler); };
+  }, [registered, rows]);
 
   const handleSave = async () => {
     await saveMutation.mutateAsync(form);
@@ -125,51 +140,30 @@ export default function ConceptosPage() {
 
   return (
     <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-      <Stack direction="row" justifyContent="flex-end" alignItems="center" mb={2}>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={handleNew}>
-          Nuevo Concepto
-        </Button>
-      </Stack>
-
-      <Stack direction="row" spacing={2} mb={2}>
-        <TextField
-          label="Buscar"
-          size="small"
-          value={filter.search || ""}
-          onChange={(e) => setFilter((f) => ({ ...f, search: e.target.value }))}
+      <Box sx={{ flex: 1, minHeight: 0 }}>
+        <zentto-grid
+          ref={gridRef}
+          height="calc(100vh - 200px)"
+          enable-toolbar
+          enable-header-menu
+          enable-header-filters
+          enable-clipboard
+          enable-quick-search
+          enable-context-menu
+          enable-status-bar
+          enable-configurator
+          enable-grouping
+          enable-pivot
+          enable-create
+          create-label="Nuevo Concepto"
         />
-        <FormControl size="small" sx={{ minWidth: 150 }}>
-          <InputLabel>Tipo</InputLabel>
-          <Select
-            value={filter.tipo || ""}
-            label="Tipo"
-            onChange={(e) => setFilter((f) => ({ ...f, tipo: e.target.value || undefined }))}
-          >
-            <MenuItem value="">Todos</MenuItem>
-            <MenuItem value="ASIGNACION">Asignación</MenuItem>
-            <MenuItem value="DEDUCCION">Deducción</MenuItem>
-            <MenuItem value="BONO">Bono</MenuItem>
-          </Select>
-        </FormControl>
-      </Stack>
-
-      <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, width: "100%" }}>
-        <DataGrid
-          rows={rows}
-          columns={columns}
-          loading={isLoading}
-          pageSizeOptions={[25, 50]}
-          disableRowSelectionOnClick
-          getRowId={(r) => `${r.codigo ?? r.Codigo}_${r.codigoNomina ?? r.CodigoNomina ?? ""}`}
-        />
-      </Paper>
+      </Box>
 
       {/* Create/Edit Dialog */}
       <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="md" fullWidth>
         <DialogTitle>{editMode ? "Editar Concepto" : "Nuevo Concepto"}</DialogTitle>
         <DialogContent>
           <Stack spacing={2} mt={1}>
-            {/* Row 1: Código + Código Nómina */}
             <Stack direction="row" spacing={2}>
               <TextField
                 label="Código"
@@ -194,7 +188,6 @@ export default function ConceptosPage() {
               onChange={(e) => setForm((f) => ({ ...f, nombre: e.target.value }))}
             />
 
-            {/* Row 2: Tipo + Clase */}
             <Stack direction="row" spacing={2}>
               <FormControl fullWidth>
                 <InputLabel>Tipo</InputLabel>
@@ -228,7 +221,6 @@ export default function ConceptosPage() {
               </FormControl>
             </Stack>
 
-            {/* Formula editor */}
             <Divider>
               <Typography variant="caption" color="text.secondary">Cálculo</Typography>
             </Divider>
@@ -239,7 +231,6 @@ export default function ConceptosPage() {
               conceptCodes={rows.map((r: any) => r.codigo ?? r.Codigo).filter(Boolean)}
             />
 
-            {/* Row: Base + Valor por defecto */}
             <Stack direction="row" spacing={2}>
               <TextField
                 label="Base de cálculo (sobre)"
@@ -259,7 +250,6 @@ export default function ConceptosPage() {
               />
             </Stack>
 
-            {/* Advanced fields */}
             <Box>
               <Button
                 size="small"
@@ -287,11 +277,9 @@ export default function ConceptosPage() {
                         onChange={(e) => setForm((f) => ({ ...f, uso: e.target.value || undefined }))}
                       >
                         <MenuItem value="">General</MenuItem>
-                        <MenuItem value="MENSUAL">Mensual</MenuItem>
-                        <MenuItem value="QUINCENAL">Quincenal</MenuItem>
-                        <MenuItem value="SEMANAL">Semanal</MenuItem>
-                        <MenuItem value="VACACIONES">Vacaciones</MenuItem>
-                        <MenuItem value="LIQUIDACION">Liquidación</MenuItem>
+                        {frequencies.map(f => (
+                          <MenuItem key={f.Code} value={f.Code}>{f.Label}</MenuItem>
+                        ))}
                       </Select>
                     </FormControl>
                   </Stack>
@@ -338,4 +326,12 @@ export default function ConceptosPage() {
       </Dialog>
     </Box>
   );
+}
+
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'zentto-grid': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & Record<string, any>, HTMLElement>;
+    }
+  }
 }

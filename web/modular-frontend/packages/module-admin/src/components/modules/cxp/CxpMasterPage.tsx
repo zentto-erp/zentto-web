@@ -36,6 +36,8 @@ import {
 } from "@mui/icons-material";
 import { useProveedoresList } from "../../../hooks/useProveedores";
 import { toDateOnly } from "@zentto/shared-api";
+import { DatePicker } from "@zentto/shared-ui";
+import dayjs from "dayjs";
 import { useTimezone } from "@zentto/shared-auth";
 import {
   CxpAplicarPagoPayload,
@@ -93,7 +95,7 @@ export default function CxpMasterPage() {
           </Typography>
           <TextField
             placeholder="Buscar proveedor..."
-            size="small"
+           
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             InputProps={{ startAdornment: <SearchIcon fontSize="small" sx={{ mr: 1, color: "text.secondary" }} /> }}
@@ -454,15 +456,16 @@ function AplicarPagosTab({
       <Paper variant="outlined" sx={{ p: 2, mb: 2 }}>
         <Grid container spacing={2} alignItems="center">
           <Grid item xs={12} sm={3}>
-            <TextField
-              fullWidth size="small" label="Fecha de Pago" type="date" value={fecha}
-              InputLabelProps={{ shrink: true }}
-              onChange={(e) => setFecha(e.target.value)}
+            <DatePicker
+              label="Fecha de Pago"
+              value={fecha ? dayjs(fecha) : null}
+              onChange={(v) => setFecha(v ? v.format('YYYY-MM-DD') : '')}
+              slotProps={{ textField: { size: 'small', fullWidth: true } }}
             />
           </Grid>
           <Grid item xs={12} sm={5}>
             <TextField
-              fullWidth size="small" label="Observaciones" value={observaciones}
+              fullWidth label="Observaciones" value={observaciones}
               onChange={(e) => setObservaciones(e.target.value)}
             />
           </Grid>
@@ -523,7 +526,7 @@ function AplicarPagosTab({
                 <TableCell align="right" sx={{ fontSize: "0.82rem" }}>{Number(r.pendiente || 0).toFixed(2)}</TableCell>
                 <TableCell align="right">
                   <TextField
-                    size="small" type="number" value={r.montoAplicar}
+                    type="number" value={r.montoAplicar}
                     onChange={(e) => changeMonto(i, Number(e.target.value))}
                     inputProps={{ min: 0, step: "0.01" }}
                     sx={{ width: 130 }}
@@ -564,34 +567,38 @@ function AplicarPagosTab({
             <TableRow key={idx}>
               <TableCell>
                 <TextField
-                  size="small" value={fp.formaPago} sx={{ minWidth: 130 }}
+                  value={fp.formaPago} sx={{ minWidth: 130 }}
                   onChange={(e) => updateFormaPago(idx, { formaPago: e.target.value.toUpperCase() })}
                 />
               </TableCell>
               <TableCell align="right">
                 <TextField
-                  size="small" type="number" value={fp.monto} sx={{ width: 130 }}
+                  type="number" value={fp.monto} sx={{ width: 130 }}
                   onChange={(e) => updateFormaPago(idx, { monto: Number(e.target.value) || 0 })}
                   inputProps={{ min: 0, step: "0.01" }}
                 />
               </TableCell>
               <TableCell>
-                <TextField size="small" value={fp.banco || ""} onChange={(e) => updateFormaPago(idx, { banco: e.target.value })} />
+                <TextField value={fp.banco || ""} onChange={(e) => updateFormaPago(idx, { banco: e.target.value })} />
               </TableCell>
               <TableCell>
-                <TextField size="small" value={fp.numCheque || ""} onChange={(e) => updateFormaPago(idx, { numCheque: e.target.value })} />
+                <TextField value={fp.numCheque || ""} onChange={(e) => updateFormaPago(idx, { numCheque: e.target.value })} />
               </TableCell>
               <TableCell>
-                <TextField
-                  size="small" type="date" value={fp.fechaVencimiento || ""}
-                  InputLabelProps={{ shrink: true }}
-                  onChange={(e) => updateFormaPago(idx, { fechaVencimiento: e.target.value || undefined })}
+                <DatePicker
+                  value={fp.fechaVencimiento ? dayjs(fp.fechaVencimiento) : null}
+                  onChange={(v) => updateFormaPago(idx, { fechaVencimiento: v ? v.format('YYYY-MM-DD') : undefined })}
+                  slotProps={{ textField: { size: 'small', fullWidth: true } }}
                 />
               </TableCell>
               <TableCell align="center">
-                <IconButton color="error" size="small" onClick={() => removeFormaPago(idx)} disabled={formasPago.length === 1}>
-                  <Delete fontSize="small" />
-                </IconButton>
+                <Tooltip title="Eliminar forma de pago">
+                  <span>
+                    <IconButton color="error" size="small" onClick={() => removeFormaPago(idx)} disabled={formasPago.length === 1}>
+                      <Delete fontSize="small" />
+                    </IconButton>
+                  </span>
+                </Tooltip>
               </TableCell>
             </TableRow>
           ))}

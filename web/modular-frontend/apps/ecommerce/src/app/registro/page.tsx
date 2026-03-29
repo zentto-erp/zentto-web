@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Box, Typography, TextField, Button, Paper, Alert, Link as MuiLink, Grid } from '@mui/material';
+import { Box, Typography, TextField, Button, Paper, Alert, Link as MuiLink } from '@mui/material';
+import { FormGrid, FormField } from '@zentto/shared-ui';
 import { useCustomerRegister } from '@zentto/module-ecommerce';
 
 export default function RegistroPage() {
@@ -45,12 +46,31 @@ export default function RegistroPage() {
 
     if (success) {
         return (
-            <Box sx={{ maxWidth: 400, mx: 'auto', py: 4 }}>
-                <Paper sx={{ p: 4, textAlign: 'center' }}>
-                    <Alert severity="success" sx={{ mb: 2 }}>Cuenta creada exitosamente</Alert>
-                    <Button variant="contained" onClick={() => router.push('/login')}>
-                        Iniciar sesion
+            <Box sx={{ maxWidth: 480, mx: 'auto', py: 6 }}>
+                <Paper sx={{ p: 5, textAlign: 'center' }}>
+                    <Typography sx={{ fontSize: 56, lineHeight: 1, mb: 2 }}>&#9993;</Typography>
+                    <Typography variant="h5" fontWeight={700} gutterBottom>
+                        Revisa tu correo
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                        Enviamos un enlace de confirmacion a:
+                    </Typography>
+                    <Typography variant="body1" fontWeight={600} sx={{ mb: 2 }}>
+                        {email}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 3, maxWidth: 340, mx: 'auto' }}>
+                        Haz clic en el enlace del email para activar tu cuenta.
+                        Si no lo ves, revisa la carpeta de spam o correo no deseado.
+                    </Typography>
+                    <Button variant="contained" size="large" sx={{ px: 5, mb: 2 }} onClick={() => router.push('/login')}>
+                        Ir al login
                     </Button>
+                    <Typography variant="caption" display="block" color="text.secondary">
+                        No recibiste el email?{' '}
+                        <MuiLink component="span" sx={{ cursor: 'pointer', fontSize: 'inherit' }} onClick={() => setSuccess(false)}>
+                            Intentar de nuevo
+                        </MuiLink>
+                    </Typography>
                 </Paper>
             </Box>
         );
@@ -66,23 +86,23 @@ export default function RegistroPage() {
                 {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
                 <form onSubmit={handleSubmit}>
-                    <Grid container spacing={2}>
-                        <Grid xs={12}>
-                            <TextField label="Nombre completo" fullWidth required value={name} onChange={(e) => setName(e.target.value)} />
-                        </Grid>
-                        <Grid xs={12}>
-                            <TextField label="Email" type="email" fullWidth required value={email} onChange={(e) => setEmail(e.target.value)} />
-                        </Grid>
-                        <Grid xs={12}>
-                            <TextField label="Telefono (opcional)" fullWidth value={phone} onChange={(e) => setPhone(e.target.value)} />
-                        </Grid>
-                        <Grid xs={12} sm={6}>
-                            <TextField label="Contraseña" type="password" fullWidth required value={password} onChange={(e) => setPassword(e.target.value)} />
-                        </Grid>
-                        <Grid xs={12} sm={6}>
-                            <TextField label="Confirmar contraseña" type="password" fullWidth required value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
-                        </Grid>
-                    </Grid>
+                    <FormGrid spacing={2}>
+                        <FormField xs={12}>
+                            <TextField label="Nombre completo" required value={name} onChange={(e) => setName(e.target.value)} />
+                        </FormField>
+                        <FormField xs={12}>
+                            <TextField label="Email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+                        </FormField>
+                        <FormField xs={12}>
+                            <TextField label="Telefono (opcional)" value={phone} onChange={(e) => setPhone(e.target.value)} />
+                        </FormField>
+                        <FormField xs={12} sm={6}>
+                            <TextField label="Contraseña" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
+                        </FormField>
+                        <FormField xs={12} sm={6}>
+                            <TextField label="Confirmar contraseña" type="password" required value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
+                        </FormField>
+                    </FormGrid>
                     <Button type="submit" variant="contained" fullWidth size="large" disabled={registerMutation.isPending} sx={{ mt: 3 }}>
                         {registerMutation.isPending ? 'Registrando...' : 'Crear cuenta'}
                     </Button>

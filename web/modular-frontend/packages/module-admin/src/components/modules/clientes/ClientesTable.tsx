@@ -1,95 +1,144 @@
 // components/modules/clientes/ClientesTable.tsx
-/**
- * EJEMPLO PRÁCTICO #1 - TABLA DE CLIENTES
- * Template reutilizable para cualquier módulo de listado
- * 
- * Este archivo muestra cómo:
- * 1. Usar el hook genérico useCrudGeneric
- * 2. Adaptar el componente DataGrid
- * 3. Implementar actions (Ver, Editar, Eliminar)
- * 4. Manejar filtros y búsqueda
- */
+"use client";
 
-'use client';
-
-import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useState, useMemo, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
+import { Box, Typography } from "@mui/material";
 import {
-  Box,
-  Button,
-  TextField,
-  Stack,
-  Paper,
-  Typography,
-} from '@mui/material';
-import { Add as AddIcon } from '@mui/icons-material';
-import DataGrid, { Column, Action } from '../../common/DataGrid';
-import { DeleteDialog, ConfirmDialog } from '../../common/Dialogs';
-import { useCrudGeneric } from '../../../hooks/useCrudGeneric';
-import { Cliente } from '@zentto/shared-api/types';
+  DeleteDialog,
+  ZenttoFilterPanel,
+  type FilterFieldDef,
+} from "@zentto/shared-ui";
+import { useCrudGeneric } from "../../../hooks/useCrudGeneric";
+import { Cliente } from "@zentto/shared-api/types";
+import type { ColumnDef } from "@zentto/datagrid-core";
+import { useGridLayoutSync } from "@zentto/shared-api";
+import { useScopedGridId } from "../../../lib/zentto-grid";
+
+
+const CLIENTE_FILTERS: FilterFieldDef[] = [
+  {
+    field: "estado",
+    label: "Estado",
+    type: "select",
+    options: [
+      { value: "Activo", label: "Activo" },
+      { value: "Inactivo", label: "Inactivo" },
+      { value: "Suspendido", label: "Suspendido" },
+    ],
+  },
+];
+
+const COLUMNS: ColumnDef[] = [
+  { field: "codigo", header: "Codigo", width: 100, sortable: true },
+  { field: "nombre", header: "Nombre", flex: 1, minWidth: 200, sortable: true },
+  { field: "rif", header: "RIF", width: 130, sortable: true },
+  { field: "email", header: "Email", width: 200 },
+  { field: "telefono", header: "Telefono", width: 140 },
+  { field: "saldo", header: "Saldo", width: 140, type: "number", currency: "VES", aggregation: "sum" },
+  {
+    field: "estado",
+    header: "Estado",
+    width: 110,
+    statusColors: { Activo: "success", Inactivo: "error", Suspendido: "warning" },
+    statusVariant: "outlined",
+  },
+  {
+    field: "actions", header: "Acciones", type: "actions" as any, width: 130, pin: "right",
+    actions: [
+      { icon: "view", label: "Ver", action: "view" },
+      { icon: "edit", label: "Editar", action: "edit", color: "#e67e22" },
+      { icon: "delete", label: "Eliminar", action: "delete", color: "#dc2626" },
+    ],
+  } as ColumnDef,
+];
 
 export default function ClientesTable() {
   const router = useRouter();
-  const crud = useCrudGeneric<Cliente>('clientes');
+  const crud = useCrudGeneric<Cliente>("clientes");
   const { data, isLoading } = crud.list();
+  const gridRef = useRef<any>(null);
+  const [registered, setRegistered] = useState(false);
+  const gridId = useScopedGridId('clientes-main');
+  const { ready: layoutReady } = useGridLayoutSync(gridId);
 
-  // State
-  const [searchTerm, setSearchTerm] = useState('');
+  const [search, setSearch] = useState("");
+  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Cliente | null>(null);
 
-  // Mutations
-  const { mutate: deleteCliente, isPending: isDeleting } = crud.delete('');
+  const { mutate: deleteCliente, isPending: isDeleting } = crud.delete("");
+
+  useEffect(() => {
+    if (!layoutReady) return;
+    import("@zentto/datagrid").then(() => setRegistered(true));
+  }, [layoutReady]);
 
   // Filtrado local
-  const filteredData = (data?.items || data?.data || []).filter(
-    (client: Cliente) =>
-      client.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      client.rif.includes(searchTerm)
+  const filteredData = useMemo(() => {
+    const items = data?.items || data?.data || [];
+    let filtered = items;
+    if (search) {
+      const term = search.toLowerCase();
+      filtered = filtered.filter(
+        (client: Cliente) =>
+          client.nombre.toLowerCase().includes(term) ||
+          client.rif.includes(search)
+      );
+    }
+    if (filterValues.estado) {
+      filtered = filtered.filter(
+        (client: Cliente) => client.estado === filterValues.estado
+      );
+    }
+    return filtered;
+  }, [data, search, filterValues]);
+
+  const rows = useMemo(
+    () =>
+      filteredData.map((client: Cliente, idx: number) => ({
+        id: client.codigo || idx,
+        ...client,
+      })),
+    [filteredData]
   );
 
-  // Columnas
-  const columns: Column<Cliente>[] = [
-    { accessor: 'codigo', header: 'Código', sortable: true, width: '80px' },
-    { accessor: 'nombre', header: 'Nombre', sortable: true },
-    { accessor: 'rif', header: 'RIF', sortable: true, width: '100px' },
-    { accessor: 'email', header: 'Email', type: 'text' },
-    {
-      accessor: 'saldo',
-      header: 'Saldo',
-      type: 'currency',
-      width: '120px',
-    },
-    {
-      accessor: 'estado',
-      header: 'Estado',
-      type: 'status',
-      width: '100px',
-    },
-  ];
+  // Bind data to web component
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+    el.columns = COLUMNS;
+    el.rows = rows;
+    el.loading = isLoading;
+  }, [rows, isLoading, registered]);
 
-  // Actions
-  const actions: Action<Cliente>[] = [
-    {
-      id: 'view',
-      label: 'Ver',
-      onClick: (row) => router.push(`/clientes/${row.codigo}`),
-    },
-    {
-      id: 'edit',
-      label: 'Editar',
-      onClick: (row) => router.push(`/clientes/${row.codigo}/edit`),
-    },
-    {
-      id: 'delete',
-      label: 'Eliminar',
-      color: 'error',
-      onClick: (row) => {
-        setSelectedClient(row);
-        setDeleteOpen(true);
-      },
-    },
-  ];
+  // Listen for action-click and create-click events
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+
+    const actionHandler = (e: CustomEvent) => {
+      const { action, row } = e.detail || {};
+      if (!row) return;
+      if (action === "view") router.push(`/clientes/${row.codigo}`);
+      if (action === "edit") router.push(`/clientes/${row.codigo}/edit`);
+      if (action === "delete") {
+        const client = filteredData.find((c: Cliente) => c.codigo === row.codigo);
+        if (client) {
+          setSelectedClient(client);
+          setDeleteOpen(true);
+        }
+      }
+    };
+    const createHandler = () => router.push("/clientes/new");
+
+    el.addEventListener("action-click", actionHandler);
+    el.addEventListener("create-click", createHandler);
+    return () => {
+      el.removeEventListener("action-click", actionHandler);
+      el.removeEventListener("create-click", createHandler);
+    };
+  }, [registered, router, filteredData]);
 
   const handleDeleteConfirm = () => {
     if (selectedClient) {
@@ -103,63 +152,63 @@ export default function ClientesTable() {
   };
 
   return (
-    <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-      {/* Header */}
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          mb: 3,
-        }}
-      >
-        <Typography variant="h5" fontWeight={600}>Gestión de Clientes</Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => router.push('/clientes/new')}
-        >
-          Nuevo Cliente
-        </Button>
-      </Box>
+    <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
+      <Typography variant="h5" fontWeight={600} sx={{ mb: 3 }}>
+        Gestion de Clientes
+      </Typography>
 
-      {/* Search Bar */}
-      <Paper sx={{ p: 2, mb: 3 }}>
-        <Stack spacing={2}>
-          <TextField
-            placeholder="Buscar por nombre o RIF..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            fullWidth
-            size="small"
-            variant="outlined"
-          />
-        </Stack>
-      </Paper>
-
-      {/* Data Grid */}
-      <DataGrid<Cliente>
-        columns={columns}
-        data={filteredData}
-        totalRecords={data?.total || 0}
-        isLoading={isLoading}
-        actions={actions}
-        title={`${filteredData.length} clientes`}
-        emptyText="No hay clientes registrados"
+      {/* Filtros */}
+      <ZenttoFilterPanel
+        filters={CLIENTE_FILTERS}
+        values={filterValues}
+        onChange={setFilterValues}
+        searchPlaceholder="Buscar por nombre o RIF..."
+        searchValue={search}
+        onSearchChange={setSearch}
       />
 
-      {/* Delete Dialog */}
+      {/* zentto-grid */}
+      <Box sx={{ flex: 1, minHeight: 400 }}>
+        {registered && (
+          <zentto-grid
+            ref={gridRef}
+            grid-id={gridId}
+            default-currency="VES"
+            export-filename="clientes"
+            height="100%"
+            show-totals
+            enable-toolbar
+            enable-header-menu
+            enable-header-filters
+            enable-clipboard
+            enable-quick-search
+            enable-context-menu
+            enable-status-bar
+            enable-configurator
+            enable-create
+            create-label="Nuevo Cliente"
+          ></zentto-grid>
+        )}
+      </Box>
+
       <DeleteDialog
         open={deleteOpen}
-        itemName={selectedClient?.nombre || ''}
+        itemName={selectedClient?.nombre || ""}
         onConfirm={handleDeleteConfirm}
-        onCancel={() => {
+        onClose={() => {
           setDeleteOpen(false);
           setSelectedClient(null);
         }}
-        isLoading={isDeleting}
+        loading={isDeleting}
       />
     </Box>
   );
 }
 
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'zentto-grid': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & Record<string, any>, HTMLElement>;
+    }
+  }
+}

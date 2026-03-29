@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiGet, apiPost } from "@zentto/shared-api";
 
 const QUERY_KEY = "compras";
-const API_BASE = "/api/v1/documentos-compra";
+const API_BASE = "/v1/documentos-compra";
 const TIPO_OPERACION = "COMPRA";
 
 export type ComprasFilter = {
@@ -18,14 +18,16 @@ export type ComprasFilter = {
 };
 
 export type CompraRow = {
-  NUM_FACT: string;
-  COD_PROVEEDOR?: string;
-  NOMBRE?: string;
-  RIF?: string;
-  FECHA?: string;
-  TOTAL?: number;
-  TIPO?: string;
-  ANULADA?: number;
+  documentId: number;
+  documentNumber: string;
+  supplierCode?: string;
+  supplierName?: string;
+  fiscalId?: string;
+  issueDate?: string;
+  totalAmount?: number;
+  documentType?: string;
+  status?: string;
+  isVoided?: boolean;
 };
 
 export type ComprasListResponse = {

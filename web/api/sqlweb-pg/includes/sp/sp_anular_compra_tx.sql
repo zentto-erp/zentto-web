@@ -61,7 +61,7 @@ BEGIN
     -- ============================================
     UPDATE "Compras"
     SET "ANULADA" = 1,
-        "CONCEPTO" = COALESCE("CONCEPTO", '') || ' [ANULADA: ' || TO_CHAR(v_fecha_anulacion, 'YYYY-MM-DD HH24:MI:SS') || ']'
+        "CONCEPTO" = COALESCE("CONCEPTO",''::VARCHAR) || ' [ANULADA: ' || TO_CHAR(v_fecha_anulacion, 'YYYY-MM-DD HH24:MI:SS') || ']'
     WHERE "NUM_FACT" = p_num_fact;
 
     -- ============================================
@@ -73,7 +73,7 @@ BEGIN
     WHERE "NUM_FACT" = p_num_fact;
 
     -- ============================================
-    -- 4. Revertir master."Product" — restar lo que se habia sumado
+    -- 4. Revertir master."Product" â€” restar lo que se habia sumado
     -- ============================================
     CREATE TEMP TABLE _detalles_compra_anul (
         "CODIGO"   VARCHAR(60),

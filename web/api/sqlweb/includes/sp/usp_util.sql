@@ -102,6 +102,25 @@ END;
 GO
 
 -- ============================================================================
+-- 1b. CONFIG: usp_Cfg_ExchangeRate_GetLatest
+-- ============================================================================
+CREATE OR ALTER PROCEDURE dbo.usp_Cfg_ExchangeRate_GetLatest
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT t.CurrencyCode, t.RateToBase, t.RateDate, t.SourceName
+    FROM cfg.ExchangeRateDaily t
+    INNER JOIN (
+        SELECT CurrencyCode, MAX(RateDate) AS MaxDate
+        FROM cfg.ExchangeRateDaily
+        WHERE CurrencyCode IN ('USD', 'EUR')
+        GROUP BY CurrencyCode
+    ) latest ON t.CurrencyCode = latest.CurrencyCode AND t.RateDate = latest.MaxDate;
+END;
+GO
+
+-- ============================================================================
 -- 2. FISCAL: usp_Cfg_Fiscal_HasTable
 -- ============================================================================
 

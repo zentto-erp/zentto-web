@@ -7,7 +7,8 @@
   "exports": {
     ".": "./src/index.tsx",
     "./globals.css": "./src/globals.css",
-    "./theme": "./src/theme.ts"
+    "./theme": "./src/theme.ts",
+    "./web-components": "./src/web-components.ts"
   },
   "dependencies": {
     "@emotion/cache": "^11",
@@ -17,14 +18,13 @@
     "@mui/material": "^6.5.0",
     "@mui/material-nextjs": "^6",
     "@mui/system": "^6.4.6",
-    "@mui/x-data-grid": "^7.24.0",
     "@mui/x-date-pickers": "^7",
     "@toolpad/core": "^0.10.0",
     "dayjs": "^1",
-    "next": "^15.5.12",
+    "next": "^16.2.0",
     "next-auth": "^5.0.0-beta.25",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
     "react-hot-toast": "^2.5.1",
     "@zentto/shared-auth": "0.1.0",
     "@zentto/shared-api": "0.1.0"

@@ -4,7 +4,9 @@ type CaptchaAction =
   | "forgot_password"
   | "reset_password"
   | "verify_email"
-  | "resend_verification";
+  | "resend_verification"
+  | "track_public"
+  | "backoffice_login";
 
 type CaptchaValidation = {
   ok: boolean;

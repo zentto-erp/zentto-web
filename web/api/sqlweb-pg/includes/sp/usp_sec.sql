@@ -1,10 +1,26 @@
 -- ============================================================
 -- DatqBoxWeb PostgreSQL - usp_sec.sql
--- Funciones de seguridad (autenticación, permisos, usuarios)
+-- Funciones de seguridad (autenticaciÃƒÂ³n, permisos, usuarios)
 -- ============================================================
 
--- usp_Sec_User_Authenticate: datos del usuario para autenticación
--- La verificación bcrypt se hace en Node.js
+-- sec."UserCompanyAccess" table: user-company-branch access control
+-- Required by usp_Sec_User_EnsureDefaultCompanyAccess and usp_Sec_User_GetCompanyAccesses
+-- Must be created by a superuser or schema owner (zentto_app needs GRANT ALL ON SCHEMA sec)
+CREATE TABLE IF NOT EXISTS sec."UserCompanyAccess" (
+    "AccessId"   SERIAL PRIMARY KEY,
+    "CodUsuario" VARCHAR(50) NOT NULL,
+    "CompanyId"  INT NOT NULL,
+    "BranchId"   INT NOT NULL,
+    "IsActive"   BOOLEAN NOT NULL DEFAULT TRUE,
+    "IsDefault"  BOOLEAN NOT NULL DEFAULT FALSE,
+    "CreatedAt"  TIMESTAMP NOT NULL DEFAULT (NOW() AT TIME ZONE 'UTC'),
+    "UpdatedAt"  TIMESTAMP NOT NULL DEFAULT (NOW() AT TIME ZONE 'UTC'),
+    CONSTRAINT "UQ_sec_UserCompanyAccess" UNIQUE ("CodUsuario", "CompanyId", "BranchId")
+);
+
+-- usp_Sec_User_Authenticate: datos del usuario para autenticaciÃƒÂ³n
+-- La verificaciÃƒÂ³n bcrypt se hace en Node.js
+DROP FUNCTION IF EXISTS usp_Sec_User_Authenticate(VARCHAR(60)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Sec_User_Authenticate(
     p_cod_usuario VARCHAR(60)
 )
@@ -36,6 +52,7 @@ END;
 $$;
 
 -- usp_Sec_User_GetType: tipo/rol del usuario
+DROP FUNCTION IF EXISTS usp_Sec_User_GetType(VARCHAR(60)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Sec_User_GetType(
     p_cod_usuario VARCHAR(60)
 )
@@ -51,7 +68,8 @@ BEGIN
 END;
 $$;
 
--- usp_Sec_User_GetModuleAccess: permisos de módulos
+-- usp_Sec_User_GetModuleAccess: permisos de mÃƒÂ³dulos
+DROP FUNCTION IF EXISTS usp_Sec_User_GetModuleAccess(VARCHAR(60)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Sec_User_GetModuleAccess(
     p_cod_usuario VARCHAR(60)
 )
@@ -66,6 +84,7 @@ END;
 $$;
 
 -- usp_Sec_User_ListCompanyAccesses_Default: empresas/sucursales activas (admin)
+DROP FUNCTION IF EXISTS usp_Sec_User_ListCompanyAccesses_Default() CASCADE;
 CREATE OR REPLACE FUNCTION usp_Sec_User_ListCompanyAccesses_Default()
 RETURNS TABLE(
     "companyId" INT, "companyCode" VARCHAR, "companyName" VARCHAR,
@@ -78,14 +97,14 @@ BEGIN
     SELECT
         c."CompanyId",
         c."CompanyCode",
-        COALESCE(NULLIF(c."TradeName", ''), c."LegalName"),
+        COALESCE(NULLIF(c."TradeName", ''::VARCHAR), c."LegalName"),
         b."BranchId",
         b."BranchCode",
         b."BranchName",
-        UPPER(COALESCE(NULLIF(b."CountryCode", ''), c."FiscalCountryCode")),
+        UPPER(COALESCE(NULLIF(b."CountryCode", ''::VARCHAR), c."FiscalCountryCode")),
         COALESCE(
-            NULLIF(ct."TimeZoneIana", ''),
-            CASE UPPER(COALESCE(NULLIF(b."CountryCode", ''), c."FiscalCountryCode"))
+            NULLIF(ct."TimeZoneIana", ''::VARCHAR),
+            CASE UPPER(COALESCE(NULLIF(b."CountryCode", ''::VARCHAR), c."FiscalCountryCode"))
                 WHEN 'ES' THEN 'Europe/Madrid'
                 WHEN 'VE' THEN 'America/Caracas'
                 ELSE 'UTC'
@@ -96,7 +115,7 @@ BEGIN
     INNER JOIN cfg."Branch" b
         ON b."CompanyId" = c."CompanyId"
     LEFT JOIN cfg."Country" ct
-        ON ct."CountryCode" = UPPER(COALESCE(NULLIF(b."CountryCode", ''), c."FiscalCountryCode"))
+        ON ct."CountryCode" = UPPER(COALESCE(NULLIF(b."CountryCode", ''::VARCHAR), c."FiscalCountryCode"))
        AND ct."IsActive" = TRUE
     WHERE c."IsActive"  = TRUE
       AND c."IsDeleted" = FALSE
@@ -110,6 +129,7 @@ END;
 $$;
 
 -- usp_Sec_User_GetCompanyAccesses: accesos empresa/sucursal de un usuario
+DROP FUNCTION IF EXISTS usp_Sec_User_GetCompanyAccesses(VARCHAR(60)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Sec_User_GetCompanyAccesses(
     p_cod_usuario VARCHAR(60)
 )
@@ -124,14 +144,14 @@ BEGIN
     SELECT
         a."CompanyId",
         c."CompanyCode",
-        COALESCE(NULLIF(c."TradeName", ''), c."LegalName"),
+        COALESCE(NULLIF(c."TradeName", ''::VARCHAR), c."LegalName"),
         a."BranchId",
         b."BranchCode",
         b."BranchName",
-        UPPER(COALESCE(NULLIF(b."CountryCode", ''), c."FiscalCountryCode")),
+        UPPER(COALESCE(NULLIF(b."CountryCode", ''::VARCHAR), c."FiscalCountryCode")),
         COALESCE(
-            NULLIF(ct."TimeZoneIana", ''),
-            CASE UPPER(COALESCE(NULLIF(b."CountryCode", ''), c."FiscalCountryCode"))
+            NULLIF(ct."TimeZoneIana", ''::VARCHAR),
+            CASE UPPER(COALESCE(NULLIF(b."CountryCode", ''::VARCHAR), c."FiscalCountryCode"))
                 WHEN 'ES' THEN 'Europe/Madrid'
                 WHEN 'VE' THEN 'America/Caracas'
                 ELSE 'UTC'
@@ -149,7 +169,7 @@ BEGIN
        AND b."IsActive"  = TRUE
        AND b."IsDeleted" = FALSE
     LEFT JOIN cfg."Country" ct
-        ON ct."CountryCode" = UPPER(COALESCE(NULLIF(b."CountryCode", ''), c."FiscalCountryCode"))
+        ON ct."CountryCode" = UPPER(COALESCE(NULLIF(b."CountryCode", ''::VARCHAR), c."FiscalCountryCode"))
        AND ct."IsActive" = TRUE
     WHERE UPPER(a."CodUsuario") = UPPER(p_cod_usuario)
       AND a."IsActive" = TRUE
@@ -158,12 +178,13 @@ BEGIN
         a."CompanyId", a."BranchId";
 
 EXCEPTION WHEN OTHERS THEN
-    -- Si la tabla no existe, retornar vacío
+    -- Si la tabla no existe, retornar vacÃƒÂ­o
     RETURN;
 END;
 $$;
 
 -- usp_Sec_User_EnsureDefaultCompanyAccess: garantiza acceso a empresa DEFAULT
+DROP FUNCTION IF EXISTS usp_Sec_User_EnsureDefaultCompanyAccess(VARCHAR(60)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Sec_User_EnsureDefaultCompanyAccess(
     p_cod_usuario VARCHAR(60)
 )
@@ -197,12 +218,13 @@ BEGIN
     VALUES
         (p_cod_usuario, v_company_id, v_branch_id, TRUE, TRUE)
     ON CONFLICT ("CodUsuario", "CompanyId", "BranchId")
-    DO UPDATE SET "IsActive" = TRUE, "IsDefault" = TRUE
-    WHERE sec."UserCompanyAccess"."IsActive" = FALSE;
+    DO UPDATE SET "IsActive" = TRUE, "IsDefault" = TRUE,
+                  "UpdatedAt" = NOW() AT TIME ZONE 'UTC';
 END;
 $$;
 
 -- usp_Sec_User_SetModuleAccess: establece permisos desde JSON
+DROP FUNCTION IF EXISTS usp_Sec_User_SetModuleAccess(VARCHAR(60), JSONB) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Sec_User_SetModuleAccess(
     p_cod_usuario  VARCHAR(60),
     p_modules_json JSONB
@@ -223,7 +245,8 @@ BEGIN
 END;
 $$;
 
--- usp_Sec_User_UpdatePassword: actualiza hash de contraseña
+-- usp_Sec_User_UpdatePassword: actualiza hash de contraseÃƒÂ±a
+DROP FUNCTION IF EXISTS usp_Sec_User_UpdatePassword(VARCHAR(60), VARCHAR(255)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Sec_User_UpdatePassword(
     p_cod_usuario  VARCHAR(60),
     p_password_hash VARCHAR(255)
@@ -240,6 +263,7 @@ END;
 $$;
 
 -- usp_Sec_User_GetAvatar: obtiene avatar del usuario
+DROP FUNCTION IF EXISTS usp_Sec_User_GetAvatar(VARCHAR(60)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Sec_User_GetAvatar(
     p_cod_usuario VARCHAR(60)
 )
@@ -255,6 +279,7 @@ END;
 $$;
 
 -- usp_Sec_User_SetAvatar: establece o elimina avatar
+DROP FUNCTION IF EXISTS usp_Sec_User_SetAvatar(VARCHAR(60), TEXT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Sec_User_SetAvatar(
     p_cod_usuario VARCHAR(60),
     p_avatar      TEXT DEFAULT NULL
@@ -270,6 +295,7 @@ END;
 $$;
 
 -- usp_Sec_User_CheckExists: verifica si usuario existe
+DROP FUNCTION IF EXISTS usp_Sec_User_CheckExists(VARCHAR(60)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Sec_User_CheckExists(
     p_cod_usuario VARCHAR(60)
 )

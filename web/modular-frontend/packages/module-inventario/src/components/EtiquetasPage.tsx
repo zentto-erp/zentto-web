@@ -18,6 +18,7 @@ import {
   Checkbox,
   InputAdornment,
   CircularProgress,
+  Tooltip,
 } from "@mui/material";
 import Grid from "@mui/material/Grid2";
 import LocalOfferIcon from "@mui/icons-material/LocalOffer";
@@ -97,7 +98,6 @@ export default function EtiquetasPage() {
                 placeholder="Buscar por codigo o nombre..."
                 onChange={(e) => debouncedSearch(e.target.value)}
                 fullWidth
-                size="small"
                 sx={{ mb: 2 }}
                 InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon fontSize="small" /></InputAdornment> }}
               />
@@ -125,9 +125,13 @@ export default function EtiquetasPage() {
                             <TableCell>{String(item.DescripcionCompleta ?? item.DESCRIPCION ?? "")}</TableCell>
                             <TableCell align="right">{formatCurrency(Number(item.PRECIO_VENTA ?? 0))}</TableCell>
                             <TableCell align="center">
-                              <IconButton size="small" color="primary" onClick={() => addItem(item)} disabled={alreadyAdded}>
-                                <AddIcon fontSize="small" />
-                              </IconButton>
+                              <Tooltip title="Agregar articulo">
+                                <span>
+                                  <IconButton size="small" color="primary" onClick={() => addItem(item)} disabled={alreadyAdded}>
+                                    <AddIcon fontSize="small" />
+                                  </IconButton>
+                                </span>
+                              </Tooltip>
                             </TableCell>
                           </TableRow>
                         );
@@ -184,14 +188,15 @@ export default function EtiquetasPage() {
                             type="number"
                             value={s.cantidad}
                             onChange={(e) => updateCantidad(s.codigo, parseInt(e.target.value, 10))}
-                            size="small"
                             inputProps={{ min: 1, style: { width: 50, textAlign: "center" } }}
                           />
                         </TableCell>
                         <TableCell align="center">
-                          <IconButton size="small" color="error" onClick={() => removeItem(s.codigo)}>
-                            <DeleteIcon fontSize="small" />
-                          </IconButton>
+                          <Tooltip title="Quitar articulo">
+                            <IconButton size="small" color="error" onClick={() => removeItem(s.codigo)}>
+                              <DeleteIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
                         </TableCell>
                       </TableRow>
                     ))}

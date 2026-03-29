@@ -43,6 +43,7 @@ import GavelIcon from '@mui/icons-material/Gavel';
 import EventIcon from '@mui/icons-material/Event';
 import DescriptionIcon from '@mui/icons-material/Description';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
+import PrintIcon from '@mui/icons-material/Print';
 
 export function has(modulos: string[], mod: SystemModule): boolean {
     return modulos.includes(mod);
@@ -55,6 +56,8 @@ export function buildNavigation(isAdmin: boolean, modulos: string[], pathname: s
     if (pathname === '/' || pathname === '/aplicaciones') {
         nav.push({ kind: 'header', title: 'ZENTTO' });
         nav.push({ kind: 'page', segment: '', title: 'Inicio / Aplicaciones', icon: <AppsIcon /> });
+        nav.push({ kind: 'divider' });
+        nav.push({ kind: 'page', segment: 'reportes', title: 'Reportes', icon: <PrintIcon /> });
         nav.push({ kind: 'header', title: 'RECURSOS' });
         nav.push({ kind: 'page', segment: 'docs', title: 'Documentación', icon: <MenuBookIcon /> });
         nav.push({ kind: 'page', segment: 'soporte', title: 'Soporte Técnico', icon: <HelpIcon /> });
@@ -127,9 +130,13 @@ export function buildNavigation(isAdmin: boolean, modulos: string[], pathname: s
 
     // App: Bancos
     if (has(modulos, 'bancos') && isApp('/bancos')) {
-        nav.push({ kind: 'page', segment: 'bancos', title: 'Dashboard', icon: <AccountBalanceIcon /> });
-        nav.push({ kind: 'page', segment: 'bancos/cuentas', title: 'Cuentas y Movimientos', icon: <AccountBalanceIcon /> });
-        nav.push({ kind: 'page', segment: 'bancos/conciliaciones', title: 'Conciliación Bancaria', icon: <AccountBalanceIcon /> });
+        nav.push({ kind: 'header', title: 'Bancos e Instituciones' });
+        nav.push({ kind: 'page', segment: 'bancos', title: 'Dashboard', icon: <DashboardIcon /> });
+        nav.push({ kind: 'page', segment: 'bancos/cuentas', title: 'Cuentas bancarias', icon: <AccountBalanceWalletIcon /> });
+        nav.push({ kind: 'page', segment: 'bancos/movimientos/generar', title: 'Generar movimiento', icon: <SwapHorizIcon /> });
+        nav.push({ kind: 'page', segment: 'bancos/conciliacion', title: 'Conciliaciones', icon: <AccountBalanceIcon /> });
+        nav.push({ kind: 'page', segment: 'bancos/caja-chica', title: 'Caja chica', icon: <PaymentsIcon /> });
+        nav.push({ kind: 'page', segment: 'bancos/entidades', title: 'Entidades', icon: <AccountBalanceIcon /> });
         return nav;
     }
 
@@ -152,6 +159,75 @@ export function buildNavigation(isAdmin: boolean, modulos: string[], pathname: s
         nav.push({ kind: 'page', segment: 'inventario/lineas', title: 'Líneas', icon: <ListIcon /> });
         nav.push({ kind: 'page', segment: 'inventario/unidades', title: 'Unidades', icon: <StraightenIcon /> });
         nav.push({ kind: 'page', segment: 'inventario/almacenes', title: 'Almacenes', icon: <WarehouseIcon /> });
+
+        nav.push({ kind: 'header', title: 'AVANZADO' });
+        nav.push({ kind: 'page', segment: 'inventario/seriales', title: 'Seriales', icon: <InventoryIcon /> });
+        nav.push({ kind: 'page', segment: 'inventario/lotes', title: 'Lotes', icon: <CategoryIcon /> });
+        nav.push({ kind: 'page', segment: 'inventario/almacenes-wms', title: 'Almacenes WMS', icon: <WarehouseIcon /> });
+        return nav;
+    }
+
+    // App: Logística
+    if (isApp('/logistica')) {
+        nav.push({ kind: 'header', title: 'LOGÍSTICA' });
+        nav.push({ kind: 'page', segment: 'logistica', title: 'Dashboard', icon: <DashboardIcon /> });
+        nav.push({ kind: 'header', title: 'OPERACIONES' });
+        nav.push({ kind: 'page', segment: 'logistica/recepciones', title: 'Recepción Mercancía', icon: <LocalShippingIcon /> });
+        nav.push({ kind: 'page', segment: 'logistica/devoluciones', title: 'Devoluciones', icon: <InventoryIcon /> });
+        nav.push({ kind: 'page', segment: 'logistica/albaranes', title: 'Albaranes / Guías', icon: <MenuBookIcon /> });
+        nav.push({ kind: 'header', title: 'CONFIGURACIÓN' });
+        nav.push({ kind: 'page', segment: 'logistica/transportistas', title: 'Transportistas', icon: <LocalShippingIcon /> });
+        return nav;
+    }
+
+    // App: CRM
+    if (isApp('/crm')) {
+        nav.push({ kind: 'header', title: 'CRM' });
+        nav.push({ kind: 'page', segment: 'crm', title: 'Dashboard', icon: <DashboardIcon /> });
+        nav.push({ kind: 'page', segment: 'crm/pipeline', title: 'Pipeline', icon: <AppsIcon /> });
+        nav.push({ kind: 'page', segment: 'crm/leads', title: 'Leads', icon: <PeopleIcon /> });
+        nav.push({ kind: 'page', segment: 'crm/actividades', title: 'Actividades', icon: <MenuBookIcon /> });
+        return nav;
+    }
+
+    // App: Manufactura
+    if (isApp('/manufactura')) {
+        nav.push({ kind: 'header', title: 'MANUFACTURA' });
+        nav.push({ kind: 'page', segment: 'manufactura', title: 'Dashboard', icon: <DashboardIcon /> });
+        nav.push({ kind: 'page', segment: 'manufactura/bom', title: 'Lista de Materiales (BOM)', icon: <InventoryIcon /> });
+        nav.push({ kind: 'page', segment: 'manufactura/centros-trabajo', title: 'Centros de Trabajo', icon: <SettingsIcon /> });
+        nav.push({ kind: 'page', segment: 'manufactura/ordenes', title: 'Ordenes de Produccion', icon: <LocalShippingIcon /> });
+        nav.push({ kind: 'divider' });
+        nav.push({ kind: 'page', segment: 'manufactura/reportes', title: 'Reportes', icon: <PrintIcon /> });
+        return nav;
+    }
+
+    // App: Flota
+    if (isApp('/flota')) {
+        nav.push({ kind: 'header', title: 'FLOTA' });
+        nav.push({ kind: 'page', segment: 'flota', title: 'Dashboard', icon: <DashboardIcon /> });
+        nav.push({ kind: 'page', segment: 'flota/vehiculos', title: 'Vehiculos', icon: <LocalShippingIcon /> });
+        nav.push({ kind: 'page', segment: 'flota/combustible', title: 'Combustible', icon: <PaymentIcon /> });
+        nav.push({ kind: 'page', segment: 'flota/mantenimiento', title: 'Mantenimiento', icon: <SettingsIcon /> });
+        nav.push({ kind: 'page', segment: 'flota/viajes', title: 'Viajes', icon: <LocalShippingIcon /> });
+        nav.push({ kind: 'divider' });
+        nav.push({ kind: 'page', segment: 'flota/reportes', title: 'Reportes', icon: <PrintIcon /> });
+        return nav;
+    }
+
+    // App: Shipping (portal de paquetería)
+    if (isApp('/shipping')) {
+        nav.push({ kind: 'header', title: 'ZENTTO SHIPPING' });
+        nav.push({ kind: 'page', segment: 'shipping', title: 'Inicio', icon: <DashboardIcon /> });
+        nav.push({ kind: 'page', segment: 'shipping/dashboard', title: 'Dashboard', icon: <AssessmentIcon /> });
+        nav.push({ kind: 'header', title: 'ENVÍOS' });
+        nav.push({ kind: 'page', segment: 'shipping/envios/nuevo', title: 'Nuevo Envío', icon: <AddCircleOutlineIcon /> });
+        nav.push({ kind: 'page', segment: 'shipping/envios', title: 'Mis Envíos', icon: <LocalShippingIcon /> });
+        nav.push({ kind: 'page', segment: 'shipping/rastreo', title: 'Rastrear', icon: <HistoryIcon /> });
+        nav.push({ kind: 'header', title: 'CUENTA' });
+        nav.push({ kind: 'page', segment: 'shipping/perfil', title: 'Mi Perfil', icon: <ManageAccountsIcon /> });
+        nav.push({ kind: 'divider' });
+        nav.push({ kind: 'page', segment: 'shipping/reportes', title: 'Reportes', icon: <PrintIcon /> });
         return nav;
     }
 

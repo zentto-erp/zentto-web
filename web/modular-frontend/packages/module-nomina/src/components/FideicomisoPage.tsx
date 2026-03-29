@@ -1,9 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Box,
-  Paper,
   Typography,
   Button,
   TextField,
@@ -19,17 +18,40 @@ import {
   FormControl,
   InputLabel,
 } from "@mui/material";
-import { DataGrid, type GridColDef } from "@mui/x-data-grid";
+
+import type { ColumnDef } from "@zentto/datagrid-core";
 import CalculateIcon from "@mui/icons-material/Calculate";
-import { formatCurrency } from "@zentto/shared-api";
+import { formatCurrency, useGridLayoutSync } from "@zentto/shared-api";
+
 import {
   useTrustList,
   useCalculateTrust,
   useTrustSummary,
   type TrustFilter,
 } from "../hooks/useRRHH";
+import { buildNominaGridId, useNominaGridId, useNominaGridRegistration } from "./zenttoGridPersistence";
+
+const COLUMNS: ColumnDef[] = [
+  { field: "employeeCode", header: "Código", width: 100, sortable: true },
+  { field: "employeeName", header: "Empleado", flex: 1, minWidth: 200, sortable: true },
+  { field: "quarter", header: "Trimestre", width: 100, sortable: true },
+  { field: "deposit", header: "Depósito", width: 130, type: "number", aggregation: "sum" },
+  { field: "interest", header: "Intereses", width: 130, type: "number", aggregation: "sum" },
+  { field: "balance", header: "Saldo", width: 130, type: "number", aggregation: "sum" },
+  {
+    field: "actions", header: "Acciones", type: "actions", width: 100, pin: "right",
+    actions: [
+      { icon: "view", label: "Ver", action: "view", color: "#1976d2" },
+      { icon: "edit", label: "Editar", action: "edit", color: "#ed6c02" },
+    ],
+  },
+];
+
+const GRID_ID = buildNominaGridId("fideicomiso");
+
 
 export default function FideicomisoPage() {
+  const gridRef = useRef<any>(null);
   const currentYear = new Date().getFullYear();
   const [filter, setFilter] = useState<TrustFilter>({ year: currentYear, page: 1, limit: 25 });
   const [calcOpen, setCalcOpen] = useState(false);
@@ -38,33 +60,36 @@ export default function FideicomisoPage() {
   const { data, isLoading } = useTrustList(filter);
   const calculateMutation = useCalculateTrust();
   const summaryQuery = useTrustSummary(filter.year ?? null, filter.quarter ?? null);
+  const { ready: layoutReady } = useGridLayoutSync(GRID_ID);
+  useNominaGridId(gridRef, GRID_ID);
+  const { registered } = useNominaGridRegistration(layoutReady);
 
   const rows = data?.data ?? data?.rows ?? [];
   const summaryData = summaryQuery.data;
 
-  const columns: GridColDef[] = [
-    { field: "employeeCode", headerName: "Código", width: 100 },
-    { field: "employeeName", headerName: "Empleado", flex: 1, minWidth: 200 },
-    { field: "quarter", headerName: "Trimestre", width: 100 },
-    {
-      field: "deposit",
-      headerName: "Depósito",
-      width: 130,
-      renderCell: (p) => formatCurrency(p.value ?? 0),
-    },
-    {
-      field: "interest",
-      headerName: "Intereses",
-      width: 130,
-      renderCell: (p) => formatCurrency(p.value ?? 0),
-    },
-    {
-      field: "balance",
-      headerName: "Saldo",
-      width: 130,
-      renderCell: (p) => formatCurrency(p.value ?? 0),
-    },
-  ];
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+    el.columns = COLUMNS;
+    el.rows = rows;
+    el.loading = isLoading;
+    el.getRowId = (r: any) => r.id ?? `${r.employeeCode}-${r.quarter}`;
+  }, [rows, isLoading, registered]);
+
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+    const handler = (e: CustomEvent) => {
+      const { action, row } = e.detail;
+      if (action === "view") {
+        console.log("Ver fideicomiso:", row);
+      } else if (action === "edit") {
+        console.log("Editar fideicomiso:", row);
+      }
+    };
+    el.addEventListener("action-click", handler);
+    return () => el.removeEventListener("action-click", handler);
+  }, [registered]);
 
   const handleCalculate = async () => {
     await calculateMutation.mutateAsync(calcForm);
@@ -102,41 +127,23 @@ export default function FideicomisoPage() {
         </Card>
       </Stack>
 
-      {/* Filters */}
-      <Stack direction="row" spacing={2} mb={2}>
-        <TextField
-          label="Año"
-          type="number"
-          size="small"
-          value={filter.year || ""}
-          onChange={(e) => setFilter((f) => ({ ...f, year: Number(e.target.value) || undefined }))}
+      <Box sx={{ flex: 1, minHeight: 0 }}>
+        <zentto-grid
+          ref={gridRef}
+          height="calc(100vh - 200px)"
+          show-totals
+          enable-toolbar
+          enable-header-menu
+          enable-header-filters
+          enable-clipboard
+          enable-quick-search
+          enable-context-menu
+          enable-status-bar
+          enable-configurator
+          enable-grouping
+          enable-pivot
         />
-        <FormControl size="small" sx={{ minWidth: 140 }}>
-          <InputLabel>Trimestre</InputLabel>
-          <Select
-            value={filter.quarter || ""}
-            label="Trimestre"
-            onChange={(e) => setFilter((f) => ({ ...f, quarter: Number(e.target.value) || undefined }))}
-          >
-            <MenuItem value="">Todos</MenuItem>
-            <MenuItem value={1}>Q1</MenuItem>
-            <MenuItem value={2}>Q2</MenuItem>
-            <MenuItem value={3}>Q3</MenuItem>
-            <MenuItem value={4}>Q4</MenuItem>
-          </Select>
-        </FormControl>
-      </Stack>
-
-      <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, width: "100%", border: "1px solid #E5E7EB" }}>
-        <DataGrid
-          rows={rows}
-          columns={columns}
-          loading={isLoading}
-          pageSizeOptions={[25, 50]}
-          disableRowSelectionOnClick
-          getRowId={(r) => r.id ?? `${r.employeeCode}-${r.quarter}`}
-        />
-      </Paper>
+      </Box>
 
       {/* Calculate Dialog */}
       <Dialog open={calcOpen} onClose={() => setCalcOpen(false)} maxWidth="sm" fullWidth>
@@ -174,4 +181,12 @@ export default function FideicomisoPage() {
       </Dialog>
     </Box>
   );
+}
+
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'zentto-grid': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & Record<string, any>, HTMLElement>;
+    }
+  }
 }

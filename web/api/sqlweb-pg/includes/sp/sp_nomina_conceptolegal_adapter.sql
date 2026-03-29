@@ -30,6 +30,7 @@ WHERE pc."ConventionCode" IS NOT NULL;
 -- =============================================
 -- Funcion: sp_Nomina_CargarConstantesDesdeConceptoLegal
 -- =============================================
+DROP FUNCTION IF EXISTS sp_nomina_cargar_constantes_desde_concepto_legal(VARCHAR(80), VARCHAR(50), VARCHAR(50)) CASCADE;
 CREATE OR REPLACE FUNCTION sp_nomina_cargar_constantes_desde_concepto_legal(
   p_session_id VARCHAR(80),
   p_convencion VARCHAR(50) DEFAULT 'LOT',
@@ -48,6 +49,7 @@ $$;
 -- =============================================
 -- Funcion: sp_Nomina_ProcesarEmpleadoConceptoLegal
 -- =============================================
+DROP FUNCTION IF EXISTS sp_nomina_procesar_empleado_concepto_legal(VARCHAR(20), VARCHAR(32), DATE, DATE, VARCHAR(50), VARCHAR(50), VARCHAR(50), INT, VARCHAR(500)) CASCADE;
 CREATE OR REPLACE FUNCTION sp_nomina_procesar_empleado_concepto_legal(
   p_nomina VARCHAR(20),
   p_cedula VARCHAR(32),
@@ -75,6 +77,7 @@ $$;
 -- =============================================
 -- Funcion: sp_Nomina_ConceptosLegales_List
 -- =============================================
+DROP FUNCTION IF EXISTS sp_nomina_conceptos_legales_list(VARCHAR(50), VARCHAR(50), VARCHAR(15), BOOLEAN) CASCADE;
 CREATE OR REPLACE FUNCTION sp_nomina_conceptos_legales_list(
   p_convencion VARCHAR(50) DEFAULT NULL,
   p_tipo_calculo VARCHAR(50) DEFAULT NULL,
@@ -128,6 +131,7 @@ $$;
 -- =============================================
 -- Funcion: sp_Nomina_ValidarFormulasConceptoLegal
 -- =============================================
+DROP FUNCTION IF EXISTS sp_nomina_validar_formulas_concepto_legal(VARCHAR(50), VARCHAR(50)) CASCADE;
 CREATE OR REPLACE FUNCTION sp_nomina_validar_formulas_concepto_legal(
   p_convencion VARCHAR(50) DEFAULT NULL,
   p_tipo_calculo VARCHAR(50) DEFAULT NULL

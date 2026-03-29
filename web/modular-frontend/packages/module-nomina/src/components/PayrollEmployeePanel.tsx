@@ -110,7 +110,7 @@ export default function PayrollEmployeePanel({ batchId, employeeCode, onClose }:
         <TableCell sx={{ py: 1 }}>
           {isEditing ? (
             <TextField
-              size="small"
+             
               type="number"
               value={editValues.quantity}
               onChange={(e) => setEditValues((v) => ({ ...v, quantity: Number(e.target.value) }))}
@@ -126,7 +126,7 @@ export default function PayrollEmployeePanel({ batchId, employeeCode, onClose }:
         <TableCell sx={{ py: 1 }}>
           {isEditing ? (
             <TextField
-              size="small"
+             
               type="number"
               value={editValues.amount}
               onChange={(e) => setEditValues((v) => ({ ...v, amount: Number(e.target.value) }))}
@@ -203,9 +203,11 @@ export default function PayrollEmployeePanel({ batchId, employeeCode, onClose }:
                 Recibo
               </Button>
             </Tooltip>
-            <IconButton onClick={onClose} sx={{ color: "#fff" }}>
-              <CloseIcon />
-            </IconButton>
+            <Tooltip title="Cerrar">
+              <IconButton onClick={onClose} sx={{ color: "#fff" }}>
+                <CloseIcon />
+              </IconButton>
+            </Tooltip>
           </Stack>
         </Box>
 
@@ -317,18 +319,18 @@ export default function PayrollEmployeePanel({ batchId, employeeCode, onClose }:
             <TextField
               label="Código"
               fullWidth
-              size="small"
+             
               value={newLine.conceptCode}
               onChange={(e) => setNewLine((n) => ({ ...n, conceptCode: e.target.value }))}
             />
             <TextField
               label="Nombre"
               fullWidth
-              size="small"
+             
               value={newLine.conceptName}
               onChange={(e) => setNewLine((n) => ({ ...n, conceptName: e.target.value }))}
             />
-            <FormControl fullWidth size="small">
+            <FormControl fullWidth>
               <InputLabel>Tipo</InputLabel>
               <Select
                 value={newLine.conceptType}
@@ -344,7 +346,7 @@ export default function PayrollEmployeePanel({ batchId, employeeCode, onClose }:
               <TextField
                 label="Cantidad"
                 type="number"
-                size="small"
+               
                 value={newLine.quantity}
                 onChange={(e) => setNewLine((n) => ({ ...n, quantity: Number(e.target.value) }))}
                 sx={{ flex: 1 }}
@@ -352,7 +354,7 @@ export default function PayrollEmployeePanel({ batchId, employeeCode, onClose }:
               <TextField
                 label="Monto"
                 type="number"
-                size="small"
+               
                 value={newLine.amount}
                 onChange={(e) => setNewLine((n) => ({ ...n, amount: Number(e.target.value) }))}
                 sx={{ flex: 1 }}

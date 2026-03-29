@@ -29,6 +29,7 @@ Usar este flujo como entrada principal para tareas nuevas:
 9. [Gobernanza de Base de Datos (Fase 1)](./09-gobernanza-bd.md)
 10. [ER Integridad Creada](./10-er-integridad-creada.md)
 11. [**Arquitectura Dual Database (SQL Server + PostgreSQL)**](./11-dual-database.md)
+12. [**Infraestructura y CI/CD**](./12-infraestructura.md)
 
 ## Principios de trabajo
 

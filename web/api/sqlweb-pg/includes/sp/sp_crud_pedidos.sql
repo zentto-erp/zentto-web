@@ -4,6 +4,7 @@
 -- ============================================================
 
 -- LIST
+DROP FUNCTION IF EXISTS usp_pedidos_list(VARCHAR(100), VARCHAR(10), INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_pedidos_list(
     p_search VARCHAR(100) DEFAULT NULL,
     p_codigo VARCHAR(10) DEFAULT NULL,
@@ -68,6 +69,7 @@ END;
 $$;
 
 -- GET BY NUM_FACT
+DROP FUNCTION IF EXISTS usp_pedidos_getbynumfact(VARCHAR(20)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_pedidos_getbynumfact(
     p_num_fact VARCHAR(20)
 )

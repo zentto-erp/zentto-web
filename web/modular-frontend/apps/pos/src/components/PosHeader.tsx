@@ -161,9 +161,11 @@ export function PosHeader({
                                         </span>
                                     </Tooltip>
                                 )}
-                                <IconButton size="small" onClick={() => setSettingsOpen(true)}>
-                                    <SettingsIcon fontSize="small" />
-                                </IconButton>
+                                <Tooltip title="Configuración POS">
+                                    <IconButton size="small" onClick={() => setSettingsOpen(true)}>
+                                        <SettingsIcon fontSize="small" />
+                                    </IconButton>
+                                </Tooltip>
                             </Typography>
                         </Box>
                         {selectedCategory && (

@@ -10,7 +10,6 @@ import {
   Alert,
   Card,
   CardContent,
-  Grid,
   Chip,
   Avatar,
   Divider,
@@ -42,16 +41,14 @@ import CalculateIcon from "@mui/icons-material/Calculate";
 import AttachMoneyIcon from "@mui/icons-material/AttachMoney";
 import ReceiptIcon from "@mui/icons-material/Receipt";
 import SaveIcon from "@mui/icons-material/Save";
-import AddCircleIcon from "@mui/icons-material/AddCircle";
-import RemoveCircleIcon from "@mui/icons-material/RemoveCircle";
 
 import { useRouter } from "next/navigation";
-import { formatCurrency } from "@zentto/shared-api";
+import { formatCurrency, useLookup } from "@zentto/shared-api";
 import { useTimezone } from "@zentto/shared-auth";
-import { CustomStepper, useToast } from "@zentto/shared-ui";
+import { CustomStepper, useToast, FormGrid, FormField } from "@zentto/shared-ui";
 import type { StepDef } from "@zentto/shared-ui";
 import { EditableDataGrid } from "@zentto/module-contabilidad";
-import type { GridColDef } from "@mui/x-data-grid";
+import type { ColumnDef } from "@zentto/datagrid-core";
 
 import {
   useConceptosList,
@@ -96,6 +93,7 @@ export default function NominaWizard({ initialCedula, onClose }: NominaWizardPro
   const router = useRouter();
   const { showToast } = useToast();
   const { timeZone } = useTimezone();
+  const { data: payrollTypes = [] } = useLookup('PAYROLL_TYPE');
   const hasInitialCedula = !!initialCedula;
   const [activeStep, setActiveStep] = useState(hasInitialCedula ? 1 : 0);
   const [error, setError] = useState<string | null>(null);
@@ -202,16 +200,8 @@ export default function NominaWizard({ initialCedula, onClose }: NominaWizardPro
       });
       setConceptos(mapped);
     } else {
-      // Conceptos por defecto (bases legales LOTTT Venezuela)
-      const totalAsig = sueldo + 100 + 50; // sueldo + bono + transporte
-      setConceptos([
-        { id: "1", codigo: "SUELDO", descripcion: "Sueldo Base", tipo: "ASIGNACION", valor: sueldo, editable: false },
-        { id: "2", codigo: "BONO", descripcion: "Bono de Alimentación", tipo: "ASIGNACION", valor: 100, editable: true },
-        { id: "3", codigo: "TRANS", descripcion: "Bono de Transporte", tipo: "ASIGNACION", valor: 50, editable: true },
-        { id: "4", codigo: "SSO", descripcion: "Seguro Social (SSO)", tipo: "DEDUCCION", formula: "SUELDO * 0.04", valor: sueldo * 0.04, editable: false },
-        { id: "5", codigo: "RPE", descripcion: "Régimen Prestacional Empleo", tipo: "DEDUCCION", formula: "SUELDO * 0.005", valor: sueldo * 0.005, editable: false },
-        { id: "6", codigo: "FAOV", descripcion: "FAOV (Ley Vivienda y Hábitat)", tipo: "DEDUCCION", formula: "TOTAL_ASIGNACIONES * 0.01", valor: totalAsig * 0.01, editable: false },
-      ]);
+      // TODO: fetch from API usp_HR_PayrollConcept_List when no concepts are configured for this payroll
+      setConceptos([]);
     }
   };
 
@@ -271,35 +261,28 @@ export default function NominaWizard({ initialCedula, onClose }: NominaWizardPro
 
   // ─── Columnas conceptos ───────────────────────────────────────
 
-  const colsConceptos: GridColDef[] = [
+  const colsConceptos: ColumnDef[] = [
     {
       field: "tipo",
-      headerName: "Tipo",
+      header: "Tipo",
       width: 120,
-      renderCell: (params) => (
-        <Chip
-          size="small"
-          icon={params.value === "ASIGNACION" ? <AddCircleIcon /> : <RemoveCircleIcon />}
-          label={params.value === "ASIGNACION" ? "Asignación" : "Deducción"}
-          color={params.value === "ASIGNACION" ? "success" : "error"}
-        />
-      ),
+      statusColors: { ASIGNACION: "success", DEDUCCION: "error" },
+      statusVariant: "outlined",
     },
-    { field: "codigo", headerName: "Código", width: 110 },
-    { field: "descripcion", headerName: "Descripción", flex: 1 },
+    { field: "codigo", header: "Codigo", width: 110 },
+    { field: "descripcion", header: "Descripcion", flex: 1 },
     {
       field: "formula",
-      headerName: "Fórmula",
+      header: "Formula",
       width: 160,
-      renderCell: (params) => params.value || "—",
+      renderCell: (value: unknown) => value ? String(value) : "—",
     },
     {
       field: "valor",
-      headerName: "Valor",
+      header: "Valor",
       width: 140,
-      editable: true,
-      type: "number" as const,
-      renderCell: (params) => formatCurrency(params.value),
+      type: "number",
+      currency: true,
     },
   ];
 
@@ -391,65 +374,59 @@ export default function NominaWizard({ initialCedula, onClose }: NominaWizardPro
               )}
 
               <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="es">
-                <Grid container spacing={3}>
-                  <Grid item xs={12} md={4}>
-                    <FormControl fullWidth>
+                <FormGrid spacing={3}>
+                  <FormField xs={12} md={4}>
+                    <FormControl>
                       <InputLabel>Tipo de Cálculo</InputLabel>
                       <Select
                         value={tipoCalculo}
                         label="Tipo de Cálculo"
                         onChange={(e) => setTipoCalculo(e.target.value)}
                       >
-                        <MenuItem value="MENSUAL">Mensual</MenuItem>
-                        <MenuItem value="QUINCENAL">Quincenal</MenuItem>
-                        <MenuItem value="SEMANAL">Semanal</MenuItem>
-                        <MenuItem value="VACACIONES">Vacaciones</MenuItem>
-                        <MenuItem value="LIQUIDACION">Liquidación</MenuItem>
+                        {payrollTypes.map(pt => (
+                          <MenuItem key={pt.Code} value={pt.Code}>{pt.Label}</MenuItem>
+                        ))}
                       </Select>
                     </FormControl>
-                  </Grid>
+                  </FormField>
 
-                  <Grid item xs={12} md={4}>
+                  <FormField xs={12} md={4}>
                     <DatePicker
                       label="Fecha Inicio"
                       value={fechaInicio}
                       onChange={setFechaInicio}
-                      slotProps={{ textField: { fullWidth: true } }}
                     />
-                  </Grid>
+                  </FormField>
 
-                  <Grid item xs={12} md={4}>
+                  <FormField xs={12} md={4}>
                     <DatePicker
                       label="Fecha Fin"
                       value={fechaFin}
                       onChange={setFechaFin}
-                      slotProps={{ textField: { fullWidth: true } }}
                     />
-                  </Grid>
+                  </FormField>
 
-                  <Grid item xs={12} md={6}>
+                  <FormField xs={12} md={6}>
                     <TextField
                       label="Sueldo Base"
                       type="number"
                       value={sueldoBase}
                       onChange={(e) => setSueldoBase(Number(e.target.value))}
-                      fullWidth
                       InputProps={{
                         startAdornment: <InputAdornment position="start">$</InputAdornment>,
                       }}
                     />
-                  </Grid>
+                  </FormField>
 
-                  <Grid item xs={12} md={6}>
+                  <FormField xs={12} md={6}>
                     <TextField
                       label="Días del Período"
                       type="number"
                       value={diasPeriodo}
                       onChange={(e) => setDiasPeriodo(Number(e.target.value))}
-                      fullWidth
                     />
-                  </Grid>
-                </Grid>
+                  </FormField>
+                </FormGrid>
               </LocalizationProvider>
             </CardContent>
           </Card>

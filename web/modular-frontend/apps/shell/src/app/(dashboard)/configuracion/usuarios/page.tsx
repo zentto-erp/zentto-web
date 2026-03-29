@@ -1,14 +1,12 @@
 'use client';
 
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import {
   Box, Typography, Button, IconButton, Chip, Dialog, DialogTitle,
   DialogContent, DialogActions, TextField, FormControlLabel, Switch,
-  Alert, CircularProgress, Stack, Tooltip, MenuItem, Card, CardContent,
-  Checkbox, FormGroup, Divider, InputAdornment,
+  Alert, CircularProgress, Tooltip, MenuItem, Card, CardContent,
+  Checkbox, FormGroup, Divider, InputAdornment, Stack,
 } from '@mui/material';
-import { DataGrid, GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
-import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import LockResetIcon from '@mui/icons-material/LockReset';
@@ -16,12 +14,16 @@ import SecurityIcon from '@mui/icons-material/Security';
 import SearchIcon from '@mui/icons-material/Search';
 import { useAuth } from '@zentto/shared-auth';
 import { SYSTEM_MODULES } from '@zentto/shared-auth';
-import { useToast } from '@zentto/shared-ui';
+import { useToast, FormGrid, FormField } from '@zentto/shared-ui';
 import {
   useUsuariosList, useCreateUsuario, useUpdateUsuario, useDeleteUsuario,
   useResetPassword, useUsuarioModulos, useSetUsuarioModulos, useSystemModules,
 } from '@zentto/shared-api';
+import { useGridLayoutSync } from '@zentto/shared-api';
 import type { Usuario, CreateUsuarioInput, UpdateUsuarioInput } from '@zentto/shared-api';
+import type { ColumnDef } from '@zentto/datagrid-core';
+import { useScopedGridId } from '@/lib/zentto-grid';
+
 
 // ─── Module labels ──────────────────────────────────────────
 const MODULE_LABELS: Record<string, string> = {
@@ -31,7 +33,7 @@ const MODULE_LABELS: Record<string, string> = {
   clientes: 'Clientes',
   proveedores: 'Proveedores',
   inventario: 'Inventario',
-  articulos: 'Artículos',
+  articulos: 'Articulos',
   pagos: 'Pagos',
   abonos: 'Abonos',
   'cuentas-por-pagar': 'Cuentas x Pagar',
@@ -39,8 +41,8 @@ const MODULE_LABELS: Record<string, string> = {
   cxp: 'CxP',
   bancos: 'Bancos',
   contabilidad: 'Contabilidad',
-  nomina: 'Nómina',
-  configuracion: 'Configuración',
+  nomina: 'Nomina',
+  configuracion: 'Configuracion',
   reportes: 'Reportes',
   usuarios: 'Usuarios',
 };
@@ -53,6 +55,10 @@ const USER_TYPES = [
 
 // ─── Main page ──────────────────────────────────────────────
 export default function UsuariosPage() {
+  const gridRef = useRef<any>(null);
+  const [registered, setRegistered] = useState(false);
+  const gridId = useScopedGridId('usuarios-main');
+  const { ready: layoutReady } = useGridLayoutSync(gridId);
   const { isAdmin } = useAuth();
   const { showToast } = useToast();
   const [search, setSearch] = useState('');
@@ -65,6 +71,11 @@ export default function UsuariosPage() {
   const [resetPwdUser, setResetPwdUser] = useState<string | null>(null);
   const [modulosUser, setModulosUser] = useState<string | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!layoutReady) return;
+    import('@zentto/datagrid').then(() => setRegistered(true));
+  }, [layoutReady]);
 
   if (!isAdmin) {
     return (
@@ -83,66 +94,102 @@ export default function UsuariosPage() {
     }
   };
 
-  const columns: GridColDef[] = [
-    { field: 'Cod_Usuario', headerName: 'Código', width: 120, flex: 0.5 },
-    { field: 'Nombre', headerName: 'Nombre', width: 200, flex: 1 },
+  const columns: ColumnDef[] = [
+    { field: 'Cod_Usuario', header: 'Codigo', width: 120, sortable: true },
+    { field: 'Nombre', header: 'Nombre', flex: 1, minWidth: 200, sortable: true },
     {
-      field: 'Tipo', headerName: 'Tipo', width: 130,
-      renderCell: (params: GridRenderCellParams) => {
-        const v = params.value as string;
-        const isAdm = v === 'ADMIN' || v === 'SUP';
-        return <Chip label={v || 'USER'} color={isAdm ? 'primary' : 'default'} size="small" />;
-      },
+      field: 'Tipo',
+      header: 'Tipo',
+      width: 130,
+      sortable: true,
+      groupable: true,
+      statusColors: { ADMIN: 'primary', SUP: 'primary', USER: 'default' },
+      statusVariant: 'filled',
     },
+    { field: 'permisosLabel', header: 'Permisos', width: 300, sortable: false },
     {
-      field: 'permisos', headerName: 'Permisos', width: 300, sortable: false,
-      renderCell: (params: GridRenderCellParams) => {
-        const row = params.row as Usuario;
-        const flags = [
-          row.Updates && 'Editar',
-          row.Addnews && 'Crear',
-          row.Deletes && 'Eliminar',
-          row.PrecioMinimo && 'Precio',
-          row.Credito && 'Crédito',
-        ].filter(Boolean);
-        return (
-          <Stack direction="row" spacing={0.5} sx={{ flexWrap: 'wrap' }}>
-            {flags.map((f) => <Chip key={f as string} label={f} size="small" variant="outlined" />)}
-            {flags.length === 0 && <Typography variant="caption" color="text.secondary">Sin permisos</Typography>}
-          </Stack>
-        );
-      },
-    },
-    {
-      field: 'actions', headerName: 'Acciones', width: 200, sortable: false,
-      renderCell: (params: GridRenderCellParams) => {
-        const row = params.row as Usuario;
-        return (
-          <Stack direction="row" spacing={0.5}>
-            <Tooltip title="Editar"><IconButton size="small" onClick={() => setEditUser(row)}><EditIcon fontSize="small" /></IconButton></Tooltip>
-            <Tooltip title="Módulos"><IconButton size="small" onClick={() => setModulosUser(row.Cod_Usuario)}><SecurityIcon fontSize="small" /></IconButton></Tooltip>
-            <Tooltip title="Resetear contraseña"><IconButton size="small" onClick={() => setResetPwdUser(row.Cod_Usuario)}><LockResetIcon fontSize="small" /></IconButton></Tooltip>
-            <Tooltip title="Eliminar"><IconButton size="small" color="error" onClick={() => setDeleteConfirm(row.Cod_Usuario)}><DeleteIcon fontSize="small" /></IconButton></Tooltip>
-          </Stack>
-        );
-      },
+      field: 'actions', header: 'Acciones', type: 'actions', width: 100, pin: 'right',
+      actions: [
+        { icon: 'edit', label: 'Editar', action: 'edit', color: '#1976d2' },
+        { icon: 'delete', label: 'Eliminar', action: 'delete', color: '#d32f2f' },
+      ],
     },
   ];
 
-  const rows = data?.rows || [];
+  const rows = useMemo(() => {
+    const rawRows = data?.rows || [];
+    return rawRows.map((row: Usuario) => {
+      const flags = [
+        row.Updates && 'Editar',
+        row.Addnews && 'Crear',
+        row.Deletes && 'Eliminar',
+        row.PrecioMinimo && 'Precio',
+        row.Credito && 'Credito',
+      ].filter(Boolean);
+      return {
+        id: row.Cod_Usuario,
+        Cod_Usuario: row.Cod_Usuario,
+        Nombre: row.Nombre,
+        Tipo: row.Tipo || 'USER',
+        permisosLabel: flags.length > 0 ? flags.join(', ') : 'Sin permisos',
+      };
+    });
+  }, [data?.rows]);
+
+  // Store raw rows for dialog lookups
+  const rawRows = data?.rows || [];
+
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+    el.columns = columns;
+    el.rows = rows;
+    el.loading = isLoading;
+  }, [rows, isLoading, registered]);
+
+  // Handle action-click for edit/delete and create-click
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+    const actionHandler = (e: CustomEvent) => {
+      const { action, row } = e.detail;
+      const usuario = rawRows.find((u: Usuario) => u.Cod_Usuario === row.Cod_Usuario);
+      if (action === "edit" && usuario) {
+        setEditUser(usuario);
+      } else if (action === "delete") {
+        setDeleteConfirm(row.Cod_Usuario);
+      }
+    };
+    const createHandler = () => setCreateOpen(true);
+    el.addEventListener("action-click", actionHandler);
+    el.addEventListener("create-click", createHandler);
+    return () => {
+      el.removeEventListener("action-click", actionHandler);
+      el.removeEventListener("create-click", createHandler);
+    };
+  }, [registered, rawRows]);
+
+  // Handle row click for actions
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+    const handler = (e: CustomEvent) => {
+      const row = e.detail?.row;
+      if (row) {
+        const usuario = rawRows.find((u: Usuario) => u.Cod_Usuario === row.Cod_Usuario);
+        if (usuario) setEditUser(usuario);
+      }
+    };
+    el.addEventListener('row-click', handler);
+    return () => el.removeEventListener('row-click', handler);
+  }, [registered, rawRows]);
 
   return (
     <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-      <Box sx={{ mb: 2, display: 'flex', justifyContent: 'flex-end' }}>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={() => setCreateOpen(true)}>
-          Nuevo Usuario
-        </Button>
-      </Box>
-
       <Card sx={{ mb: 2 }}>
         <CardContent sx={{ py: 1.5, '&:last-child': { pb: 1.5 } }}>
           <TextField
-            size="small" placeholder="Buscar por código o nombre..." fullWidth
+            size="small" placeholder="Buscar por codigo o nombre..." fullWidth
             value={search} onChange={(e) => setSearch(e.target.value)}
             InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon fontSize="small" /></InputAdornment> }}
           />
@@ -151,18 +198,27 @@ export default function UsuariosPage() {
 
       {error && <Alert severity="error" sx={{ mb: 2 }}>Error al cargar usuarios</Alert>}
 
-      <Box sx={{ flex: 1, minHeight: 0, width: '100%' }}>
-        <DataGrid
-          rows={rows}
-          columns={columns}
-          loading={isLoading}
-          getRowId={(row) => row.Cod_Usuario}
-          pageSizeOptions={[10, 25, 50]}
-          initialState={{ pagination: { paginationModel: { pageSize: 10 } } }}
-          disableRowSelectionOnClick
-          sx={{ bgcolor: 'background.paper', borderRadius: 2 }}
-        />
-      </Box>
+      {!layoutReady || !registered ? (
+        <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}><CircularProgress /></Box>
+      ) : (
+        <Box sx={{ flex: 1, minHeight: 0, width: '100%' }}>
+          <zentto-grid
+            ref={gridRef}
+            grid-id={gridId}
+            height="calc(100vh - 280px)"
+            enable-toolbar
+            enable-header-menu
+            enable-header-filters
+            enable-clipboard
+            enable-quick-search
+            enable-context-menu
+            enable-status-bar
+            enable-configurator
+            enable-create
+            create-label="Nuevo Usuario"
+          />
+        </Box>
+      )}
 
       {/* Create Dialog */}
       <CreateUsuarioDialog open={createOpen} onClose={() => setCreateOpen(false)} onSuccess={() => showToast('Usuario creado correctamente', 'success')} />
@@ -171,17 +227,17 @@ export default function UsuariosPage() {
       <EditUsuarioDialog user={editUser} onClose={() => setEditUser(null)} onSuccess={() => showToast('Usuario actualizado correctamente', 'success')} />
 
       {/* Module Access Dialog */}
-      <ModulosDialog codigo={modulosUser} onClose={() => setModulosUser(null)} onSuccess={() => showToast('Módulos actualizados correctamente', 'success')} />
+      <ModulosDialog codigo={modulosUser} onClose={() => setModulosUser(null)} onSuccess={() => showToast('Modulos actualizados correctamente', 'success')} />
 
       {/* Reset Password Dialog */}
-      <ResetPasswordDialog codigo={resetPwdUser} onClose={() => setResetPwdUser(null)} onSuccess={() => showToast('Contraseña reseteada correctamente', 'success')} />
+      <ResetPasswordDialog codigo={resetPwdUser} onClose={() => setResetPwdUser(null)} onSuccess={() => showToast('Contrasena reseteada correctamente', 'success')} />
 
       {/* Delete Confirmation */}
       <Dialog open={!!deleteConfirm} onClose={() => setDeleteConfirm(null)} maxWidth="xs" fullWidth>
-        <DialogTitle>Confirmar Eliminación</DialogTitle>
+        <DialogTitle>Confirmar Eliminacion</DialogTitle>
         <DialogContent>
-          <Typography>¿Estás seguro de eliminar al usuario <strong>{deleteConfirm}</strong>?</Typography>
-          <Typography variant="caption" color="error">Esta acción no se puede deshacer.</Typography>
+          <Typography>Estas seguro de eliminar al usuario <strong>{deleteConfirm}</strong>?</Typography>
+          <Typography variant="caption" color="error">Esta accion no se puede deshacer.</Typography>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDeleteConfirm(null)}>Cancelar</Button>
@@ -207,11 +263,11 @@ function CreateUsuarioDialog({ open, onClose, onSuccess }: { open: boolean; onCl
   const handleSubmit = async () => {
     setErr(null);
     if (!form.Cod_Usuario || !form.Password) {
-      setErr('Código y contraseña son obligatorios');
+      setErr('Codigo y contrasena son obligatorios');
       return;
     }
     if (form.Password.length < 6) {
-      setErr('La contraseña debe tener al menos 6 caracteres');
+      setErr('La contrasena debe tener al menos 6 caracteres');
       return;
     }
     try {
@@ -228,31 +284,45 @@ function CreateUsuarioDialog({ open, onClose, onSuccess }: { open: boolean; onCl
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle>Crear Usuario</DialogTitle>
       <DialogContent>
-        <Stack spacing={2} sx={{ mt: 1 }}>
-          {err && <Alert severity="error">{err}</Alert>}
-          <TextField label="Código de Usuario" required fullWidth size="small"
-            value={form.Cod_Usuario} onChange={(e) => setForm({ ...form, Cod_Usuario: e.target.value.toUpperCase() })}
-            inputProps={{ maxLength: 10 }} />
-          <TextField label="Nombre" fullWidth size="small"
-            value={form.Nombre} onChange={(e) => setForm({ ...form, Nombre: e.target.value })} />
-          <TextField label="Contraseña" required type="password" fullWidth size="small"
-            value={form.Password} onChange={(e) => setForm({ ...form, Password: e.target.value })}
-            helperText="Mínimo 6 caracteres, 1 mayúscula, 1 número" />
-          <TextField label="Tipo" select fullWidth size="small"
-            value={form.Tipo} onChange={(e) => setForm({ ...form, Tipo: e.target.value })}>
-            {USER_TYPES.map((t) => <MenuItem key={t.value} value={t.value}>{t.label}</MenuItem>)}
-          </TextField>
-          <Divider />
-          <Typography variant="subtitle2">Permisos de Campo</Typography>
-          <FormGroup row>
-            <FormControlLabel control={<Switch checked={form.Updates} onChange={(_, c) => setForm({ ...form, Updates: c })} />} label="Editar" />
-            <FormControlLabel control={<Switch checked={form.Addnews} onChange={(_, c) => setForm({ ...form, Addnews: c })} />} label="Crear" />
-            <FormControlLabel control={<Switch checked={form.Deletes} onChange={(_, c) => setForm({ ...form, Deletes: c })} />} label="Eliminar" />
-            <FormControlLabel control={<Switch checked={form.PrecioMinimo} onChange={(_, c) => setForm({ ...form, PrecioMinimo: c })} />} label="Precio Mín." />
-            <FormControlLabel control={<Switch checked={form.Credito} onChange={(_, c) => setForm({ ...form, Credito: c })} />} label="Crédito" />
-            <FormControlLabel control={<Switch checked={form.Cambiar} onChange={(_, c) => setForm({ ...form, Cambiar: c })} />} label="Cambiar Pwd" />
-          </FormGroup>
-        </Stack>
+        <FormGrid spacing={2} sx={{ mt: 1 }}>
+          {err && <FormField xs={12}><Alert severity="error">{err}</Alert></FormField>}
+          <FormField xs={12} sm={6}>
+            <TextField label="Codigo de Usuario" required fullWidth size="small"
+              value={form.Cod_Usuario} onChange={(e) => setForm({ ...form, Cod_Usuario: e.target.value.toUpperCase() })}
+              inputProps={{ maxLength: 10 }} />
+          </FormField>
+          <FormField xs={12} sm={6}>
+            <TextField label="Nombre" fullWidth size="small"
+              value={form.Nombre} onChange={(e) => setForm({ ...form, Nombre: e.target.value })} />
+          </FormField>
+          <FormField xs={12} sm={6}>
+            <TextField label="Contrasena" required type="password" fullWidth size="small"
+              value={form.Password} onChange={(e) => setForm({ ...form, Password: e.target.value })}
+              helperText="Minimo 6 caracteres, 1 mayuscula, 1 numero" />
+          </FormField>
+          <FormField xs={12} sm={6}>
+            <TextField label="Tipo" select fullWidth size="small"
+              value={form.Tipo} onChange={(e) => setForm({ ...form, Tipo: e.target.value })}>
+              {USER_TYPES.map((t) => <MenuItem key={t.value} value={t.value}>{t.label}</MenuItem>)}
+            </TextField>
+          </FormField>
+          <FormField xs={12}>
+            <Divider />
+          </FormField>
+          <FormField xs={12}>
+            <Typography variant="subtitle2">Permisos de Campo</Typography>
+          </FormField>
+          <FormField xs={12}>
+            <FormGroup row>
+              <FormControlLabel control={<Switch checked={form.Updates} onChange={(_, c) => setForm({ ...form, Updates: c })} />} label="Editar" />
+              <FormControlLabel control={<Switch checked={form.Addnews} onChange={(_, c) => setForm({ ...form, Addnews: c })} />} label="Crear" />
+              <FormControlLabel control={<Switch checked={form.Deletes} onChange={(_, c) => setForm({ ...form, Deletes: c })} />} label="Eliminar" />
+              <FormControlLabel control={<Switch checked={form.PrecioMinimo} onChange={(_, c) => setForm({ ...form, PrecioMinimo: c })} />} label="Precio Min." />
+              <FormControlLabel control={<Switch checked={form.Credito} onChange={(_, c) => setForm({ ...form, Credito: c })} />} label="Credito" />
+              <FormControlLabel control={<Switch checked={form.Cambiar} onChange={(_, c) => setForm({ ...form, Cambiar: c })} />} label="Cambiar Pwd" />
+            </FormGroup>
+          </FormField>
+        </FormGrid>
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>Cancelar</Button>
@@ -297,28 +367,40 @@ function EditUsuarioDialog({ user, onClose, onSuccess }: { user: Usuario | null;
     <Dialog open={!!user} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle>Editar Usuario: {user?.Cod_Usuario}</DialogTitle>
       <DialogContent>
-        <Stack spacing={2} sx={{ mt: 1 }}>
-          {err && <Alert severity="error">{err}</Alert>}
-          <TextField label="Nombre" fullWidth size="small"
-            value={form.Nombre || ''} onChange={(e) => setForm({ ...form, Nombre: e.target.value })} />
-          <TextField label="Nueva Contraseña (dejar vacío para no cambiar)" type="password" fullWidth size="small"
-            value={form.Password || ''} onChange={(e) => setForm({ ...form, Password: e.target.value })}
-            helperText="Dejar vacío para mantener la contraseña actual" />
-          <TextField label="Tipo" select fullWidth size="small"
-            value={form.Tipo || ''} onChange={(e) => setForm({ ...form, Tipo: e.target.value })}>
-            {USER_TYPES.map((t) => <MenuItem key={t.value} value={t.value}>{t.label}</MenuItem>)}
-          </TextField>
-          <Divider />
-          <Typography variant="subtitle2">Permisos de Campo</Typography>
-          <FormGroup row>
-            <FormControlLabel control={<Switch checked={form.Updates ?? false} onChange={(_, c) => setForm({ ...form, Updates: c })} />} label="Editar" />
-            <FormControlLabel control={<Switch checked={form.Addnews ?? false} onChange={(_, c) => setForm({ ...form, Addnews: c })} />} label="Crear" />
-            <FormControlLabel control={<Switch checked={form.Deletes ?? false} onChange={(_, c) => setForm({ ...form, Deletes: c })} />} label="Eliminar" />
-            <FormControlLabel control={<Switch checked={form.PrecioMinimo ?? false} onChange={(_, c) => setForm({ ...form, PrecioMinimo: c })} />} label="Precio Mín." />
-            <FormControlLabel control={<Switch checked={form.Credito ?? false} onChange={(_, c) => setForm({ ...form, Credito: c })} />} label="Crédito" />
-            <FormControlLabel control={<Switch checked={form.Cambiar ?? false} onChange={(_, c) => setForm({ ...form, Cambiar: c })} />} label="Cambiar Pwd" />
-          </FormGroup>
-        </Stack>
+        <FormGrid spacing={2} sx={{ mt: 1 }}>
+          {err && <FormField xs={12}><Alert severity="error">{err}</Alert></FormField>}
+          <FormField xs={12} sm={6}>
+            <TextField label="Nombre" fullWidth size="small"
+              value={form.Nombre || ''} onChange={(e) => setForm({ ...form, Nombre: e.target.value })} />
+          </FormField>
+          <FormField xs={12} sm={6}>
+            <TextField label="Tipo" select fullWidth size="small"
+              value={form.Tipo || ''} onChange={(e) => setForm({ ...form, Tipo: e.target.value })}>
+              {USER_TYPES.map((t) => <MenuItem key={t.value} value={t.value}>{t.label}</MenuItem>)}
+            </TextField>
+          </FormField>
+          <FormField xs={12}>
+            <TextField label="Nueva Contrasena (dejar vacio para no cambiar)" type="password" fullWidth size="small"
+              value={form.Password || ''} onChange={(e) => setForm({ ...form, Password: e.target.value })}
+              helperText="Dejar vacio para mantener la contrasena actual" />
+          </FormField>
+          <FormField xs={12}>
+            <Divider />
+          </FormField>
+          <FormField xs={12}>
+            <Typography variant="subtitle2">Permisos de Campo</Typography>
+          </FormField>
+          <FormField xs={12}>
+            <FormGroup row>
+              <FormControlLabel control={<Switch checked={form.Updates ?? false} onChange={(_, c) => setForm({ ...form, Updates: c })} />} label="Editar" />
+              <FormControlLabel control={<Switch checked={form.Addnews ?? false} onChange={(_, c) => setForm({ ...form, Addnews: c })} />} label="Crear" />
+              <FormControlLabel control={<Switch checked={form.Deletes ?? false} onChange={(_, c) => setForm({ ...form, Deletes: c })} />} label="Eliminar" />
+              <FormControlLabel control={<Switch checked={form.PrecioMinimo ?? false} onChange={(_, c) => setForm({ ...form, PrecioMinimo: c })} />} label="Precio Min." />
+              <FormControlLabel control={<Switch checked={form.Credito ?? false} onChange={(_, c) => setForm({ ...form, Credito: c })} />} label="Credito" />
+              <FormControlLabel control={<Switch checked={form.Cambiar ?? false} onChange={(_, c) => setForm({ ...form, Cambiar: c })} />} label="Cambiar Pwd" />
+            </FormGroup>
+          </FormField>
+        </FormGrid>
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>Cancelar</Button>
@@ -373,33 +455,37 @@ function ModulosDialog({ codigo, onClose, onSuccess }: { codigo: string | null; 
       onClose();
       onSuccess();
     } catch (e: unknown) {
-      setErr(e instanceof Error ? e.message : 'Error al guardar módulos');
+      setErr(e instanceof Error ? e.message : 'Error al guardar modulos');
     }
   };
 
   return (
     <Dialog open={!!codigo} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>Acceso a Módulos: {codigo}</DialogTitle>
+      <DialogTitle>Acceso a Modulos: {codigo}</DialogTitle>
       <DialogContent>
         {isLoading ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}><CircularProgress /></Box>
         ) : (
-          <Stack spacing={1} sx={{ mt: 1 }}>
-            {err && <Alert severity="error">{err}</Alert>}
-            <Stack direction="row" spacing={1} sx={{ mb: 1 }}>
-              <Button size="small" onClick={handleSelectAll}>Seleccionar Todos</Button>
-              <Button size="small" onClick={handleClearAll}>Quitar Todos</Button>
-            </Stack>
-            <FormGroup>
-              {SYSTEM_MODULES.map((mod) => (
-                <FormControlLabel
-                  key={mod}
-                  control={<Checkbox checked={selected[mod] ?? false} onChange={() => handleToggle(mod)} />}
-                  label={MODULE_LABELS[mod] || mod}
-                />
-              ))}
-            </FormGroup>
-          </Stack>
+          <FormGrid spacing={1} sx={{ mt: 1 }}>
+            {err && <FormField xs={12}><Alert severity="error">{err}</Alert></FormField>}
+            <FormField xs={12}>
+              <Stack direction="row" spacing={1}>
+                <Button size="small" onClick={handleSelectAll}>Seleccionar Todos</Button>
+                <Button size="small" onClick={handleClearAll}>Quitar Todos</Button>
+              </Stack>
+            </FormField>
+            <FormField xs={12}>
+              <FormGroup>
+                {SYSTEM_MODULES.map((mod) => (
+                  <FormControlLabel
+                    key={mod}
+                    control={<Checkbox checked={selected[mod] ?? false} onChange={() => handleToggle(mod)} />}
+                    label={MODULE_LABELS[mod] || mod}
+                  />
+                ))}
+              </FormGroup>
+            </FormField>
+          </FormGrid>
         )}
       </DialogContent>
       <DialogActions>
@@ -424,28 +510,30 @@ function ResetPasswordDialog({ codigo, onClose, onSuccess }: { codigo: string | 
 
   const handleSubmit = async () => {
     setErr(null);
-    if (newPwd.length < 6) { setErr('La contraseña debe tener al menos 6 caracteres'); return; }
+    if (newPwd.length < 6) { setErr('La contrasena debe tener al menos 6 caracteres'); return; }
     try {
       await resetMutation.mutateAsync({ codUsuario: codigo!, newPassword: newPwd });
       onClose();
       onSuccess();
     } catch (e: unknown) {
-      setErr(e instanceof Error ? e.message : 'Error al resetear contraseña');
+      setErr(e instanceof Error ? e.message : 'Error al resetear contrasena');
     }
   };
 
   return (
     <Dialog open={!!codigo} onClose={onClose} maxWidth="xs" fullWidth>
-      <DialogTitle>Resetear Contraseña: {codigo}</DialogTitle>
+      <DialogTitle>Resetear Contrasena: {codigo}</DialogTitle>
       <DialogContent>
-        <Stack spacing={2} sx={{ mt: 1 }}>
-          {err && <Alert severity="error">{err}</Alert>}
-          <TextField
-            label="Nueva Contraseña" type="password" fullWidth size="small"
-            value={newPwd} onChange={(e) => setNewPwd(e.target.value)}
-            helperText="Mínimo 6 caracteres"
-          />
-        </Stack>
+        <FormGrid spacing={2} sx={{ mt: 1 }}>
+          {err && <FormField xs={12}><Alert severity="error">{err}</Alert></FormField>}
+          <FormField xs={12}>
+            <TextField
+              label="Nueva Contrasena" type="password" fullWidth size="small"
+              value={newPwd} onChange={(e) => setNewPwd(e.target.value)}
+              helperText="Minimo 6 caracteres"
+            />
+          </FormField>
+        </FormGrid>
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>Cancelar</Button>
@@ -455,4 +543,12 @@ function ResetPasswordDialog({ codigo, onClose, onSuccess }: { codigo: string | 
       </DialogActions>
     </Dialog>
   );
+}
+
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'zentto-grid': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & Record<string, any>, HTMLElement>;
+    }
+  }
 }

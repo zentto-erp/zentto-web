@@ -151,6 +151,7 @@ export interface AcceptedPaymentMethod {
   methodCode?: string;
   methodName?: string;
   methodCategory?: PaymentCategory;
+  iconName?: string | null;
   providerCode?: string;
   providerName?: string;
 }

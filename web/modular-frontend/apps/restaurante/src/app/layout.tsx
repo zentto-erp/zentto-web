@@ -3,6 +3,7 @@
 import * as React from 'react';
 import { Suspense, useEffect, useState } from 'react';
 import { AppRouterCacheProvider } from '@mui/material-nextjs/v15-appRouter';
+import CssBaseline from '@mui/material/CssBaseline';
 import { SessionProvider } from 'next-auth/react';
 import { AuthProvider, useAuth } from '@zentto/shared-auth';
 import { QueryProvider, useHydrateLocalizacion } from '@zentto/shared-api';
@@ -11,7 +12,8 @@ import {
     LoadingFallback,
     ToastProvider,
     LocalizationProviderWrapper,
-    OdooLayout
+    OdooLayout,
+    BrandedThemeProvider
 } from '@zentto/shared-ui';
 import '@zentto/shared-ui/globals.css';
 
@@ -54,19 +56,22 @@ function AppContent({ children }: { children: React.ReactNode }) {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
     return (
-        <html lang="es" data-toolpad-color-scheme="light" suppressHydrationWarning>
+        <html lang="es" data-scroll-behavior="smooth" data-toolpad-color-scheme="light" suppressHydrationWarning>
             <head>
                 <title>Restaurante - Zentto App</title>
                 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
             </head>
             <body>
-                <SessionProvider basePath="/api/auth">
+                <SessionProvider basePath="/restaurante/api/auth">
                     <QueryProvider>
                         <AuthProvider>
-                            <AppRouterCacheProvider options={{ enableCssLayer: true }}>
-                                <LocalizationProviderWrapper>
-                                    <AppContent>{children}</AppContent>
-                                </LocalizationProviderWrapper>
+                            <AppRouterCacheProvider>
+                                <BrandedThemeProvider defaultMode="system">
+                                    <CssBaseline />
+                                    <LocalizationProviderWrapper>
+                                        <AppContent>{children}</AppContent>
+                                    </LocalizationProviderWrapper>
+                                </BrandedThemeProvider>
                             </AppRouterCacheProvider>
                         </AuthProvider>
                     </QueryProvider>

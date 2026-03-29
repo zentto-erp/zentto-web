@@ -15,6 +15,7 @@ web/api/dist
 **/.env
 **/.env.local
 **/.env.*.local
+**/.env.*.production
 !**/.env.example
 
 # ── Logs ──────────────────────────────────────────────────────────────────────
@@ -25,7 +26,6 @@ web/api/dist
 docs/
 md/
 web/api/sqlweb/
-web/api/sqlweb-pg/
 web/api/db-snapshot/
 web/api/scripts/
 web/api/sql/

@@ -3,10 +3,10 @@
 import * as React from 'react';
 import { Suspense } from 'react';
 import { AppRouterCacheProvider } from '@mui/material-nextjs/v15-appRouter';
-import { ThemeProvider } from '@mui/material/styles';
+import CssBaseline from '@mui/material/CssBaseline';
 import InitColorSchemeScript from '@mui/material/InitColorSchemeScript';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { theme } from '@zentto/shared-ui';
+import { BrandedThemeProvider } from '@zentto/shared-ui';
 import '@zentto/shared-ui/globals.css';
 import { StoreLayout } from '@zentto/module-ecommerce';
 import { useRouter } from 'next/navigation';
@@ -37,17 +37,18 @@ function AppContent({ children }: { children: React.ReactNode }) {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
     return (
-        <html lang="es" suppressHydrationWarning>
+        <html lang="es" data-scroll-behavior="smooth" suppressHydrationWarning>
             <head>
                 <title>Zentto Store - Tienda en linea</title>
                 <InitColorSchemeScript attribute="data-toolpad-color-scheme" />
             </head>
             <body>
                 <QueryClientProvider client={queryClient}>
-                    <AppRouterCacheProvider options={{ enableCssLayer: true }}>
-                        <ThemeProvider theme={theme} defaultMode="system">
+                    <AppRouterCacheProvider>
+                        <BrandedThemeProvider defaultMode="system">
+                            <CssBaseline />
                             <AppContent>{children}</AppContent>
-                        </ThemeProvider>
+                        </BrandedThemeProvider>
                     </AppRouterCacheProvider>
                 </QueryClientProvider>
             </body>

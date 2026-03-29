@@ -1,7 +1,7 @@
 version: '3.9'
 
-# ── Zentto — docker-compose PRODUCCIÓN ────────────────────────────────────────
-# Usa imágenes pre-construidas desde ghcr.io (desplegadas por CI/CD)
+# ── Zentto — docker-compose PRODUCCION ────────────────────────────────────────
+# Usa imagenes pre-construidas desde ghcr.io (desplegadas por CI/CD)
 # Uso en servidor: docker compose -f docker-compose.prod.yml up -d
 
 services:
@@ -13,8 +13,12 @@ services:
       - "4000:4000"
     env_file:
       - /opt/zentto/.env.api
+    environment:
+      - CORS_ORIGINS=https://zentto.net,https://www.zentto.net,https://app.zentto.net
+      - STORE_URL=https://app.zentto.net
     volumes:
       - api_storage:/app/storage/media
+      - /opt/zentto/backups:/backups/zentto   # respaldos pg_dump persistentes en host
     networks:
       - zentto-net
 
@@ -23,9 +27,19 @@ services:
     container_name: zentto-frontend
     restart: unless-stopped
     ports:
-      - "3000-3010:3000-3010"
+      - "3000-3014:3000-3014"
+    volumes:
+      - /opt/zentto/docker/pm2.config.cjs:/app/pm2.config.cjs:ro
+    env_file:
+      - /opt/zentto/.env.frontend
     environment:
       - NODE_ENV=production
+      # Auth (shell app — runtime)
+      - AUTH_TRUST_HOST=true
+      - NEXTAUTH_URL=https://app.zentto.net
+      # API URLs para SSR (server-side rendering en runtime)
+      - BACKEND_URL=http://zentto-api:4000
+      - API_URL=http://zentto-api:4000
     networks:
       - zentto-net
 
@@ -36,4 +50,5 @@ volumes:
 
 networks:
   zentto-net:
-    driver: bridge
+    external: true
+    name: zentto_zentto-net

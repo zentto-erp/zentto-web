@@ -4,6 +4,7 @@
 -- ============================================================
 
 -- ---------- 1. List (paginado con filtros) ----------
+DROP FUNCTION IF EXISTS usp_almacen_list(VARCHAR(100), VARCHAR(50), INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_almacen_list(
     p_search   VARCHAR(100) DEFAULT NULL,
     p_tipo     VARCHAR(50)  DEFAULT NULL,
@@ -71,6 +72,7 @@ END;
 $$;
 
 -- ---------- 2. Get by Codigo ----------
+DROP FUNCTION IF EXISTS usp_almacen_getbycodigo(VARCHAR(10)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_almacen_getbycodigo(
     p_codigo VARCHAR(10)
 )
@@ -105,6 +107,7 @@ END;
 $$;
 
 -- ---------- 3. Insert ----------
+DROP FUNCTION IF EXISTS usp_almacen_insert(JSONB) CASCADE;
 CREATE OR REPLACE FUNCTION usp_almacen_insert(
     p_row_json JSONB
 )
@@ -128,9 +131,9 @@ BEGIN
 
     IF v_company_id IS NULL THEN v_company_id := 1; END IF;
 
-    v_codigo := NULLIF(p_row_json->>'Codigo', '');
-    v_desc   := NULLIF(p_row_json->>'Descripcion', '');
-    v_tipo   := NULLIF(p_row_json->>'Tipo', '');
+    v_codigo := NULLIF(p_row_json->>'Codigo', ''::VARCHAR);
+    v_desc   := NULLIF(p_row_json->>'Descripcion', ''::VARCHAR);
+    v_tipo   := NULLIF(p_row_json->>'Tipo', ''::VARCHAR);
 
     -- Verificar duplicado
     IF EXISTS (
@@ -155,6 +158,7 @@ END;
 $$;
 
 -- ---------- 4. Update ----------
+DROP FUNCTION IF EXISTS usp_almacen_update(VARCHAR(10), JSONB) CASCADE;
 CREATE OR REPLACE FUNCTION usp_almacen_update(
     p_codigo   VARCHAR(10),
     p_row_json JSONB
@@ -177,8 +181,8 @@ BEGIN
         RETURN;
     END IF;
 
-    v_desc := NULLIF(p_row_json->>'Descripcion', '');
-    v_tipo := NULLIF(p_row_json->>'Tipo', '');
+    v_desc := NULLIF(p_row_json->>'Descripcion', ''::VARCHAR);
+    v_tipo := NULLIF(p_row_json->>'Tipo', ''::VARCHAR);
 
     UPDATE master."Warehouse" SET
         "Description"   = COALESCE(v_desc, "Description"),
@@ -194,6 +198,7 @@ END;
 $$;
 
 -- ---------- 5. Delete (soft delete via IsDeleted) ----------
+DROP FUNCTION IF EXISTS usp_almacen_delete(VARCHAR(10)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_almacen_delete(
     p_codigo VARCHAR(10)
 )

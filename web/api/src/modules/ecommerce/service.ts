@@ -1,9 +1,14 @@
 import { callSp, callSpOut, sql } from "../../db/query.js";
 import { signJwt, verifyJwt, type JwtPayload } from "../../auth/jwt.js";
+import { sendAuthMail } from "../usuarios/auth-mailer.service.js";
+import { welcomeStoreTemplate } from "../usuarios/email-templates/base.js";
+import { getActiveScope } from "../_shared/scope.js";
 import bcrypt from "bcryptjs";
 
-const DEFAULT_COMPANY = 1;
-const DEFAULT_BRANCH = 1;
+function scope() {
+  const s = getActiveScope();
+  return { companyId: s?.companyId ?? 1, branchId: s?.branchId ?? 1 };
+}
 
 // Base URL de la API para resolver rutas relativas de imágenes (ej: /media-files/...)
 const API_SELF_URL = (process.env.API_SELF_URL || `http://localhost:${process.env.PORT || 4000}`).replace(/\/+$/, "");
@@ -84,8 +89,8 @@ export async function listProducts(params: {
   const { rows, output } = await callSpOut<StoreProduct>(
     "usp_Store_Product_List",
     {
-      CompanyId: DEFAULT_COMPANY,
-      BranchId: DEFAULT_BRANCH,
+      CompanyId: scope().companyId,
+      BranchId: scope().branchId,
       Search: params.search?.trim() || null,
       Category: params.category || null,
       Brand: params.brand || null,
@@ -118,8 +123,8 @@ export async function getProductByCode(code: string) {
   const rows = await callSp<any>(
     "usp_Store_Product_GetByCode",
     {
-      CompanyId: DEFAULT_COMPANY,
-      BranchId: DEFAULT_BRANCH,
+      CompanyId: scope().companyId,
+      BranchId: scope().branchId,
       Code: code,
     }
   );
@@ -130,72 +135,29 @@ export async function getProductByCode(code: string) {
 }
 
 export async function getProductByCodeFull(code: string) {
-  const pool = (await import("../../db/mssql.js")).getPool();
-  const p = await pool;
-  const request = p.request();
-  request.input("CompanyId", DEFAULT_COMPANY);
-  request.input("BranchId", DEFAULT_BRANCH);
-  request.input("Code", code);
+  const params = { CompanyId: scope().companyId, BranchId: scope().branchId, Code: code };
 
-  const result = await request.execute("usp_Store_Product_GetByCode");
+  // Lanzar todas las consultas en paralelo
+  const [productRows, images, highlightRows, specRows] = await Promise.all([
+    callSp<any>("usp_Store_Product_GetByCode", params),
+    callSp<any>("usp_Store_Product_GetImages", params),
+    callSp<any>("usp_Store_Product_GetHighlights", { CompanyId: scope().companyId, Code: code }),
+    callSp<any>("usp_Store_Product_GetSpecs", { CompanyId: scope().companyId, Code: code }),
+  ]);
 
-  const sets = result.recordsets as any[];
-  const product = sets[0]?.[0] ?? null;
-  const images = sets[1] ?? [];
-  const highlights = (sets[2] ?? []).map((h: any) => h.text);
-  const specs = (sets[3] ?? []).map((s: any) => ({
+  const product = productRows[0] ?? null;
+  if (!product) return null;
+
+  const highlights = highlightRows.map((h: any) => h.text);
+  const specs = specRows.map((s: any) => ({
     group: s.group,
     key: s.key,
     value: s.value,
   }));
 
-  // Recordset 5: Variantes del producto
-  const variantsRaw = sets[4] ?? [];
-  // Recordset 6: Opciones de variante por código
-  const variantOptionsRaw = sets[5] ?? [];
-  // Recordset 7: Atributos de industria
-  const industryAttributesRaw = sets[6] ?? [];
-
-  // Agrupar opciones por código de variante
-  const optionsByCode: Record<string, any[]> = {};
-  for (const opt of variantOptionsRaw) {
-    (optionsByCode[opt.code] ??= []).push({
-      groupCode: opt.groupCode,
-      groupName: opt.groupName,
-      displayType: opt.displayType,
-      optionCode: opt.optionCode,
-      optionLabel: opt.optionLabel,
-      colorHex: opt.colorHex,
-      imageUrl: opt.optionImageUrl,
-    });
-  }
-
-  const variants = variantsRaw.map((v: any) => ({
-    variantId: v.variantId,
-    code: v.code,
-    name: v.name,
-    sku: v.sku,
-    price: v.price,
-    priceDelta: v.priceDelta,
-    stock: v.stock,
-    isDefault: v.isDefault,
-    sortOrder: v.sortOrder,
-    options: optionsByCode[v.code] ?? [],
-  }));
-
-  const industryAttributes = industryAttributesRaw.map((a: any) => ({
-    key: a.key,
-    label: a.label,
-    dataType: a.dataType,
-    displayGroup: a.displayGroup,
-    value: a.valueText ?? a.valueNumber ?? a.valueDate ?? a.valueBoolean,
-    valueText: a.valueText,
-    valueNumber: a.valueNumber,
-    valueDate: a.valueDate,
-    valueBoolean: a.valueBoolean,
-  }));
-
-  if (!product) return null;
+  // TODO: variantes e industryAttributes cuando las funciones PG estén listas
+  const variants: any[] = [];
+  const industryAttributes: any[] = [];
 
   // Resolver URLs de imágenes relativas a absolutas
   const resolvedImages = images.map((img: any) => ({
@@ -213,13 +175,13 @@ export async function getProductByCodeFull(code: string) {
 
 export async function listCategories() {
   return callSp<StoreCategory>("usp_Store_Category_List", {
-    CompanyId: DEFAULT_COMPANY,
+    CompanyId: scope().companyId,
   });
 }
 
 export async function listBrands() {
   return callSp<StoreBrand>("usp_Store_Brand_List", {
-    CompanyId: DEFAULT_COMPANY,
+    CompanyId: scope().companyId,
   });
 }
 
@@ -238,7 +200,7 @@ export async function registerCustomer(data: {
   const { output } = await callSpOut(
     "usp_Store_Customer_Register",
     {
-      CompanyId: DEFAULT_COMPANY,
+      CompanyId: scope().companyId,
       Email: data.email.toLowerCase().trim(),
       Name: data.name.trim(),
       PasswordHash: hash,
@@ -258,6 +220,11 @@ export async function registerCustomer(data: {
   if (resultado !== 1) {
     return { ok: false, error: mensaje };
   }
+
+  // Email de bienvenida (silencioso, no bloquea el registro)
+  const storeUrl = process.env.STORE_URL || "https://app.zentto.net";
+  const { subject, text, html } = welcomeStoreTemplate(data.name, storeUrl);
+  sendAuthMail({ to: data.email, subject, text, html }).catch(() => {});
 
   return { ok: true, message: mensaje };
 }
@@ -280,8 +247,8 @@ export async function loginCustomer(email: string, password: string) {
     name: user.displayName,
     isAdmin: false,
     modulos: ["ecommerce"],
-    companyId: DEFAULT_COMPANY,
-    branchId: DEFAULT_BRANCH,
+    companyId: scope().companyId,
+    branchId: scope().branchId,
   } as JwtPayload);
 
   return {
@@ -294,6 +261,128 @@ export async function loginCustomer(email: string, password: string) {
       phone: user.phone,
       address: user.address,
       fiscalId: user.fiscalId,
+    },
+  };
+}
+
+/**
+ * Google OAuth: verifica token de Google y registra/loguea al cliente.
+ * Usa el endpoint de Google para verificar el ID token.
+ */
+export async function googleAuthCustomer(idToken: string) {
+  // Verificar token con Google
+  const googleRes = await fetch(
+    `https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(idToken)}`
+  );
+  if (!googleRes.ok) {
+    return { ok: false, error: "Token de Google inválido" };
+  }
+
+  const google = (await googleRes.json()) as {
+    email: string;
+    name: string;
+    given_name?: string;
+    family_name?: string;
+    picture?: string;
+    email_verified?: string;
+    sub: string;
+  };
+
+  if (!google.email) {
+    return { ok: false, error: "No se pudo obtener email de Google" };
+  }
+
+  const email = google.email.toLowerCase().trim();
+  const name = google.name || `${google.given_name || ""} ${google.family_name || ""}`.trim() || email;
+
+  // Buscar si ya existe
+  const existing = await callSp<CustomerLoginRow>(
+    "usp_Store_Customer_Login",
+    { Email: email }
+  );
+
+  if (existing[0]) {
+    // Ya existe — login directo (sin verificar password)
+    const user = existing[0];
+    if (!user.isActive) return { ok: false, error: "Cuenta desactivada" };
+
+    const token = signJwt({
+      sub: String(user.userId),
+      name: user.displayName,
+      isAdmin: false,
+      modulos: ["ecommerce"],
+      companyId: scope().companyId,
+      branchId: scope().branchId,
+    } as JwtPayload);
+
+    return {
+      ok: true,
+      token,
+      isNew: false,
+      customer: {
+        email: user.email,
+        name: user.displayName,
+        customerCode: user.customerCode,
+        phone: user.phone,
+        address: user.address,
+        fiscalId: user.fiscalId,
+      },
+    };
+  }
+
+  // No existe — registrar con password random (no usará password, siempre Google)
+  const randomPwd = crypto.randomUUID();
+  const hash = await bcrypt.hash(randomPwd, 10);
+
+  const { output } = await callSpOut(
+    "usp_Store_Customer_Register",
+    {
+      CompanyId: scope().companyId,
+      Email: email,
+      Name: name,
+      PasswordHash: hash,
+      Phone: null,
+      Address: null,
+      FiscalId: null,
+    },
+    {
+      Resultado: sql.Int,
+      Mensaje: sql.NVarChar(500),
+    }
+  );
+
+  if ((output.Resultado as number) !== 1) {
+    return { ok: false, error: output.Mensaje as string };
+  }
+
+  // Buscar el recién creado para obtener userId
+  const newRows = await callSp<CustomerLoginRow>(
+    "usp_Store_Customer_Login",
+    { Email: email }
+  );
+  const newUser = newRows[0];
+  if (!newUser) return { ok: false, error: "Error al crear cuenta" };
+
+  const token = signJwt({
+    sub: String(newUser.userId),
+    name: newUser.displayName,
+    isAdmin: false,
+    modulos: ["ecommerce"],
+    companyId: scope().companyId,
+    branchId: scope().branchId,
+  } as JwtPayload);
+
+  return {
+    ok: true,
+    token,
+    isNew: true,
+    customer: {
+      email: newUser.email,
+      name: newUser.displayName,
+      customerCode: newUser.customerCode,
+      phone: newUser.phone,
+      address: newUser.address,
+      fiscalId: newUser.fiscalId,
     },
   };
 }
@@ -317,6 +406,7 @@ export async function checkout(data: {
     email: string;
     phone?: string;
     address?: string;
+    billingAddress?: string;
     fiscalId?: string;
   };
   items: Array<{
@@ -330,6 +420,7 @@ export async function checkout(data: {
   }>;
   notes?: string;
   addressId?: number;
+  billingAddressId?: number;
   paymentMethodId?: number;
   paymentMethodType?: string;
 }) {
@@ -337,7 +428,7 @@ export async function checkout(data: {
   const { output: custOut } = await callSpOut(
     "usp_Store_Customer_FindOrCreate",
     {
-      CompanyId: DEFAULT_COMPANY,
+      CompanyId: scope().companyId,
       Email: data.customer.email.toLowerCase().trim(),
       Name: data.customer.name.trim(),
       Phone: data.customer.phone || null,
@@ -365,8 +456,8 @@ export async function checkout(data: {
   const { output: orderOut } = await callSpOut(
     "usp_Store_Order_Create",
     {
-      CompanyId: DEFAULT_COMPANY,
-      BranchId: DEFAULT_BRANCH,
+      CompanyId: scope().companyId,
+      BranchId: scope().branchId,
       CustomerCode: customerCode,
       CustomerName: data.customer.name.trim(),
       CustomerEmail: data.customer.email.toLowerCase().trim(),
@@ -378,6 +469,9 @@ export async function checkout(data: {
       AddressId: data.addressId ?? null,
       PaymentMethodId: data.paymentMethodId ?? null,
       PaymentMethodType: data.paymentMethodType || null,
+      BillingAddressId: data.billingAddressId ?? null,
+      ShippingAddressText: data.customer.address || null,
+      BillingAddressText: data.customer.billingAddress || data.customer.address || null,
     },
     {
       OrderNumber: sql.NVarChar(60),
@@ -403,19 +497,18 @@ export async function checkout(data: {
 // ─── Consulta de pedidos ───────────────────────────────
 
 export async function getOrderByToken(token: string) {
-  const pool = (await import("../../db/mssql.js")).getPool();
-  const p = await pool;
-  const request = p.request();
-  request.input("CompanyId", DEFAULT_COMPANY);
-  request.input("Token", token);
-
-  const result = await request.execute("usp_Store_Order_GetByToken");
-
-  const sets = result.recordsets as any[];
-  const header = sets[0]?.[0] ?? null;
-  const lines = sets[1] ?? [];
-
+  const headers = await callSp<any>("usp_Store_Order_GetByToken", {
+    CompanyId: scope().companyId,
+    Token: token,
+  });
+  const header = headers[0] ?? null;
   if (!header) return null;
+
+  // Obtener líneas usando el número de orden del header
+  const lines = header.orderNumber
+    ? await callSp<any>("usp_Store_Order_GetByNumber_Lines", { OrderNumber: header.orderNumber })
+    : [];
+
   return { ...header, lines };
 }
 
@@ -423,7 +516,7 @@ export async function getMyOrders(customerCode: string, page = 1, limit = 20) {
   const { rows, output } = await callSpOut<any>(
     "usp_Store_Order_List",
     {
-      CompanyId: DEFAULT_COMPANY,
+      CompanyId: scope().companyId,
       CustomerCode: customerCode,
       Page: Math.max(page, 1),
       Limit: Math.min(Math.max(limit, 1), 100),
@@ -442,20 +535,16 @@ export async function getMyOrders(customerCode: string, page = 1, limit = 20) {
 // ─── Reseñas ────────────────────────────────────────────
 
 export async function getProductReviews(productCode: string, page = 1, limit = 20) {
-  const pool = (await import("../../db/mssql.js")).getPool();
-  const p = await pool;
-  const request = p.request();
-  request.input("CompanyId", DEFAULT_COMPANY);
-  request.input("ProductCode", productCode);
-  request.input("Page", Math.max(page, 1));
-  request.input("Limit", Math.min(Math.max(limit, 1), 50));
+  const params = { CompanyId: scope().companyId, ProductCode: productCode };
+  const safePage = Math.max(page, 1);
+  const safeLimit = Math.min(Math.max(limit, 1), 50);
 
-  const result = await request.execute("usp_Store_Review_List");
+  const [summaryRows, reviews] = await Promise.all([
+    callSp<any>("usp_Store_Review_List_Summary", params),
+    callSp<any>("usp_Store_Review_List_Items", { ...params, Page: safePage, Limit: safeLimit }),
+  ]);
 
-  const sets = result.recordsets as any[];
-  const summary = sets[0]?.[0] ?? { avgRating: 0, totalCount: 0, star1: 0, star2: 0, star3: 0, star4: 0, star5: 0 };
-  const reviews = sets[1] ?? [];
-
+  const summary = summaryRows[0] ?? { avgRating: 0, totalCount: 0, star1: 0, star2: 0, star3: 0, star4: 0, star5: 0 };
   return { summary, reviews };
 }
 
@@ -470,7 +559,7 @@ export async function createReview(data: {
   const { output } = await callSpOut(
     "usp_Store_Review_Create",
     {
-      CompanyId: DEFAULT_COMPANY,
+      CompanyId: scope().companyId,
       ProductCode: data.productCode,
       Rating: data.rating,
       Title: data.title || null,
@@ -495,7 +584,7 @@ export async function createReview(data: {
 
 export async function listAddresses(customerCode: string) {
   return callSp<any>("usp_Store_Address_List", {
-    CompanyId: DEFAULT_COMPANY,
+    CompanyId: scope().companyId,
     CustomerCode: customerCode,
   });
 }
@@ -517,7 +606,7 @@ export async function upsertAddress(customerCode: string, data: {
     "usp_Store_Address_Upsert",
     {
       AddressId: data.addressId ?? null,
-      CompanyId: DEFAULT_COMPANY,
+      CompanyId: scope().companyId,
       CustomerCode: customerCode,
       Label: data.label,
       RecipientName: data.recipientName,
@@ -553,7 +642,7 @@ export async function deleteAddress(customerCode: string, addressId: number) {
 
 export async function listPaymentMethods(customerCode: string) {
   return callSp<any>("usp_Store_PaymentMethod_List", {
-    CompanyId: DEFAULT_COMPANY,
+    CompanyId: scope().companyId,
     CustomerCode: customerCode,
   });
 }
@@ -577,7 +666,7 @@ export async function upsertPaymentMethod(customerCode: string, data: {
     "usp_Store_PaymentMethod_Upsert",
     {
       PaymentMethodId: data.paymentMethodId ?? null,
-      CompanyId: DEFAULT_COMPANY,
+      CompanyId: scope().companyId,
       CustomerCode: customerCode,
       MethodType: data.methodType,
       Label: data.label,
@@ -612,18 +701,12 @@ export async function deletePaymentMethod(customerCode: string, paymentMethodId:
 }
 
 export async function getOrderByNumber(orderNumber: string) {
-  const pool = (await import("../../db/mssql.js")).getPool();
-  const p = await pool;
-  const request = p.request();
-  request.input("CompanyId", DEFAULT_COMPANY);
-  request.input("OrderNumber", orderNumber);
+  const [headers, lines] = await Promise.all([
+    callSp<any>("usp_Store_Order_GetByNumber", { CompanyId: scope().companyId, OrderNumber: orderNumber }),
+    callSp<any>("usp_Store_Order_GetByNumber_Lines", { OrderNumber: orderNumber }),
+  ]);
 
-  const result = await request.execute("usp_Store_Order_GetByNumber");
-
-  const sets = result.recordsets as any[];
-  const header = sets[0]?.[0] ?? null;
-  const lines = sets[1] ?? [];
-
+  const header = headers[0] ?? null;
   if (!header) return null;
   return { ...header, lines };
 }

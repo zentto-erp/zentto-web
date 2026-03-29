@@ -5,9 +5,7 @@
 -- Entrada arrays por JSONB (reemplazo de XML en SQL Server)
 -- ============================================================
 
-DROP FUNCTION IF EXISTS usp_cxc_aplicar_cobro(
-    VARCHAR, VARCHAR, VARCHAR, NUMERIC, VARCHAR, VARCHAR, JSONB, JSONB
-);
+DROP FUNCTION IF EXISTS usp_cxc_aplicar_cobro(VARCHAR, VARCHAR, VARCHAR, NUMERIC, VARCHAR, VARCHAR, JSONB, JSONB) CASCADE;
 
 CREATE OR REPLACE FUNCTION usp_cxc_aplicar_cobro(
     p_request_id       VARCHAR(100),
@@ -86,7 +84,7 @@ BEGIN
     IF NOT EXISTS (
         SELECT 1
           FROM jsonb_array_elements(p_documentos_json) AS elem
-         WHERE COALESCE(NULLIF(elem->>'numDoc', ''), '') <> ''
+         WHERE COALESCE(NULLIF(elem->>'numDoc', ''::VARCHAR),''::VARCHAR) <> ''
     ) THEN
         RETURN QUERY SELECT
             ''::VARCHAR(50),
@@ -117,7 +115,7 @@ BEGIN
         RETURN QUERY SELECT
             v_dup_ref::VARCHAR(50),
             1,
-            ('Duplicado idempotente. Recibo: ' || COALESCE(v_dup_ref, ''))::VARCHAR(500);
+            ('Duplicado idempotente. Recibo: ' || COALESCE(v_dup_ref,''::VARCHAR))::VARCHAR(500);
         RETURN;
     END IF;
 
@@ -126,11 +124,11 @@ BEGIN
     -- -------------------------------------------------------
     FOR v_doc IN
         SELECT
-            UPPER(COALESCE(NULLIF(elem->>'tipoDoc', ''), 'FACT')) AS tipo_doc,
-            COALESCE(NULLIF(elem->>'numDoc', ''), '')             AS num_doc,
-            COALESCE(NULLIF(elem->>'montoAplicar', ''), '0')::NUMERIC(18,2) AS monto_aplicar
+            UPPER(COALESCE(NULLIF(elem->>'tipoDoc', ''::VARCHAR), 'FACT')) AS tipo_doc,
+            COALESCE(NULLIF(elem->>'numDoc', ''::VARCHAR),''::VARCHAR)             AS num_doc,
+            COALESCE(NULLIF(elem->>'montoAplicar', ''::VARCHAR), '0')::NUMERIC(18,2) AS monto_aplicar
           FROM jsonb_array_elements(p_documentos_json) AS elem
-         WHERE COALESCE(NULLIF(elem->>'numDoc', ''), '') <> ''
+         WHERE COALESCE(NULLIF(elem->>'numDoc', ''::VARCHAR),''::VARCHAR) <> ''
     LOOP
         -- Buscar documento pendiente
         SELECT rd."ReceivableDocumentId",

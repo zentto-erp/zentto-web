@@ -19,8 +19,12 @@ import {
   getCuentasBancarias,
   getMovimientosCuenta,
   getMovimientoById,
+  insertCuentaBancaria,
+  updateCuentaBancaria,
+  deleteCuentaBancaria,
 } from "./conciliacion.service.js";
-import { emitBankMovementAccountingEntry } from "./bancos-contabilidad.service.js";
+import { emitBankMovementAccountingEntry, linkMovementToEntry, getLinkedEntries } from "./bancos-contabilidad.service.js";
+import { emitBusinessNotification } from "../_shared/notify.js";
 import {
   listCajaChicaBoxes,
   createCajaChicaBox,
@@ -115,6 +119,39 @@ bancosRouter.get("/cuentas/list", async (req, res) => {
   }
 });
 
+// POST /v1/bancos/cuentas - Crear cuenta bancaria
+bancosRouter.post("/cuentas", async (req, res) => {
+  try {
+    const result = await insertCuentaBancaria(req.body);
+    if (result.ok) return res.json({ success: true, message: result.mensaje, id: result.id });
+    return res.status(400).json({ success: false, message: result.mensaje });
+  } catch (err: any) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+// PUT /v1/bancos/cuentas/:id - Actualizar cuenta bancaria
+bancosRouter.put("/cuentas/:id", async (req, res) => {
+  try {
+    const result = await updateCuentaBancaria(Number(req.params.id), req.body);
+    if (result.ok) return res.json({ success: true, message: result.mensaje });
+    return res.status(400).json({ success: false, message: result.mensaje });
+  } catch (err: any) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+// DELETE /v1/bancos/cuentas/:id - Desactivar cuenta bancaria
+bancosRouter.delete("/cuentas/:id", async (req, res) => {
+  try {
+    const result = await deleteCuentaBancaria(Number(req.params.id));
+    if (result.ok) return res.json({ success: true, message: result.mensaje });
+    return res.status(400).json({ success: false, message: result.mensaje });
+  } catch (err: any) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
 // GET /v1/bancos/cuentas/:nroCta/movimientos - Movimientos de cuenta
 bancosRouter.get("/cuentas/:nroCta/movimientos", async (req, res) => {
   try {
@@ -185,10 +222,21 @@ bancosRouter.post("/movimientos/generar", async (req, res) => {
             concepto: parsed.data.Concepto,
             nroRef: parsed.data.Nro_Ref,
           }, codUsuario);
+          // Link movement to journal entry
+          if (contabilidad.ok && contabilidad.asientoId && result.movimientoId) {
+            await linkMovementToEntry(result.movimientoId, contabilidad.asientoId);
+          }
         }
       } catch {
         // Never block the bank operation
       }
+      // Notify: movimiento bancario (best-effort)
+      emitBusinessNotification({
+        event: "BANK_MOVEMENT_RECORDED",
+        to: String(parsed.data.Beneficiario ?? ""),
+        subject: `Movimiento bancario ${parsed.data.Tipo} registrado`,
+        data: { Tipo: parsed.data.Tipo, Cuenta: parsed.data.Nro_Cta, Monto: String(parsed.data.Monto), Beneficiario: String(parsed.data.Beneficiario ?? ""), Referencia: String(parsed.data.Nro_Ref ?? "") },
+      }).catch(() => {});
       return res.status(201).json({ ...result, contabilidad });
     } else {
       return res.status(400).json(result);
@@ -206,6 +254,26 @@ const conciliacionCreateSchema = z.object({
   Nro_Cta: z.string().min(1),
   Fecha_Desde: z.string().min(1),
   Fecha_Hasta: z.string().min(1),
+});
+
+// POST /v1/bancos/conciliaciones - Alias de /conciliaciones/crear
+bancosRouter.post("/conciliaciones", async (req, res) => {
+  const parsed = conciliacionCreateSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
+  }
+  try {
+    const codUsuario = (req as any).user?.username || "API";
+    const result = await crearConciliacion(
+      parsed.data.Nro_Cta,
+      parsed.data.Fecha_Desde,
+      parsed.data.Fecha_Hasta,
+      codUsuario
+    );
+    res.status(201).json(result);
+  } catch (err: any) {
+    res.status(500).json({ error: String(err) });
+  }
 });
 
 // POST /v1/bancos/conciliaciones/crear - Crear conciliacion
@@ -367,6 +435,18 @@ bancosRouter.post("/conciliaciones/cerrar", async (req, res) => {
       codUsuario
     );
     res.json(result);
+  } catch (err: any) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+// GET /v1/bancos/conciliaciones/:id/asientos - Asientos vinculados a conciliacion
+bancosRouter.get("/conciliaciones/:id/asientos", async (req, res) => {
+  const id = parseInt(req.params.id);
+  if (isNaN(id)) return res.status(400).json({ error: "invalid_id" });
+  try {
+    const rows = await getLinkedEntries(id);
+    res.json({ rows });
   } catch (err: any) {
     res.status(500).json({ error: String(err) });
   }

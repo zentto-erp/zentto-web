@@ -1,37 +1,101 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
     Box, Typography, Button, Dialog, DialogTitle, DialogContent, DialogActions,
-    TextField, IconButton, CircularProgress, Chip, Switch, FormControlLabel, Select, MenuItem, InputLabel, FormControl
+    TextField, CircularProgress, Switch, FormControlLabel, Select, MenuItem, InputLabel, FormControl
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
-import EditIcon from '@mui/icons-material/Edit';
-import { GridColDef } from '@mui/x-data-grid';
-import { EditableDataGrid } from '@zentto/module-admin';
+import type { ColumnDef } from '@zentto/datagrid-core';
+import { useGridLayoutSync } from '@zentto/shared-api';
 import {
     CategoriaMenu,
     ProductoMenuAdmin,
     useCategoriasAdminQuery,
-    useDeleteProductoAdminMutation,
     useProductosAdminQuery,
     useUpsertProductoAdminMutation,
 } from '@/hooks/useRestauranteAdmin';
+import { useScopedGridId } from '@/lib/zentto-grid';
+
 
 export default function AdminProductosPage() {
+    const gridRef = useRef<any>(null);
+    const [registered, setRegistered] = useState(false);
+    const gridId = useScopedGridId('productos-main');
+    const { ready: layoutReady } = useGridLayoutSync(gridId);
     const { data: productosData, isLoading: isLoadingProductos } = useProductosAdminQuery();
     const { data: categoriasData, isLoading: isLoadingCategorias } = useCategoriasAdminQuery();
     const upsertProductoMutation = useUpsertProductoAdminMutation();
-    const deleteProductoMutation = useDeleteProductoAdminMutation();
     const [open, setOpen] = useState(false);
     const [editing, setEditing] = useState<Partial<ProductoMenuAdmin>>({});
-
-    const page = 1;
-    const pageSize = 100;
 
     const productos = (productosData?.rows ?? []) as ProductoMenuAdmin[];
     const categorias = (categoriasData?.rows ?? []) as CategoriaMenu[];
     const loading = isLoadingProductos || isLoadingCategorias;
+
+    useEffect(() => {
+        if (!layoutReady) return;
+        import('@zentto/datagrid').then(() => setRegistered(true));
+    }, [layoutReady]);
+
+    const columns = useMemo<ColumnDef[]>(() => [
+        { field: 'codigo', header: 'Codigo', width: 130, sortable: true },
+        { field: 'nombre', header: 'Nombre', flex: 1, minWidth: 320, sortable: true },
+        { field: 'categoriaNombre', header: 'Categoria', width: 170, sortable: true, groupable: true },
+        { field: 'precio', header: 'Precio', width: 120, type: 'number', sortable: true },
+        {
+            field: 'estadoLabel',
+            header: 'Estado',
+            width: 130,
+            sortable: true,
+            groupable: true,
+            statusColors: { Activo: 'success', Inactivo: 'default' },
+            statusVariant: 'filled',
+        },
+        {
+            field: 'actions', header: 'Acciones', type: 'actions', width: 100, pin: 'right',
+            actions: [
+                { icon: 'edit', label: 'Editar', action: 'edit', color: '#1976d2' },
+                { icon: 'delete', label: 'Eliminar', action: 'delete', color: '#d32f2f' },
+            ],
+        },
+    ], []);
+
+    const rows = useMemo(() =>
+        productos.map((p) => ({
+            id: Number(p.id),
+            codigo: p.codigo,
+            nombre: p.nombre,
+            categoriaNombre: categorias.find((c) => c.id === Number(p.categoriaId))?.nombre || 'Sin categoria',
+            precio: Number(p.precio ?? 0).toFixed(2),
+            estadoLabel: p.disponible !== false ? 'Activo' : 'Inactivo',
+        })),
+        [productos, categorias]
+    );
+
+    useEffect(() => {
+        const el = gridRef.current;
+        if (!el || !registered) return;
+        el.columns = columns;
+        el.rows = rows;
+        el.loading = loading;
+    }, [rows, loading, registered, columns]);
+
+    useEffect(() => {
+        const el = gridRef.current;
+        if (!el || !registered) return;
+        const handler = (e: CustomEvent) => {
+            const { action, row } = e.detail;
+            if (action === "edit") {
+                const prod = productos.find((p) => Number(p.id) === row.id);
+                if (prod) { setEditing(prod); setOpen(true); }
+            } else if (action === "delete") {
+                console.log("Eliminar producto:", row);
+            }
+        };
+        el.addEventListener("action-click", handler);
+        return () => el.removeEventListener("action-click", handler);
+    }, [registered, productos]);
 
     const handleSave = async () => {
         try {
@@ -52,76 +116,12 @@ export default function AdminProductosPage() {
         }
     };
 
-    const columns = useMemo<GridColDef[]>(() => [
-        { field: 'codigo', headerName: 'Código', minWidth: 130, flex: 0.8, editable: true },
-        {
-            field: 'nombre',
-            headerName: 'Nombre',
-            minWidth: 320,
-            flex: 2,
-            editable: true,
-            renderCell: (params) => (
-                <Box sx={{ py: 0.75 }}>
-                    <Typography variant="body1" fontWeight="medium">{params.row.nombre}</Typography>
-                    <Typography variant="body2" color="text.secondary">{params.row.descripcion || ''}</Typography>
-                </Box>
-            ),
-        },
-        {
-            field: 'categoriaId',
-            headerName: 'Categoría',
-            minWidth: 170,
-            flex: 1,
-            type: 'singleSelect',
-            editable: true,
-            valueOptions: categorias.map((cat) => ({ value: cat.id, label: cat.nombre })),
-            valueFormatter: (value) => categorias.find((cat) => cat.id === Number(value))?.nombre || 'Sin categoría',
-        },
-        {
-            field: 'precio',
-            headerName: 'Precio',
-            minWidth: 120,
-            flex: 0.8,
-            type: 'number',
-            editable: true,
-            valueFormatter: (value) => `$${Number(value ?? 0).toFixed(2)}`,
-        },
-        {
-            field: 'disponible',
-            headerName: 'Estado',
-            minWidth: 130,
-            flex: 0.8,
-            type: 'boolean',
-            editable: true,
-            renderCell: (params) => (
-                <Chip
-                    label={params.value ? 'Activo' : 'Inactivo'}
-                    color={params.value ? 'success' : 'default'}
-                    size="small"
-                />
-            ),
-        },
-    ], [categorias]);
-
-    const handleUpdateRow = async (row: Record<string, unknown>) => {
-        await upsertProductoMutation.mutateAsync({
-            id: Number(row.id),
-            codigo: String(row.codigo || '').trim(),
-            nombre: String(row.nombre || '').trim(),
-            descripcion: String(row.descripcion || ''),
-            precio: Number(row.precio || 0),
-            iva: Number(row.iva || 16),
-            categoriaId: row.categoriaId ? Number(row.categoriaId) : undefined,
-            disponible: row.disponible !== false,
-        });
-    };
-
-    const handleDeleteRow = async (row: Record<string, unknown>) => {
-        await deleteProductoMutation.mutateAsync(Number(row.id));
-    };
+    if (!layoutReady || !registered) {
+        return <Box sx={{ display: 'flex', justifyContent: 'center', mt: 10 }}><CircularProgress /></Box>;
+    }
 
     return (
-        <Box sx={{ p: 3 }}>
+        <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', height: '100%' }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
                 <Typography variant="h4" fontWeight="bold">Platos y Bebidas</Typography>
                 <Button
@@ -133,24 +133,23 @@ export default function AdminProductosPage() {
                 </Button>
             </Box>
 
-            {loading ? (
+            {loading && !rows.length ? (
                 <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
                     <CircularProgress />
                 </Box>
             ) : (
-                <EditableDataGrid
-                    rows={productos}
-                    columns={columns}
-                    loading={loading}
-                    page={page}
-                    pageSize={pageSize}
-                    rowCount={productos.length}
-                    onPageChange={() => { }}
-                    onAddRow={() => { setEditing({ disponible: true }); setOpen(true); }}
-                    onUpdateRow={handleUpdateRow}
-                    onDeleteRow={handleDeleteRow}
-                    addButtonText="Nuevo Producto"
-                    getRowId={(row) => Number(row.id)}
+                <zentto-grid
+                    ref={gridRef}
+                    grid-id={gridId}
+                    height="calc(100vh - 240px)"
+                    enable-toolbar
+                    enable-header-menu
+                    enable-header-filters
+                    enable-clipboard
+                    enable-quick-search
+                    enable-context-menu
+                    enable-status-bar
+                    enable-configurator
                 />
             )}
 
@@ -166,15 +165,15 @@ export default function AdminProductosPage() {
                         />
                         <TextField
                             fullWidth
-                            label="Código (SKU)"
+                            label="Codigo (SKU)"
                             value={editing.codigo || ''}
                             onChange={(e) => setEditing({ ...editing, codigo: e.target.value })}
                         />
                         <FormControl fullWidth>
-                            <InputLabel>Categoría</InputLabel>
+                            <InputLabel>Categoria</InputLabel>
                             <Select
                                 value={editing.categoriaId || ''}
-                                label="Categoría"
+                                label="Categoria"
                                 onChange={(e) => setEditing({ ...editing, categoriaId: Number(e.target.value) })}
                             >
                                 {categorias.map(cat => (
@@ -185,7 +184,7 @@ export default function AdminProductosPage() {
                         <TextField
                             fullWidth
                             type="number"
-                            label="Precio Público"
+                            label="Precio Publico"
                             value={editing.precio || ''}
                             onChange={(e) => setEditing({ ...editing, precio: Number(e.target.value) })}
                         />
@@ -203,7 +202,7 @@ export default function AdminProductosPage() {
                                     onChange={(e) => setEditing({ ...editing, disponible: e.target.checked })}
                                 />
                             }
-                            label="Disponible en Menú"
+                            label="Disponible en Menu"
                         />
                     </Box>
                 </DialogContent>
@@ -214,4 +213,12 @@ export default function AdminProductosPage() {
             </Dialog>
         </Box>
     );
+}
+
+declare global {
+    namespace JSX {
+        interface IntrinsicElements {
+            'zentto-grid': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & Record<string, any>, HTMLElement>;
+        }
+    }
 }

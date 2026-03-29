@@ -19,6 +19,7 @@
 -- ============================================================================
 -- usp_Rest_Admin_ResolveSupplier
 -- ============================================================================
+DROP FUNCTION IF EXISTS usp_rest_admin_resolvesupplier(INT, VARCHAR(30)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_rest_admin_resolvesupplier(
     p_company_id INT,
     p_key        VARCHAR(30)
@@ -45,6 +46,7 @@ $$;
 -- ============================================================================
 -- usp_Rest_Admin_ResolveProduct
 -- ============================================================================
+DROP FUNCTION IF EXISTS usp_rest_admin_resolveproduct(INT, VARCHAR(60)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_rest_admin_resolveproduct(
     p_company_id INT,
     p_key        VARCHAR(60)
@@ -71,6 +73,7 @@ $$;
 -- ============================================================================
 -- usp_Rest_Admin_ResolveMenuCategory
 -- ============================================================================
+DROP FUNCTION IF EXISTS usp_rest_admin_resolvemenucategory(INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_rest_admin_resolvemenucategory(
     p_menu_category_id INT
 )
@@ -90,12 +93,13 @@ $$;
 -- AMBIENTES
 -- ============================================================================
 
+DROP FUNCTION IF EXISTS usp_rest_admin_ambiente_list(INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_rest_admin_ambiente_list(
     p_company_id INT,
     p_branch_id  INT
 )
 RETURNS TABLE(
-    "id"     INT,
+    "id"     BIGINT,
     "nombre" VARCHAR,
     "color"  VARCHAR,
     "orden"  INT
@@ -117,6 +121,7 @@ BEGIN
 END;
 $$;
 
+DROP FUNCTION IF EXISTS usp_rest_admin_ambiente_upsert(INT, INT, INT, VARCHAR(30), VARCHAR(100), VARCHAR(10), INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_rest_admin_ambiente_upsert(
     p_id         INT DEFAULT 0,
     p_company_id INT DEFAULT NULL,
@@ -163,12 +168,13 @@ $$;
 -- CATEGORIAS MENU
 -- ============================================================================
 
+DROP FUNCTION IF EXISTS usp_rest_admin_categoria_list(INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_rest_admin_categoria_list(
     p_company_id INT,
     p_branch_id  INT
 )
 RETURNS TABLE(
-    "id"          INT,
+    "id"          BIGINT,
     "nombre"      VARCHAR,
     "descripcion" VARCHAR,
     "color"       VARCHAR,
@@ -192,6 +198,7 @@ BEGIN
 END;
 $$;
 
+DROP FUNCTION IF EXISTS usp_rest_admin_categoria_upsert(INT, INT, INT, VARCHAR(30), VARCHAR(100), VARCHAR(500), VARCHAR(10), INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_rest_admin_categoria_upsert(
     p_id          INT DEFAULT 0,
     p_company_id  INT DEFAULT NULL,
@@ -242,6 +249,18 @@ $$;
 -- PRODUCTOS MENU
 -- ============================================================================
 
+-- Nuclear drop: eliminar TODAS las sobrecargas por OID
+DO $do$
+DECLARE _oid OID;
+BEGIN
+  FOR _oid IN
+    SELECT p.oid FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+    WHERE n.nspname = 'public' AND p.proname = 'usp_rest_admin_producto_list'
+  LOOP
+    EXECUTE format('DROP FUNCTION IF EXISTS %s CASCADE', _oid::regprocedure);
+  END LOOP;
+END $do$;
+
 CREATE OR REPLACE FUNCTION usp_rest_admin_producto_list(
     p_company_id       INT,
     p_branch_id        INT,
@@ -250,11 +269,11 @@ CREATE OR REPLACE FUNCTION usp_rest_admin_producto_list(
     p_solo_disponibles BOOLEAN DEFAULT TRUE
 )
 RETURNS TABLE(
-    "id"                   INT,
+    "id"                   BIGINT,
     "codigo"               VARCHAR,
     "nombre"               VARCHAR,
     "descripcion"          VARCHAR,
-    "categoriaId"          INT,
+    "categoriaId"          BIGINT,
     "categoriaNombre"      VARCHAR,
     "precio"               NUMERIC,
     "costoEstimado"        NUMERIC,
@@ -312,16 +331,18 @@ BEGIN
 END;
 $$;
 
+DROP FUNCTION IF EXISTS usp_rest_admin_producto_get(INT, INT) CASCADE;
+DROP FUNCTION IF EXISTS usp_rest_admin_producto_get(BIGINT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_rest_admin_producto_get(
-    p_id        INT,
+    p_id        BIGINT,
     p_branch_id INT
 )
 RETURNS TABLE(
-    "id"                   INT,
+    "id"                   BIGINT,
     "codigo"               VARCHAR,
     "nombre"               VARCHAR,
     "descripcion"          VARCHAR,
-    "categoriaId"          INT,
+    "categoriaId"          BIGINT,
     "precio"               NUMERIC,
     "costoEstimado"        NUMERIC,
     "iva"                  NUMERIC,
@@ -374,15 +395,17 @@ END;
 $$;
 
 -- Nota: los resultsets 2 y 3 del GET original se separan en funciones individuales
+DROP FUNCTION IF EXISTS usp_rest_admin_producto_get_componentes(INT) CASCADE;
+DROP FUNCTION IF EXISTS usp_rest_admin_producto_get_componentes(BIGINT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_rest_admin_producto_get_componentes(
-    p_id INT
+    p_id BIGINT
 )
 RETURNS TABLE(
-    "id"           INT,
+    "id"           BIGINT,
     "nombre"       VARCHAR,
     "obligatorio"  BOOLEAN,
     "orden"        INT,
-    "opcionId"     INT,
+    "opcionId"     BIGINT,
     "opcionNombre" VARCHAR,
     "precioExtra"  NUMERIC,
     "opcionOrden"  INT
@@ -410,13 +433,15 @@ BEGIN
 END;
 $$;
 
+DROP FUNCTION IF EXISTS usp_rest_admin_producto_get_receta(INT, INT) CASCADE;
+DROP FUNCTION IF EXISTS usp_rest_admin_producto_get_receta(BIGINT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_rest_admin_producto_get_receta(
-    p_id        INT,
+    p_id        BIGINT,
     p_branch_id INT
 )
 RETURNS TABLE(
-    "id"          INT,
-    "productoId"  INT,
+    "id"          BIGINT,
+    "productoId"  BIGINT,
     "inventarioId" VARCHAR,
     "descripcion" VARCHAR,
     "imagen"      VARCHAR,
@@ -458,6 +483,8 @@ BEGIN
 END;
 $$;
 
+DROP FUNCTION IF EXISTS usp_rest_admin_producto_upsert(INT, INT, INT, VARCHAR(20), VARCHAR(200), VARCHAR(500), INT, NUMERIC(18,2), NUMERIC(18,2), NUMERIC(5,2), BOOLEAN, INT, VARCHAR(500), BOOLEAN, BOOLEAN, INT, INT) CASCADE;
+DROP FUNCTION IF EXISTS usp_rest_admin_producto_upsert(INT, INT, INT, VARCHAR(20), VARCHAR(200), VARCHAR(500), INT, NUMERIC(18,2), NUMERIC(18,2), NUMERIC(5,2), BOOLEAN, INT, VARCHAR(500), BOOLEAN, BOOLEAN, BIGINT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_rest_admin_producto_upsert(
     p_id                   INT DEFAULT 0,
     p_company_id           INT DEFAULT NULL,
@@ -474,7 +501,7 @@ CREATE OR REPLACE FUNCTION usp_rest_admin_producto_upsert(
     p_image_url            VARCHAR(500) DEFAULT NULL,
     p_is_daily_suggestion  BOOLEAN DEFAULT FALSE,
     p_is_available         BOOLEAN DEFAULT TRUE,
-    p_inventory_product_id INT DEFAULT NULL,
+    p_inventory_product_id BIGINT DEFAULT NULL,
     p_user_id              INT DEFAULT NULL
 )
 RETURNS TABLE("id" INT)
@@ -525,6 +552,7 @@ BEGIN
 END;
 $$;
 
+DROP FUNCTION IF EXISTS usp_rest_admin_producto_delete(INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_rest_admin_producto_delete(
     p_id INT
 )
@@ -544,6 +572,7 @@ $$;
 -- COMPONENTES / OPCIONES
 -- ============================================================================
 
+DROP FUNCTION IF EXISTS usp_rest_admin_componente_upsert(INT, INT, VARCHAR(100), BOOLEAN, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_rest_admin_componente_upsert(
     p_id           INT DEFAULT 0,
     p_producto_id  INT DEFAULT NULL,
@@ -578,6 +607,7 @@ BEGIN
 END;
 $$;
 
+DROP FUNCTION IF EXISTS usp_rest_admin_opcion_upsert(INT, INT, VARCHAR(100), NUMERIC(18,2), INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_rest_admin_opcion_upsert(
     p_id            INT DEFAULT 0,
     p_componente_id INT DEFAULT NULL,
@@ -616,10 +646,12 @@ $$;
 -- RECETAS
 -- ============================================================================
 
+DROP FUNCTION IF EXISTS usp_rest_admin_receta_upsert(INT, INT, INT, NUMERIC(10,3), VARCHAR(20), VARCHAR(200)) CASCADE;
+DROP FUNCTION IF EXISTS usp_rest_admin_receta_upsert(INT, INT, BIGINT, NUMERIC(10,3), VARCHAR(20), VARCHAR(200)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_rest_admin_receta_upsert(
-    p_id                    INT DEFAULT 0,
-    p_producto_id           INT DEFAULT NULL,
-    p_ingredient_product_id INT DEFAULT NULL,
+    p_id                    INT    DEFAULT 0,
+    p_producto_id           INT    DEFAULT NULL,
+    p_ingredient_product_id BIGINT DEFAULT NULL,
     p_quantity              NUMERIC(10,3) DEFAULT NULL,
     p_unit_code             VARCHAR(20) DEFAULT NULL,
     p_notes                 VARCHAR(200) DEFAULT NULL
@@ -653,6 +685,7 @@ BEGIN
 END;
 $$;
 
+DROP FUNCTION IF EXISTS usp_rest_admin_receta_delete(INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_rest_admin_receta_delete(
     p_id INT
 )
@@ -671,19 +704,20 @@ $$;
 -- COMPRAS
 -- ============================================================================
 
+DROP FUNCTION IF EXISTS usp_rest_admin_compra_list(INT, INT, VARCHAR, TIMESTAMP, TIMESTAMP) CASCADE;
 CREATE OR REPLACE FUNCTION usp_rest_admin_compra_list(
     p_company_id INT,
     p_branch_id  INT,
     p_status     VARCHAR(20) DEFAULT NULL,
-    p_from_date  TIMESTAMPTZ DEFAULT NULL,
-    p_to_date    TIMESTAMPTZ DEFAULT NULL
+    p_from_date  TIMESTAMP DEFAULT NULL,
+    p_to_date    TIMESTAMP DEFAULT NULL
 )
 RETURNS TABLE(
-    "id"                INT,
+    "id"                BIGINT,
     "numCompra"         VARCHAR,
     "proveedorId"       VARCHAR,
     "proveedorNombre"   VARCHAR,
-    "fechaCompra"       TIMESTAMPTZ,
+    "fechaCompra"       TIMESTAMP,
     "estado"            VARCHAR,
     "subtotal"          NUMERIC,
     "iva"               NUMERIC,
@@ -716,15 +750,17 @@ BEGIN
 END;
 $$;
 
+DROP FUNCTION IF EXISTS usp_rest_admin_compra_getdetalle_header(INT) CASCADE;
+DROP FUNCTION IF EXISTS usp_rest_admin_compra_getdetalle_header(BIGINT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_rest_admin_compra_getdetalle_header(
-    p_compra_id INT
+    p_compra_id BIGINT
 )
 RETURNS TABLE(
-    "id"                INT,
+    "id"                BIGINT,
     "numCompra"         VARCHAR,
     "proveedorId"       VARCHAR,
     "proveedorNombre"   VARCHAR,
-    "fechaCompra"       TIMESTAMPTZ,
+    "fechaCompra"       TIMESTAMP,
     "estado"            VARCHAR,
     "subtotal"          NUMERIC,
     "iva"               NUMERIC,
@@ -756,12 +792,14 @@ BEGIN
 END;
 $$;
 
+DROP FUNCTION IF EXISTS usp_rest_admin_compra_getdetalle_lines(INT) CASCADE;
+DROP FUNCTION IF EXISTS usp_rest_admin_compra_getdetalle_lines(BIGINT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_rest_admin_compra_getdetalle_lines(
-    p_compra_id INT
+    p_compra_id BIGINT
 )
 RETURNS TABLE(
-    "id"           INT,
-    "compraId"     INT,
+    "id"           BIGINT,
+    "compraId"     BIGINT,
     "inventarioId" VARCHAR,
     "descripcion"  VARCHAR,
     "cantidad"     NUMERIC,
@@ -789,6 +827,7 @@ BEGIN
 END;
 $$;
 
+DROP FUNCTION IF EXISTS usp_rest_admin_compra_getnextseq(INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_rest_admin_compra_getnextseq(
     p_company_id INT,
     p_branch_id  INT
@@ -805,11 +844,13 @@ BEGIN
 END;
 $$;
 
+DROP FUNCTION IF EXISTS usp_rest_admin_compra_insert(INT, INT, VARCHAR(20), INT, VARCHAR(500), INT) CASCADE;
+DROP FUNCTION IF EXISTS usp_rest_admin_compra_insert(INT, INT, VARCHAR(20), BIGINT, VARCHAR(500), INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_rest_admin_compra_insert(
     p_company_id      INT,
     p_branch_id       INT,
     p_purchase_number VARCHAR(20),
-    p_supplier_id     INT DEFAULT NULL,
+    p_supplier_id     BIGINT DEFAULT NULL,
     p_notes           VARCHAR(500) DEFAULT NULL,
     p_user_id         INT DEFAULT NULL
 )
@@ -833,9 +874,11 @@ BEGIN
 END;
 $$;
 
+DROP FUNCTION IF EXISTS usp_rest_admin_compra_update(INT, INT, VARCHAR(20), VARCHAR(500)) CASCADE;
+DROP FUNCTION IF EXISTS usp_rest_admin_compra_update(INT, BIGINT, VARCHAR(20), VARCHAR(500)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_rest_admin_compra_update(
     p_compra_id   INT,
-    p_supplier_id INT DEFAULT NULL,
+    p_supplier_id BIGINT DEFAULT NULL,
     p_status      VARCHAR(20) DEFAULT NULL,
     p_notes       VARCHAR(500) DEFAULT NULL
 )
@@ -852,11 +895,12 @@ BEGIN
 END;
 $$;
 
+DROP FUNCTION IF EXISTS usp_rest_admin_compralinea_getprev(INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_rest_admin_compralinea_getprev(
     p_id        INT,
     p_compra_id INT
 )
-RETURNS TABLE("ingredientProductId" INT, "quantity" NUMERIC)
+RETURNS TABLE("ingredientProductId" BIGINT, "quantity" NUMERIC)
 LANGUAGE plpgsql
 AS $$
 BEGIN
@@ -869,10 +913,12 @@ BEGIN
 END;
 $$;
 
+DROP FUNCTION IF EXISTS usp_rest_admin_compralinea_upsert(INT, INT, INT, VARCHAR(200), NUMERIC(10,3), NUMERIC(18,2), NUMERIC(5,2), NUMERIC(18,2)) CASCADE;
+DROP FUNCTION IF EXISTS usp_rest_admin_compralinea_upsert(INT, INT, BIGINT, VARCHAR(200), NUMERIC(10,3), NUMERIC(18,2), NUMERIC(5,2), NUMERIC(18,2)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_rest_admin_compralinea_upsert(
     p_id                    INT DEFAULT 0,
     p_compra_id             INT DEFAULT NULL,
-    p_ingredient_product_id INT DEFAULT NULL,
+    p_ingredient_product_id BIGINT DEFAULT NULL,
     p_descripcion           VARCHAR(200) DEFAULT NULL,
     p_quantity              NUMERIC(10,3) DEFAULT NULL,
     p_unit_price            NUMERIC(18,2) DEFAULT NULL,
@@ -914,11 +960,12 @@ BEGIN
 END;
 $$;
 
+DROP FUNCTION IF EXISTS usp_rest_admin_compralinea_delete(INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_rest_admin_compralinea_delete(
     p_compra_id  INT,
     p_detalle_id INT
 )
-RETURNS TABLE("ingredientProductId" INT, "quantity" NUMERIC)
+RETURNS TABLE("ingredientProductId" BIGINT, "quantity" NUMERIC)
 LANGUAGE plpgsql
 AS $$
 BEGIN
@@ -936,6 +983,7 @@ BEGIN
 END;
 $$;
 
+DROP FUNCTION IF EXISTS usp_rest_admin_compra_recalctotals(INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_rest_admin_compra_recalctotals(
     p_purchase_id INT
 )
@@ -964,8 +1012,10 @@ BEGIN
 END;
 $$;
 
+DROP FUNCTION IF EXISTS usp_rest_admin_adjuststock(INT, NUMERIC(18,4)) CASCADE;
+DROP FUNCTION IF EXISTS usp_rest_admin_adjuststock(BIGINT, NUMERIC(18,4)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_rest_admin_adjuststock(
-    p_product_id INT,
+    p_product_id BIGINT,
     p_delta_qty  NUMERIC(18,4)
 )
 RETURNS VOID
@@ -987,10 +1037,12 @@ $$;
 -- SYNC IMAGE LINK
 -- ============================================================================
 
+DROP FUNCTION IF EXISTS usp_rest_admin_syncmenuproductimage(INT, INT, INT, VARCHAR(500), INT) CASCADE;
+DROP FUNCTION IF EXISTS usp_rest_admin_syncmenuproductimage(INT, INT, BIGINT, VARCHAR(500), INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_rest_admin_syncmenuproductimage(
     p_company_id      INT,
     p_branch_id       INT,
-    p_menu_product_id INT,
+    p_menu_product_id BIGINT,
     p_storage_key     VARCHAR(500),
     p_user_id         INT DEFAULT NULL
 )
@@ -1067,6 +1119,7 @@ $$;
 -- BUSQUEDA DE PROVEEDORES
 -- ============================================================================
 
+DROP FUNCTION IF EXISTS usp_rest_admin_proveedor_search(INT, VARCHAR(100), INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_rest_admin_proveedor_search(
     p_company_id INT,
     p_search     VARCHAR(100) DEFAULT NULL,
@@ -1110,6 +1163,7 @@ $$;
 -- BUSQUEDA DE INSUMOS
 -- ============================================================================
 
+DROP FUNCTION IF EXISTS usp_rest_admin_insumo_search(INT, INT, VARCHAR(100), INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_rest_admin_insumo_search(
     p_company_id INT,
     p_branch_id  INT,

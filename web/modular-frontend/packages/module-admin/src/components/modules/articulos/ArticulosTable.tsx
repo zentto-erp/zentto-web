@@ -1,9 +1,9 @@
 // components/modules/articulos/ArticulosTable.tsx
-// Tabla de artículos con filtros avanzados: selectores, rangos, comodines
+// Tabla de articulos con filtros avanzados: selectores, rangos, comodines
 "use client";
 
-import { useState, useCallback, useMemo, type Dispatch, type SetStateAction } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useCallback, useMemo, useEffect, useRef, type Dispatch, type SetStateAction } from "react";
+import { useRouter, usePathname } from "next/navigation";
 import {
   Box,
   Button,
@@ -28,28 +28,21 @@ import {
   Badge,
 } from "@mui/material";
 import {
-  DataGrid,
-  GridColDef,
-  GridPaginationModel,
-  GridSortModel,
-  GridRenderCellParams,
-  GridActionsCellItem,
-} from "@mui/x-data-grid";
-import {
-  Add as AddIcon,
-  Edit as EditIcon,
-  Delete as DeleteIcon,
-  Visibility as ViewIcon,
   Search as SearchIcon,
   FilterList as FilterIcon,
   Clear as ClearIcon,
   ExpandMore as ExpandMoreIcon,
   ExpandLess as ExpandLessIcon,
+  ViewColumn as ViewColumnIcon,
 } from "@mui/icons-material";
 import { useArticulosList, useDeleteArticulo, useArticuloFilterOptions } from "../../../hooks/useArticulos";
-import { formatCurrency } from "@zentto/shared-api";
+import { formatCurrency, apiGet, useGridLayoutSync } from "@zentto/shared-api";
+import { useQuery } from "@tanstack/react-query";
 import { debounce } from "lodash";
 import type { ArticuloFilter } from "@zentto/shared-api/types";
+import type { ColumnDef } from "@zentto/datagrid-core";
+import { useScopedGridId } from "../../../lib/zentto-grid";
+
 
 // ============ Componente selector reutilizable ============
 function FilterSelect({
@@ -70,7 +63,7 @@ function FilterSelect({
       value={value}
       onChange={(e) => onChange(e.target.value)}
       size="small"
-      sx={{ minWidth: 140, flex: 1 }}
+      sx={{ minWidth: 130, flex: 1 }}
     >
       <MenuItem value="">
         <em>Todos</em>
@@ -86,17 +79,23 @@ function FilterSelect({
 
 export default function ArticulosTable() {
   const router = useRouter();
+  const pathname = usePathname() || '';
+  const basePath = pathname.includes('/inventario/') ? '/inventario/articulos' : '/articulos';
+  const gridRef = useRef<any>(null);
+  const [registered, setRegistered] = useState(false);
+  const gridId = useScopedGridId('articulos-main');
+  const { ready: layoutReady } = useGridLayoutSync(gridId);
+
+  useEffect(() => {
+    if (!layoutReady) return;
+    import("@zentto/datagrid").then(() => setRegistered(true));
+  }, [layoutReady]);
 
   // ========== Estado del DataGrid ==========
-  const [paginationModel, setPaginationModel] = useState<GridPaginationModel>({
-    page: 0,
-    pageSize: 25,
-  });
-  const [sortModel, setSortModel] = useState<GridSortModel>([
-    { field: "codigo", sort: "asc" },
-  ]);
+  const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 20 });
+  const [sortModel, setSortModel] = useState([{ field: "codigo", sort: "asc" as const }]);
 
-  // ========== Búsqueda ==========
+  // ========== Busqueda ==========
   const [searchText, setSearchText] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [wildcardText, setWildcardText] = useState("");
@@ -122,10 +121,11 @@ export default function ArticulosTable() {
   // ========== UI ==========
   const [showFilters, setShowFilters] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [extendedView, setExtendedView] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedArticulo, setSelectedArticulo] = useState<string | null>(null);
 
-  // ========== Debounce para búsqueda ==========
+  // ========== Debounce para busqueda ==========
   const debouncedSetSearch = useCallback(
     debounce((value: string) => {
       setDebouncedSearch(value);
@@ -156,11 +156,11 @@ export default function ArticulosTable() {
   const sortFieldMap: Record<string, string> = {
     codigo: "CODIGO",
     linea: "Linea",
-    descripcionCompleta: "DescripcionCompleta",
+    descripcion: "ProductName",
     precioVenta: "PRECIO_VENTA",
     precioCompra: "PRECIO_COMPRA",
     stock: "EXISTENCIA",
-    estado: "Eliminado",
+    estado: "IsActive",
     categoria: "Categoria",
     marca: "Marca",
     tipo: "Tipo",
@@ -173,6 +173,7 @@ export default function ArticulosTable() {
   // ========== Contar filtros activos ==========
   const activeFilterCount = useMemo(() => {
     let c = 0;
+    if (debouncedSearch) c++;
     if (filterLinea) c++;
     if (filterCategoria) c++;
     if (filterMarca) c++;
@@ -187,7 +188,7 @@ export default function ArticulosTable() {
     if (filterServicio !== undefined) c++;
     if (debouncedWildcard) c++;
     return c;
-  }, [filterLinea, filterCategoria, filterMarca, filterTipo, filterClase, filterUnidad, filterUbicacion, filterEstado, precioRangeActive, stockMin, stockMax, filterServicio, debouncedWildcard]);
+  }, [debouncedSearch, filterLinea, filterCategoria, filterMarca, filterTipo, filterClase, filterUnidad, filterUbicacion, filterEstado, precioRangeActive, stockMin, stockMax, filterServicio, debouncedWildcard]);
 
   // ========== Limpiar todos los filtros ==========
   const clearAllFilters = () => {
@@ -211,7 +212,7 @@ export default function ArticulosTable() {
     setPaginationModel((p) => ({ ...p, page: 0 }));
   };
 
-  // Resetear página al cambiar un filtro
+  // Resetear pagina al cambiar un filtro
   const onFilterChange = <T,>(setter: Dispatch<SetStateAction<T>>) => (val: T) => {
     setter(val);
     setPaginationModel((p) => ({ ...p, page: 0 }));
@@ -245,129 +246,76 @@ export default function ArticulosTable() {
 
   // ========== Queries ==========
   const { data: articulosData, isLoading, isFetching } = useArticulosList(filter);
+  const { data: tasaData } = useQuery({
+    queryKey: ["config-tasas"],
+    queryFn: () => apiGet("/v1/config/tasas") as Promise<{ USD?: number }>,
+    staleTime: 10 * 60 * 1000,
+  });
+  const tasaCambio = tasaData?.USD || 1;
   const { data: filterOptions } = useArticuloFilterOptions();
   const { mutate: deleteArticulo, isPending: isDeleting } = useDeleteArticulo();
 
   // ========== Columnas del DataGrid ==========
-  const columns: GridColDef[] = useMemo(
-    () => [
-      {
-        field: "codigo",
-        headerName: "Código",
-        width: 120,
-        sortable: true,
-      },
-      {
-        field: "descripcionCompleta",
-        headerName: "Descripción",
-        flex: 1,
-        minWidth: 250,
-        sortable: true,
-      },
-      {
-        field: "linea",
-        headerName: "Línea",
-        width: 100,
-        sortable: true,
-        renderCell: (params: GridRenderCellParams) =>
-          params.value ? (
-            <Chip label={params.value} size="small" variant="outlined" color="info" />
-          ) : "—",
-      },
-      {
-        field: "categoria",
-        headerName: "Categoría",
-        width: 110,
-        sortable: true,
-      },
-      {
-        field: "marca",
-        headerName: "Marca",
-        width: 110,
-        sortable: true,
-      },
-      {
-        field: "unidad",
-        headerName: "Unidad",
-        width: 80,
-        sortable: true,
-      },
-      {
-        field: "ubicacion",
-        headerName: "Ubicación",
-        width: 100,
-        sortable: true,
-      },
-      {
-        field: "precioVenta",
-        headerName: "Precio",
-        width: 110,
-        sortable: true,
-        align: "right",
-        headerAlign: "right",
-        renderCell: (params: GridRenderCellParams) =>
-          formatCurrency(params.value),
-      },
-      {
-        field: "stock",
-        headerName: "Stock",
-        width: 80,
-        sortable: true,
-        align: "right",
-        headerAlign: "right",
-        renderCell: (params: GridRenderCellParams) =>
-          params.value?.toLocaleString("es-VE") ?? "0",
-      },
-      {
-        field: "estado",
-        headerName: "Estado",
-        width: 90,
-        sortable: true,
-        renderCell: (params: GridRenderCellParams) => (
-          <Chip
-            label={params.value === "Activo" ? "Activo" : "Inactivo"}
-            color={params.value === "Activo" ? "success" : "default"}
-            size="small"
-            variant="outlined"
-          />
-        ),
-      },
-      {
-        field: "actions",
-        type: "actions",
-        headerName: "Acciones",
-        width: 120,
-        getActions: (params) => [
-          <GridActionsCellItem
-            key="view"
-            icon={<ViewIcon />}
-            label="Ver"
-            onClick={() => router.push(`/articulos/${params.row.codigo}`)}
-          />,
-          <GridActionsCellItem
-            key="edit"
-            icon={<EditIcon />}
-            label="Editar"
-            onClick={() => router.push(`/articulos/${params.row.codigo}/edit`)}
-          />,
-          <GridActionsCellItem
-            key="delete"
-            icon={<DeleteIcon color="error" />}
-            label="Eliminar"
-            onClick={() => {
-              setSelectedArticulo(params.row.codigo);
-              setDeleteDialogOpen(true);
-            }}
-          />,
+  const columns = useMemo<ColumnDef[]>(
+    () => {
+      const base: ColumnDef[] = [
+        { field: "codigo", header: "Codigo", width: 120, sortable: true },
+        { field: "descripcion", header: "Articulo", flex: 1, minWidth: 200, sortable: true },
+        { field: "categoria", header: "Categoria", width: 110, sortable: true },
+        { field: "precioCompra", header: "Costo", width: 110, type: "number", currency: "VES", sortable: true },
+        { field: "precioVenta", header: "Precio", width: 110, type: "number", currency: "VES", sortable: true },
+        { field: "precioUsd", header: "Precio ($)", width: 100, type: "number", currency: "USD" },
+        { field: "stock", header: "Stock", width: 80, type: "number", sortable: true, aggregation: "sum" },
+        {
+          field: "estado", header: "Estado", width: 100, sortable: true,
+          statusColors: { Activo: "success", Inactivo: "error" },
+          statusVariant: "outlined",
+        },
+      ];
+
+      const extended: ColumnDef[] = [
+        { field: "referencia", header: "Referencia", width: 120, sortable: true },
+        { field: "marca", header: "Marca", width: 110, sortable: true },
+        { field: "linea", header: "Linea", width: 100, sortable: true },
+        { field: "clase", header: "Clase", width: 100, sortable: true },
+        { field: "unidad", header: "Unidad", width: 80, sortable: true },
+        { field: "tipo", header: "Tipo", width: 100, sortable: true },
+        { field: "minimo", header: "Minimo", width: 80, type: "number", sortable: true },
+        { field: "maximo", header: "Maximo", width: 80, type: "number", sortable: true },
+        { field: "barra", header: "Cod. Barras", width: 120, sortable: true },
+        { field: "nParte", header: "N. Parte", width: 110, sortable: true },
+        { field: "ubicacion", header: "Ubicacion", width: 100, sortable: true },
+      ];
+
+      const actionsCol: ColumnDef = {
+        field: "actions", header: "Acciones", type: "actions" as any, width: 130, pin: "right",
+        actions: [
+          { icon: "view", label: "Ver detalle", action: "view" },
+          { icon: "edit", label: "Editar", action: "edit", color: "#e67e22" },
+          { icon: "delete", label: "Eliminar", action: "delete", color: "#dc2626" },
         ],
-      },
-    ],
-    [router]
+      } as ColumnDef;
+
+      return extendedView ? [...base, ...extended, actionsCol] : [...base, actionsCol];
+    },
+    [extendedView]
   );
 
   // ========== Filas mapeadas ==========
-  const rows = articulosData?.data ?? [];
+  const rawRows = articulosData?.data ?? [];
   const totalRows = articulosData?.total ?? 0;
+
+  const rows = useMemo(
+    () =>
+      rawRows.map((item: any) => ({
+        ...item,
+        id: item.codigo,
+        precioUsd: tasaCambio > 1 && (item.precioVenta ?? 0) > 0
+          ? Number(((item.precioVenta ?? 0) / tasaCambio).toFixed(2))
+          : 0,
+      })),
+    [rawRows, tasaCambio]
+  );
 
   // ========== Eliminar ==========
   const handleDelete = () => {
@@ -384,16 +332,49 @@ export default function ArticulosTable() {
   const precioMin = filterOptions?.precioMin ?? 0;
   const precioMax = filterOptions?.precioMax ?? 1000;
 
+  // ========== Bind data to web component ==========
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+    el.columns = columns;
+    el.rows = rows;
+    el.loading = isLoading;
+  }, [columns, rows, isLoading, registered]);
+
+  // ========== Listen for action-click and create-click events ==========
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+
+    const actionHandler = (e: CustomEvent) => {
+      const { action, row } = e.detail || {};
+      if (!row) return;
+      if (action === "view") router.push(`${basePath}/${row.codigo}`);
+      if (action === "edit") router.push(`${basePath}/${row.codigo}/edit`);
+      if (action === "delete") {
+        setSelectedArticulo(row.codigo);
+        setDeleteDialogOpen(true);
+      }
+    };
+    const createHandler = () => router.push(`${basePath}/new`);
+
+    el.addEventListener("action-click", actionHandler);
+    el.addEventListener("create-click", createHandler);
+    return () => {
+      el.removeEventListener("action-click", actionHandler);
+      el.removeEventListener("create-click", createHandler);
+    };
+  }, [registered, router, basePath]);
+
   // ========== RENDER ==========
   return (
-    <Box sx={{ width: "100%", flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-      {/* ===== BARRA SUPERIOR: Búsqueda + Botones ===== */}
+    <Box sx={{ width: "100%", flex: 1, display: "flex", flexDirection: "column", minHeight: 0, height: "100%" }}>
+      {/* ===== BARRA SUPERIOR: Busqueda + Botones ===== */}
       <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 2 }}>
         <TextField
-          placeholder="Buscar por código, descripción, marca, referencia..."
+          placeholder="Buscar por codigo, descripcion, marca, referencia..."
           value={searchText}
           onChange={handleSearchChange}
-          size="small"
           sx={{ flex: 1, maxWidth: 500 }}
           InputProps={{
             startAdornment: (
@@ -403,9 +384,11 @@ export default function ArticulosTable() {
             ),
             endAdornment: searchText ? (
               <InputAdornment position="end">
-                <IconButton size="small" onClick={() => { setSearchText(""); setDebouncedSearch(""); }}>
-                  <ClearIcon fontSize="small" />
-                </IconButton>
+                <Tooltip title="Limpiar busqueda">
+                  <IconButton size="small" onClick={() => { setSearchText(""); setDebouncedSearch(""); }}>
+                    <ClearIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
               </InputAdornment>
             ) : null,
           }}
@@ -438,77 +421,54 @@ export default function ArticulosTable() {
 
         <Box sx={{ flex: 1 }} />
 
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => router.push("/articulos/new")}
-          size="small"
-        >
-          Nuevo Artículo
-        </Button>
+        <Tooltip title="Vista compacta / extendida">
+          <Button
+            variant={extendedView ? "contained" : "outlined"}
+            startIcon={<ViewColumnIcon />}
+            onClick={() => setExtendedView(!extendedView)}
+            size="small"
+          >
+            {extendedView ? "Compacta" : "Extendida"}
+          </Button>
+        </Tooltip>
+
+        <Tooltip title="Registrar entrada o salida de stock">
+          <Button
+            variant="outlined"
+            onClick={() => router.push("/inventario/ajuste")}
+            size="small"
+          >
+            Ajuste de Inventario
+          </Button>
+        </Tooltip>
       </Stack>
 
       {/* ===== PANEL DE FILTROS COLAPSABLE ===== */}
       <Collapse in={showFilters}>
-        <Paper variant="outlined" sx={{ p: 2, mb: 2 }}>
+        <Paper variant="outlined" sx={{ p: 1.5, mb: 1.5, position: 'relative', zIndex: 10 }}>
           {/* Fila 1: Selectores principales */}
           <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
-            Filtros básicos
+            Filtros basicos
           </Typography>
           <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ mb: 1.5 }}>
-            <FilterSelect
-              label="Línea"
-              value={filterLinea}
-              options={filterOptions?.lineas ?? []}
-              onChange={onFilterChange(setFilterLinea)}
-            />
-            <FilterSelect
-              label="Categoría"
-              value={filterCategoria}
-              options={filterOptions?.categorias ?? []}
-              onChange={onFilterChange(setFilterCategoria)}
-            />
-            <FilterSelect
-              label="Marca"
-              value={filterMarca}
-              options={filterOptions?.marcas ?? []}
-              onChange={onFilterChange(setFilterMarca)}
-            />
-            <FilterSelect
-              label="Tipo"
-              value={filterTipo}
-              options={filterOptions?.tipos ?? []}
-              onChange={onFilterChange(setFilterTipo)}
-            />
+            <FilterSelect label="Linea" value={filterLinea} options={filterOptions?.lineas ?? []} onChange={onFilterChange(setFilterLinea)} />
+            <FilterSelect label="Categoria" value={filterCategoria} options={filterOptions?.categorias ?? []} onChange={onFilterChange(setFilterCategoria)} />
+            <FilterSelect label="Marca" value={filterMarca} options={filterOptions?.marcas ?? []} onChange={onFilterChange(setFilterMarca)} />
+            <FilterSelect label="Tipo" value={filterTipo} options={filterOptions?.tipos ?? []} onChange={onFilterChange(setFilterTipo)} />
           </Stack>
 
           {/* Fila 2: Selectores secundarios */}
           <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ mb: 1.5 }}>
-            <FilterSelect
-              label="Clase"
-              value={filterClase}
-              options={filterOptions?.clases ?? []}
-              onChange={onFilterChange(setFilterClase)}
-            />
-            <FilterSelect
-              label="Unidad"
-              value={filterUnidad}
-              options={filterOptions?.unidades ?? []}
-              onChange={onFilterChange(setFilterUnidad)}
-            />
-            <FilterSelect
-              label="Ubicación"
-              value={filterUbicacion}
-              options={filterOptions?.ubicaciones ?? []}
-              onChange={onFilterChange(setFilterUbicacion)}
-            />
+            <FilterSelect label="Clase" value={filterClase} options={filterOptions?.clases ?? []} onChange={onFilterChange(setFilterClase)} />
+            <FilterSelect label="Unidad" value={filterUnidad} options={filterOptions?.unidades ?? []} onChange={onFilterChange(setFilterUnidad)} />
+            <FilterSelect label="Ubicacion" value={filterUbicacion} options={filterOptions?.ubicaciones ?? []} onChange={onFilterChange(setFilterUbicacion)} />
             <TextField
               select
               label="Estado"
               value={filterEstado}
               onChange={(e) => onFilterChange(setFilterEstado)(e.target.value)}
               size="small"
-              sx={{ minWidth: 140, flex: 1 }}
+              sx={{ minWidth: 130, flex: 1 }}
             >
               <MenuItem value="todos">Todos</MenuItem>
               <MenuItem value="activo">Activo</MenuItem>
@@ -523,174 +483,156 @@ export default function ArticulosTable() {
             size="small"
             onClick={() => setShowAdvanced(!showAdvanced)}
             endIcon={showAdvanced ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-            sx={{ mb: 1 }}
+            sx={{ mb: 0.5 }}
           >
             Filtros avanzados
           </Button>
 
-          <Collapse in={showAdvanced}>
-            <Stack spacing={2} sx={{ mt: 1 }}>
+          <Collapse in={showAdvanced} unmountOnExit>
+            <Stack direction={{ xs: "column", md: "row" }} spacing={2} sx={{ mt: 1 }} alignItems="flex-start">
               {/* Rango de precios */}
-              <Box>
-                <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 0.5 }}>
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={precioRangeActive}
-                        onChange={(e) => {
-                          setPrecioRangeActive(e.target.checked);
-                          if (e.target.checked && precioRange[0] === 0 && precioRange[1] === 0) {
-                            setPrecioRange([precioMin, precioMax]);
-                          }
-                          setPaginationModel((p) => ({ ...p, page: 0 }));
-                        }}
-                        size="small"
-                      />
-                    }
-                    label={
-                      <Typography variant="body2">
-                        Rango de precio:{" "}
-                        {precioRangeActive
-                          ? `${formatCurrency(precioRange[0])} — ${formatCurrency(precioRange[1])}`
-                          : "Desactivado"}
-                      </Typography>
-                    }
-                  />
-                </Stack>
-                {precioRangeActive && (
-                  <Box sx={{ px: 2 }}>
-                    <Slider
-                      value={precioRange}
-                      onChange={(_, v) => setPrecioRange(v as [number, number])}
-                      onChangeCommitted={() => setPaginationModel((p) => ({ ...p, page: 0 }))}
-                      min={precioMin}
-                      max={precioMax}
-                      step={Math.max(1, Math.round((precioMax - precioMin) / 100))}
-                      valueLabelDisplay="auto"
-                      valueLabelFormat={(v) => formatCurrency(v)}
-                      sx={{ maxWidth: 400 }}
+              <Box sx={{ flex: 1, minWidth: 200, maxWidth: 350 }}>
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={precioRangeActive}
+                      onChange={(e) => {
+                        setPrecioRangeActive(e.target.checked);
+                        if (e.target.checked && precioRange[0] === 0 && precioRange[1] === 0) {
+                          setPrecioRange([precioMin, precioMax]);
+                        }
+                        setPaginationModel((p) => ({ ...p, page: 0 }));
+                      }}
+                      size="small"
                     />
-                  </Box>
+                  }
+                  label={
+                    <Typography variant="body2">
+                      Precio:{" "}
+                      {precioRangeActive
+                        ? `${formatCurrency(precioRange[0])} — ${formatCurrency(precioRange[1])}`
+                        : "Off"}
+                    </Typography>
+                  }
+                />
+                {precioRangeActive && (
+                  <Slider
+                    value={precioRange}
+                    onChange={(_, v) => setPrecioRange(v as [number, number])}
+                    onChangeCommitted={() => setPaginationModel((p) => ({ ...p, page: 0 }))}
+                    min={precioMin}
+                    max={precioMax}
+                    step={Math.max(1, Math.round((precioMax - precioMin) / 100))}
+                    valueLabelDisplay="auto"
+                    valueLabelFormat={(v) => formatCurrency(v)}
+                    size="small"
+                    sx={{ mx: 1 }}
+                  />
                 )}
               </Box>
 
               {/* Rango de stock */}
-              <Stack direction="row" spacing={1} alignItems="center" sx={{ maxWidth: 400 }}>
+              <Stack direction="row" spacing={1} alignItems="center" sx={{ minWidth: 200 }}>
                 <TextField
-                  label="Stock mínimo"
+                  label="Stock min"
                   type="number"
+                  size="small"
                   value={stockMin}
                   onChange={(e) => onFilterChange(setStockMin)(e.target.value)}
-                  size="small"
-                  sx={{ flex: 1 }}
+                  sx={{ width: 100 }}
                 />
                 <Typography variant="body2" color="text.secondary">—</Typography>
                 <TextField
-                  label="Stock máximo"
+                  label="Stock max"
                   type="number"
+                  size="small"
                   value={stockMax}
                   onChange={(e) => onFilterChange(setStockMax)(e.target.value)}
-                  size="small"
-                  sx={{ flex: 1 }}
+                  sx={{ width: 100 }}
                 />
               </Stack>
 
-              {/* Búsqueda con comodines */}
-              <TextField
-                label="Búsqueda con comodines"
-                placeholder="Ej: ACEI*MOTOR, ???-001, *FILTRO*"
-                value={wildcardText}
-                onChange={handleWildcardChange}
-                size="small"
-                sx={{ maxWidth: 400 }}
-                helperText="Usa * para cualquier texto, ? para un solo carácter"
-                InputProps={{
-                  endAdornment: wildcardText ? (
-                    <InputAdornment position="end">
-                      <IconButton size="small" onClick={() => { setWildcardText(""); setDebouncedWildcard(""); }}>
-                        <ClearIcon fontSize="small" />
-                      </IconButton>
-                    </InputAdornment>
-                  ) : null,
-                }}
-              />
+              {/* Busqueda con comodines */}
+              <Box sx={{ flex: 1, minWidth: 200, maxWidth: 300 }}>
+                <TextField
+                  label="Comodines"
+                  placeholder="ACEI*MOTOR, *FILTRO*"
+                  value={wildcardText}
+                  onChange={handleWildcardChange}
+                  size="small"
+                  fullWidth
+                  helperText="* = cualquier texto, ? = 1 caracter"
+                  InputProps={{
+                    endAdornment: wildcardText ? (
+                      <InputAdornment position="end">
+                        <IconButton size="small" onClick={() => { setWildcardText(""); setDebouncedWildcard(""); }}>
+                          <ClearIcon fontSize="small" />
+                        </IconButton>
+                      </InputAdornment>
+                    ) : null,
+                  }}
+                />
+              </Box>
 
               {/* Servicio */}
-              <Stack direction="row" spacing={2} alignItems="center">
-                <Typography variant="body2">Servicio:</Typography>
-                <Button
-                  variant={filterServicio === undefined ? "contained" : "outlined"}
-                  size="small"
-                  onClick={() => onFilterChange(setFilterServicio)(undefined)}
-                >
-                  Todos
-                </Button>
-                <Button
-                  variant={filterServicio === true ? "contained" : "outlined"}
-                  size="small"
-                  onClick={() => onFilterChange(setFilterServicio)(true)}
-                >
-                  Sí
-                </Button>
-                <Button
-                  variant={filterServicio === false ? "contained" : "outlined"}
-                  size="small"
-                  onClick={() => onFilterChange(setFilterServicio)(false)}
-                >
-                  No
-                </Button>
+              <Stack direction="row" spacing={0.5} alignItems="center">
+                <Typography variant="body2" sx={{ mr: 0.5 }}>Servicio:</Typography>
+                {([undefined, true, false] as const).map((val) => (
+                  <Button
+                    key={String(val)}
+                    variant={filterServicio === val ? "contained" : "outlined"}
+                    size="small"
+                    onClick={() => onFilterChange(setFilterServicio)(val as any)}
+                    sx={{ minWidth: 40, px: 1 }}
+                  >
+                    {val === undefined ? "Todos" : val ? "Si" : "No"}
+                  </Button>
+                ))}
               </Stack>
             </Stack>
           </Collapse>
         </Paper>
       </Collapse>
 
-      {/* ===== RESUMEN ===== */}
-      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
-        <Typography variant="body2" color="text.secondary">
-          {totalRows.toLocaleString("es-VE")} artículo{totalRows !== 1 ? "s" : ""} encontrado{totalRows !== 1 ? "s" : ""}
-        </Typography>
-      </Stack>
+      {/* ===== RESUMEN — solo si hay busqueda o filtros activos ===== */}
+      {activeFilterCount > 0 && (
+        <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
+          <Typography variant="body2" color="text.secondary">
+            {totalRows.toLocaleString("es-VE")} articulo{totalRows !== 1 ? "s" : ""} encontrado{totalRows !== 1 ? "s" : ""}
+          </Typography>
+        </Stack>
+      )}
 
       {/* ===== DATA GRID ===== */}
-      <DataGrid
-        rows={rows}
-        columns={columns}
-        rowCount={totalRows}
-        loading={isLoading}
-        paginationMode="server"
-        sortingMode="server"
-        paginationModel={paginationModel}
-        onPaginationModelChange={setPaginationModel}
-        sortModel={sortModel}
-        onSortModelChange={setSortModel}
-        pageSizeOptions={[10, 25, 50, 100]}
-        disableRowSelectionOnClick
-        disableColumnFilter
-        getRowId={(row) => row.codigo}
-        sx={{
-          flex: 1,
-          minHeight: 0,
-          "& .MuiDataGrid-row:hover": {
-            backgroundColor: "action.hover",
-          },
-        }}
-        localeText={{
-          noRowsLabel: "No se encontraron artículos",
-          MuiTablePagination: {
-            labelRowsPerPage: "Filas por página:",
-            labelDisplayedRows: ({ from, to, count }) =>
-              `${from}–${to} de ${count !== -1 ? count.toLocaleString("es-VE") : `más de ${to}`}`,
-          },
-        }}
-      />
+      <Box sx={{ flex: 1, minHeight: 400 }}>
+        {registered && (
+          <zentto-grid
+            ref={gridRef}
+            grid-id={gridId}
+            default-currency="VES"
+            export-filename="articulos"
+            height="100%"
+            show-totals
+            enable-toolbar
+            enable-header-menu
+            enable-header-filters
+            enable-clipboard
+            enable-quick-search
+            enable-context-menu
+            enable-status-bar
+            enable-configurator
+            enable-create
+            create-label="Nuevo Articulo"
+          ></zentto-grid>
+        )}
+      </Box>
 
       {/* ===== DIALOG ELIMINAR ===== */}
       <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
-        <DialogTitle>Confirmar eliminación</DialogTitle>
+        <DialogTitle>Confirmar eliminacion</DialogTitle>
         <DialogContent>
           <Typography>
-            ¿Está seguro de que desea eliminar el artículo <strong>{selectedArticulo}</strong>?
+            Esta seguro de que desea eliminar el articulo <strong>{selectedArticulo}</strong>?
           </Typography>
         </DialogContent>
         <DialogActions>
@@ -709,4 +651,12 @@ export default function ArticulosTable() {
       </Dialog>
     </Box>
   );
+}
+
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'zentto-grid': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & Record<string, any>, HTMLElement>;
+    }
+  }
 }

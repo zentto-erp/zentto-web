@@ -92,9 +92,11 @@ export function PosEsperaDrawer({ open, onClose, onRecuperado, onError }: PosEsp
                         <Chip label={ventasEnEspera.length} size="small" sx={{ bgcolor: 'rgba(255,255,255,0.3)', color: 'white', fontWeight: 'bold' }} />
                     )}
                 </Box>
-                <IconButton onClick={onClose} sx={{ color: 'white' }}>
-                    <CloseIcon />
-                </IconButton>
+                <Tooltip title="Cerrar">
+                    <IconButton onClick={onClose} sx={{ color: 'white' }}>
+                        <CloseIcon />
+                    </IconButton>
+                </Tooltip>
             </Box>
 
             <Box sx={{ flexGrow: 1, overflow: 'auto', p: 1 }}>

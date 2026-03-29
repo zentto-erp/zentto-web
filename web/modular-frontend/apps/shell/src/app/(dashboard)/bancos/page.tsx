@@ -1,5 +1,5 @@
-import { BancosPage } from "@zentto/module-bancos";
+import { BancosHome } from "@zentto/module-bancos";
 
 export default function Page() {
-  return <BancosPage />;
+  return <BancosHome />;
 }

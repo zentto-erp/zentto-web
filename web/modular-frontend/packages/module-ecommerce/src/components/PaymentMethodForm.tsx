@@ -2,7 +2,9 @@
 
 import { useState } from "react";
 import { Box, TextField, Button, Checkbox, FormControlLabel, CircularProgress, MenuItem } from "@mui/material";
-import Grid from "@mui/material/Grid2";
+import { FormGrid, FormField } from "@zentto/shared-ui";
+import { useQuery } from "@tanstack/react-query";
+import { apiGet } from "@zentto/shared-api";
 import type { PaymentMethodFormData } from "../hooks/useStoreAccount";
 
 const METHOD_TYPES = [
@@ -27,6 +29,11 @@ interface Props {
 }
 
 export default function PaymentMethodForm({ initial, onSave, onCancel, saving }: Props) {
+  const { data: bancosData } = useQuery({
+    queryKey: ["bancos-ecommerce"],
+    queryFn: () => apiGet("/api/v1/bancos"),
+  });
+  const bancos: any[] = (bancosData as any)?.rows ?? (bancosData as any)?.data ?? [];
   const [methodType, setMethodType] = useState(initial?.methodType ?? "");
   const [label, setLabel] = useState(initial?.label ?? "");
   const [bankName, setBankName] = useState(initial?.bankName ?? "");
@@ -81,88 +88,96 @@ export default function PaymentMethodForm({ initial, onSave, onCancel, saving }:
 
   return (
     <Box component="form" onSubmit={handleSubmit} sx={{ p: 2, border: "1px dashed #ccc", borderRadius: 2, bgcolor: "#fafafa" }}>
-      <Grid container spacing={2}>
-        <Grid size={{ xs: 12, sm: 6 }}>
+      <FormGrid spacing={2}>
+        <FormField xs={12} sm={6}>
           <TextField
             select label="Tipo de metodo" value={methodType}
             onChange={(e) => handleTypeChange(e.target.value)}
-            fullWidth size="small" required
+            required
           >
             {METHOD_TYPES.map((t) => <MenuItem key={t.value} value={t.value}>{t.label}</MenuItem>)}
           </TextField>
-        </Grid>
-        <Grid size={{ xs: 12, sm: 6 }}>
-          <TextField label="Etiqueta" placeholder='Ej: Mi Banesco' value={label} onChange={(e) => setLabel(e.target.value)} fullWidth size="small" required />
-        </Grid>
+        </FormField>
+        <FormField xs={12} sm={6}>
+          <TextField label="Etiqueta" placeholder='Ej: Mi Banesco' value={label} onChange={(e) => setLabel(e.target.value)} required />
+        </FormField>
 
         {/* Pago Movil */}
         {methodType === "PAGO_MOVIL" && (
           <>
-            <Grid size={{ xs: 12, sm: 4 }}>
-              <TextField label="Banco" value={bankName} onChange={(e) => handleBankChange(e.target.value)} fullWidth size="small" required />
-            </Grid>
-            <Grid size={{ xs: 12, sm: 4 }}>
-              <TextField label="Telefono" placeholder="0414-1234567" value={accountPhone} onChange={(e) => setAccountPhone(e.target.value)} fullWidth size="small" required />
-            </Grid>
-            <Grid size={{ xs: 12, sm: 4 }}>
-              <TextField label="CI / RIF del titular" value={holderFiscalId} onChange={(e) => setHolderFiscalId(e.target.value)} fullWidth size="small" required />
-            </Grid>
+            <FormField xs={12} sm={4}>
+              <TextField select label="Banco" value={bankName} onChange={(e) => handleBankChange(e.target.value)} required>
+                {bancos.map((b: any) => (
+                  <MenuItem key={b.BankName ?? b.bankName} value={b.BankName ?? b.bankName}>{b.BankName ?? b.bankName}</MenuItem>
+                ))}
+              </TextField>
+            </FormField>
+            <FormField xs={12} sm={4}>
+              <TextField label="Telefono" placeholder="0414-1234567" value={accountPhone} onChange={(e) => setAccountPhone(e.target.value)} required />
+            </FormField>
+            <FormField xs={12} sm={4}>
+              <TextField label="CI / RIF del titular" value={holderFiscalId} onChange={(e) => setHolderFiscalId(e.target.value)} required />
+            </FormField>
           </>
         )}
 
         {/* Transferencia */}
         {methodType === "TRANSFERENCIA" && (
           <>
-            <Grid size={{ xs: 12, sm: 4 }}>
-              <TextField label="Banco" value={bankName} onChange={(e) => handleBankChange(e.target.value)} fullWidth size="small" required />
-            </Grid>
-            <Grid size={{ xs: 12, sm: 4 }}>
-              <TextField label="Nro. de cuenta" value={accountNumber} onChange={(e) => setAccountNumber(e.target.value)} fullWidth size="small" required />
-            </Grid>
-            <Grid size={{ xs: 12, sm: 4 }}>
-              <TextField label="Titular" value={holderName} onChange={(e) => setHolderName(e.target.value)} fullWidth size="small" />
-            </Grid>
-            <Grid size={{ xs: 12, sm: 4 }}>
-              <TextField label="CI / RIF" value={holderFiscalId} onChange={(e) => setHolderFiscalId(e.target.value)} fullWidth size="small" />
-            </Grid>
+            <FormField xs={12} sm={4}>
+              <TextField select label="Banco" value={bankName} onChange={(e) => handleBankChange(e.target.value)} required>
+                {bancos.map((b: any) => (
+                  <MenuItem key={b.BankName ?? b.bankName} value={b.BankName ?? b.bankName}>{b.BankName ?? b.bankName}</MenuItem>
+                ))}
+              </TextField>
+            </FormField>
+            <FormField xs={12} sm={4}>
+              <TextField label="Nro. de cuenta" value={accountNumber} onChange={(e) => setAccountNumber(e.target.value)} required />
+            </FormField>
+            <FormField xs={12} sm={4}>
+              <TextField label="Titular" value={holderName} onChange={(e) => setHolderName(e.target.value)} />
+            </FormField>
+            <FormField xs={12} sm={4}>
+              <TextField label="CI / RIF" value={holderFiscalId} onChange={(e) => setHolderFiscalId(e.target.value)} />
+            </FormField>
           </>
         )}
 
         {/* Zelle */}
         {methodType === "ZELLE" && (
           <>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField label="Email de Zelle" type="email" value={accountEmail} onChange={(e) => setAccountEmail(e.target.value)} fullWidth size="small" required />
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField label="Nombre del titular" value={holderName} onChange={(e) => setHolderName(e.target.value)} fullWidth size="small" />
-            </Grid>
+            <FormField xs={12} sm={6}>
+              <TextField label="Email de Zelle" type="email" value={accountEmail} onChange={(e) => setAccountEmail(e.target.value)} required />
+            </FormField>
+            <FormField xs={12} sm={6}>
+              <TextField label="Nombre del titular" value={holderName} onChange={(e) => setHolderName(e.target.value)} />
+            </FormField>
           </>
         )}
 
         {/* Tarjeta */}
         {methodType === "TARJETA" && (
           <>
-            <Grid size={{ xs: 12, sm: 3 }}>
-              <TextField select label="Tipo" value={cardType} onChange={(e) => setCardType(e.target.value)} fullWidth size="small" required>
+            <FormField xs={12} sm={3}>
+              <TextField select label="Tipo" value={cardType} onChange={(e) => setCardType(e.target.value)} required>
                 {CARD_TYPES.map((t) => <MenuItem key={t.value} value={t.value}>{t.label}</MenuItem>)}
               </TextField>
-            </Grid>
-            <Grid size={{ xs: 12, sm: 3 }}>
-              <TextField label="Ultimos 4 digitos" value={cardLast4} onChange={(e) => setCardLast4(e.target.value.replace(/\D/g, "").slice(0, 4))} fullWidth size="small" required inputProps={{ maxLength: 4 }} />
-            </Grid>
-            <Grid size={{ xs: 12, sm: 3 }}>
-              <TextField label="Vencimiento" placeholder="MM/YYYY" value={cardExpiry} onChange={(e) => setCardExpiry(e.target.value)} fullWidth size="small" required />
-            </Grid>
-            <Grid size={{ xs: 12, sm: 3 }}>
-              <TextField label="Titular" value={holderName} onChange={(e) => setHolderName(e.target.value)} fullWidth size="small" />
-            </Grid>
+            </FormField>
+            <FormField xs={12} sm={3}>
+              <TextField label="Ultimos 4 digitos" value={cardLast4} onChange={(e) => setCardLast4(e.target.value.replace(/\D/g, "").slice(0, 4))} required inputProps={{ maxLength: 4 }} />
+            </FormField>
+            <FormField xs={12} sm={3}>
+              <TextField label="Vencimiento" placeholder="MM/YYYY" value={cardExpiry} onChange={(e) => setCardExpiry(e.target.value)} required />
+            </FormField>
+            <FormField xs={12} sm={3}>
+              <TextField label="Titular" value={holderName} onChange={(e) => setHolderName(e.target.value)} />
+            </FormField>
           </>
         )}
 
         {/* Efectivo: sin campos adicionales */}
 
-        <Grid size={{ xs: 12 }}>
+        <FormField xs={12}>
           <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <FormControlLabel
               control={<Checkbox checked={isDefault} onChange={(e) => setIsDefault(e.target.checked)} size="small" />}
@@ -175,8 +190,8 @@ export default function PaymentMethodForm({ initial, onSave, onCancel, saving }:
               </Button>
             </Box>
           </Box>
-        </Grid>
-      </Grid>
+        </FormField>
+      </FormGrid>
     </Box>
   );
 }

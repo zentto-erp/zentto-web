@@ -1,7 +1,7 @@
 "use client";
 
-import { CxpMasterPage } from "@zentto/module-admin";
+import { CxpMasterPage } from "@zentto/module-compras";
 
-export default function CxpIndexPage() {
+export default function CxpPage() {
   return <CxpMasterPage />;
 }

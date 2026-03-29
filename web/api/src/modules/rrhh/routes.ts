@@ -6,6 +6,7 @@
 import { Router, Request, Response } from "express";
 import { z } from "zod";
 import * as svc from "./service.js";
+import { emitRRHHAccountingEntry } from "./rrhh-contabilidad.service.js";
 
 const router = Router();
 
@@ -46,7 +47,24 @@ router.post("/utilidades/generate", async (req: Request, res: Response) => {
   }
   try {
     const result = await svc.generateProfitSharing({ ...parsed.data, codUsuario: codUsuario(req) });
-    res.status(result.success ? 200 : 400).json(result);
+
+    let contabilidad: { ok: boolean; asientoId?: number | null; numeroAsiento?: string | null } = { ok: false };
+    if (result.success) {
+      try {
+        contabilidad = await emitRRHHAccountingEntry(
+          {
+            tipo: "UTILIDADES",
+            referencia: `UTIL-${parsed.data.year}`,
+            concepto: `Utilidades año ${parsed.data.year}`,
+            fecha: new Date().toISOString().slice(0, 10),
+            monto: parsed.data.totalProfit,
+          },
+          codUsuario(req)
+        );
+      } catch { /* never blocks */ }
+    }
+
+    res.status(result.success ? 200 : 400).json({ ...result, contabilidad });
   } catch (err: any) {
     res.status(500).json({ error: String(err) });
   }
@@ -105,7 +123,24 @@ router.post("/fideicomiso/calculate", async (req: Request, res: Response) => {
   }
   try {
     const result = await svc.calculateTrustQuarter({ ...parsed.data, codUsuario: codUsuario(req) });
-    res.status(result.success ? 200 : 400).json(result);
+
+    let contabilidad: { ok: boolean; asientoId?: number | null; numeroAsiento?: string | null } = { ok: false };
+    if (result.success) {
+      try {
+        contabilidad = await emitRRHHAccountingEntry(
+          {
+            tipo: "FIDEICOMISO",
+            referencia: `FID-${parsed.data.year}-Q${parsed.data.quarter}`,
+            concepto: `Fideicomiso ${parsed.data.year} Q${parsed.data.quarter}`,
+            fecha: new Date().toISOString().slice(0, 10),
+            monto: (result as any).totalAmount ?? 0,
+          },
+          codUsuario(req)
+        );
+      } catch { /* never blocks */ }
+    }
+
+    res.status(result.success ? 200 : 400).json({ ...result, contabilidad });
   } catch (err: any) {
     res.status(500).json({ error: String(err) });
   }
@@ -125,10 +160,10 @@ router.get("/fideicomiso/balance/:employeeCode", async (req: Request, res: Respo
 // GET /v1/rrhh/fideicomiso/summary
 router.get("/fideicomiso/summary", async (req: Request, res: Response) => {
   try {
-    const result = await svc.getTrustSummary({
-      year: parseInt(req.query.year as string),
-      quarter: parseInt(req.query.quarter as string),
-    });
+    const year = parseInt(req.query.year as string);
+    const quarter = parseInt(req.query.quarter as string);
+    if (isNaN(year) || isNaN(quarter)) return res.status(400).json({ error: "year and quarter required" });
+    const result = await svc.getTrustSummary({ year, quarter });
     if (!result) return res.status(404).json({ error: "not_found" });
     res.json(result);
   } catch (err: any) {
@@ -231,7 +266,24 @@ router.post("/caja-ahorro/loans/:loanId/approve", async (req: Request, res: Resp
       loanId: Number(req.params.loanId),
       codUsuario: codUsuario(req),
     });
-    res.json(result);
+
+    let contabilidad: { ok: boolean; asientoId?: number | null; numeroAsiento?: string | null } = { ok: false };
+    if (result.success) {
+      try {
+        contabilidad = await emitRRHHAccountingEntry(
+          {
+            tipo: "PRESTAMO_APROBADO",
+            referencia: `PREST-${req.params.loanId}`,
+            concepto: `Préstamo caja ahorro #${req.params.loanId} aprobado`,
+            fecha: new Date().toISOString().slice(0, 10),
+            monto: (result as any).amount ?? 0,
+          },
+          codUsuario(req)
+        );
+      } catch { /* never blocks */ }
+    }
+
+    res.json({ ...result, contabilidad });
   } catch (err: any) {
     res.status(500).json({ error: String(err) });
   }
@@ -249,7 +301,24 @@ router.post("/caja-ahorro/loans/:loanId/payment", async (req: Request, res: Resp
       amount: parsed.data.amount,
       codUsuario: codUsuario(req),
     });
-    res.json(result);
+
+    let contabilidad: { ok: boolean; asientoId?: number | null; numeroAsiento?: string | null } = { ok: false };
+    if (result.success) {
+      try {
+        contabilidad = await emitRRHHAccountingEntry(
+          {
+            tipo: "PRESTAMO_PAGO",
+            referencia: `PREST-PAG-${req.params.loanId}`,
+            concepto: `Pago préstamo #${req.params.loanId}`,
+            fecha: new Date().toISOString().slice(0, 10),
+            monto: parsed.data.amount,
+          },
+          codUsuario(req)
+        );
+      } catch { /* never blocks */ }
+    }
+
+    res.json({ ...result, contabilidad });
   } catch (err: any) {
     res.status(500).json({ error: String(err) });
   }
@@ -259,7 +328,24 @@ router.post("/caja-ahorro/loans/:loanId/payment", async (req: Request, res: Resp
 router.post("/caja-ahorro/process-monthly", async (req: Request, res: Response) => {
   try {
     const result = await svc.processMonthlyContributions(codUsuario(req));
-    res.json(result);
+
+    let contabilidad: { ok: boolean; asientoId?: number | null; numeroAsiento?: string | null } = { ok: false };
+    if (result.success) {
+      try {
+        contabilidad = await emitRRHHAccountingEntry(
+          {
+            tipo: "APORTE_MENSUAL",
+            referencia: `APORTE-${new Date().toISOString().slice(0, 7)}`,
+            concepto: `Aportes mensuales caja de ahorro`,
+            fecha: new Date().toISOString().slice(0, 10),
+            monto: (result as any).totalAmount ?? 0,
+          },
+          codUsuario(req)
+        );
+      } catch { /* never blocks */ }
+    }
+
+    res.json({ ...result, contabilidad });
   } catch (err: any) {
     res.status(500).json({ error: String(err) });
   }
@@ -350,7 +436,9 @@ router.post("/obligaciones/enroll", async (req: Request, res: Response) => {
 // GET /v1/rrhh/obligaciones/employee/:employeeId
 router.get("/obligaciones/employee/:employeeId", async (req: Request, res: Response) => {
   try {
-    const result = await svc.getEmployeeObligations(Number(req.params.employeeId));
+    const employeeId = Number(req.params.employeeId);
+    if (!Number.isFinite(employeeId)) return res.status(400).json({ error: "employeeId must be a valid number" });
+    const result = await svc.getEmployeeObligations(employeeId);
     res.json(result);
   } catch (err: any) {
     res.status(500).json({ error: String(err) });
@@ -380,7 +468,24 @@ router.post("/obligaciones/filings/generate", async (req: Request, res: Response
   }
   try {
     const result = await svc.generateFiling({ ...parsed.data, codUsuario: codUsuario(req) });
-    res.status(result.success ? 201 : 400).json(result);
+
+    let contabilidad: { ok: boolean; asientoId?: number | null; numeroAsiento?: string | null } = { ok: false };
+    if (result.success) {
+      try {
+        contabilidad = await emitRRHHAccountingEntry(
+          {
+            tipo: "OBLIGACION_LEGAL",
+            referencia: `OBLIG-${parsed.data.obligationId}-${parsed.data.periodStart}`,
+            concepto: `Obligación legal #${parsed.data.obligationId} período ${parsed.data.periodStart}`,
+            fecha: new Date().toISOString().slice(0, 10),
+            monto: (result as any).totalAmount ?? 0,
+          },
+          codUsuario(req)
+        );
+      } catch { /* never blocks */ }
+    }
+
+    res.status(result.success ? 201 : 400).json({ ...result, contabilidad });
   } catch (err: any) {
     res.status(500).json({ error: String(err) });
   }
@@ -758,7 +863,9 @@ router.post("/comites/:committeeId/meetings", async (req: Request, res: Response
 // GET /v1/rrhh/comites/:committeeId/meetings
 router.get("/comites/:committeeId/meetings", async (req: Request, res: Response) => {
   try {
-    const result = await svc.getCommitteeMeetings(Number(req.params.committeeId));
+    const committeeId = Number(req.params.committeeId);
+    if (!Number.isFinite(committeeId)) return res.status(400).json({ error: "committeeId must be a valid number" });
+    const result = await svc.getCommitteeMeetings(committeeId);
     res.json(result);
   } catch (err: any) {
     res.status(500).json({ error: String(err) });

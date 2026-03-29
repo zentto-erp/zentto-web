@@ -24,12 +24,18 @@ export interface AplicarPagoInput {
   observaciones?: string;
   documentos: DocumentoAplicar[];
   formasPago: FormaPago[];
+  applyRetention?: boolean;
+  retentionType?: string;
+  countryCode?: string;
 }
 
 export interface AplicarPagoResult {
   success: boolean;
   numPago?: string;
   message: string;
+  retentionAmount?: number;
+  retentionRate?: number;
+  voucherId?: number;
 }
 
 export interface ListDocumentosCxPInput {
@@ -59,25 +65,44 @@ function normalizeCxPEstado(estado?: string | null) {
 }
 
 export async function aplicarPago(input: AplicarPagoInput): Promise<AplicarPagoResult> {
-  const numPago = buildPaymentNumber("PAG");
-
-  const { output } = await callSpOut(
-    "usp_AP_Payable_ApplyPayment",
+  const rows = await callSp<{
+    NumPago: string;
+    Resultado: number;
+    Mensaje: string;
+    RetentionAmount?: number;
+    RetentionRate?: number;
+    VoucherId?: number;
+  }>(
+    "usp_cxp_aplicar_pago",
     {
-      CodProveedor: input.codProveedor,
-      Fecha: input.fecha ? new Date(input.fecha) : null,
       RequestId: input.requestId,
-      NumPago: numPago,
+      CodProveedor: input.codProveedor,
+      Fecha: input.fecha,
+      MontoTotal: input.montoTotal,
+      CodUsuario: input.codUsuario || "API",
+      Observaciones: input.observaciones || "",
       DocumentosXml: arrayToXml(input.documentos ?? []),
-    },
-    { Resultado: sql.Int, Mensaje: sql.NVarChar(500) }
+      FormasPagoXml: input.formasPago?.length ? arrayToXml(input.formasPago) : null,
+      ApplyRetention: input.applyRetention ?? false,
+      RetentionType: input.retentionType ?? "ISLR",
+      CountryCode: input.countryCode ?? "VE",
+    }
   );
 
-  const resultado = Number(output.Resultado ?? -99);
-  const mensaje = String(output.Mensaje ?? "Error desconocido");
+  const result = rows[0];
+  const resultado = Number(result?.Resultado ?? -99);
+  const mensaje = String(result?.Mensaje ?? "Error desconocido");
+  const numPago = String(result?.NumPago ?? "");
 
   if (resultado > 0) {
-    return { success: true, numPago, message: mensaje };
+    return {
+      success: true,
+      numPago,
+      message: mensaje,
+      retentionAmount: Number(result?.RetentionAmount ?? 0),
+      retentionRate: Number(result?.RetentionRate ?? 0),
+      voucherId: Number(result?.VoucherId ?? 0),
+    };
   }
   return { success: false, message: mensaje };
 }

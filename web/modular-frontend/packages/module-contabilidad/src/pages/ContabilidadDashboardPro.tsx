@@ -279,28 +279,28 @@ export default function ContabilidadDashboardPro() {
 
   const kpiCards: KpiCardProps[] = [
     {
-      title: "Ingresos del Periodo",
+      title: "Ingresos del periodo",
       value: ingresos,
       color: "#1565c0",
       icon: <TrendingUpIcon sx={{ fontSize: 32 }} />,
       isLoading,
     },
     {
-      title: "Gastos del Periodo",
+      title: "Gastos del periodo",
       value: gastos,
       color: "#c62828",
       icon: <TrendingDownIcon sx={{ fontSize: 32 }} />,
       isLoading,
     },
     {
-      title: "Utilidad Neta",
+      title: "Utilidad neta",
       value: utilidad,
       color: utilidad >= 0 ? "#2e7d32" : "#b71c1c",
       icon: <PaidIcon sx={{ fontSize: 32 }} />,
       isLoading,
     },
     {
-      title: "Posicion de Caja",
+      title: "Posición de caja",
       value: caja,
       color: "#00695c",
       icon: <SavingsIcon sx={{ fontSize: 32 }} />,
@@ -333,25 +333,25 @@ export default function ContabilidadDashboardPro() {
 
   const quickActions = [
     {
-      label: "Nuevo Asiento",
+      label: "Nuevo asiento",
       icon: <AddCircleOutlineIcon />,
       href: "/contabilidad/asientos/new",
       color: "#2e7d32",
     },
     {
-      label: "Conciliar Banco",
+      label: "Conciliar banco",
       icon: <AccountBalanceIcon />,
       href: "/contabilidad/conciliacion",
       color: "#1565c0",
     },
     {
-      label: "Cerrar Periodo",
+      label: "Cerrar periodo",
       icon: <LockClockIcon />,
       href: "/contabilidad/cierre",
       color: "#e65100",
     },
     {
-      label: "Ver Reportes",
+      label: "Ver reportes",
       icon: <AssessmentIcon />,
       href: "/contabilidad/reportes",
       color: "#6a1b9a",
@@ -361,7 +361,7 @@ export default function ContabilidadDashboardPro() {
   return (
     <Box>
       <Typography variant="h5" sx={{ mb: 3, fontWeight: 700, color: "text.primary" }}>
-        Dashboard Contable Pro
+        Dashboard contable pro
       </Typography>
 
       {error && (
@@ -428,7 +428,7 @@ export default function ContabilidadDashboardPro() {
           <Paper sx={{ borderRadius: 2, overflow: "hidden" }}>
             <Box sx={{ p: 2, borderBottom: "1px solid #eee" }}>
               <Typography variant="h6" fontWeight={600}>
-                Ultimos Asientos
+                Últimos asientos
               </Typography>
             </Box>
             {ultimosAsientos.length > 0 ? (
@@ -496,7 +496,7 @@ export default function ContabilidadDashboardPro() {
         <Grid size={{ xs: 12, md: 4 }}>
           <Paper sx={{ borderRadius: 2, p: 3, height: "100%" }}>
             <Typography variant="h6" fontWeight={600} sx={{ mb: 2 }}>
-              Tareas Pendientes
+              Tareas pendientes
             </Typography>
 
             <Stack spacing={2}>
@@ -583,7 +583,7 @@ export default function ContabilidadDashboardPro() {
       {/* ROW 4 - Quick Actions */}
       <Paper sx={{ borderRadius: 2, p: 2 }}>
         <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1.5, textTransform: "uppercase", letterSpacing: 1 }}>
-          Acciones Rapidas
+          Acciones rápidas
         </Typography>
         <Stack direction="row" spacing={2} flexWrap="wrap">
           {quickActions.map((action, idx) => (
@@ -608,7 +608,7 @@ export default function ContabilidadDashboardPro() {
                 }}
               >
                 <Box sx={{ color: action.color, mb: 1 }}>
-                  {React.cloneElement(action.icon as React.ReactElement, { sx: { fontSize: 36 } })}
+                  {React.cloneElement(action.icon as React.ReactElement<any>, { sx: { fontSize: 36 } })}
                 </Box>
                 <Typography variant="body2" fontWeight={600} textAlign="center">
                   {action.label}

@@ -6,6 +6,7 @@
 -- =============================================
 -- Funcion: sp_Nomina_CalcularSalariosPromedio
 -- =============================================
+DROP FUNCTION IF EXISTS sp_nomina_calcular_salarios_promedio(VARCHAR(80), VARCHAR(32), DATE, DATE) CASCADE;
 CREATE OR REPLACE FUNCTION sp_nomina_calcular_salarios_promedio(
   p_session_id VARCHAR(80),
   p_cedula VARCHAR(32),
@@ -41,6 +42,7 @@ $$;
 -- =============================================
 -- Funcion: sp_Nomina_CalcularDiasVacaciones
 -- =============================================
+DROP FUNCTION IF EXISTS sp_nomina_calcular_dias_vacaciones(VARCHAR(80), VARCHAR(32), DATE, NUMERIC(18,6), NUMERIC(18,6)) CASCADE;
 CREATE OR REPLACE FUNCTION sp_nomina_calcular_dias_vacaciones(
   p_session_id VARCHAR(80),
   p_cedula VARCHAR(32),
@@ -93,6 +95,7 @@ $$;
 -- =============================================
 -- Funcion: sp_Nomina_ProcesarVacaciones
 -- =============================================
+DROP FUNCTION IF EXISTS sp_nomina_procesar_vacaciones(VARCHAR(50), VARCHAR(32), DATE, DATE, DATE, VARCHAR(50), INT, VARCHAR(500)) CASCADE;
 CREATE OR REPLACE FUNCTION sp_nomina_procesar_vacaciones(
   p_vacacion_id VARCHAR(50),
   p_cedula VARCHAR(32),
@@ -225,6 +228,7 @@ $$;
 -- =============================================
 -- Funcion: sp_Nomina_CalcularLiquidacion
 -- =============================================
+DROP FUNCTION IF EXISTS sp_nomina_calcular_liquidacion(VARCHAR(50), VARCHAR(32), DATE, VARCHAR(50), VARCHAR(50), INT, VARCHAR(500)) CASCADE;
 CREATE OR REPLACE FUNCTION sp_nomina_calcular_liquidacion(
   p_liquidacion_id VARCHAR(50),
   p_cedula VARCHAR(32),
@@ -351,6 +355,7 @@ $$;
 -- Funcion: sp_Nomina_GetLiquidacion
 -- Retorna header, lineas y totales
 -- =============================================
+DROP FUNCTION IF EXISTS sp_nomina_get_liquidacion_header(VARCHAR(50)) CASCADE;
 CREATE OR REPLACE FUNCTION sp_nomina_get_liquidacion_header(
   p_liquidacion_id VARCHAR(50)
 )
@@ -385,6 +390,7 @@ BEGIN
 END;
 $$;
 
+DROP FUNCTION IF EXISTS sp_nomina_get_liquidacion_lines(VARCHAR(50)) CASCADE;
 CREATE OR REPLACE FUNCTION sp_nomina_get_liquidacion_lines(
   p_liquidacion_id VARCHAR(50)
 )
@@ -411,6 +417,7 @@ BEGIN
 END;
 $$;
 
+DROP FUNCTION IF EXISTS sp_nomina_get_liquidacion_totals(VARCHAR(50)) CASCADE;
 CREATE OR REPLACE FUNCTION sp_nomina_get_liquidacion_totals(
   p_liquidacion_id VARCHAR(50)
 )

@@ -1,8 +1,8 @@
--- ═══════════════════════════════════════════════════════════════════
--- DatqBox POS & Restaurante — Funciones PostgreSQL
+-- Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
+-- DatqBox POS & Restaurante Ã¢â‚¬â€ Funciones PostgreSQL
 -- Productos para POS, Clientes POS, Mesas, Pedidos y Facturacion
 -- Traducido de SQL Server a PostgreSQL
--- ═══════════════════════════════════════════════════════════════════
+-- Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
 
 -- =============================================
 -- 1. PRODUCTOS POS: Listar articulos para POS con precios y stock
@@ -52,11 +52,11 @@ BEGIN
         i."ProductCode",
         i."ProductCode",
         TRIM(
-            COALESCE(RTRIM(i."Categoria"), '') ||
-            CASE WHEN RTRIM(COALESCE(i."Tipo", '')) <> '' THEN ' ' || RTRIM(i."Tipo") ELSE '' END ||
-            CASE WHEN RTRIM(COALESCE(i."ProductName", '')) <> '' THEN ' ' || RTRIM(i."ProductName") ELSE '' END ||
-            CASE WHEN RTRIM(COALESCE(i."Marca", '')) <> '' THEN ' ' || RTRIM(i."Marca") ELSE '' END ||
-            CASE WHEN RTRIM(COALESCE(i."Clase", '')) <> '' THEN ' ' || RTRIM(i."Clase") ELSE '' END
+            COALESCE(RTRIM(i."Categoria"),''::VARCHAR) ||
+            CASE WHEN RTRIM(COALESCE(i."Tipo",''::VARCHAR)) <> '' THEN ' ' || RTRIM(i."Tipo") ELSE '' END ||
+            CASE WHEN RTRIM(COALESCE(i."ProductName",''::VARCHAR)) <> '' THEN ' ' || RTRIM(i."ProductName") ELSE '' END ||
+            CASE WHEN RTRIM(COALESCE(i."Marca",''::VARCHAR)) <> '' THEN ' ' || RTRIM(i."Marca") ELSE '' END ||
+            CASE WHEN RTRIM(COALESCE(i."Clase",''::VARCHAR)) <> '' THEN ' ' || RTRIM(i."Clase") ELSE '' END
         ),
         i."SalesPrice",
         COALESCE(i."PRECIO_VENTA2", i."SalesPrice" * 0.90),
@@ -108,11 +108,11 @@ BEGIN
         i."ProductCode",
         i."ProductCode",
         TRIM(
-            COALESCE(RTRIM(i."Categoria"), '') ||
-            CASE WHEN RTRIM(COALESCE(i."Tipo", '')) <> '' THEN ' ' || RTRIM(i."Tipo") ELSE '' END ||
-            CASE WHEN RTRIM(COALESCE(i."ProductName", '')) <> '' THEN ' ' || RTRIM(i."ProductName") ELSE '' END ||
-            CASE WHEN RTRIM(COALESCE(i."Marca", '')) <> '' THEN ' ' || RTRIM(i."Marca") ELSE '' END ||
-            CASE WHEN RTRIM(COALESCE(i."Clase", '')) <> '' THEN ' ' || RTRIM(i."Clase") ELSE '' END
+            COALESCE(RTRIM(i."Categoria"),''::VARCHAR) ||
+            CASE WHEN RTRIM(COALESCE(i."Tipo",''::VARCHAR)) <> '' THEN ' ' || RTRIM(i."Tipo") ELSE '' END ||
+            CASE WHEN RTRIM(COALESCE(i."ProductName",''::VARCHAR)) <> '' THEN ' ' || RTRIM(i."ProductName") ELSE '' END ||
+            CASE WHEN RTRIM(COALESCE(i."Marca",''::VARCHAR)) <> '' THEN ' ' || RTRIM(i."Marca") ELSE '' END ||
+            CASE WHEN RTRIM(COALESCE(i."Clase",''::VARCHAR)) <> '' THEN ' ' || RTRIM(i."Clase") ELSE '' END
         ),
         i."SalesPrice",
         COALESCE(i."PRECIO_VENTA2", i."SalesPrice" * 0.90),
@@ -267,6 +267,7 @@ CREATE TABLE IF NOT EXISTS "RestaurantePedidoItems" (
 );
 
 -- SP Listar Mesas
+DROP FUNCTION IF EXISTS public.usp_rest_mesas_list(VARCHAR(10)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_rest_mesas_list(
     p_ambiente_id VARCHAR(10) DEFAULT NULL
 )
@@ -301,6 +302,7 @@ END;
 $$;
 
 -- SP Abrir Pedido en mesa
+DROP FUNCTION IF EXISTS public.usp_rest_pedido_abrir(INT, VARCHAR(100), VARCHAR(20), VARCHAR(10)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_rest_pedido_abrir(
     p_mesa_id        INT,
     p_cliente_nombre VARCHAR(100) DEFAULT NULL,
@@ -327,6 +329,7 @@ END;
 $$;
 
 -- SP Agregar Item a Pedido
+DROP FUNCTION IF EXISTS public.usp_rest_pedido_item_agregar(INT, VARCHAR(15), VARCHAR(200), NUMERIC(10,3), NUMERIC(18,2), NUMERIC(9,4), BOOLEAN, TEXT, VARCHAR(500)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_rest_pedido_item_agregar(
     p_pedido_id       INT,
     p_producto_id     VARCHAR(15),
@@ -377,6 +380,7 @@ END;
 $$;
 
 -- SP Enviar comanda a cocina (marcar items como enviados)
+DROP FUNCTION IF EXISTS public.usp_rest_comanda_enviar(INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_rest_comanda_enviar(
     p_pedido_id INT
 )
@@ -396,6 +400,7 @@ END;
 $$;
 
 -- SP Cerrar pedido (mesa queda libre)
+DROP FUNCTION IF EXISTS public.usp_rest_pedido_cerrar(INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_rest_pedido_cerrar(
     p_pedido_id INT
 )
@@ -417,6 +422,7 @@ END;
 $$;
 
 -- SP obtener pedido activo de una mesa (header)
+DROP FUNCTION IF EXISTS public.usp_rest_pedido_get_by_mesa_header(INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_rest_pedido_get_by_mesa_header(
     p_mesa_id INT
 )
@@ -449,6 +455,7 @@ END;
 $$;
 
 -- SP obtener items del pedido activo de una mesa
+DROP FUNCTION IF EXISTS public.usp_rest_pedido_get_by_mesa_items(INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_rest_pedido_get_by_mesa_items(
     p_mesa_id INT
 )

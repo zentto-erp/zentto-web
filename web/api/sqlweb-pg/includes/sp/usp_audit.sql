@@ -43,6 +43,7 @@ CREATE INDEX IF NOT EXISTS "IX_AuditLog_User"
 --  SP 1: usp_Audit_Log_Insert
 --  Inserta un registro en audit."AuditLog" y retorna el "AuditLogId" generado.
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_Audit_Log_Insert(INT, INT, INT, VARCHAR(100), VARCHAR(50), VARCHAR(100), VARCHAR(50), VARCHAR(10), VARCHAR(500), TEXT, TEXT, VARCHAR(50)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Audit_Log_Insert(
     p_company_id    INT,
     p_branch_id     INT,
@@ -83,6 +84,7 @@ $$;
 --  Retorna lista paginada de registros de auditoria con filtros opcionales.
 --  Nota: En PG retornamos una sola tabla; el TotalCount se incluye como columna.
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_Audit_Log_List(INT, INT, DATE, DATE, VARCHAR(50), VARCHAR(100), VARCHAR(10), VARCHAR(100), VARCHAR(200), INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Audit_Log_List(
     p_company_id    INT,
     p_branch_id     INT,
@@ -165,6 +167,7 @@ $$;
 --  SP 3: usp_Audit_Log_GetById
 --  Retorna el registro completo de auditoria incluyendo OldValues y NewValues.
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_Audit_Log_GetById(BIGINT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Audit_Log_GetById(
     p_audit_log_id  BIGINT
 )
@@ -213,6 +216,7 @@ $$;
 -- =============================================================================
 
 -- 4a. Totales generales
+DROP FUNCTION IF EXISTS usp_Audit_Dashboard_Totales(INT, INT, DATE, DATE) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Audit_Dashboard_Totales(
     p_company_id    INT,
     p_branch_id     INT,
@@ -249,6 +253,7 @@ END;
 $$;
 
 -- 4b. Top 10 modulos con mayor actividad
+DROP FUNCTION IF EXISTS usp_Audit_Dashboard_TopModulos(INT, INT, DATE, DATE) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Audit_Dashboard_TopModulos(
     p_company_id    INT,
     p_branch_id     INT,
@@ -276,6 +281,7 @@ END;
 $$;
 
 -- 4c. Ultimos 10 registros de auditoria
+DROP FUNCTION IF EXISTS usp_Audit_Dashboard_UltimosLogs(INT, INT, DATE, DATE) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Audit_Dashboard_UltimosLogs(
     p_company_id    INT,
     p_branch_id     INT,
@@ -316,6 +322,7 @@ $$;
 --  Lista paginada de registros fiscales desde fiscal."Record".
 --  Si la tabla no existe, retorna conjunto vacio.
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_Audit_FiscalRecord_List(INT, INT, DATE, DATE, INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Audit_FiscalRecord_List(
     p_company_id    INT,
     p_branch_id     INT,
@@ -326,15 +333,15 @@ CREATE OR REPLACE FUNCTION usp_Audit_FiscalRecord_List(
 )
 RETURNS TABLE(
     "TotalCount"       BIGINT,
-    "FiscalRecordId"   INT,
+    "FiscalRecordId"   BIGINT,
     "InvoiceId"        INT,
-    "InvoiceNumber"    VARCHAR(50),
+    "InvoiceNumber"    VARCHAR,
     "InvoiceDate"      DATE,
-    "InvoiceType"      VARCHAR(20),
-    "RecordHash"       VARCHAR(64),
+    "InvoiceType"      VARCHAR,
+    "RecordHash"       VARCHAR,
     "SentToAuthority"  BOOLEAN,
-    "AuthorityStatus"  VARCHAR(50),
-    "CountryCode"      VARCHAR(3),
+    "AuthorityStatus"  VARCHAR,
+    "CountryCode"      VARCHAR,
     "CreatedAt"        TIMESTAMP
 )
 LANGUAGE plpgsql AS $$
@@ -352,33 +359,33 @@ BEGIN
     ) INTO v_table_exists;
 
     IF NOT v_table_exists THEN
-        -- Retornar conjunto vacio
+        -- Retornar conjunto vacio (WHERE FALSE nunca produce filas)
+        RETURN QUERY SELECT 0::BIGINT, 0::BIGINT, 0::INT, ''::VARCHAR, CURRENT_DATE, ''::VARCHAR,
+            ''::VARCHAR, FALSE, ''::VARCHAR, ''::VARCHAR, (NOW() AT TIME ZONE 'UTC')::TIMESTAMP
+        WHERE FALSE;
         RETURN;
     END IF;
 
     -- Calcular total
-    EXECUTE format(
-        'SELECT COUNT(*) FROM fiscal."Record" WHERE "CompanyId" = $1 AND "BranchId" = $2'
+    EXECUTE 'SELECT COUNT(*) FROM fiscal."Record" WHERE "CompanyId" = $1 AND "BranchId" = $2'
         || CASE WHEN p_fecha_desde IS NOT NULL THEN ' AND "CreatedAt"::DATE >= $3' ELSE '' END
         || CASE WHEN p_fecha_hasta IS NOT NULL THEN ' AND "CreatedAt"::DATE <= $4' ELSE '' END
-    )
     INTO v_total
     USING p_company_id, p_branch_id, p_fecha_desde, p_fecha_hasta;
 
     -- Retornar registros paginados
-    RETURN QUERY EXECUTE format(
+    RETURN QUERY EXECUTE
         'SELECT $5::BIGINT AS "TotalCount",'
-        || ' "FiscalRecordId", "InvoiceId", "InvoiceNumber"::VARCHAR(50),'
-        || ' "InvoiceDate"::DATE, "InvoiceType"::VARCHAR(20),'
-        || ' "RecordHash"::VARCHAR(64), "SentToAuthority"::BOOLEAN,'
-        || ' "AuthorityStatus"::VARCHAR(50), "CountryCode"::VARCHAR(3), "CreatedAt"'
+        || ' "FiscalRecordId"::BIGINT, "InvoiceId"::INT, "InvoiceNumber"::VARCHAR,'
+        || ' "InvoiceDate"::DATE, "InvoiceType"::VARCHAR,'
+        || ' "RecordHash"::VARCHAR, COALESCE("SentToAuthority", FALSE)::BOOLEAN,'
+        || ' COALESCE("AuthorityStatus", ''''::VARCHAR)::VARCHAR, COALESCE("CountryCode"::VARCHAR, ''''::VARCHAR)::VARCHAR, "CreatedAt"::TIMESTAMP'
         || ' FROM fiscal."Record"'
         || ' WHERE "CompanyId" = $1 AND "BranchId" = $2'
         || CASE WHEN p_fecha_desde IS NOT NULL THEN ' AND "CreatedAt"::DATE >= $3' ELSE '' END
         || CASE WHEN p_fecha_hasta IS NOT NULL THEN ' AND "CreatedAt"::DATE <= $4' ELSE '' END
         || ' ORDER BY "CreatedAt" DESC'
         || ' LIMIT $6 OFFSET $7'
-    )
     USING p_company_id, p_branch_id, p_fecha_desde, p_fecha_hasta, v_total, v_limit, v_offset;
 END;
 $$;

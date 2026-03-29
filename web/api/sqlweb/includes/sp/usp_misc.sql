@@ -2143,5 +2143,67 @@ BEGIN
 END;
 GO
 
+-- -----------------------------------------------------------------------------
+--  usp_HR_Payroll_DeleteConcept — soft-delete (IsActive = 0)
+-- -----------------------------------------------------------------------------
+CREATE OR ALTER PROCEDURE dbo.usp_HR_Payroll_DeleteConcept
+    @CompanyId   INT,
+    @ConceptCode NVARCHAR(20),
+    @Resultado   INT OUTPUT,
+    @Mensaje     NVARCHAR(500) OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    UPDATE hr.PayrollConcept
+    SET IsActive = 0,
+        UpdatedAt = SYSUTCDATETIME()
+    WHERE CompanyId = @CompanyId
+      AND ConceptCode = @ConceptCode
+      AND IsActive = 1;
+
+    IF @@ROWCOUNT = 0
+    BEGIN
+        SET @Resultado = -1;
+        SET @Mensaje = N'Concepto no encontrado o ya desactivado';
+        RETURN;
+    END;
+
+    SET @Resultado = 1;
+    SET @Mensaje = N'Concepto desactivado';
+END;
+GO
+
+-- -----------------------------------------------------------------------------
+--  usp_HR_Payroll_DeleteConstant — soft-delete (IsActive = 0)
+-- -----------------------------------------------------------------------------
+CREATE OR ALTER PROCEDURE dbo.usp_HR_Payroll_DeleteConstant
+    @CompanyId    INT,
+    @ConstantCode NVARCHAR(50),
+    @Resultado    INT OUTPUT,
+    @Mensaje      NVARCHAR(500) OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    UPDATE hr.PayrollConstant
+    SET IsActive = 0,
+        UpdatedAt = SYSUTCDATETIME()
+    WHERE CompanyId = @CompanyId
+      AND ConstantCode = @ConstantCode
+      AND IsActive = 1;
+
+    IF @@ROWCOUNT = 0
+    BEGIN
+        SET @Resultado = -1;
+        SET @Mensaje = N'Constante no encontrada o ya desactivada';
+        RETURN;
+    END;
+
+    SET @Resultado = 1;
+    SET @Mensaje = N'Constante desactivada';
+END;
+GO
+
 PRINT '>> usp_misc.sql: Todos los SPs creados correctamente.';
 GO

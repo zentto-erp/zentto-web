@@ -1,4 +1,4 @@
-import { callSp } from "../../db/query.js";
+import { callSp, query } from "../../db/query.js";
 import {
   hashPassword,
   verifyPassword,

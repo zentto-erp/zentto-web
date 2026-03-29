@@ -10,9 +10,10 @@ import {
   Paper,
   CircularProgress,
   Alert,
-  Grid,
   Typography,
 } from "@mui/material";
+import { FormGrid, FormField, DatePicker } from "@zentto/shared-ui";
+import dayjs from "dayjs";
 import { useCuentaPorPagarById, useCreateCuentaPorPagar, useUpdateCuentaPorPagar } from "../hooks/useCuentasPorPagar";
 import { CreateCuentaPorPagarDTO, UpdateCuentaPorPagarDTO } from "@zentto/shared-api/types";
 import { useTimezone } from "@zentto/shared-auth";
@@ -150,93 +151,77 @@ export default function CuentaPorPagarForm({ id }: CuentaPorPagarFormProps) {
       )}
 
       <Paper component="form" onSubmit={handleSubmit} sx={{ p: 3 }}>
-        <Grid container spacing={2}>
-          <Grid item xs={12} sm={6}>
+        <FormGrid spacing={2}>
+          <FormField xs={12} sm={6}>
             <TextField
               label="Codigo Proveedor"
               placeholder="Ej: PROV001"
               value={formData.codigoProveedor}
               onChange={(e) => setFormData({ ...formData, codigoProveedor: e.target.value })}
-              fullWidth
-              size="small"
               required
               error={!!errors.codigoProveedor}
               helperText={errors.codigoProveedor}
             />
-          </Grid>
+          </FormField>
 
-          <Grid item xs={12} sm={6}>
+          <FormField xs={12} sm={6}>
             <TextField
               label="Nombre Proveedor"
               value={formData.nombreProveedor}
               onChange={(e) => setFormData({ ...formData, nombreProveedor: e.target.value })}
-              fullWidth
-              size="small"
             />
-          </Grid>
+          </FormField>
 
-          <Grid item xs={12} sm={6}>
+          <FormField xs={12} sm={6}>
             <TextField
               label="Numero de Referencia"
               placeholder="Factura, PO, etc."
               value={formData.numeroReferencia}
               onChange={(e) => setFormData({ ...formData, numeroReferencia: e.target.value })}
-              fullWidth
-              size="small"
             />
-          </Grid>
+          </FormField>
 
-          <Grid item xs={12} sm={6}>
+          <FormField xs={12} sm={6}>
             <TextField
               label="Monto Total (Bs.)"
               type="number"
               inputProps={{ min: 0, step: "0.01" }}
               value={formData.montoTotal}
               onChange={(e) => setFormData({ ...formData, montoTotal: parseFloat(e.target.value) })}
-              fullWidth
-              size="small"
               required
               error={!!errors.montoTotal}
               helperText={errors.montoTotal}
             />
-          </Grid>
+          </FormField>
 
-          <Grid item xs={12} sm={6}>
-            <TextField
+          <FormField xs={12} sm={6}>
+            <DatePicker
               label="Fecha de Creacion"
-              type="date"
-              value={formData.fechaCreacion}
-              onChange={(e) => setFormData({ ...formData, fechaCreacion: e.target.value })}
-              fullWidth
-              size="small"
-              InputLabelProps={{ shrink: true }}
+              value={formData.fechaCreacion ? dayjs(formData.fechaCreacion) : null}
+              onChange={(v) => setFormData({ ...formData, fechaCreacion: v ? v.format('YYYY-MM-DD') : '' })}
+              slotProps={{ textField: { size: 'small', fullWidth: true } }}
             />
-          </Grid>
+          </FormField>
 
-          <Grid item xs={12} sm={6}>
-            <TextField
+          <FormField xs={12} sm={6}>
+            <DatePicker
               label="Fecha de Vencimiento"
-              type="date"
-              value={formData.fechaVencimiento}
-              onChange={(e) => setFormData({ ...formData, fechaVencimiento: e.target.value })}
-              fullWidth
-              size="small"
-              InputLabelProps={{ shrink: true }}
+              value={formData.fechaVencimiento ? dayjs(formData.fechaVencimiento) : null}
+              onChange={(v) => setFormData({ ...formData, fechaVencimiento: v ? v.format('YYYY-MM-DD') : '' })}
+              slotProps={{ textField: { size: 'small', fullWidth: true } }}
             />
-          </Grid>
+          </FormField>
 
-          <Grid item xs={12}>
+          <FormField xs={12}>
             <TextField
               label="Descripcion"
               value={formData.descripcion}
               onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
-              fullWidth
               multiline
               rows={3}
-              size="small"
             />
-          </Grid>
-        </Grid>
+          </FormField>
+        </FormGrid>
 
         <Box sx={{ display: "flex", gap: 2, mt: 4, justifyContent: "flex-end" }}>
           <Button

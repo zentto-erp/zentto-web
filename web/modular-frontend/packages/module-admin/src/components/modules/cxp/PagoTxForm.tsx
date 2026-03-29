@@ -3,11 +3,12 @@
 import { useMemo, useState } from "react";
 import {
   Alert,
+  Autocomplete,
   Box,
   Button,
   Checkbox,
   CircularProgress,
-  Grid,
+  MenuItem,
   Paper,
   Stack,
   Table,
@@ -18,9 +19,12 @@ import {
   TextField,
   Typography
 } from "@mui/material";
+import { FormGrid, FormField, DatePicker } from '@zentto/shared-ui';
+import dayjs from "dayjs";
 import { Add, Delete } from "@mui/icons-material";
-import { toDateOnly } from "@zentto/shared-api";
+import { apiGet, toDateOnly } from "@zentto/shared-api";
 import { useTimezone } from "@zentto/shared-auth";
+import { useQuery } from "@tanstack/react-query";
 import {
   CxpAplicarPagoPayload,
   CxpDocumentoPendiente,
@@ -35,11 +39,25 @@ type FormaPagoLine = { formaPago: string; monto: number; banco?: string; numCheq
 export default function PagoTxForm() {
   const { timeZone } = useTimezone();
   const [codProveedor, setCodProveedor] = useState("");
+  const [provInput, setProvInput] = useState("");
   const [fecha, setFecha] = useState(toDateOnly(new Date(), timeZone));
   const [codUsuario, setCodUsuario] = useState("SUP");
   const [observaciones, setObservaciones] = useState("");
   const [formasPago, setFormasPago] = useState<FormaPagoLine[]>([{ formaPago: "EFECTIVO", monto: 0 }]);
   const [rows, setRows] = useState<SelDoc[]>([]);
+
+  const { data: proveedoresData } = useQuery({
+    queryKey: ["proveedores-search-cxp", provInput],
+    queryFn: () => apiGet("/api/v1/proveedores", { search: provInput, limit: 10 }),
+    enabled: provInput.length >= 2,
+  });
+  const proveedoresOptions: { codProveedor: string; nombre: string }[] = (proveedoresData as any)?.rows ?? (proveedoresData as any)?.data ?? [];
+
+  const { data: bancosData } = useQuery({
+    queryKey: ["bancos-list"],
+    queryFn: () => apiGet("/api/v1/bancos"),
+  });
+  const bancos: any[] = (bancosData as any)?.rows ?? (bancosData as any)?.data ?? [];
 
   const docsQuery = useCxpDocumentosPendientes(codProveedor.trim());
   const saldoQuery = useCxpSaldo(codProveedor.trim());
@@ -121,46 +139,56 @@ export default function PagoTxForm() {
       </Typography>
 
       <Paper sx={{ p: 2, mb: 2 }}>
-        <Grid container spacing={2}>
-          <Grid item xs={12} sm={3}>
-            <TextField
-              fullWidth
-              size="small"
-              label="Cod Proveedor"
-              value={codProveedor}
-              onChange={(e) => setCodProveedor(e.target.value)}
+        <FormGrid spacing={2}>
+          <FormField xs={12} sm={3}>
+            <Autocomplete
+              freeSolo
+             
+              options={proveedoresOptions}
+              getOptionLabel={(opt) =>
+                typeof opt === "string" ? opt : `${opt.codProveedor} - ${opt.nombre}`
+              }
+              inputValue={provInput}
+              onInputChange={(_e, val) => {
+                setProvInput(val);
+                setCodProveedor(val);
+              }}
+              onChange={(_e, val) => {
+                if (val && typeof val !== "string") {
+                  setCodProveedor(val.codProveedor);
+                  setProvInput(`${val.codProveedor} - ${val.nombre}`);
+                }
+              }}
+              renderInput={(params) => (
+                <TextField {...params} label="Cod Proveedor" />
+              )}
             />
-          </Grid>
-          <Grid item xs={12} sm={2}>
-            <TextField
-              fullWidth
-              size="small"
+          </FormField>
+          <FormField xs={12} sm={2}>
+            <DatePicker
               label="Fecha"
-              type="date"
-              value={fecha}
-              InputLabelProps={{ shrink: true }}
-              onChange={(e) => setFecha(e.target.value)}
+              value={fecha ? dayjs(fecha) : null}
+              onChange={(v) => setFecha(v ? v.format('YYYY-MM-DD') : '')}
+              slotProps={{ textField: { size: 'small', fullWidth: true } }}
             />
-          </Grid>
-          <Grid item xs={12} sm={2}>
+          </FormField>
+          <FormField xs={12} sm={2}>
             <TextField
-              fullWidth
-              size="small"
+             
               label="Cod Usuario"
               value={codUsuario}
               onChange={(e) => setCodUsuario(e.target.value)}
             />
-          </Grid>
-          <Grid item xs={12}>
+          </FormField>
+          <FormField xs={12}>
             <TextField
-              fullWidth
-              size="small"
+             
               label="Observaciones"
               value={observaciones}
               onChange={(e) => setObservaciones(e.target.value)}
             />
-          </Grid>
-        </Grid>
+          </FormField>
+        </FormGrid>
 
         <Stack direction="row" spacing={1} sx={{ mt: 2 }}>
           <Button
@@ -203,15 +231,22 @@ export default function PagoTxForm() {
               <TableRow key={idx}>
                 <TableCell>
                   <TextField
-                    size="small"
+                    select
+                   
                     value={fp.formaPago}
-                    onChange={(e) => updateFormaPago(idx, { formaPago: e.target.value.toUpperCase() })}
+                    onChange={(e) => updateFormaPago(idx, { formaPago: e.target.value })}
                     sx={{ minWidth: 140 }}
-                  />
+                  >
+                    <MenuItem value="EFECTIVO">Efectivo</MenuItem>
+                    <MenuItem value="TRANSFERENCIA">Transferencia</MenuItem>
+                    <MenuItem value="TARJETA">Tarjeta</MenuItem>
+                    <MenuItem value="CHEQUE">Cheque</MenuItem>
+                    <MenuItem value="PAGO_MOVIL">Pago Movil</MenuItem>
+                  </TextField>
                 </TableCell>
                 <TableCell align="right">
                   <TextField
-                    size="small"
+                   
                     type="number"
                     value={fp.monto}
                     onChange={(e) => updateFormaPago(idx, { monto: Number(e.target.value) || 0 })}
@@ -220,18 +255,28 @@ export default function PagoTxForm() {
                   />
                 </TableCell>
                 <TableCell>
-                  <TextField size="small" value={fp.banco || ""} onChange={(e) => updateFormaPago(idx, { banco: e.target.value })} />
-                </TableCell>
-                <TableCell>
-                  <TextField size="small" value={fp.numCheque || ""} onChange={(e) => updateFormaPago(idx, { numCheque: e.target.value })} />
-                </TableCell>
-                <TableCell>
                   <TextField
-                    size="small"
-                    type="date"
-                    value={fp.fechaVencimiento || ""}
-                    InputLabelProps={{ shrink: true }}
-                    onChange={(e) => updateFormaPago(idx, { fechaVencimiento: e.target.value || undefined })}
+                    select
+                   
+                    value={fp.banco || ""}
+                    onChange={(e) => updateFormaPago(idx, { banco: e.target.value })}
+                  >
+                    <MenuItem value="">Sin banco</MenuItem>
+                    {bancos.map((b: any) => (
+                      <MenuItem key={b.BankName ?? b.nombre} value={b.BankName ?? b.nombre}>
+                        {b.BankName ?? b.nombre}
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                </TableCell>
+                <TableCell>
+                  <TextField value={fp.numCheque || ""} onChange={(e) => updateFormaPago(idx, { numCheque: e.target.value })} />
+                </TableCell>
+                <TableCell>
+                  <DatePicker
+                    value={fp.fechaVencimiento ? dayjs(fp.fechaVencimiento) : null}
+                    onChange={(v) => updateFormaPago(idx, { fechaVencimiento: v ? v.format('YYYY-MM-DD') : undefined })}
+                    slotProps={{ textField: { size: 'small', fullWidth: true } }}
                   />
                 </TableCell>
                 <TableCell align="center">
@@ -295,7 +340,7 @@ export default function PagoTxForm() {
                 <TableCell align="right">{Number(r.pendiente || 0).toFixed(2)}</TableCell>
                 <TableCell align="right">
                   <TextField
-                    size="small"
+                   
                     type="number"
                     value={r.montoAplicar}
                     onChange={(e) => changeMonto(i, Number(e.target.value))}

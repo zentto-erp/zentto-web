@@ -1,9 +1,10 @@
 -- ============================================================
 -- DatqBoxWeb PostgreSQL - usp_cfg.sql
--- Funciones de configuración (cfg.AppSetting, contexto)
+-- Funciones de configuraciÃƒÂ³n (cfg.AppSetting, contexto)
 -- ============================================================
 
 -- usp_Cfg_ResolveContext: resuelve contexto empresa/sucursal/usuario
+DROP FUNCTION IF EXISTS usp_Cfg_ResolveContext(VARCHAR(60)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Cfg_ResolveContext(
     p_user_code VARCHAR(60) DEFAULT NULL
 )
@@ -40,11 +41,12 @@ END;
 $$;
 
 -- usp_Cfg_AppSetting_List: lista configuraciones por empresa
+DROP FUNCTION IF EXISTS usp_Cfg_AppSetting_List(INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Cfg_AppSetting_List(
     p_company_id INT
 )
 RETURNS TABLE(
-    "SettingId" BIGINT, "Module" VARCHAR, "SettingKey" VARCHAR,
+    "SettingId" INT, "Module" VARCHAR, "SettingKey" VARCHAR,
     "SettingValue" TEXT, "ValueType" VARCHAR, "Description" VARCHAR,
     "UpdatedAt" TIMESTAMP
 )
@@ -60,13 +62,14 @@ BEGIN
 END;
 $$;
 
--- usp_Cfg_AppSetting_ListByModule: lista configuraciones por módulo
+-- usp_Cfg_AppSetting_ListByModule: lista configuraciones por mÃƒÂ³dulo
+DROP FUNCTION IF EXISTS usp_Cfg_AppSetting_ListByModule(INT, VARCHAR(60)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Cfg_AppSetting_ListByModule(
     p_company_id INT,
     p_module     VARCHAR(60)
 )
 RETURNS TABLE(
-    "SettingId" BIGINT, "Module" VARCHAR, "SettingKey" VARCHAR,
+    "SettingId" INT, "Module" VARCHAR, "SettingKey" VARCHAR,
     "SettingValue" TEXT, "ValueType" VARCHAR, "Description" VARCHAR,
     "UpdatedAt" TIMESTAMP
 )
@@ -84,6 +87,7 @@ END;
 $$;
 
 -- usp_Cfg_AppSetting_ListWithMeta: con metadatos completos
+DROP FUNCTION IF EXISTS usp_Cfg_AppSetting_ListWithMeta(INT, VARCHAR(60)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Cfg_AppSetting_ListWithMeta(
     p_company_id INT,
     p_module     VARCHAR(60) DEFAULT NULL
@@ -106,7 +110,8 @@ BEGIN
 END;
 $$;
 
--- usp_Cfg_AppSetting_Upsert: insertar o actualizar configuración
+-- usp_Cfg_AppSetting_Upsert: insertar o actualizar configuraciÃƒÂ³n
+DROP FUNCTION IF EXISTS usp_Cfg_AppSetting_Upsert(INT, VARCHAR(60), VARCHAR(128), TEXT, VARCHAR(30), VARCHAR(500), INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Cfg_AppSetting_Upsert(
     p_company_id    INT,
     p_module        VARCHAR(60),
@@ -140,7 +145,8 @@ EXCEPTION WHEN OTHERS THEN
 END;
 $$;
 
--- usp_Cfg_AppSetting_ListModules: lista módulos distintos
+-- usp_Cfg_AppSetting_ListModules: lista mÃƒÂ³dulos distintos
+DROP FUNCTION IF EXISTS usp_Cfg_AppSetting_ListModules(INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Cfg_AppSetting_ListModules(
     p_company_id INT
 )
@@ -156,6 +162,7 @@ END;
 $$;
 
 -- usp_Cfg_AppSetting_ListValueTypes: lista tipos de valor
+DROP FUNCTION IF EXISTS usp_Cfg_AppSetting_ListValueTypes() CASCADE;
 CREATE OR REPLACE FUNCTION usp_Cfg_AppSetting_ListValueTypes()
 RETURNS TABLE("ValueType" VARCHAR)
 LANGUAGE plpgsql AS $$

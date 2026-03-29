@@ -73,8 +73,8 @@ BEGIN
             COALESCE(m."Precio_Compra", 0)       AS "CostoUnit",
             m."Cantidad" * COALESCE(m."Precio_Compra", 0) AS "Monto",
             CASE
-                WHEN UPPER(TRIM(COALESCE(m."Tipo", ''))) = 'INGRESO' THEN 1
-                WHEN UPPER(TRIM(COALESCE(m."Tipo", ''))) = 'EGRESO' THEN
+                WHEN UPPER(TRIM(COALESCE(m."Tipo",''::VARCHAR))) = 'INGRESO' THEN 1
+                WHEN UPPER(TRIM(COALESCE(m."Tipo",''::VARCHAR))) = 'EGRESO' THEN
                     CASE
                         WHEN m."Motivo" ILIKE '%Autoconsumo%' THEN 3
                         WHEN m."Motivo" ILIKE '%FACT%'
@@ -86,8 +86,8 @@ BEGIN
                              OR m."Motivo" ILIKE '%Pedido%' THEN 2
                         ELSE 4
                     END
-                WHEN UPPER(TRIM(COALESCE(m."Tipo", ''))) LIKE '%ANULACION%INGRESO%' THEN 1
-                WHEN UPPER(TRIM(COALESCE(m."Tipo", ''))) LIKE '%ANULACION%EGRESO%' THEN 1
+                WHEN UPPER(TRIM(COALESCE(m."Tipo",''::VARCHAR))) LIKE '%ANULACION%INGRESO%' THEN 1
+                WHEN UPPER(TRIM(COALESCE(m."Tipo",''::VARCHAR))) LIKE '%ANULACION%EGRESO%' THEN 1
                 ELSE 4
             END AS "Clase"
         FROM public."MovInvent" m

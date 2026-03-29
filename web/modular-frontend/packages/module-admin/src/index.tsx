@@ -5,7 +5,9 @@ export const MODULE_ID = "admin";
 export const MODULE_TITLE = "Administración";
 
 // Re-export hooks
-export { useFacturasList, useFacturaById, useCreateFactura, useUpdateFactura, useDeleteFactura } from './hooks/useFacturas';
+export { useFacturasList, useFacturaById, useDetalleFactura, useCreateFactura, useUpdateFactura, useDeleteFactura } from './hooks/useFacturas';
+export { usePedidosPendientes, useFacturarDesdePedido } from './hooks/usePedidosEcommerce';
+export type { PedidoEcommerce } from './hooks/usePedidosEcommerce';
 export { useComprasList, useCompraById, useDetalleCompra, useEmitirCompraTx, useCreateCompra, useDeleteCompra } from './hooks/useCompras';
 export { useAbonosList, useAbonoById, useCreateAbono, useUpdateAbono, useDeleteAbono } from './hooks/useAbonos';
 export { useArticulosList, useArticuloById, useCreateArticulo, useUpdateArticulo, useDeleteArticulo, useArticuloFilterOptions } from './hooks/useArticulos';
@@ -47,9 +49,10 @@ export { default as CxpMasterPage } from './components/modules/cxp/CxpMasterPage
 // Re-export components — facturas
 export { default as FacturasTable } from './components/modules/facturas/FacturasTable';
 export { default as FacturaForm } from './components/modules/facturas/FacturaForm';
+export { default as FacturaDetail } from './components/modules/facturas/FacturaDetail';
+export { default as PedidosEcommercePage } from './components/modules/facturas/PedidosEcommercePage';
 
 // Re-export components — inventario
-export { default as InventarioTable } from './components/modules/inventario/InventarioTable';
 export { default as AjusteInventarioForm } from './components/modules/inventario/AjusteInventarioForm';
 export { default as CatalogoCrudPage } from './components/modules/inventario/CatalogoCrudPage';
 export { default as GenericEntityCrudPage } from './components/modules/inventario/CatalogoCrudPage';

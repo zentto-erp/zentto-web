@@ -65,30 +65,30 @@ BEGIN
     END IF;
 
     -- Extraer campos principales
-    v_num_doc         := NULLIF(p_doc_json->>'NUM_DOC', '');
-    v_serial_tipo     := COALESCE(NULLIF(p_doc_json->>'SERIALTIPO', ''), '');
-    v_cod_proveedor   := NULLIF(p_doc_json->>'COD_PROVEEDOR', '');
-    v_nombre          := NULLIF(p_doc_json->>'NOMBRE', '');
-    v_rif             := NULLIF(p_doc_json->>'RIF', '');
-    v_fecha_str       := NULLIF(p_doc_json->>'FECHA', '');
+    v_num_doc         := NULLIF(p_doc_json->>'NUM_DOC', ''::VARCHAR);
+    v_serial_tipo     := COALESCE(NULLIF(p_doc_json->>'SERIALTIPO', ''::VARCHAR),''::VARCHAR);
+    v_cod_proveedor   := NULLIF(p_doc_json->>'COD_PROVEEDOR', ''::VARCHAR);
+    v_nombre          := NULLIF(p_doc_json->>'NOMBRE', ''::VARCHAR);
+    v_rif             := NULLIF(p_doc_json->>'RIF', ''::VARCHAR);
+    v_fecha_str       := NULLIF(p_doc_json->>'FECHA', ''::VARCHAR);
     v_fecha           := CASE WHEN v_fecha_str IS NOT NULL THEN v_fecha_str::TIMESTAMP ELSE NOW() AT TIME ZONE 'UTC' END;
-    v_fecha_vence_str := NULLIF(p_doc_json->>'FECHA_VENCE', '');
+    v_fecha_vence_str := NULLIF(p_doc_json->>'FECHA_VENCE', ''::VARCHAR);
     v_fecha_vence     := CASE WHEN v_fecha_vence_str IS NOT NULL THEN v_fecha_vence_str::TIMESTAMP ELSE NULL END;
-    v_fecha_recibo_str := NULLIF(p_doc_json->>'FECHA_RECIBO', '');
+    v_fecha_recibo_str := NULLIF(p_doc_json->>'FECHA_RECIBO', ''::VARCHAR);
     v_fecha_recibo    := CASE WHEN v_fecha_recibo_str IS NOT NULL THEN v_fecha_recibo_str::TIMESTAMP ELSE NULL END;
-    v_observ          := NULLIF(p_doc_json->>'OBSERV', '');
-    v_concepto        := NULLIF(p_doc_json->>'CONCEPTO', '');
-    v_num_control     := NULLIF(p_doc_json->>'NUM_CONTROL', '');
-    v_doc_origen      := NULLIF(p_doc_json->>'DOC_ORIGEN', '');
-    v_almacen         := NULLIF(p_doc_json->>'ALMACEN', '');
-    v_precio_dollar   := COALESCE(NULLIF(p_doc_json->>'PRECIO_DOLLAR', '')::DOUBLE PRECISION, 0);
-    v_moneda          := COALESCE(NULLIF(p_doc_json->>'MONEDA', ''), 'BS');
-    v_tasa_cambio     := COALESCE(NULLIF(p_doc_json->>'TASA_CAMBIO', '')::DOUBLE PRECISION, 1);
+    v_observ          := NULLIF(p_doc_json->>'OBSERV', ''::VARCHAR);
+    v_concepto        := NULLIF(p_doc_json->>'CONCEPTO', ''::VARCHAR);
+    v_num_control     := NULLIF(p_doc_json->>'NUM_CONTROL', ''::VARCHAR);
+    v_doc_origen      := NULLIF(p_doc_json->>'DOC_ORIGEN', ''::VARCHAR);
+    v_almacen         := NULLIF(p_doc_json->>'ALMACEN', ''::VARCHAR);
+    v_precio_dollar   := COALESCE(NULLIF(p_doc_json->>'PRECIO_DOLLAR', ''::VARCHAR)::DOUBLE PRECISION, 0);
+    v_moneda          := COALESCE(NULLIF(p_doc_json->>'MONEDA', ''::VARCHAR), 'BS');
+    v_tasa_cambio     := COALESCE(NULLIF(p_doc_json->>'TASA_CAMBIO', ''::VARCHAR)::DOUBLE PRECISION, 1);
 
     -- Retenciones
-    v_iva_retenido    := COALESCE(NULLIF(p_doc_json->>'IVA_RETENIDO', '')::DOUBLE PRECISION, 0);
-    v_monto_islr      := COALESCE(NULLIF(p_doc_json->>'MONTO_ISLR', '')::DOUBLE PRECISION, 0);
-    v_islr            := NULLIF(p_doc_json->>'ISLR', '');
+    v_iva_retenido    := COALESCE(NULLIF(p_doc_json->>'IVA_RETENIDO', ''::VARCHAR)::DOUBLE PRECISION, 0);
+    v_monto_islr      := COALESCE(NULLIF(p_doc_json->>'MONTO_ISLR', ''::VARCHAR)::DOUBLE PRECISION, 0);
+    v_islr            := NULLIF(p_doc_json->>'ISLR', ''::VARCHAR);
 
     IF v_num_doc IS NULL THEN
         RAISE EXCEPTION 'num_doc_requerido';
@@ -116,12 +116,12 @@ BEGIN
     INSERT INTO _detalle_compra_temp ("RENGLON", "COD_SERV", "DESCRIPCION", "CANTIDAD", "PRECIO", "COSTO", "ALICUOTA", "SUBTOTAL", "MONTO_IVA", "TOTAL")
     SELECT
         ROW_NUMBER() OVER (ORDER BY (SELECT NULL))::INT,
-        NULLIF(elem->>'COD_SERV', ''),
-        NULLIF(elem->>'DESCRIPCION', ''),
-        COALESCE(NULLIF(elem->>'CANTIDAD', '')::DOUBLE PRECISION, 0),
-        COALESCE(NULLIF(elem->>'PRECIO', '')::DOUBLE PRECISION, 0),
-        COALESCE(NULLIF(elem->>'COSTO', '')::DOUBLE PRECISION, 0),
-        COALESCE(NULLIF(elem->>'ALICUOTA', '')::DOUBLE PRECISION, 0),
+        NULLIF(elem->>'COD_SERV', ''::VARCHAR),
+        NULLIF(elem->>'DESCRIPCION', ''::VARCHAR),
+        COALESCE(NULLIF(elem->>'CANTIDAD', ''::VARCHAR)::DOUBLE PRECISION, 0),
+        COALESCE(NULLIF(elem->>'PRECIO', ''::VARCHAR)::DOUBLE PRECISION, 0),
+        COALESCE(NULLIF(elem->>'COSTO', ''::VARCHAR)::DOUBLE PRECISION, 0),
+        COALESCE(NULLIF(elem->>'ALICUOTA', ''::VARCHAR)::DOUBLE PRECISION, 0),
         0, 0, 0
     FROM jsonb_array_elements(p_detalle_json) AS elem;
 
@@ -187,10 +187,10 @@ BEGIN
                 "NUM_DOC", "TIPO_OPERACION", "TIPO_PAGO", "BANCO", "NUMERO", "MONTO", "FECHA", "CO_USUARIO"
             ) VALUES (
                 v_num_doc, p_tipo_operacion,
-                NULLIF(v_row->>'TIPO_PAGO', ''),
-                NULLIF(v_row->>'BANCO', ''),
-                NULLIF(v_row->>'NUMERO', ''),
-                COALESCE(NULLIF(v_row->>'MONTO', '')::DOUBLE PRECISION, 0),
+                NULLIF(v_row->>'TIPO_PAGO', ''::VARCHAR),
+                NULLIF(v_row->>'BANCO', ''::VARCHAR),
+                NULLIF(v_row->>'NUMERO', ''::VARCHAR),
+                COALESCE(NULLIF(v_row->>'MONTO', ''::VARCHAR)::DOUBLE PRECISION, 0),
                 v_fecha, p_cod_usuario
             );
         END LOOP;

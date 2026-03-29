@@ -5,6 +5,7 @@
 -- ============================================================
 
 -- ---------- 1. List (paginado: documentNumber, userCode, from, to) ----------
+DROP FUNCTION IF EXISTS usp_facturas_list(VARCHAR(60), VARCHAR(60), DATE, DATE, INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_facturas_list(
     p_num_fact    VARCHAR(60) DEFAULT NULL,
     p_cod_usuario VARCHAR(60) DEFAULT NULL,
@@ -87,6 +88,7 @@ END;
 $$;
 
 -- ---------- 2. Get by DocumentNumber ----------
+DROP FUNCTION IF EXISTS usp_facturas_getbynumfact(VARCHAR(60)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_facturas_getbynumfact(
     p_num_fact VARCHAR(60)
 )

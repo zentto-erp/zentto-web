@@ -1,9 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Box,
-  Paper,
   Typography,
   Button,
   TextField,
@@ -12,20 +11,17 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  Chip,
   MenuItem,
   Select,
   FormControl,
   InputLabel,
   Switch,
   FormControlLabel,
-  IconButton,
-  Tooltip,
 } from "@mui/material";
-import { DataGrid, type GridColDef } from "@mui/x-data-grid";
-import AddIcon from "@mui/icons-material/Add";
-import EditIcon from "@mui/icons-material/Edit";
-import DeleteIcon from "@mui/icons-material/Delete";
+import { DatePicker } from "@zentto/shared-ui";
+import type { ColumnDef } from "@zentto/datagrid-core";
+import dayjs from "dayjs";
+import { useGridLayoutSync } from "@zentto/shared-api";
 import {
   useTrainingList,
   useSaveTraining,
@@ -34,13 +30,47 @@ import {
   type TrainingInput,
 } from "../hooks/useRRHH";
 import EmployeeSelector from "./EmployeeSelector";
+import { buildNominaGridId, useNominaGridId, useNominaGridRegistration } from "./zenttoGridPersistence";
 
 const emptyForm: TrainingInput = {
   employeeCode: "", title: "", type: "", provider: "",
   hours: 0, result: "", regulatory: false, startDate: "", endDate: "",
 };
 
+const COLUMNS: ColumnDef[] = [
+  { field: "Title", header: "Título", flex: 1, minWidth: 200, sortable: true },
+  { field: "EmployeeName", header: "Empleado", flex: 1, minWidth: 180, sortable: true },
+  {
+    field: "TrainingType", header: "Tipo", width: 130, sortable: true, groupable: true,
+    statusColors: { INDUCCION: "info", TECNICA: "success", SEGURIDAD: "warning", LIDERAZGO: "info", CUMPLIMIENTO: "warning" },
+    statusVariant: "outlined",
+  },
+  { field: "Provider", header: "Proveedor", width: 150 },
+  { field: "DurationHours", header: "Horas", width: 80, type: "number" },
+  { field: "StartDate", header: "Fecha Inicio", width: 120 },
+  { field: "EndDate", header: "Fecha Fin", width: 120 },
+  {
+    field: "Result", header: "Resultado", width: 120,
+    statusColors: { APROBADO: "success", REPROBADO: "error" },
+  },
+  {
+    field: "IsRegulatory", header: "Regulatorio", width: 110,
+  },
+  {
+    field: "actions", header: "Acciones", type: "actions", width: 100, pin: "right",
+    actions: [
+      { icon: "edit", label: "Editar", action: "edit", color: "#1976d2" },
+      { icon: "delete", label: "Eliminar", action: "delete", color: "#dc2626" },
+    ],
+  },
+];
+
+const GRID_ID = buildNominaGridId("capacitacion");
+
+
+
 export default function CapacitacionPage() {
+  const gridRef = useRef<any>(null);
   const [filter, setFilter] = useState<TrainingFilter>({ page: 1, limit: 25 });
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editMode, setEditMode] = useState(false);
@@ -49,234 +79,95 @@ export default function CapacitacionPage() {
   const { data, isLoading } = useTrainingList(filter);
   const saveMutation = useSaveTraining();
   const deleteMutation = useDeleteTraining();
+  const { ready: layoutReady } = useGridLayoutSync(GRID_ID);
+  const { registered } = useNominaGridRegistration(layoutReady);
 
   const rows = data?.data ?? data?.rows ?? [];
+  useNominaGridId(gridRef, GRID_ID);
 
-  const handleNew = () => {
-    setForm({ ...emptyForm });
-    setEditMode(false);
-    setDialogOpen(true);
-  };
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+    el.columns = COLUMNS;
+    el.rows = rows;
+    el.loading = isLoading;
+    el.getRowId = (r: any) => r.TrainingRecordId ?? `${r.EmployeeCode}-${r.Title}-${r.StartDate}`;
+  }, [rows, isLoading, registered]);
+
+  const handleNew = () => { setForm({ ...emptyForm }); setEditMode(false); setDialogOpen(true); };
 
   const handleEdit = (row: Record<string, any>) => {
     setForm({
-      id: row.id,
-      employeeCode: row.employeeCode ?? "",
-      title: row.title ?? "",
-      type: row.type ?? "",
-      provider: row.provider ?? "",
-      hours: row.hours ?? 0,
-      result: row.result ?? "",
-      regulatory: row.regulatory ?? false,
-      startDate: row.startDate ?? "",
-      endDate: row.endDate ?? "",
+      id: row.TrainingRecordId, employeeCode: row.EmployeeCode ?? "", title: row.Title ?? "",
+      type: row.TrainingType ?? "", provider: row.Provider ?? "", hours: row.DurationHours ?? 0,
+      result: row.Result ?? "", regulatory: row.IsRegulatory ?? false,
+      startDate: row.StartDate ?? "", endDate: row.EndDate ?? "",
     });
-    setEditMode(true);
-    setDialogOpen(true);
+    setEditMode(true); setDialogOpen(true);
   };
 
   const handleDelete = async (row: Record<string, any>) => {
-    const id = row.id;
+    const id = row.TrainingRecordId;
     if (!id) return;
-    if (!window.confirm(`¿Eliminar la capacitación "${row.title}"?`)) return;
+    if (!window.confirm(`¿Eliminar la capacitación "${row.Title}"?`)) return;
     await deleteMutation.mutateAsync(id);
   };
 
-  const columns: GridColDef[] = [
-    { field: "title", headerName: "Título", flex: 1, minWidth: 200 },
-    { field: "employeeName", headerName: "Empleado", flex: 1, minWidth: 180 },
-    {
-      field: "type",
-      headerName: "Tipo",
-      width: 130,
-      renderCell: (p) => (
-        <Chip label={p.value || "—"} size="small" variant="outlined" color="primary" />
-      ),
-    },
-    { field: "provider", headerName: "Proveedor", width: 150 },
-    { field: "hours", headerName: "Horas", width: 80, type: "number" },
-    { field: "startDate", headerName: "Fecha Inicio", width: 120 },
-    { field: "endDate", headerName: "Fecha Fin", width: 120 },
-    {
-      field: "result",
-      headerName: "Resultado",
-      width: 120,
-      renderCell: (p) =>
-        p.value ? (
-          <Chip
-            label={p.value}
-            size="small"
-            color={
-              p.value === "APROBADO" ? "success" :
-              p.value === "REPROBADO" ? "error" : "default"
-            }
-          />
-        ) : null,
-    },
-    {
-      field: "regulatory",
-      headerName: "Regulatorio",
-      width: 110,
-      renderCell: (p) =>
-        p.value ? (
-          <Chip label="Regulatorio" size="small" color="warning" variant="outlined" />
-        ) : null,
-    },
-    {
-      field: "actions",
-      headerName: "Acciones",
-      width: 110,
-      sortable: false,
-      filterable: false,
-      renderCell: (params) => (
-        <Stack direction="row" spacing={0.5}>
-          <Tooltip title="Editar">
-            <IconButton size="small" color="primary" onClick={() => handleEdit(params.row)}>
-              <EditIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="Eliminar">
-            <IconButton size="small" color="error" onClick={() => handleDelete(params.row)}>
-              <DeleteIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-        </Stack>
-      ),
-    },
-  ];
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+    const handler = (e: CustomEvent) => {
+      const { action, row } = e.detail;
+      if (action === "edit") handleEdit(row);
+      if (action === "delete") handleDelete(row);
+    };
+    el.addEventListener("action-click", handler);
+    const createHandler = () => handleNew();
+    el.addEventListener("create-click", createHandler);
+    return () => { el.removeEventListener("action-click", handler); el.removeEventListener("create-click", createHandler); };
+  }, [registered, rows]);
 
   const handleSave = async () => {
     await saveMutation.mutateAsync(form);
-    setDialogOpen(false);
-    setForm({ ...emptyForm });
+    setDialogOpen(false); setForm({ ...emptyForm });
   };
 
   return (
     <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-      <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
-        <Typography variant="h6">Capacitación</Typography>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={handleNew}>
-          Nueva Capacitación
-        </Button>
-      </Stack>
+      <Typography variant="h6" sx={{ mb: 2 }}>Capacitación</Typography>
 
-      <Stack direction="row" spacing={2} mb={2}>
-        <TextField
-          label="Buscar"
-          size="small"
-          value={filter.search || ""}
-          onChange={(e) => setFilter((f) => ({ ...f, search: e.target.value }))}
-        />
-        <FormControl size="small" sx={{ minWidth: 140 }}>
-          <InputLabel>Tipo</InputLabel>
-          <Select
-            value={filter.type || ""}
-            label="Tipo"
-            onChange={(e) => setFilter((f) => ({ ...f, type: e.target.value || undefined }))}
-          >
-            <MenuItem value="">Todos</MenuItem>
-            <MenuItem value="INDUCCION">Inducción</MenuItem>
-            <MenuItem value="TECNICA">Técnica</MenuItem>
-            <MenuItem value="SEGURIDAD">Seguridad</MenuItem>
-            <MenuItem value="LIDERAZGO">Liderazgo</MenuItem>
-            <MenuItem value="CUMPLIMIENTO">Cumplimiento</MenuItem>
-          </Select>
-        </FormControl>
-      </Stack>
+      <Box sx={{ flex: 1, minHeight: 0 }}>
+        <zentto-grid ref={gridRef} height="calc(100vh - 200px)" enable-toolbar enable-header-menu enable-header-filters enable-clipboard enable-quick-search enable-context-menu enable-status-bar enable-configurator enable-grouping enable-pivot enable-create create-label="Nueva Capacitación" />
+      </Box>
 
-      <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, width: "100%", border: "1px solid #E5E7EB" }}>
-        <DataGrid
-          rows={rows}
-          columns={columns}
-          loading={isLoading}
-          pageSizeOptions={[25, 50]}
-          disableRowSelectionOnClick
-          getRowId={(r) => r.id ?? `${r.employeeCode}-${r.title}-${r.startDate}`}
-        />
-      </Paper>
-
-      {/* Create/Edit Dialog */}
       <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="sm" fullWidth>
         <DialogTitle>{editMode ? "Editar Capacitación" : "Registrar Capacitación"}</DialogTitle>
         <DialogContent>
           <Stack spacing={2} mt={1}>
-            <EmployeeSelector
-              value={form.employeeCode}
-              onChange={(code) => setForm((f) => ({ ...f, employeeCode: code }))}
-            />
-            <TextField
-              label="Título"
-              fullWidth
-              value={form.title}
-              onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
-            />
-            <FormControl fullWidth>
-              <InputLabel>Tipo</InputLabel>
-              <Select
-                value={form.type}
-                label="Tipo"
-                onChange={(e) => setForm((f) => ({ ...f, type: e.target.value }))}
-              >
-                <MenuItem value="INDUCCION">Inducción</MenuItem>
-                <MenuItem value="TECNICA">Técnica</MenuItem>
-                <MenuItem value="SEGURIDAD">Seguridad</MenuItem>
-                <MenuItem value="LIDERAZGO">Liderazgo</MenuItem>
+            <EmployeeSelector value={form.employeeCode} onChange={(code) => setForm((f) => ({ ...f, employeeCode: code }))} />
+            <TextField label="Título" fullWidth value={form.title} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} />
+            <FormControl fullWidth><InputLabel>Tipo</InputLabel>
+              <Select value={form.type} label="Tipo" onChange={(e) => setForm((f) => ({ ...f, type: e.target.value }))}>
+                <MenuItem value="INDUCCION">Inducción</MenuItem><MenuItem value="TECNICA">Técnica</MenuItem>
+                <MenuItem value="SEGURIDAD">Seguridad</MenuItem><MenuItem value="LIDERAZGO">Liderazgo</MenuItem>
                 <MenuItem value="CUMPLIMIENTO">Cumplimiento</MenuItem>
               </Select>
             </FormControl>
-            <TextField
-              label="Proveedor"
-              fullWidth
-              value={form.provider || ""}
-              onChange={(e) => setForm((f) => ({ ...f, provider: e.target.value }))}
-            />
-            <TextField
-              label="Horas"
-              type="number"
-              fullWidth
-              value={form.hours || ""}
-              onChange={(e) => setForm((f) => ({ ...f, hours: Number(e.target.value) }))}
-            />
-            <TextField
-              label="Resultado"
-              fullWidth
-              value={form.result || ""}
-              onChange={(e) => setForm((f) => ({ ...f, result: e.target.value }))}
-            />
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={form.regulatory || false}
-                  onChange={(e) => setForm((f) => ({ ...f, regulatory: e.target.checked }))}
-                />
-              }
-              label="Capacitación regulatoria"
-            />
-            <TextField
-              label="Fecha Inicio"
-              type="date"
-              fullWidth
-              InputLabelProps={{ shrink: true }}
-              value={form.startDate}
-              onChange={(e) => setForm((f) => ({ ...f, startDate: e.target.value }))}
-            />
-            <TextField
-              label="Fecha Fin"
-              type="date"
-              fullWidth
-              InputLabelProps={{ shrink: true }}
-              value={form.endDate || ""}
-              onChange={(e) => setForm((f) => ({ ...f, endDate: e.target.value }))}
-            />
+            <TextField label="Proveedor" fullWidth value={form.provider || ""} onChange={(e) => setForm((f) => ({ ...f, provider: e.target.value }))} />
+            <TextField label="Horas" type="number" fullWidth value={form.hours || ""} onChange={(e) => setForm((f) => ({ ...f, hours: Number(e.target.value) }))} />
+            <TextField label="Resultado" fullWidth value={form.result || ""} onChange={(e) => setForm((f) => ({ ...f, result: e.target.value }))} />
+            <FormControlLabel control={<Switch checked={form.regulatory || false} onChange={(e) => setForm((f) => ({ ...f, regulatory: e.target.checked }))} />} label="Capacitación regulatoria" />
+            <DatePicker label="Fecha Inicio" value={form.startDate ? dayjs(form.startDate) : null} onChange={(v) => setForm((f) => ({ ...f, startDate: v ? v.format('YYYY-MM-DD') : '' }))} slotProps={{ textField: { size: 'small', fullWidth: true } }} />
+            <DatePicker label="Fecha Fin" value={form.endDate ? dayjs(form.endDate) : null} onChange={(v) => setForm((f) => ({ ...f, endDate: v ? v.format('YYYY-MM-DD') : '' }))} slotProps={{ textField: { size: 'small', fullWidth: true } }} />
           </Stack>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDialogOpen(false)}>Cancelar</Button>
-          <Button variant="contained" onClick={handleSave} disabled={saveMutation.isPending}>
-            Guardar
-          </Button>
+          <Button variant="contained" onClick={handleSave} disabled={saveMutation.isPending}>Guardar</Button>
         </DialogActions>
       </Dialog>
     </Box>
   );
 }
+
+declare global { namespace JSX { interface IntrinsicElements { 'zentto-grid': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & Record<string, any>, HTMLElement>; } } }

@@ -1,16 +1,16 @@
--- ═══════════════════════════════════════════════════════════════
+-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 -- Archivo  : sp_nomina_batch.sql
--- Propósito: Stored Procedures para Nómina en Lote (PostgreSQL)
+-- PropÃ³sito: Stored Procedures para NÃ³mina en Lote (PostgreSQL)
 -- Tablas   : hr."PayrollBatch", hr."PayrollBatchLine", hr."PayrollConcept",
 --            hr."PayrollRun", hr."PayrollRunLine", master."Employee"
 -- Requiere : sp_nomina_sistema.sql, sp_nomina_calculo.sql
--- Origen   : Conversión desde T-SQL (SQL Server 2012+)
+-- Origen   : ConversiÃ³n desde T-SQL (SQL Server 2012+)
 -- Fecha    : 2026-03-16
--- ═══════════════════════════════════════════════════════════════
+-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
--- ───────────────────────────────────────────────────────
+-- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 -- 0. Tablas de soporte: hr."PayrollBatch", hr."PayrollBatchLine"
--- ───────────────────────────────────────────────────────
+-- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 CREATE SCHEMA IF NOT EXISTS hr;
 
@@ -68,11 +68,44 @@ CREATE INDEX IF NOT EXISTS "IX_hr_PayrollBatchLine_Employee"
     ON hr."PayrollBatchLine" ("BatchId", "EmployeeCode")
     INCLUDE ("ConceptType", "Total", "IsModified");
 
+-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+-- ALTER TABLE: Agregar columnas faltantes si la tabla fue creada
+-- por 08_fin_hr_extensions.sql con esquema incompleto.
+-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+DO $$ BEGIN
+  -- hr."PayrollBatch" â€” columnas que 08_fin_hr_extensions.sql no incluye
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='hr' AND table_name='PayrollBatch' AND column_name='BranchId') THEN
+    ALTER TABLE hr."PayrollBatch" ADD COLUMN "BranchId" INTEGER NOT NULL DEFAULT 1;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='hr' AND table_name='PayrollBatch' AND column_name='TotalEmployees') THEN
+    ALTER TABLE hr."PayrollBatch" ADD COLUMN "TotalEmployees" INTEGER NOT NULL DEFAULT 0;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='hr' AND table_name='PayrollBatch' AND column_name='TotalGross') THEN
+    ALTER TABLE hr."PayrollBatch" ADD COLUMN "TotalGross" NUMERIC(18,2) NOT NULL DEFAULT 0;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='hr' AND table_name='PayrollBatch' AND column_name='TotalDeductions') THEN
+    ALTER TABLE hr."PayrollBatch" ADD COLUMN "TotalDeductions" NUMERIC(18,2) NOT NULL DEFAULT 0;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='hr' AND table_name='PayrollBatch' AND column_name='TotalNet') THEN
+    ALTER TABLE hr."PayrollBatch" ADD COLUMN "TotalNet" NUMERIC(18,2) NOT NULL DEFAULT 0;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='hr' AND table_name='PayrollBatch' AND column_name='CreatedBy') THEN
+    ALTER TABLE hr."PayrollBatch" ADD COLUMN "CreatedBy" INTEGER NULL;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='hr' AND table_name='PayrollBatch' AND column_name='ApprovedBy') THEN
+    ALTER TABLE hr."PayrollBatch" ADD COLUMN "ApprovedBy" INTEGER NULL;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='hr' AND table_name='PayrollBatch' AND column_name='ApprovedAt') THEN
+    ALTER TABLE hr."PayrollBatch" ADD COLUMN "ApprovedAt" TIMESTAMP NULL;
+  END IF;
+END $$;
 
--- ═══════════════════════════════════════════════════════════════
+
+-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 -- 1. usp_HR_Payroll_GenerateDraft
---    Genera un borrador de nómina en lote para todos los empleados activos.
--- ═══════════════════════════════════════════════════════════════
+--    Genera un borrador de nÃ³mina en lote para todos los empleados activos.
+-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+DROP FUNCTION IF EXISTS public.usp_HR_Payroll_GenerateDraft(INTEGER, INTEGER, VARCHAR(15), DATE, DATE, INTEGER, VARCHAR(100)) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_GenerateDraft(
     p_company_id        INTEGER,
     p_branch_id         INTEGER,
@@ -81,7 +114,7 @@ CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_GenerateDraft(
     p_to_date           DATE,
     p_user_id           INTEGER,
     p_department_filter VARCHAR(100) DEFAULT NULL,
-    OUT p_batch_id      INTEGER,
+    OUT p_batch_id      BIGINT,
     OUT p_resultado     INTEGER,
     OUT p_mensaje       TEXT
 )
@@ -92,16 +125,16 @@ DECLARE
 BEGIN
     p_resultado := 0;
     p_mensaje   := '';
-    p_batch_id  := 0;
+    p_batch_id  := 0::BIGINT;
 
-    -- Validaciones básicas
+    -- Validaciones bÃ¡sicas
     IF p_from_date >= p_to_date THEN
         p_resultado := -1;
         p_mensaje   := 'La fecha desde debe ser menor que la fecha hasta.';
         RETURN;
     END IF;
 
-    -- Verificar que no exista un batch BORRADOR duplicado para el mismo período
+    -- Verificar que no exista un batch BORRADOR duplicado para el mismo perÃ­odo
     IF EXISTS (
         SELECT 1 FROM hr."PayrollBatch"
         WHERE "CompanyId"   = p_company_id
@@ -112,7 +145,7 @@ BEGIN
           AND "Status"      = 'BORRADOR'
     ) THEN
         p_resultado := -2;
-        p_mensaje   := 'Ya existe un borrador de nómina para este período y tipo.';
+        p_mensaje   := 'Ya existe un borrador de nÃ³mina para este perÃ­odo y tipo.';
         RETURN;
     END IF;
 
@@ -128,7 +161,7 @@ BEGIN
         )
         RETURNING "BatchId" INTO p_batch_id;
 
-        -- Insertar líneas por cada empleado activo + cada concepto activo de la nómina
+        -- Insertar lÃ­neas por cada empleado activo + cada concepto activo de la nÃ³mina
         INSERT INTO hr."PayrollBatchLine" (
             "BatchId", "EmployeeId", "EmployeeCode", "EmployeeName",
             "ConceptCode", "ConceptName", "ConceptType",
@@ -138,7 +171,7 @@ BEGIN
             p_batch_id,
             e."EmployeeId",
             e."EmployeeCode",
-            COALESCE(e."EmployeeName", ''),
+            COALESCE(e."EmployeeName",''::VARCHAR),
             pc."ConceptCode",
             pc."ConceptName",
             pc."ConceptType",
@@ -179,12 +212,14 @@ END;
 $$;
 
 
--- ═══════════════════════════════════════════════════════════════
+-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 -- 2. usp_HR_Payroll_SaveDraftLine
 --    Guarda cambios de una celda (autosave).
--- ═══════════════════════════════════════════════════════════════
+-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+DROP FUNCTION IF EXISTS public.usp_HR_Payroll_SaveDraftLine(INTEGER, NUMERIC(18,4), NUMERIC(18,4), INTEGER, VARCHAR(500)) CASCADE;
+DROP FUNCTION IF EXISTS public.usp_HR_Payroll_SaveDraftLine(BIGINT, NUMERIC(18,4), NUMERIC(18,4), INTEGER, VARCHAR(500)) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_SaveDraftLine(
-    p_line_id   INTEGER,
+    p_line_id   BIGINT,
     p_quantity  NUMERIC(18,4),
     p_amount    NUMERIC(18,4),
     p_user_id   INTEGER,
@@ -195,12 +230,12 @@ CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_SaveDraftLine(
 LANGUAGE plpgsql
 AS $$
 DECLARE
-    v_batch_id INTEGER;
+    v_batch_id BIGINT;
 BEGIN
     p_resultado := 0;
     p_mensaje   := '';
 
-    -- Validar que la línea existe y pertenece a un batch en BORRADOR
+    -- Validar que la lÃ­nea existe y pertenece a un batch en BORRADOR
     SELECT bl."BatchId"
     INTO v_batch_id
     FROM hr."PayrollBatchLine" bl
@@ -210,7 +245,7 @@ BEGIN
 
     IF v_batch_id IS NULL THEN
         p_resultado := -1;
-        p_mensaje   := 'Línea no encontrada o el lote no está en estado BORRADOR.';
+        p_mensaje   := 'LÃ­nea no encontrada o el lote no estÃ¡ en estado BORRADOR.';
         RETURN;
     END IF;
 
@@ -234,7 +269,7 @@ BEGIN
         WHERE "BatchId" = v_batch_id;
 
         p_resultado := 1;
-        p_mensaje   := 'Línea actualizada correctamente.';
+        p_mensaje   := 'LÃ­nea actualizada correctamente.';
 
     EXCEPTION WHEN OTHERS THEN
         p_resultado := -99;
@@ -244,12 +279,14 @@ END;
 $$;
 
 
--- ═══════════════════════════════════════════════════════════════
+-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 -- 3. usp_HR_Payroll_BatchAddLine
 --    Agrega un nuevo concepto a un empleado en el lote.
--- ═══════════════════════════════════════════════════════════════
+-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+DROP FUNCTION IF EXISTS public.usp_HR_Payroll_BatchAddLine(INTEGER, VARCHAR(24), VARCHAR(20), VARCHAR(120), VARCHAR(15), NUMERIC(18,4), NUMERIC(18,4), INTEGER) CASCADE;
+DROP FUNCTION IF EXISTS public.usp_HR_Payroll_BatchAddLine(BIGINT, VARCHAR(24), VARCHAR(20), VARCHAR(120), VARCHAR(15), NUMERIC(18,4), NUMERIC(18,4), INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_BatchAddLine(
-    p_batch_id      INTEGER,
+    p_batch_id      BIGINT,
     p_employee_code VARCHAR(24),
     p_concept_code  VARCHAR(20),
     p_concept_name  VARCHAR(120),
@@ -276,12 +313,12 @@ BEGIN
         WHERE "BatchId" = p_batch_id AND "Status" = 'BORRADOR'
     ) THEN
         p_resultado := -1;
-        p_mensaje   := 'El lote no existe o no está en estado BORRADOR.';
+        p_mensaje   := 'El lote no existe o no estÃ¡ en estado BORRADOR.';
         RETURN;
     END IF;
 
     -- Obtener nombre del empleado
-    SELECT COALESCE(e."EmployeeName", ''), e."EmployeeId"
+    SELECT COALESCE(e."EmployeeName",''::VARCHAR), e."EmployeeId"
     INTO v_employee_name, v_employee_id
     FROM master."Employee" e
     WHERE e."EmployeeCode" = p_employee_code
@@ -289,7 +326,7 @@ BEGIN
     LIMIT 1;
 
     IF v_employee_name IS NULL THEN
-        -- Intentar obtener de líneas existentes del batch
+        -- Intentar obtener de lÃ­neas existentes del batch
         SELECT bl."EmployeeName", bl."EmployeeId"
         INTO v_employee_name, v_employee_id
         FROM hr."PayrollBatchLine" bl
@@ -340,7 +377,7 @@ BEGIN
         WHERE "BatchId" = p_batch_id;
 
         p_resultado := 1;
-        p_mensaje   := 'Línea agregada correctamente.';
+        p_mensaje   := 'LÃ­nea agregada correctamente.';
 
     EXCEPTION WHEN OTHERS THEN
         p_resultado := -99;
@@ -350,12 +387,14 @@ END;
 $$;
 
 
--- ═══════════════════════════════════════════════════════════════
+-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 -- 4. usp_HR_Payroll_BatchRemoveLine
---    Elimina una línea de concepto del lote.
--- ═══════════════════════════════════════════════════════════════
+--    Elimina una lÃ­nea de concepto del lote.
+-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+DROP FUNCTION IF EXISTS public.usp_HR_Payroll_BatchRemoveLine(INTEGER, INTEGER) CASCADE;
+DROP FUNCTION IF EXISTS public.usp_HR_Payroll_BatchRemoveLine(BIGINT, INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_BatchRemoveLine(
-    p_line_id   INTEGER,
+    p_line_id   BIGINT,
     p_user_id   INTEGER,
     OUT p_resultado INTEGER,
     OUT p_mensaje   TEXT
@@ -364,7 +403,7 @@ RETURNS record
 LANGUAGE plpgsql
 AS $$
 DECLARE
-    v_batch_id INTEGER;
+    v_batch_id BIGINT;
 BEGIN
     p_resultado := 0;
     p_mensaje   := '';
@@ -378,7 +417,7 @@ BEGIN
 
     IF v_batch_id IS NULL THEN
         p_resultado := -1;
-        p_mensaje   := 'Línea no encontrada o el lote no está en estado BORRADOR.';
+        p_mensaje   := 'LÃ­nea no encontrada o el lote no estÃ¡ en estado BORRADOR.';
         RETURN;
     END IF;
 
@@ -396,7 +435,7 @@ BEGIN
         WHERE "BatchId" = v_batch_id;
 
         p_resultado := 1;
-        p_mensaje   := 'Línea eliminada correctamente.';
+        p_mensaje   := 'LÃ­nea eliminada correctamente.';
 
     EXCEPTION WHEN OTHERS THEN
         p_resultado := -99;
@@ -406,18 +445,19 @@ END;
 $$;
 
 
--- ═══════════════════════════════════════════════════════════════
+-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 -- 5. usp_HR_Payroll_GetDraftSummary
---    Retorna resumen del lote para la vista de pre-nómina.
+--    Retorna resumen del lote para la vista de pre-nÃ³mina.
 --    Tres result sets expuestos como tres funciones separadas en PG:
---      _Header   -> cabecera con totales y comparación con período anterior
+--      _Header   -> cabecera con totales y comparaciÃ³n con perÃ­odo anterior
 --      _ByDept   -> resumen general (sin columna departamento en Employee)
 --      _Alerts   -> alertas (sin asignaciones, neto negativo, monto cero)
--- ═══════════════════════════════════════════════════════════════
+-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 -- 5a. Cabecera del batch con totales
+DROP FUNCTION IF EXISTS public.usp_HR_Payroll_GetDraftSummary_Header(INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_GetDraftSummary_Header(
-    p_batch_id INTEGER
+    p_batch_id BIGINT
 )
 RETURNS TABLE(
     "BatchId"          INTEGER,
@@ -446,25 +486,25 @@ AS $$
 BEGIN
     RETURN QUERY
     SELECT
-        b."BatchId",
-        b."CompanyId",
-        b."BranchId",
-        b."PayrollCode",
-        b."FromDate",
-        b."ToDate",
-        b."Status",
-        b."TotalEmployees",
-        b."TotalGross",
-        b."TotalDeductions",
-        b."TotalNet",
-        b."CreatedBy",
-        b."CreatedAt",
-        b."ApprovedBy",
-        b."ApprovedAt",
-        prev."PrevBatchId",
-        prev."PrevTotalGross",
-        prev."PrevTotalDeductions",
-        prev."PrevTotalNet",
+        b."BatchId"::INTEGER,
+        b."CompanyId"::INTEGER,
+        b."BranchId"::INTEGER,
+        b."PayrollCode"::VARCHAR(15),
+        b."FromDate"::DATE,
+        b."ToDate"::DATE,
+        b."Status"::VARCHAR(20),
+        b."TotalEmployees"::INTEGER,
+        b."TotalGross"::NUMERIC(18,2),
+        b."TotalDeductions"::NUMERIC(18,2),
+        b."TotalNet"::NUMERIC(18,2),
+        b."CreatedBy"::INTEGER,
+        b."CreatedAt"::TIMESTAMP,
+        b."ApprovedBy"::INTEGER,
+        b."ApprovedAt"::TIMESTAMP,
+        prev."PrevBatchId"::INTEGER,
+        prev."PrevTotalGross"::NUMERIC(18,2),
+        prev."PrevTotalDeductions"::NUMERIC(18,2),
+        prev."PrevTotalNet"::NUMERIC(18,2),
         CASE WHEN prev."PrevTotalNet" > 0
              THEN CAST(((b."TotalNet" - prev."PrevTotalNet") / prev."PrevTotalNet") * 100 AS NUMERIC(8,2))
              ELSE 0::NUMERIC(8,2)
@@ -472,10 +512,10 @@ BEGIN
     FROM hr."PayrollBatch" b
     LEFT JOIN LATERAL (
         SELECT
-            pb."BatchId"          AS "PrevBatchId",
-            pb."TotalGross"       AS "PrevTotalGross",
-            pb."TotalDeductions"  AS "PrevTotalDeductions",
-            pb."TotalNet"         AS "PrevTotalNet"
+            pb."BatchId"::INTEGER          AS "PrevBatchId",
+            pb."TotalGross"::NUMERIC(18,2)       AS "PrevTotalGross",
+            pb."TotalDeductions"::NUMERIC(18,2)  AS "PrevTotalDeductions",
+            pb."TotalNet"::NUMERIC(18,2)         AS "PrevTotalNet"
         FROM hr."PayrollBatch" pb
         WHERE pb."CompanyId"   = b."CompanyId"
           AND pb."BranchId"    = b."BranchId"
@@ -490,8 +530,9 @@ END;
 $$;
 
 -- 5b. Resumen general (sin columna departamento)
+DROP FUNCTION IF EXISTS public.usp_HR_Payroll_GetDraftSummary_ByDept(INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_GetDraftSummary_ByDept(
-    p_batch_id INTEGER
+    p_batch_id BIGINT
 )
 RETURNS TABLE(
     "DepartmentCode" TEXT,
@@ -519,8 +560,9 @@ END;
 $$;
 
 -- 5c. Alertas
+DROP FUNCTION IF EXISTS public.usp_HR_Payroll_GetDraftSummary_Alerts(INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_GetDraftSummary_Alerts(
-    p_batch_id INTEGER
+    p_batch_id BIGINT
 )
 RETURNS TABLE(
     "AlertType"    TEXT,
@@ -543,7 +585,7 @@ BEGIN
             'SIN_ASIGNACIONES'::TEXT                               AS "AlertType",
             bl."EmployeeCode",
             bl."EmployeeName",
-            'El empleado no tiene conceptos de asignación.'::TEXT  AS "AlertMessage"
+            'El empleado no tiene conceptos de asignaciÃ³n.'::TEXT  AS "AlertMessage"
         FROM hr."PayrollBatchLine" bl
         WHERE bl."BatchId" = p_batch_id
         GROUP BY bl."EmployeeCode", bl."EmployeeName"
@@ -568,7 +610,7 @@ BEGIN
 
         UNION ALL
 
-        -- Líneas con monto cero
+        -- LÃ­neas con monto cero
         SELECT
             'MONTO_CERO'::TEXT AS "AlertType",
             bl."EmployeeCode",
@@ -585,12 +627,14 @@ END;
 $$;
 
 
--- ═══════════════════════════════════════════════════════════════
+-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 -- 6. usp_HR_Payroll_GetDraftGrid
 --    Retorna los empleados con sus totales para la grilla.
--- ═══════════════════════════════════════════════════════════════
+-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+DROP FUNCTION IF EXISTS public.usp_HR_Payroll_GetDraftGrid(INTEGER, VARCHAR(100), VARCHAR(100), BOOLEAN, INTEGER, INTEGER) CASCADE;
+DROP FUNCTION IF EXISTS public.usp_HR_Payroll_GetDraftGrid(BIGINT, VARCHAR, VARCHAR, BOOLEAN, INTEGER, INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_GetDraftGrid(
-    p_batch_id      INTEGER,
+    p_batch_id      BIGINT,
     p_search        VARCHAR(100) DEFAULT NULL,
     p_department    VARCHAR(100) DEFAULT NULL,
     p_only_modified BOOLEAN      DEFAULT FALSE,
@@ -599,12 +643,12 @@ CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_GetDraftGrid(
 )
 RETURNS TABLE(
     p_total_count    BIGINT,
-    "EmployeeCode"   VARCHAR(24),
-    "EmployeeName"   VARCHAR(200),
+    "EmployeeCode"   VARCHAR,
+    "EmployeeName"   VARCHAR,
     "EmployeeId"     BIGINT,
-    "DepartmentCode" TEXT,
-    "DepartmentName" TEXT,
-    "PositionName"   TEXT,
+    "DepartmentCode" VARCHAR,
+    "DepartmentName" VARCHAR,
+    "PositionName"   VARCHAR,
     "TotalGross"     NUMERIC,
     "TotalDeductions" NUMERIC,
     "TotalNet"       NUMERIC,
@@ -639,16 +683,16 @@ BEGIN
     )
     SELECT
         COUNT(*) OVER()       AS p_total_count,
-        f."EmployeeCode",
-        f."EmployeeName",
+        f."EmployeeCode"::VARCHAR,
+        f."EmployeeName"::VARCHAR,
         f."EmployeeId",
-        ''::TEXT              AS "DepartmentCode",
-        ''::TEXT              AS "DepartmentName",
-        ''::TEXT              AS "PositionName",
+        ''::VARCHAR           AS "DepartmentCode",
+        ''::VARCHAR           AS "DepartmentName",
+        ''::VARCHAR           AS "PositionName",
         f."TotalGross",
         f."TotalDeductions",
         f."TotalNet",
-        f."HasModified",
+        f."HasModified"::BIGINT,
         f."ConceptCount"
     FROM "Filtered" f
     ORDER BY f."EmployeeName"
@@ -658,28 +702,30 @@ END;
 $$;
 
 
--- ═══════════════════════════════════════════════════════════════
+-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 -- 7. usp_HR_Payroll_GetEmployeeLines
---    Retorna todas las líneas de concepto de un empleado en un lote.
--- ═══════════════════════════════════════════════════════════════
+--    Retorna todas las lÃ­neas de concepto de un empleado en un lote.
+-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+DROP FUNCTION IF EXISTS public.usp_HR_Payroll_GetEmployeeLines(INTEGER, VARCHAR(24)) CASCADE;
+DROP FUNCTION IF EXISTS public.usp_HR_Payroll_GetEmployeeLines(BIGINT, VARCHAR) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_GetEmployeeLines(
-    p_batch_id      INTEGER,
+    p_batch_id      BIGINT,
     p_employee_code VARCHAR(24)
 )
 RETURNS TABLE(
     "LineId"       INTEGER,
     "BatchId"      INTEGER,
     "EmployeeId"   BIGINT,
-    "EmployeeCode" VARCHAR(24),
-    "EmployeeName" VARCHAR(200),
-    "ConceptCode"  VARCHAR(20),
-    "ConceptName"  VARCHAR(120),
-    "ConceptType"  VARCHAR(15),
-    "Quantity"     NUMERIC(18,4),
-    "Amount"       NUMERIC(18,4),
-    "Total"        NUMERIC(18,2),
+    "EmployeeCode" VARCHAR,
+    "EmployeeName" VARCHAR,
+    "ConceptCode"  VARCHAR,
+    "ConceptName"  VARCHAR,
+    "ConceptType"  VARCHAR,
+    "Quantity"     NUMERIC,
+    "Amount"       NUMERIC,
+    "Total"        NUMERIC,
     "IsModified"   BOOLEAN,
-    "Notes"        VARCHAR(500),
+    "Notes"        VARCHAR,
     "UpdatedAt"    TIMESTAMP
 )
 LANGUAGE plpgsql
@@ -687,20 +733,20 @@ AS $$
 BEGIN
     RETURN QUERY
     SELECT
-        bl."LineId",
-        bl."BatchId",
-        bl."EmployeeId",
-        bl."EmployeeCode",
-        bl."EmployeeName",
-        bl."ConceptCode",
-        bl."ConceptName",
-        bl."ConceptType",
-        bl."Quantity",
-        bl."Amount",
-        bl."Total",
-        bl."IsModified",
-        bl."Notes",
-        bl."UpdatedAt"
+        bl."LineId"::INTEGER,
+        bl."BatchId"::INTEGER,
+        bl."EmployeeId"::BIGINT,
+        bl."EmployeeCode"::VARCHAR,
+        bl."EmployeeName"::VARCHAR,
+        bl."ConceptCode"::VARCHAR,
+        bl."ConceptName"::VARCHAR,
+        bl."ConceptType"::VARCHAR,
+        bl."Quantity"::NUMERIC,
+        bl."Amount"::NUMERIC,
+        bl."Total"::NUMERIC,
+        bl."IsModified"::BOOLEAN,
+        bl."Notes"::VARCHAR,
+        bl."UpdatedAt"::TIMESTAMP
     FROM hr."PayrollBatchLine" bl
     WHERE bl."BatchId"      = p_batch_id
       AND bl."EmployeeCode" = p_employee_code
@@ -715,12 +761,14 @@ END;
 $$;
 
 
--- ═══════════════════════════════════════════════════════════════
+-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 -- 8. usp_HR_Payroll_ApproveDraft
---    Aprueba un borrador de nómina.
--- ═══════════════════════════════════════════════════════════════
+--    Aprueba un borrador de nÃ³mina.
+-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+DROP FUNCTION IF EXISTS public.usp_HR_Payroll_ApproveDraft(INTEGER, INTEGER, INTEGER) CASCADE;
+DROP FUNCTION IF EXISTS public.usp_HR_Payroll_ApproveDraft(BIGINT, INTEGER, INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_ApproveDraft(
-    p_batch_id   INTEGER,
+    p_batch_id   BIGINT,
     p_approved_by INTEGER,
     p_user_id    INTEGER,
     OUT p_resultado INTEGER,
@@ -752,10 +800,10 @@ BEGIN
         RETURN;
     END IF;
 
-    -- Verificar que el lote tiene líneas
+    -- Verificar que el lote tiene lÃ­neas
     IF NOT EXISTS (SELECT 1 FROM hr."PayrollBatchLine" WHERE "BatchId" = p_batch_id) THEN
         p_resultado := -3;
-        p_mensaje   := 'No se puede aprobar un lote sin líneas.';
+        p_mensaje   := 'No se puede aprobar un lote sin lÃ­neas.';
         RETURN;
     END IF;
 
@@ -778,14 +826,16 @@ END;
 $$;
 
 
--- ═══════════════════════════════════════════════════════════════
+-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 -- 9. usp_HR_Payroll_ProcessBatch
 --    Procesa un lote aprobado: crea PayrollRun individuales.
---    Nota: el XML de líneas se construye como JSON en PostgreSQL
+--    Nota: el XML de lÃ­neas se construye como JSON en PostgreSQL
 --    para compatibilidad con usp_HR_Payroll_UpsertRun.
--- ═══════════════════════════════════════════════════════════════
+-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+DROP FUNCTION IF EXISTS public.usp_HR_Payroll_ProcessBatch(INTEGER, INTEGER) CASCADE;
+DROP FUNCTION IF EXISTS public.usp_HR_Payroll_ProcessBatch(BIGINT, INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_ProcessBatch(
-    p_batch_id  INTEGER,
+    p_batch_id  BIGINT,
     p_user_id   INTEGER,
     OUT p_procesados INTEGER,
     OUT p_errores    INTEGER,
@@ -854,7 +904,7 @@ BEGIN
             WHERE "BatchId" = p_batch_id
             GROUP BY "EmployeeCode"
         LOOP
-            -- Construir JSON de líneas para este empleado
+            -- Construir JSON de lÃ­neas para este empleado
             SELECT json_agg(
                 json_build_object(
                     'code',        "ConceptCode",
@@ -863,7 +913,7 @@ BEGIN
                     'qty',         "Quantity",
                     'amount',      "Amount",
                     'total',       "Total",
-                    'description', COALESCE("Notes", '')
+                    'description', COALESCE("Notes",''::VARCHAR)
                 )
             )::TEXT
             INTO v_lines_json
@@ -920,35 +970,31 @@ END;
 $$;
 
 
--- ═══════════════════════════════════════════════════════════════
+-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 -- 10. usp_HR_Payroll_ListBatches
---     Lista todos los lotes de nómina con paginación.
--- ═══════════════════════════════════════════════════════════════
+--     Lista todos los lotes de nÃ³mina con paginaciÃ³n.
+-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+DROP FUNCTION IF EXISTS public.usp_HR_Payroll_ListBatches(INTEGER, VARCHAR(20), VARCHAR(20), INTEGER, INTEGER) CASCADE;
+DROP FUNCTION IF EXISTS public.usp_HR_Payroll_ListBatches(INTEGER, VARCHAR(15), VARCHAR(20), INTEGER, INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_ListBatches(
     p_company_id   INTEGER,
-    p_payroll_code VARCHAR(15) DEFAULT NULL,
+    p_payroll_code VARCHAR(20) DEFAULT NULL,
     p_status       VARCHAR(20) DEFAULT NULL,
     p_offset       INTEGER     DEFAULT 0,
     p_limit        INTEGER     DEFAULT 25
 )
 RETURNS TABLE(
     p_total_count    BIGINT,
-    "BatchId"        INTEGER,
+    "BatchId"        BIGINT,
     "CompanyId"      INTEGER,
-    "BranchId"       INTEGER,
-    "PayrollCode"    VARCHAR(15),
+    "PayrollCode"    VARCHAR(20),
     "FromDate"       DATE,
     "ToDate"         DATE,
     "Status"         VARCHAR(20),
-    "TotalEmployees" INTEGER,
-    "TotalGross"     NUMERIC(18,2),
-    "TotalDeductions" NUMERIC(18,2),
-    "TotalNet"       NUMERIC(18,2),
-    "CreatedBy"      INTEGER,
+    "Notes"          VARCHAR(500),
     "CreatedAt"      TIMESTAMP,
-    "ApprovedBy"     INTEGER,
-    "ApprovedAt"     TIMESTAMP,
-    "UpdatedAt"      TIMESTAMP
+    "UpdatedAt"      TIMESTAMP,
+    "CreatedByUserId" INTEGER
 )
 LANGUAGE plpgsql
 AS $$
@@ -958,22 +1004,17 @@ BEGIN
         COUNT(*) OVER()  AS p_total_count,
         b."BatchId",
         b."CompanyId",
-        b."BranchId",
         b."PayrollCode",
         b."FromDate",
         b."ToDate",
         b."Status",
-        b."TotalEmployees",
-        b."TotalGross",
-        b."TotalDeductions",
-        b."TotalNet",
-        b."CreatedBy",
+        b."Notes",
         b."CreatedAt",
-        b."ApprovedBy",
-        b."ApprovedAt",
-        b."UpdatedAt"
+        b."UpdatedAt",
+        b."CreatedByUserId"
     FROM hr."PayrollBatch" b
     WHERE b."CompanyId" = p_company_id
+      AND b."IsDeleted" = FALSE
       AND (p_payroll_code IS NULL OR b."PayrollCode" = p_payroll_code)
       AND (p_status       IS NULL OR b."Status"      = p_status)
     ORDER BY b."CreatedAt" DESC
@@ -983,14 +1024,16 @@ END;
 $$;
 
 
--- ═══════════════════════════════════════════════════════════════
+-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 -- 11. usp_HR_Payroll_BatchBulkUpdate
---     Actualización masiva: aplica un concepto a múltiples empleados.
---     Nota: el parámetro XML de T-SQL se reemplaza por JSON array en PG.
+--     ActualizaciÃ³n masiva: aplica un concepto a mÃºltiples empleados.
+--     Nota: el parÃ¡metro XML de T-SQL se reemplaza por JSON array en PG.
 --     Formato JSON: '[{"code":"EMP001"},{"code":"EMP002"}]'
--- ═══════════════════════════════════════════════════════════════
+-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+DROP FUNCTION IF EXISTS public.usp_HR_Payroll_BatchBulkUpdate(INTEGER, VARCHAR(20), VARCHAR(15), NUMERIC(18,4), INTEGER, TEXT) CASCADE;
+DROP FUNCTION IF EXISTS public.usp_HR_Payroll_BatchBulkUpdate(BIGINT, VARCHAR(20), VARCHAR(15), NUMERIC(18,4), INTEGER, TEXT) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_BatchBulkUpdate(
-    p_batch_id       INTEGER,
+    p_batch_id       BIGINT,
     p_concept_code   VARCHAR(20),
     p_concept_type   VARCHAR(15),
     p_amount         NUMERIC(18,4),
@@ -1015,12 +1058,12 @@ BEGIN
         WHERE "BatchId" = p_batch_id AND "Status" = 'BORRADOR'
     ) THEN
         p_resultado := -1;
-        p_mensaje   := 'El lote no existe o no está en estado BORRADOR.';
+        p_mensaje   := 'El lote no existe o no estÃ¡ en estado BORRADOR.';
         RETURN;
     END IF;
 
     BEGIN
-        -- Actualizar líneas existentes que coincidan
+        -- Actualizar lÃ­neas existentes que coincidan
         UPDATE hr."PayrollBatchLine" bl
         SET "Amount"     = p_amount,
             "Total"      = bl."Quantity" * p_amount,
@@ -1050,7 +1093,7 @@ BEGIN
         WHERE "BatchId" = p_batch_id;
 
         p_resultado := 1;
-        p_mensaje   := p_affected_count::TEXT || ' líneas actualizadas.';
+        p_mensaje   := p_affected_count::TEXT || ' lÃ­neas actualizadas.';
 
     EXCEPTION WHEN OTHERS THEN
         p_resultado := -99;
@@ -1059,4 +1102,62 @@ BEGIN
 END;
 $$;
 
--- ═══ sp_nomina_batch.sql completado exitosamente ═══
+-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+-- WRAPPER: usp_HR_Payroll_GetDraftSummary
+-- La API llama "usp_HR_Payroll_GetDraftSummary" como funciÃ³n Ãºnica.
+-- Este wrapper devuelve la cabecera + totales en una sola fila.
+-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+DROP FUNCTION IF EXISTS public.usp_HR_Payroll_GetDraftSummary(BIGINT) CASCADE;
+DROP FUNCTION IF EXISTS public.usp_HR_Payroll_GetDraftSummary(INTEGER) CASCADE;
+CREATE OR REPLACE FUNCTION public.usp_HR_Payroll_GetDraftSummary(
+    p_batch_id BIGINT
+)
+RETURNS TABLE(
+    "BatchId"              INTEGER,
+    "CompanyId"            INTEGER,
+    "BranchId"             INTEGER,
+    "PayrollCode"          VARCHAR(15),
+    "FromDate"             DATE,
+    "ToDate"               DATE,
+    "Status"               VARCHAR(20),
+    "TotalEmployees"       INTEGER,
+    "TotalGross"           NUMERIC(18,2),
+    "TotalDeductions"      NUMERIC(18,2),
+    "TotalNet"             NUMERIC(18,2),
+    "CreatedBy"            INTEGER,
+    "CreatedAt"            TIMESTAMP,
+    "ApprovedBy"           INTEGER,
+    "ApprovedAt"           TIMESTAMP,
+    "PrevBatchId"          INTEGER,
+    "PrevTotalGross"       NUMERIC(18,2),
+    "PrevTotalDeductions"  NUMERIC(18,2),
+    "PrevTotalNet"         NUMERIC(18,2),
+    "NetChangePercent"     NUMERIC(8,2),
+    "totalAsignaciones"    NUMERIC,
+    "totalDeducciones"     NUMERIC,
+    "totalNeto"            NUMERIC,
+    "totalEmpleados"       BIGINT
+)
+LANGUAGE plpgsql AS $$
+BEGIN
+    RETURN QUERY
+    SELECT
+        h."BatchId", h."CompanyId", h."BranchId",
+        h."PayrollCode", h."FromDate", h."ToDate",
+        h."Status", h."TotalEmployees",
+        h."TotalGross", h."TotalDeductions", h."TotalNet",
+        h."CreatedBy", h."CreatedAt",
+        h."ApprovedBy", h."ApprovedAt",
+        h."PrevBatchId", h."PrevTotalGross",
+        h."PrevTotalDeductions", h."PrevTotalNet",
+        h."NetChangePercent",
+        -- Campos adicionales que la API consume como resumen
+        h."TotalGross"::NUMERIC       AS "totalAsignaciones",
+        h."TotalDeductions"::NUMERIC  AS "totalDeducciones",
+        h."TotalNet"::NUMERIC         AS "totalNeto",
+        h."TotalEmployees"::BIGINT    AS "totalEmpleados"
+    FROM public.usp_HR_Payroll_GetDraftSummary_Header(p_batch_id) h;
+END;
+$$;
+
+-- â•â•â• sp_nomina_batch.sql completado exitosamente â•â•â•

@@ -1,13 +1,19 @@
 ﻿import "dotenv/config";
+import { createServer } from "node:http";
 import cron from "node-cron";
 import { createApp } from "./app.js";
 import { warmUp } from "./modules/inventario/inventario-cache.js";
 import { getTasasBCV, triggerSyncTasas } from "./modules/config/service.js";
+import { attachFiscalRelayWs } from "./modules/pos/fiscal-relay.js";
+import { startNotificationConsumer, stopNotificationConsumer } from "./modules/integrations/kafka-notification-consumer.js";
 
 const port = Number(process.env.PORT || 4000);
 const app = await createApp();
 
-app.listen(port, () => {
+const httpServer = createServer(app);
+attachFiscalRelayWs(httpServer);
+
+httpServer.listen(port, () => {
   console.log(`[api] listening on :${port}`);
 
   // Pre-calentar caché de inventario (~64k artículos) en background
@@ -29,4 +35,33 @@ app.listen(port, () => {
   }, {
     timezone: "America/Caracas"
   });
+
+  // Kafka notification consumer — best-effort, no bloquea
+  startNotificationConsumer().catch(err =>
+    console.warn('[kafka-consumer] Failed to start:', err.message || err)
+  );
+
+  // Alertas automáticas del sistema — cada hora (minuto 15)
+  cron.schedule("15 * * * *", async () => {
+    try {
+      const { processSystemAlerts } = await import("./modules/sistema/alertas-automaticas.service.js");
+      const result = await processSystemAlerts();
+      if (result.generated > 0) {
+        console.log(`[cron] Alertas generadas: ${result.generated} (${result.checks.join(", ")})`);
+      }
+    } catch (err) {
+      console.error("[cron] Error en alertas automáticas:", err);
+    }
+  });
 });
+
+// Graceful shutdown
+for (const signal of ['SIGINT', 'SIGTERM'] as const) {
+  process.on(signal, async () => {
+    console.log(`[api] ${signal} received — shutting down`);
+    await stopNotificationConsumer();
+    const { obs } = await import("./modules/integrations/observability.js");
+    await obs.disconnect();
+    httpServer.close(() => process.exit(0));
+  });
+}

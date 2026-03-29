@@ -3,16 +3,14 @@ import React from 'react';
 import { Box, Avatar, Menu, MenuItem, ListItemIcon, Divider, Typography, Stack } from '@mui/material';
 import LogoutIcon from '@mui/icons-material/Logout';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
-import { signOut } from 'next-auth/react';
-import { useAuth } from '@zentto/shared-auth';
+import { appAwareSignOut, buildLoginCallbackUrl, useAuth } from '@zentto/shared-auth';
 import { apiGet } from '@zentto/shared-api';
 import { useRouter } from 'next/navigation';
-import type { SidebarFooterProps } from '@toolpad/core/DashboardLayout';
 import PerfilDrawer from './PerfilDrawer';
 
 export function ToolbarAccountOverride() { return null; }
 
-export default function SidebarFooterAccount({ mini }: SidebarFooterProps) {
+export default function SidebarFooterAccount({ mini }: { mini: boolean }) {
   const { userName, userId, isAdmin } = useAuth();
   const router = useRouter();
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
@@ -53,7 +51,7 @@ export default function SidebarFooterAccount({ mini }: SidebarFooterProps) {
   const open = Boolean(anchorEl);
   const handleClick = (e: React.MouseEvent<HTMLElement>) => setAnchorEl(e.currentTarget);
   const handleClose = () => setAnchorEl(null);
-  const handleLogout = async () => { handleClose(); await signOut({ redirect: false }); router.push('/authentication/login'); };
+  const handleLogout = async () => { handleClose(); await appAwareSignOut({ redirect: false, callbackUrl: buildLoginCallbackUrl() }); window.location.href = buildLoginCallbackUrl(); };
   const getInitials = (name: string | null) => name ? name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : '?';
 
   return (

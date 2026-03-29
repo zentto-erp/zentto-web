@@ -16,10 +16,13 @@ import {
   TablePagination,
   TableRow,
   TextField,
-  Typography
+  Typography,
+  Tooltip,
 } from "@mui/material";
 import { Add, Search, Visibility } from "@mui/icons-material";
 import { toDateOnly } from "@zentto/shared-api";
+import { DatePicker } from "@zentto/shared-ui";
+import dayjs from "dayjs";
 import { useTimezone } from "@zentto/shared-auth";
 import { useComprasList } from "../../../hooks/useCompras";
 
@@ -76,7 +79,7 @@ export default function ComprasTable() {
       <Paper sx={{ p: 2, mb: 2 }}>
         <Box sx={{ display: "grid", gap: 1.5, gridTemplateColumns: { xs: "1fr", md: "2fr 1fr 1fr" } }}>
           <TextField
-            size="small"
+           
             label="Buscar"
             placeholder="Numero, proveedor, rif"
             value={search}
@@ -92,27 +95,17 @@ export default function ComprasTable() {
               )
             }}
           />
-          <TextField
-            size="small"
-            type="date"
+          <DatePicker
             label="Desde"
-            InputLabelProps={{ shrink: true }}
-            value={fechaDesde}
-            onChange={(e) => {
-              setFechaDesde(e.target.value);
-              setPage(0);
-            }}
+            value={fechaDesde ? dayjs(fechaDesde) : null}
+            onChange={(v) => { setFechaDesde(v ? v.format('YYYY-MM-DD') : ''); setPage(0); }}
+            slotProps={{ textField: { size: 'small', fullWidth: true } }}
           />
-          <TextField
-            size="small"
-            type="date"
+          <DatePicker
             label="Hasta"
-            InputLabelProps={{ shrink: true }}
-            value={fechaHasta}
-            onChange={(e) => {
-              setFechaHasta(e.target.value);
-              setPage(0);
-            }}
+            value={fechaHasta ? dayjs(fechaHasta) : null}
+            onChange={(v) => { setFechaHasta(v ? v.format('YYYY-MM-DD') : ''); setPage(0); }}
+            slotProps={{ textField: { size: 'small', fullWidth: true } }}
           />
         </Box>
       </Paper>
@@ -151,9 +144,11 @@ export default function ComprasTable() {
                   </TableCell>
                   <TableCell align="right">{Number(row.TOTAL || 0).toFixed(2)}</TableCell>
                   <TableCell align="center">
-                    <IconButton size="small" onClick={() => router.push(`/compras/${encodeURIComponent(String(row.NUM_FACT))}`)}>
-                      <Visibility fontSize="small" />
-                    </IconButton>
+                    <Tooltip title="Ver detalle de compra">
+                      <IconButton size="small" onClick={() => router.push(`/compras/${encodeURIComponent(String(row.NUM_FACT))}`)}>
+                        <Visibility fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
                   </TableCell>
                 </TableRow>
               ))}

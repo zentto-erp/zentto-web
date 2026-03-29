@@ -16,6 +16,7 @@ import {
   IconButton,
   Divider,
   CircularProgress,
+  Tooltip,
 } from "@mui/material";
 import Grid from "@mui/material/Grid2";
 import { DateCalendar } from "@mui/x-date-pickers/DateCalendar";
@@ -304,9 +305,11 @@ export default function VacacionesCalendarPage() {
                             <Typography variant="body2">
                               {dayjs(d).format("dddd, D [de] MMMM YYYY")}
                             </Typography>
-                            <IconButton size="small" onClick={() => handleRemoveDay(d)}>
-                              <DeleteIcon fontSize="small" />
-                            </IconButton>
+                            <Tooltip title="Quitar dia">
+                              <IconButton size="small" onClick={() => handleRemoveDay(d)}>
+                                <DeleteIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
                           </Stack>
                         ))}
                       </Stack>

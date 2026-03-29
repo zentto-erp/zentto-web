@@ -3,24 +3,24 @@
 -- E-commerce product variants functions
 -- ============================================================
 
-/*  ═══════════════════════════════════════════════════════════════
-    usp_ecommerce_variants.sql — Variantes de Producto + Atributos por Industria
+/*  â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    usp_ecommerce_variants.sql â€” Variantes de Producto + Atributos por Industria
     Tablas nuevas: store."ProductVariantGroup", store."ProductVariantOption",
                    store."ProductVariant", store."ProductVariantOptionValue",
                    store."IndustryTemplate", store."IndustryTemplateAttribute",
                    store."ProductAttribute"
     Columnas nuevas en master."Product": "IsVariantParent", "ParentProductCode",
                                          "IndustryTemplateCode"
-    ═══════════════════════════════════════════════════════════════ */
+    â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 
--- ═══════════════════════════════════════════════════════════════
+-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 -- Crear schema store si no existe
--- ═══════════════════════════════════════════════════════════════
+-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 CREATE SCHEMA IF NOT EXISTS store;
 
--- ═══════════════════════════════════════════════════════════════
--- PARTE 1: DDL — Columnas nuevas en master."Product"
--- ═══════════════════════════════════════════════════════════════
+-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+-- PARTE 1: DDL â€” Columnas nuevas en master."Product"
+-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 DO $$
 BEGIN
@@ -47,11 +47,11 @@ BEGIN
 END
 $$;
 
--- ═══════════════════════════════════════════════════════════════
--- PARTE 2: DDL — Tablas de variantes
--- ═══════════════════════════════════════════════════════════════
+-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+-- PARTE 2: DDL â€” Tablas de variantes
+-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
--- 2a. Grupos de variación (Color, Talla, Capacidad...)
+-- 2a. Grupos de variaciÃ³n (Color, Talla, Capacidad...)
 CREATE TABLE IF NOT EXISTS store."ProductVariantGroup" (
     "VariantGroupId"   SERIAL PRIMARY KEY,
     "CompanyId"        INT            NOT NULL DEFAULT 1,
@@ -118,9 +118,9 @@ CREATE TABLE IF NOT EXISTS store."ProductVariantOptionValue" (
     CONSTRAINT "UQ_PVOV" UNIQUE ("ProductVariantId", "VariantOptionId")
 );
 
--- ═══════════════════════════════════════════════════════════════
--- PARTE 3: DDL — Tablas de atributos por industria
--- ═══════════════════════════════════════════════════════════════
+-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+-- PARTE 3: DDL â€” Tablas de atributos por industria
+-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 -- 3a. Plantillas de industria
 CREATE TABLE IF NOT EXISTS store."IndustryTemplate" (
@@ -137,7 +137,7 @@ CREATE TABLE IF NOT EXISTS store."IndustryTemplate" (
     CONSTRAINT "UQ_IndustryTemplate_Code" UNIQUE ("CompanyId", "TemplateCode")
 );
 
--- 3b. Definición de atributos por plantilla
+-- 3b. DefiniciÃ³n de atributos por plantilla
 CREATE TABLE IF NOT EXISTS store."IndustryTemplateAttribute" (
     "TemplateAttributeId" SERIAL PRIMARY KEY,
     "CompanyId"           INT            NOT NULL DEFAULT 1,
@@ -180,13 +180,13 @@ CREATE TABLE IF NOT EXISTS store."ProductAttribute" (
 CREATE INDEX IF NOT EXISTS "IX_ProductAttribute_Product"
     ON store."ProductAttribute" ("CompanyId", "ProductCode", "IsDeleted", "IsActive");
 
--- ═══════════════════════════════════════════════════════════════
--- PARTE 4: SEED — Plantillas de industria con atributos
--- ═══════════════════════════════════════════════════════════════
+-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+-- PARTE 4: SEED â€” Plantillas de industria con atributos
+-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 -- 4a. Plantillas
 INSERT INTO store."IndustryTemplate" ("CompanyId", "TemplateCode", "TemplateName", "Description", "IconName", "SortOrder")
-VALUES (1, 'FARMACIA', 'Farmacia', 'Medicamentos, suplementos y productos farmacéuticos', 'LocalPharmacy', 1)
+VALUES (1, 'FARMACIA', 'Farmacia', 'Medicamentos, suplementos y productos farmacÃ©uticos', 'LocalPharmacy', 1)
 ON CONFLICT ON CONSTRAINT "UQ_IndustryTemplate_Code" DO NOTHING;
 
 INSERT INTO store."IndustryTemplate" ("CompanyId", "TemplateCode", "TemplateName", "Description", "IconName", "SortOrder")
@@ -194,7 +194,7 @@ VALUES (1, 'ROPA', 'Ropa y Calzado', 'Prendas de vestir, calzado y accesorios de
 ON CONFLICT ON CONSTRAINT "UQ_IndustryTemplate_Code" DO NOTHING;
 
 INSERT INTO store."IndustryTemplate" ("CompanyId", "TemplateCode", "TemplateName", "Description", "IconName", "SortOrder")
-VALUES (1, 'ELECTRONICA', 'Electrónica', 'Dispositivos electrónicos, componentes y accesorios', 'Devices', 3)
+VALUES (1, 'ELECTRONICA', 'ElectrÃ³nica', 'Dispositivos electrÃ³nicos, componentes y accesorios', 'Devices', 3)
 ON CONFLICT ON CONSTRAINT "UQ_IndustryTemplate_Code" DO NOTHING;
 
 INSERT INTO store."IndustryTemplate" ("CompanyId", "TemplateCode", "TemplateName", "Description", "IconName", "SortOrder")
@@ -203,44 +203,44 @@ ON CONFLICT ON CONSTRAINT "UQ_IndustryTemplate_Code" DO NOTHING;
 
 -- 4b. Atributos de FARMACIA
 INSERT INTO store."IndustryTemplateAttribute" ("CompanyId", "TemplateCode", "AttributeKey", "AttributeLabel", "DataType", "IsRequired", "DisplayGroup", "SortOrder") VALUES
-(1, 'FARMACIA', 'PrincipioActivo',     'Principio Activo',        'TEXT',    TRUE,  'Composición',          1),
-(1, 'FARMACIA', 'Concentracion',        'Concentración',           'TEXT',    TRUE,  'Composición',          2),
-(1, 'FARMACIA', 'FormaFarmaceutica',    'Forma Farmacéutica',      'LIST',    TRUE,  'Presentación',         3),
-(1, 'FARMACIA', 'ViaAdministracion',    'Vía de Administración',   'LIST',    FALSE, 'Presentación',         4),
+(1, 'FARMACIA', 'PrincipioActivo',     'Principio Activo',        'TEXT',    TRUE,  'ComposiciÃ³n',          1),
+(1, 'FARMACIA', 'Concentracion',        'ConcentraciÃ³n',           'TEXT',    TRUE,  'ComposiciÃ³n',          2),
+(1, 'FARMACIA', 'FormaFarmaceutica',    'Forma FarmacÃ©utica',      'LIST',    TRUE,  'PresentaciÃ³n',         3),
+(1, 'FARMACIA', 'ViaAdministracion',    'VÃ­a de AdministraciÃ³n',   'LIST',    FALSE, 'PresentaciÃ³n',         4),
 (1, 'FARMACIA', 'RegistroSanitario',    'Registro Sanitario',      'TEXT',    TRUE,  'Regulatorio',          5),
 (1, 'FARMACIA', 'Laboratorio',          'Laboratorio Fabricante',  'TEXT',    TRUE,  'Regulatorio',          6),
 (1, 'FARMACIA', 'RequiereReceta',       'Requiere Receta',         'BOOLEAN', TRUE,  'Regulatorio',          7),
 (1, 'FARMACIA', 'FechaVencimiento',     'Fecha de Vencimiento',    'DATE',    FALSE, 'Control de Lote',      8),
-(1, 'FARMACIA', 'Lote',                 'Número de Lote',          'TEXT',    FALSE, 'Control de Lote',      9),
-(1, 'FARMACIA', 'Contraindicaciones',   'Contraindicaciones Clave','TEXT',    FALSE, 'Información Clínica', 10)
+(1, 'FARMACIA', 'Lote',                 'NÃºmero de Lote',          'TEXT',    FALSE, 'Control de Lote',      9),
+(1, 'FARMACIA', 'Contraindicaciones',   'Contraindicaciones Clave','TEXT',    FALSE, 'InformaciÃ³n ClÃ­nica', 10)
 ON CONFLICT ON CONSTRAINT "UQ_TemplateAttribute_Key" DO NOTHING;
 
 -- Opciones LIST para FARMACIA
 UPDATE store."IndustryTemplateAttribute"
-SET "ListOptions" = '["Tableta","Cápsula","Jarabe","Solución inyectable","Crema","Gel","Supositorio","Gotas","Aerosol","Parche transdérmico","Polvo para suspensión"]'
+SET "ListOptions" = '["Tableta","CÃ¡psula","Jarabe","SoluciÃ³n inyectable","Crema","Gel","Supositorio","Gotas","Aerosol","Parche transdÃ©rmico","Polvo para suspensiÃ³n"]'
 WHERE "TemplateCode" = 'FARMACIA' AND "AttributeKey" = 'FormaFarmaceutica' AND "CompanyId" = 1 AND "ListOptions" IS NULL;
 
 UPDATE store."IndustryTemplateAttribute"
-SET "ListOptions" = '["Oral","Intravenosa","Intramuscular","Subcutánea","Tópica","Rectal","Oftálmica","Ótica","Nasal","Inhalatoria","Sublingual"]'
+SET "ListOptions" = '["Oral","Intravenosa","Intramuscular","SubcutÃ¡nea","TÃ³pica","Rectal","OftÃ¡lmica","Ã“tica","Nasal","Inhalatoria","Sublingual"]'
 WHERE "TemplateCode" = 'FARMACIA' AND "AttributeKey" = 'ViaAdministracion' AND "CompanyId" = 1 AND "ListOptions" IS NULL;
 
 -- 4c. Atributos de ROPA
 INSERT INTO store."IndustryTemplateAttribute" ("CompanyId", "TemplateCode", "AttributeKey", "AttributeLabel", "DataType", "IsRequired", "DisplayGroup", "SortOrder") VALUES
-(1, 'ROPA', 'Material',             'Material / Composición',    'TEXT',    TRUE,  'Composición',    1),
-(1, 'ROPA', 'Genero',               'Género',                    'LIST',    TRUE,  'Clasificación',  2),
-(1, 'ROPA', 'Temporada',            'Temporada',                 'LIST',    FALSE, 'Clasificación',  3),
-(1, 'ROPA', 'PaisOrigen',           'País de Origen',            'TEXT',    FALSE, 'Origen',         4),
+(1, 'ROPA', 'Material',             'Material / ComposiciÃ³n',    'TEXT',    TRUE,  'ComposiciÃ³n',    1),
+(1, 'ROPA', 'Genero',               'GÃ©nero',                    'LIST',    TRUE,  'ClasificaciÃ³n',  2),
+(1, 'ROPA', 'Temporada',            'Temporada',                 'LIST',    FALSE, 'ClasificaciÃ³n',  3),
+(1, 'ROPA', 'PaisOrigen',           'PaÃ­s de Origen',            'TEXT',    FALSE, 'Origen',         4),
 (1, 'ROPA', 'InstruccionesLavado',  'Instrucciones de Lavado',   'TEXT',    FALSE, 'Cuidado',        5),
-(1, 'ROPA', 'TipoPrenda',           'Tipo de Prenda',            'TEXT',    FALSE, 'Clasificación',  6),
-(1, 'ROPA', 'Ajuste',               'Ajuste / Fit',              'LIST',    FALSE, 'Clasificación',  7)
+(1, 'ROPA', 'TipoPrenda',           'Tipo de Prenda',            'TEXT',    FALSE, 'ClasificaciÃ³n',  6),
+(1, 'ROPA', 'Ajuste',               'Ajuste / Fit',              'LIST',    FALSE, 'ClasificaciÃ³n',  7)
 ON CONFLICT ON CONSTRAINT "UQ_TemplateAttribute_Key" DO NOTHING;
 
 UPDATE store."IndustryTemplateAttribute"
-SET "ListOptions" = '["Hombre","Mujer","Unisex","Niño","Niña"]'
+SET "ListOptions" = '["Hombre","Mujer","Unisex","NiÃ±o","NiÃ±a"]'
 WHERE "TemplateCode" = 'ROPA' AND "AttributeKey" = 'Genero' AND "CompanyId" = 1 AND "ListOptions" IS NULL;
 
 UPDATE store."IndustryTemplateAttribute"
-SET "ListOptions" = '["Primavera/Verano","Otoño/Invierno","Todo el año"]'
+SET "ListOptions" = '["Primavera/Verano","OtoÃ±o/Invierno","Todo el aÃ±o"]'
 WHERE "TemplateCode" = 'ROPA' AND "AttributeKey" = 'Temporada' AND "CompanyId" = 1 AND "ListOptions" IS NULL;
 
 UPDATE store."IndustryTemplateAttribute"
@@ -249,34 +249,34 @@ WHERE "TemplateCode" = 'ROPA' AND "AttributeKey" = 'Ajuste' AND "CompanyId" = 1 
 
 -- 4d. Atributos de ELECTRONICA
 INSERT INTO store."IndustryTemplateAttribute" ("CompanyId", "TemplateCode", "AttributeKey", "AttributeLabel", "DataType", "IsRequired", "DisplayGroup", "SortOrder") VALUES
-(1, 'ELECTRONICA', 'Voltaje',                'Voltaje',                 'TEXT',    FALSE, 'Eléctrico',        1),
-(1, 'ELECTRONICA', 'Potencia',               'Potencia (W)',            'NUMBER',  FALSE, 'Eléctrico',        2),
+(1, 'ELECTRONICA', 'Voltaje',                'Voltaje',                 'TEXT',    FALSE, 'ElÃ©ctrico',        1),
+(1, 'ELECTRONICA', 'Potencia',               'Potencia (W)',            'NUMBER',  FALSE, 'ElÃ©ctrico',        2),
 (1, 'ELECTRONICA', 'Conectividad',           'Conectividad',            'TEXT',    FALSE, 'Conectividad',     3),
 (1, 'ELECTRONICA', 'SistemaOperativo',       'Sistema Operativo',       'TEXT',    FALSE, 'Software',         4),
 (1, 'ELECTRONICA', 'Capacidad',              'Capacidad de Almacenamiento', 'TEXT', FALSE, 'Almacenamiento', 5),
-(1, 'ELECTRONICA', 'Resolucion',             'Resolución',              'TEXT',    FALSE, 'Pantalla',         6),
-(1, 'ELECTRONICA', 'CertificacionesTecnicas','Certificaciones Técnicas','TEXT',    FALSE, 'Regulatorio',      7)
+(1, 'ELECTRONICA', 'Resolucion',             'ResoluciÃ³n',              'TEXT',    FALSE, 'Pantalla',         6),
+(1, 'ELECTRONICA', 'CertificacionesTecnicas','Certificaciones TÃ©cnicas','TEXT',    FALSE, 'Regulatorio',      7)
 ON CONFLICT ON CONSTRAINT "UQ_TemplateAttribute_Key" DO NOTHING;
 
 -- 4e. Atributos de ALIMENTOS
 INSERT INTO store."IndustryTemplateAttribute" ("CompanyId", "TemplateCode", "AttributeKey", "AttributeLabel", "DataType", "IsRequired", "DisplayGroup", "SortOrder") VALUES
-(1, 'ALIMENTOS', 'Ingredientes',             'Ingredientes',                'TEXT',    TRUE,  'Composición',          1),
-(1, 'ALIMENTOS', 'InformacionNutricional',   'Información Nutricional',     'TEXT',    FALSE, 'Composición',          2),
-(1, 'ALIMENTOS', 'Alergenos',                'Alérgenos',                   'TEXT',    FALSE, 'Composición',          3),
-(1, 'ALIMENTOS', 'PesoNeto',                 'Peso Neto',                   'TEXT',    TRUE,  'Presentación',         4),
+(1, 'ALIMENTOS', 'Ingredientes',             'Ingredientes',                'TEXT',    TRUE,  'ComposiciÃ³n',          1),
+(1, 'ALIMENTOS', 'InformacionNutricional',   'InformaciÃ³n Nutricional',     'TEXT',    FALSE, 'ComposiciÃ³n',          2),
+(1, 'ALIMENTOS', 'Alergenos',                'AlÃ©rgenos',                   'TEXT',    FALSE, 'ComposiciÃ³n',          3),
+(1, 'ALIMENTOS', 'PesoNeto',                 'Peso Neto',                   'TEXT',    TRUE,  'PresentaciÃ³n',         4),
 (1, 'ALIMENTOS', 'FechaVencimiento',         'Fecha de Vencimiento',        'DATE',    FALSE, 'Control de Lote',      5),
-(1, 'ALIMENTOS', 'Lote',                     'Número de Lote',              'TEXT',    FALSE, 'Control de Lote',      6),
+(1, 'ALIMENTOS', 'Lote',                     'NÃºmero de Lote',              'TEXT',    FALSE, 'Control de Lote',      6),
 (1, 'ALIMENTOS', 'RegistroSanitario',        'Registro Sanitario',          'TEXT',    TRUE,  'Regulatorio',          7),
-(1, 'ALIMENTOS', 'PaisOrigen',               'País de Origen',              'TEXT',    FALSE, 'Origen',               8),
-(1, 'ALIMENTOS', 'Organico',                 'Orgánico',                    'BOOLEAN', FALSE, 'Certificaciones',      9),
+(1, 'ALIMENTOS', 'PaisOrigen',               'PaÃ­s de Origen',              'TEXT',    FALSE, 'Origen',               8),
+(1, 'ALIMENTOS', 'Organico',                 'OrgÃ¡nico',                    'BOOLEAN', FALSE, 'Certificaciones',      9),
 (1, 'ALIMENTOS', 'SinGluten',                'Sin Gluten',                  'BOOLEAN', FALSE, 'Certificaciones',     10),
 (1, 'ALIMENTOS', 'SinLactosa',               'Sin Lactosa',                 'BOOLEAN', FALSE, 'Certificaciones',     11),
 (1, 'ALIMENTOS', 'CondicionesAlmacenamiento','Condiciones de Almacenamiento','TEXT',   FALSE, 'Almacenamiento',      12)
 ON CONFLICT ON CONSTRAINT "UQ_TemplateAttribute_Key" DO NOTHING;
 
--- ═══════════════════════════════════════════════════════════════
--- PARTE 5: SEED — Grupos de variación predefinidos
--- ═══════════════════════════════════════════════════════════════
+-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+-- PARTE 5: SEED â€” Grupos de variaciÃ³n predefinidos
+-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 INSERT INTO store."ProductVariantGroup" ("CompanyId", "GroupCode", "GroupName", "DisplayType", "SortOrder") VALUES
 (1, 'COLOR',      'Color',      'SWATCH',   1),
@@ -341,11 +341,11 @@ BEGIN
 END
 $$;
 
--- ═══════════════════════════════════════════════════════════════
--- PARTE 6: Funciones — Lectura de variantes y atributos
--- ═══════════════════════════════════════════════════════════════
+-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+-- PARTE 6: Funciones â€” Lectura de variantes y atributos
+-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
--- 6a. Listar grupos de variación
+-- 6a. Listar grupos de variaciÃ³n
 DROP FUNCTION IF EXISTS public.usp_store_variantgroup_list(INT);
 CREATE OR REPLACE FUNCTION public.usp_store_variantgroup_list(
     p_company_id INT DEFAULT 1
@@ -373,7 +373,7 @@ BEGIN
 END;
 $$;
 
--- 6b. Obtener opciones de un grupo de variación
+-- 6b. Obtener opciones de un grupo de variaciÃ³n
 DROP FUNCTION IF EXISTS public.usp_store_variantgroup_getoptions(INT, VARCHAR);
 CREATE OR REPLACE FUNCTION public.usp_store_variantgroup_getoptions(
     p_company_id  INT DEFAULT 1,

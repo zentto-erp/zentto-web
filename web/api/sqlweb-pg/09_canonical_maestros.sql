@@ -342,17 +342,8 @@ CREATE UNIQUE INDEX IF NOT EXISTS "UQ_CompanyProfile_CompanyId"
   ON cfg."CompanyProfile" ("CompanyId");
 
 -- ============================================================
--- SECCION 3: TABLA DE COMPATIBILIDAD public.AccesoUsuarios
--- ============================================================
-CREATE TABLE IF NOT EXISTS public."AccesoUsuarios" (
-  "Cod_Usuario" VARCHAR(20)  NOT NULL,
-  "Modulo"      VARCHAR(60)  NOT NULL,
-  "Permitido"   BOOLEAN      NOT NULL DEFAULT TRUE,
-  "CreatedAt"   TIMESTAMP    NOT NULL DEFAULT (NOW() AT TIME ZONE 'UTC'),
-  "UpdatedAt"   TIMESTAMP    NOT NULL DEFAULT (NOW() AT TIME ZONE 'UTC'),
-  PRIMARY KEY ("Cod_Usuario", "Modulo")
-);
-
+-- NOTA: public."AccesoUsuarios" eliminada (2026-03-16).
+-- Los permisos de modulo deben residir en sec.* o cfg.*.
 -- ============================================================
 -- Inicializar perfil DEFAULT de empresa
 -- ============================================================
@@ -547,44 +538,9 @@ BEGIN
       ('VE', '2026-12-31', 'Fin de Anio',                       TRUE);
   END IF;
 
-  -- AccesoUsuarios seed para SUP
-  IF EXISTS (SELECT 1 FROM sec."User" WHERE "UserCode" = 'SUP' AND "IsDeleted" = FALSE)
-    AND NOT EXISTS (SELECT 1 FROM public."AccesoUsuarios" WHERE "Cod_Usuario" = 'SUP')
-  THEN
-    INSERT INTO public."AccesoUsuarios" ("Cod_Usuario", "Modulo", "Permitido") VALUES
-      ('SUP', 'dashboard',         TRUE), ('SUP', 'clientes',         TRUE),
-      ('SUP', 'proveedores',       TRUE), ('SUP', 'inventario',       TRUE),
-      ('SUP', 'articulos',         TRUE), ('SUP', 'facturas',         TRUE),
-      ('SUP', 'documentos-venta',  TRUE), ('SUP', 'documentos-compra',TRUE),
-      ('SUP', 'pedidos',           TRUE), ('SUP', 'cotizaciones',     TRUE),
-      ('SUP', 'presupuestos',      TRUE), ('SUP', 'compras',          TRUE),
-      ('SUP', 'abonos',            TRUE), ('SUP', 'pagos',            TRUE),
-      ('SUP', 'cxc',               TRUE), ('SUP', 'cxp',              TRUE),
-      ('SUP', 'contabilidad',      TRUE), ('SUP', 'cuentas',          TRUE),
-      ('SUP', 'bancos',            TRUE), ('SUP', 'nomina',           TRUE),
-      ('SUP', 'empleados',         TRUE), ('SUP', 'almacen',          TRUE),
-      ('SUP', 'categorias',        TRUE), ('SUP', 'marcas',           TRUE),
-      ('SUP', 'unidades',          TRUE), ('SUP', 'vendedores',       TRUE),
-      ('SUP', 'centro-costo',      TRUE), ('SUP', 'retenciones',      TRUE),
-      ('SUP', 'movinvent',         TRUE), ('SUP', 'config',           TRUE),
-      ('SUP', 'settings',          TRUE), ('SUP', 'reportes',         TRUE),
-      ('SUP', 'pos',               TRUE), ('SUP', 'restaurante',      TRUE),
-      ('SUP', 'fiscal',            TRUE), ('SUP', 'sistema',          TRUE),
-      ('SUP', 'usuarios',          TRUE), ('SUP', 'supervision',      TRUE),
-      ('SUP', 'media',             TRUE), ('SUP', 'empresa',          TRUE);
-  END IF;
-
-  -- AccesoUsuarios seed para OPERADOR
-  IF EXISTS (SELECT 1 FROM sec."User" WHERE "UserCode" = 'OPERADOR' AND "IsDeleted" = FALSE)
-    AND NOT EXISTS (SELECT 1 FROM public."AccesoUsuarios" WHERE "Cod_Usuario" = 'OPERADOR')
-  THEN
-    INSERT INTO public."AccesoUsuarios" ("Cod_Usuario", "Modulo", "Permitido") VALUES
-      ('OPERADOR', 'dashboard',    TRUE), ('OPERADOR', 'facturas',     TRUE),
-      ('OPERADOR', 'clientes',     TRUE), ('OPERADOR', 'inventario',   TRUE),
-      ('OPERADOR', 'articulos',    TRUE), ('OPERADOR', 'pagos',        TRUE),
-      ('OPERADOR', 'abonos',       TRUE), ('OPERADOR', 'pos',          TRUE),
-      ('OPERADOR', 'restaurante',  TRUE), ('OPERADOR', 'reportes',     TRUE);
-  END IF;
+  -- NOTA: Seed de AccesoUsuarios eliminado (2026-03-16).
+  -- La tabla public."AccesoUsuarios" fue removida. Los permisos
+  -- de modulo deben gestionarse en sec.* o cfg.*.
 
 END $$;
 

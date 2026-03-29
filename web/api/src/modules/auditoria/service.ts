@@ -1,5 +1,5 @@
 import { callSp } from "../../db/query.js";
-import { getPool } from "../../db/mssql.js";
+import { env } from "../../config/env.js";
 import { getRequestScope } from "../../context/request-context.js";
 
 // ────────────────────────────────────────────────────────────
@@ -51,8 +51,17 @@ function resolveScope() {
   return { companyId, branchId };
 }
 
-/** Ejecuta SP y retorna todos los recordsets */
+const usePg = () => env.dbType === "postgres";
+
+/** Ejecuta SP y retorna todos los recordsets (SQL Server multi-recordset o PG flat) */
 async function callSpMulti(spName: string, inputs: Record<string, unknown>): Promise<any[][]> {
+  if (usePg()) {
+    // PG: callSp retorna un array plano; TotalCount viene en cada fila
+    const rows = await callSp<any>(spName, inputs);
+    return [rows]; // devolver como recordset[0]
+  }
+  // SQL Server: multi-recordset via mssql pool
+  const { getPool } = await import("../../db/mssql.js");
   const pool = await getPool();
   const request = pool.request();
   for (const [key, value] of Object.entries(inputs)) {
@@ -96,7 +105,7 @@ export async function listAuditLogs(filter: ListAuditLogsFilter) {
   const page = Math.max(1, Number(filter.page || 1));
   const limit = Math.min(500, Math.max(1, Number(filter.limit || 50)));
 
-  const recordsets = await callSpMulti("dbo.usp_Audit_Log_List", {
+  const spParams = {
     CompanyId: companyId,
     BranchId: branchId,
     FechaDesde: filter.fechaDesde || null,
@@ -108,8 +117,20 @@ export async function listAuditLogs(filter: ListAuditLogsFilter) {
     Search: filter.search || null,
     Page: page,
     Limit: limit,
-  });
+  };
 
+  if (usePg()) {
+    // PG: funcion retorna tabla plana con TotalCount en cada fila
+    const rows = await callSp<any>("usp_Audit_Log_List", spParams);
+    const total = rows[0]?.TotalCount ?? 0;
+    const data = rows.map((r: any) => {
+      const { TotalCount: _, ...rest } = r;
+      return rest;
+    });
+    return { data, total: Number(total), page, limit };
+  }
+
+  const recordsets = await callSpMulti("dbo.usp_Audit_Log_List", spParams);
   const total = recordsets[0]?.[0]?.TotalCount ?? 0;
   const data = recordsets[1] ?? [];
 
@@ -134,13 +155,25 @@ export async function getAuditLog(id: number) {
 export async function getDashboard(fechaDesde: string, fechaHasta: string) {
   const { companyId, branchId } = resolveScope();
 
-  const recordsets = await callSpMulti("dbo.usp_Audit_Dashboard_Resumen", {
+  const dashParams = {
     CompanyId: companyId,
     BranchId: branchId,
     FechaDesde: fechaDesde,
     FechaHasta: fechaHasta,
-  });
+  };
 
+  if (usePg()) {
+    // PG: 3 funciones separadas en lugar de 1 SP con 3 recordsets
+    const [totalesRows, modulosRows, ultimosRows] = await Promise.all([
+      callSp<any>("usp_Audit_Dashboard_Totales", dashParams),
+      callSp<any>("usp_Audit_Dashboard_TopModulos", dashParams),
+      callSp<any>("usp_Audit_Dashboard_UltimosLogs", dashParams),
+    ]);
+    const totales = totalesRows[0] ?? {};
+    return { ...totales, modulosActivos: modulosRows, ultimosLogs: ultimosRows };
+  }
+
+  const recordsets = await callSpMulti("dbo.usp_Audit_Dashboard_Resumen", dashParams);
   const totales = recordsets[0]?.[0] ?? {};
   const modulosActivos = recordsets[1] ?? [];
   const ultimosLogs = recordsets[2] ?? [];
@@ -157,15 +190,26 @@ export async function listFiscalRecords(filter: ListFiscalRecordsFilter) {
   const page = Math.max(1, Number(filter.page || 1));
   const limit = Math.min(500, Math.max(1, Number(filter.limit || 50)));
 
-  const recordsets = await callSpMulti("dbo.usp_Audit_FiscalRecord_List", {
+  const spParams = {
     CompanyId: companyId,
     BranchId: branchId,
     FechaDesde: filter.fechaDesde || null,
     FechaHasta: filter.fechaHasta || null,
     Page: page,
     Limit: limit,
-  });
+  };
 
+  if (usePg()) {
+    const rows = await callSp<any>("usp_Audit_FiscalRecord_List", spParams);
+    const total = rows[0]?.TotalCount ?? 0;
+    const data = rows.map((r: any) => {
+      const { TotalCount: _, ...rest } = r;
+      return rest;
+    });
+    return { data, total: Number(total), page, limit };
+  }
+
+  const recordsets = await callSpMulti("dbo.usp_Audit_FiscalRecord_List", spParams);
   const total = recordsets[0]?.[0]?.TotalCount ?? 0;
   const data = recordsets[1] ?? [];
 

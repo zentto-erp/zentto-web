@@ -83,7 +83,8 @@ export default function ArticuloDetallePage() {
                 Identificación
               </Typography>
               <FieldItem label="Código" value={articulo.codigo} />
-              <FieldItem label="Descripción" value={articulo.descripcion} />
+              <FieldItem label="Nombre" value={articulo.descripcion} />
+              <FieldItem label="Descripción Completa" value={articulo.descripcionCompleta} />
               <FieldItem label="Categoría" value={articulo.categoria} />
               <FieldItem label="Tipo" value={articulo.tipo} />
               <FieldItem label="Marca" value={articulo.marca} />
@@ -120,6 +121,17 @@ export default function ArticuloDetallePage() {
               <FieldItem label="PLU" value={articulo.plu} />
               <FieldItem label="N. Parte" value={articulo.nParte} />
             </Grid>
+
+            {(articulo as any).descripcionLarga && (
+              <Grid size={{ xs: 12 }}>
+                <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
+                  Descripción
+                </Typography>
+                <Typography variant="body2" sx={{ whiteSpace: "pre-wrap", color: "text.secondary" }}>
+                  {(articulo as any).descripcionLarga}
+                </Typography>
+              </Grid>
+            )}
           </Grid>
         </CardContent>
       </Card>

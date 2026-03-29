@@ -46,6 +46,7 @@
 :r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\usp_acct.sql
 :r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\usp_pay.sql
 :r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\usp_misc.sql
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\alter_bank_movement_journal.sql
 :r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\usp_ops.sql
 :r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\usp_util.sql
 :r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\usp_rest_admin.sql
@@ -54,11 +55,26 @@
 :r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\sp_crud_bancos.sql
 :r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\usp_fin_pettycash.sql
 :r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\usp_ecommerce.sql
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\29_fiscal_retenciones_schema.sql
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\09_inventory_advanced.sql
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\10_logistics.sql
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\11_crm.sql
+
+-- ====================================================================
+-- Nuevos Modulos: Inventario Avanzado, Logistica, CRM, Manufactura, Flota, RBAC
+-- ====================================================================
+:r includes/sp/usp_inv.sql
+:r includes/sp/usp_logistics.sql
+:r includes/sp/usp_crm.sql
+:r includes/sp/usp_mfg.sql
+:r includes/sp/usp_fleet.sql
+:r includes/sp/usp_rbac.sql
 
 -- ====================================================================
 -- RRHH: Beneficios, Obligaciones Legales, Salud Ocupacional
 -- ====================================================================
 :r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\sp_cfg_country.sql
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\sp_cfg_state_lookup.sql
 :r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\sp_rrhh_beneficios.sql
 :r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\sp_rrhh_obligaciones_legales.sql
 :r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\sp_rrhh_salud_ocupacional.sql
@@ -94,9 +110,37 @@
 :r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\usp_fiscal_tributaria.sql
 
 -- ====================================================================
+-- Flota: Control de Vehiculos, Combustible, Mantenimiento, Viajes
+-- ====================================================================
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\usp_fleet.sql
+
+-- ====================================================================
+-- RBAC: Permisos Granulares, Restricciones de Precio, Aprobaciones
+-- ====================================================================
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\usp_rbac.sql
+
+-- ====================================================================
+-- Inventario Avanzado: Almacenes, Zonas, Lotes, Seriales, Movimientos
+-- ====================================================================
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\usp_inv.sql
+
+-- ====================================================================
+-- Logistica: Transportistas, Recepciones, Devoluciones, Notas de Entrega
+-- ====================================================================
+:r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\usp_logistics.sql
+
+-- ====================================================================
 -- Seeds Demo: Datos completos para demos y pruebas
 -- ====================================================================
 :r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\seed_contabilidad_demo.sql
 :r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\seed_demo_clientes_documentos.sql
 :r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\seed_demo_finanzas_contabilidad.sql
 :r D:\DatqBoxWorkspace\DatqBoxWeb\web\api\sqlweb\includes\sp\seed_demo_ecommerce_pos.sql
+
+-- Seeds nuevos modulos
+:r includes/sp/seed_demo_inventario_avanzado.sql
+:r includes/sp/seed_demo_logistica.sql
+:r includes/sp/seed_demo_crm.sql
+:r includes/sp/seed_demo_manufactura.sql
+:r includes/sp/seed_demo_flota.sql
+:r includes/sp/seed_demo_rbac.sql

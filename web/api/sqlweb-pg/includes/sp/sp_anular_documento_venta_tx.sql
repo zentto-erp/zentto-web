@@ -5,6 +5,7 @@
 -- DEPRECATED: Usa tablas legacy
 -- =============================================
 
+DROP FUNCTION IF EXISTS sp_anular_documento_venta_tx(VARCHAR(60), VARCHAR(20), VARCHAR(60), VARCHAR(500), BOOLEAN) CASCADE;
 CREATE OR REPLACE FUNCTION sp_anular_documento_venta_tx(
     p_num_doc             VARCHAR(60),
     p_tipo_operacion      VARCHAR(20),
@@ -64,7 +65,7 @@ BEGIN
     -- Marcar como anulado
     UPDATE "DocumentosVenta" SET
         "ANULADA" = TRUE,
-        "OBSERV" = COALESCE("OBSERV", '') || ' [ANULADO: ' || TO_CHAR(v_fecha_anulacion, 'YYYY-MM-DD HH24:MI:SS') || COALESCE(' - ' || p_motivo, '') || ']'
+        "OBSERV" = COALESCE("OBSERV",''::VARCHAR) || ' [ANULADO: ' || TO_CHAR(v_fecha_anulacion, 'YYYY-MM-DD HH24:MI:SS') || COALESCE(' - ' || p_motivo,''::VARCHAR) || ']'
     WHERE "NUM_DOC" = p_num_doc AND "TIPO_OPERACION" = p_tipo_operacion;
 
     -- Anular detalle
@@ -108,7 +109,7 @@ BEGIN
         UPDATE "P_Cobrar" SET
             "ANULADA" = TRUE,
             "SALDO" = 0,
-            "OBSERVACION" = COALESCE("OBSERVACION", '') || ' [ANULADO]'
+            "OBSERVACION" = COALESCE("OBSERVACION",''::VARCHAR) || ' [ANULADO]'
         WHERE "FACTURA" = p_num_doc AND "ANULADA" = FALSE;
     END IF;
 

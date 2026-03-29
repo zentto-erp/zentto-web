@@ -1,0 +1,318 @@
+/**
+ * Manufactura Routes — /v1/manufactura
+ *
+ * BOMs, Work Centers, Routing, Work Orders
+ */
+import { Router, Request, Response } from "express";
+import * as svc from "./service.js";
+import { emitWorkOrderAccountingEntry } from "./mfg-contabilidad.service.js";
+import { obs } from "../integrations/observability.js";
+
+export const manufacturaRouter = Router();
+
+// ── Helper ───────────────────────────────────────────────────────────────────
+
+function userId(req: Request): number {
+  return (req as any).user?.userId ?? (req as any).user?.id ?? 0;
+}
+
+function intOrNull(v: unknown): number | null {
+  if (v === undefined || v === null || v === "") return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+//  BOMs
+// ═══════════════════════════════════════════════════════════════════════════════
+
+manufacturaRouter.get("/bom", async (req: Request, res: Response) => {
+  try {
+    const q = req.query;
+    const result = await svc.listBOMs({
+      status: (q.status as string) || undefined,
+      search: (q.search as string) || undefined,
+      page: q.page ? parseInt(q.page as string) : undefined,
+      limit: q.limit ? parseInt(q.limit as string) : undefined,
+    });
+    res.json(result);
+  } catch (err: any) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+manufacturaRouter.get("/bom/:id", async (req: Request, res: Response) => {
+  try {
+    const row = await svc.getBOM(Number(req.params.id));
+    if (!row) return res.status(404).json({ error: "not_found" });
+    res.json(row);
+  } catch (err: any) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+manufacturaRouter.post("/bom", async (req: Request, res: Response) => {
+  try {
+    const body = req.body;
+    const result = await svc.createBOM({
+      productId: body.productId,
+      bomCode: body.bomCode,
+      bomName: body.bomName,
+      outputQuantity: body.outputQuantity ?? body.expectedQuantity,
+      linesJson: body.lines ? JSON.stringify(body.lines) : null,
+      userId: userId(req),
+    });
+    if (result.success) {
+      try { obs.event('mfg.bom.created', { bomId: result.id, productId: body.productId, bomCode: body.bomCode, bomName: body.bomName, module: 'manufactura', userId: userId(req), userName: (req as any).user?.userName, companyId: (req as any).user?.companyId }); } catch { /* never blocks */ }
+    }
+    res.status(result.success ? 201 : 400).json(result);
+  } catch (err: any) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+manufacturaRouter.post("/bom/:id/activar", async (req: Request, res: Response) => {
+  try {
+    const result = await svc.activateBOM(Number(req.params.id), userId(req));
+    if (result.success) {
+      try { obs.audit('mfg.bom.activated', { userId: userId(req), userName: (req as any).user?.userName, companyId: (req as any).user?.companyId, module: 'manufactura', entity: 'BOM', entityId: Number(req.params.id) }); } catch { /* never blocks */ }
+    }
+    res.status(result.success ? 200 : 400).json(result);
+  } catch (err: any) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+manufacturaRouter.post("/bom/:id/obsoleto", async (req: Request, res: Response) => {
+  try {
+    const result = await svc.obsoleteBOM(Number(req.params.id), userId(req));
+    res.status(result.success ? 200 : 400).json(result);
+  } catch (err: any) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+//  CENTROS DE TRABAJO
+// ═══════════════════════════════════════════════════════════════════════════════
+
+manufacturaRouter.get("/centros-trabajo", async (req: Request, res: Response) => {
+  try {
+    const q = req.query;
+    const result = await svc.listWorkCenters({
+      search: (q.search as string) || undefined,
+      page: q.page ? parseInt(q.page as string) : undefined,
+      limit: q.limit ? parseInt(q.limit as string) : undefined,
+    });
+    res.json(result);
+  } catch (err: any) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+manufacturaRouter.post("/centros-trabajo", async (req: Request, res: Response) => {
+  try {
+    const result = await svc.upsertWorkCenter({ ...req.body, userId: userId(req) });
+    res.status(result.success ? 200 : 400).json(result);
+  } catch (err: any) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+//  ROUTING (rutas de produccion)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+manufacturaRouter.get("/bom/:id/rutas", async (req: Request, res: Response) => {
+  try {
+    const rows = await svc.listRouting(Number(req.params.id));
+    res.json(rows);
+  } catch (err: any) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+manufacturaRouter.post("/bom/:id/rutas", async (req: Request, res: Response) => {
+  try {
+    const result = await svc.upsertRouting(Number(req.params.id), {
+      ...req.body,
+      userId: userId(req),
+    });
+    res.status(result.success ? 200 : 400).json(result);
+  } catch (err: any) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+//  ORDENES DE TRABAJO
+// ═══════════════════════════════════════════════════════════════════════════════
+
+manufacturaRouter.get("/ordenes", async (req: Request, res: Response) => {
+  try {
+    const q = req.query;
+    const result = await svc.listWorkOrders({
+      status: (q.status as string) || undefined,
+      fechaDesde: (q.fechaDesde as string) || undefined,
+      fechaHasta: (q.fechaHasta as string) || undefined,
+      page: q.page ? parseInt(q.page as string) : undefined,
+      limit: q.limit ? parseInt(q.limit as string) : undefined,
+    });
+    res.json(result);
+  } catch (err: any) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+manufacturaRouter.get("/ordenes/:id", async (req: Request, res: Response) => {
+  try {
+    const row = await svc.getWorkOrder(Number(req.params.id));
+    if (!row) return res.status(404).json({ error: "not_found" });
+    res.json(row);
+  } catch (err: any) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+manufacturaRouter.post("/ordenes", async (req: Request, res: Response) => {
+  try {
+    const result = await svc.createWorkOrder({ ...req.body, userId: userId(req) });
+    if (result.success) {
+      try { obs.event('mfg.workorder.created', { workOrderId: result.id, workOrderNumber: result.WorkOrderNumber, bomId: req.body.bomId, productId: req.body.productId, plannedQuantity: req.body.plannedQuantity, priority: req.body.priority, module: 'manufactura', userId: userId(req), userName: (req as any).user?.userName, companyId: (req as any).user?.companyId }); } catch { /* never blocks */ }
+    }
+    res.status(result.success ? 201 : 400).json(result);
+  } catch (err: any) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+manufacturaRouter.post("/ordenes/:id/iniciar", async (req: Request, res: Response) => {
+  try {
+    const result = await svc.startWorkOrder(Number(req.params.id), userId(req));
+    if (result.success) {
+      try { obs.audit('mfg.workorder.started', { userId: userId(req), userName: (req as any).user?.userName, companyId: (req as any).user?.companyId, module: 'manufactura', entity: 'WorkOrder', entityId: Number(req.params.id) }); } catch { /* never blocks */ }
+    }
+    res.status(result.success ? 200 : 400).json(result);
+  } catch (err: any) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+manufacturaRouter.post("/ordenes/:id/consumir", async (req: Request, res: Response) => {
+  try {
+    const result = await svc.consumeMaterial(Number(req.params.id), {
+      ...req.body,
+      userId: userId(req),
+    });
+    if (result.success) {
+      try { obs.event('mfg.workorder.material_consumed', { workOrderId: Number(req.params.id), productId: req.body.productId, quantity: req.body.quantity, lotNumber: req.body.lotNumber, module: 'manufactura', userId: userId(req), userName: (req as any).user?.userName, companyId: (req as any).user?.companyId }); } catch { /* never blocks */ }
+    }
+    res.status(result.success ? 200 : 400).json(result);
+  } catch (err: any) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+manufacturaRouter.post("/ordenes/:id/reportar-salida", async (req: Request, res: Response) => {
+  try {
+    const result = await svc.reportOutput(Number(req.params.id), {
+      ...req.body,
+      userId: userId(req),
+    });
+    res.status(result.success ? 200 : 400).json(result);
+  } catch (err: any) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+manufacturaRouter.post("/ordenes/:id/completar", async (req: Request, res: Response) => {
+  try {
+    const result = await svc.completeWorkOrder(Number(req.params.id), userId(req));
+    if (!result.success) return res.status(400).json(result);
+
+    try { obs.audit('mfg.workorder.completed', { userId: userId(req), userName: (req as any).user?.userName, companyId: (req as any).user?.companyId, workOrderNumber: result.WorkOrderNumber, module: 'manufactura', entity: 'WorkOrder', entityId: Number(req.params.id) }); } catch { /* never blocks */ }
+
+    // Best-effort: contabilidad (nunca bloquea la operacion principal)
+    let contabilidad: { ok: boolean } = { ok: false };
+    try {
+      const codUsuario = String(userId(req));
+      const body = req.body ?? {};
+      contabilidad = await emitWorkOrderAccountingEntry({
+        workOrderNumber: String(result.WorkOrderNumber ?? `WO-${req.params.id}`),
+        productCode: String(body.productCode ?? ""),
+        completedQuantity: Number(body.completedQuantity ?? 0),
+        materialCost: Number(body.materialCost ?? 0),
+        laborCost: Number(body.laborCost ?? 0),
+        totalCost: Number(body.totalCost ?? 0),
+        fecha: new Date().toISOString().slice(0, 10),
+      }, codUsuario);
+    } catch { /* never blocks */ }
+
+    // Best-effort: stock movements (consume materials + produce finished goods)
+    let stock: { ok: boolean; materialsConsumed?: number; outputCreated?: boolean } = { ok: false };
+    try {
+      const { processWorkOrderStock } = await import("./mfg-integracion.service.js");
+      const scope = (req as any).user;
+      stock = await processWorkOrderStock({
+        companyId: scope?.companyId ?? 1,
+        branchId: scope?.branchId ?? 1,
+        workOrderId: Number(req.params.id),
+        userId: userId(req),
+      });
+    } catch { /* never blocks */ }
+
+    res.status(200).json({ ...result, contabilidad, stock });
+  } catch (err: any) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+manufacturaRouter.post("/ordenes/:id/cancelar", async (req: Request, res: Response) => {
+  try {
+    const result = await svc.cancelWorkOrder(Number(req.params.id), userId(req));
+    res.status(result.success ? 200 : 400).json(result);
+  } catch (err: any) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+//  ANALYTICS / DASHBOARD
+// ═══════════════════════════════════════════════════════════════════════════════
+
+manufacturaRouter.get("/dashboard", async (_req: Request, res: Response) => {
+  try {
+    const data = await svc.getAnalyticsDashboard();
+    if (!data) return res.status(404).json({ error: "no_data" });
+    res.json(data);
+  } catch (err: any) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+manufacturaRouter.get("/analytics/production-by-product", async (_req: Request, res: Response) => {
+  try {
+    const data = await svc.getProductionByProduct();
+    res.json(data);
+  } catch (err: any) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+manufacturaRouter.get("/analytics/orders-by-status", async (_req: Request, res: Response) => {
+  try {
+    const data = await svc.getOrdersByStatus();
+    res.json(data);
+  } catch (err: any) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+manufacturaRouter.get("/analytics/recent-orders", async (_req: Request, res: Response) => {
+  try {
+    const data = await svc.getRecentOrders();
+    res.json(data);
+  } catch (err: any) {
+    res.status(500).json({ error: String(err) });
+  }
+});

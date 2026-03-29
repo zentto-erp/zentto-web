@@ -1,4 +1,5 @@
 import React from 'react';
+import dynamic from 'next/dynamic';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import InventoryIcon from '@mui/icons-material/Inventory';
 import TuneIcon from '@mui/icons-material/Tune';
@@ -12,6 +13,8 @@ import MenuBookIcon from '@mui/icons-material/MenuBook';
 import LocalOfferIcon from '@mui/icons-material/LocalOffer';
 import WarehouseIcon from '@mui/icons-material/Warehouse';
 
+const PrintIcon = dynamic(() => import('@mui/icons-material/Print'), { ssr: false });
+
 export function buildNav(isAdmin: boolean, modulos: string[]): Array<Record<string, unknown>> {
     const nav: Array<Record<string, unknown>> = [];
     const has = (mod: string) => isAdmin || modulos.includes(mod);
@@ -20,12 +23,17 @@ export function buildNav(isAdmin: boolean, modulos: string[]): Array<Record<stri
         nav.push({ kind: 'header', title: 'Inventario' });
         nav.push({ kind: 'page', segment: '', title: 'Dashboard', icon: <DashboardIcon /> });
         nav.push({ kind: 'page', segment: 'articulos', title: 'Artículos', icon: <InventoryIcon /> });
-        nav.push({ kind: 'page', segment: 'ajuste', title: 'Ajuste de Inventario', icon: <TuneIcon /> });
+        nav.push({ kind: 'page', segment: 'ajuste', title: 'Ajuste de inventario', icon: <TuneIcon /> });
         nav.push({ kind: 'page', segment: 'movimientos', title: 'Movimientos', icon: <HistoryIcon /> });
         nav.push({ kind: 'page', segment: 'traslados', title: 'Traslados', icon: <SwapHorizIcon /> });
 
+        nav.push({ kind: 'header', title: 'Avanzado' });
+        nav.push({ kind: 'page', segment: 'seriales', title: 'Seriales', icon: <InventoryIcon /> });
+        nav.push({ kind: 'page', segment: 'lotes', title: 'Lotes', icon: <CategoryIcon /> });
+        nav.push({ kind: 'page', segment: 'almacenes-wms', title: 'Almacenes WMS', icon: <WarehouseIcon /> });
+
         nav.push({ kind: 'header', title: 'Reportes' });
-        nav.push({ kind: 'page', segment: 'reportes/libro', title: 'Libro de Inventario', icon: <MenuBookIcon /> });
+        nav.push({ kind: 'page', segment: 'reportes/libro', title: 'Libro de inventario', icon: <MenuBookIcon /> });
         nav.push({ kind: 'page', segment: 'etiquetas', title: 'Etiquetas', icon: <LocalOfferIcon /> });
 
         nav.push({ kind: 'header', title: 'Catálogos' });
@@ -34,6 +42,9 @@ export function buildNav(isAdmin: boolean, modulos: string[]): Array<Record<stri
         nav.push({ kind: 'page', segment: 'catalogos/lineas', title: 'Líneas', icon: <ListIcon /> });
         nav.push({ kind: 'page', segment: 'catalogos/unidades', title: 'Unidades', icon: <StraightenIcon /> });
         nav.push({ kind: 'page', segment: 'catalogos/almacenes', title: 'Almacenes', icon: <WarehouseIcon /> });
+
+        nav.push({ kind: 'divider' });
+        nav.push({ kind: 'page', segment: 'reportes', title: 'Reportes', icon: <PrintIcon /> });
     }
 
     return nav;

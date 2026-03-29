@@ -645,7 +645,7 @@ CREATE OR ALTER PROCEDURE dbo.usp_POS_WaitTicket_Create
     @DiscountAmount   DECIMAL(18,2)  = 0,
     @TaxAmount        DECIMAL(18,2)  = 0,
     @TotalAmount      DECIMAL(18,2)  = 0,
-    @Resultado        INT OUTPUT,
+    @Resultado        BIGINT OUTPUT,
     @Mensaje          NVARCHAR(500) OUTPUT
 AS
 BEGIN
@@ -674,7 +674,7 @@ GO
 --  Inserta una linea de ticket de espera.
 -- -----------------------------------------------------------------------------
 CREATE OR ALTER PROCEDURE dbo.usp_POS_WaitTicketLine_Insert
-    @WaitTicketId        INT,
+    @WaitTicketId        BIGINT,
     @LineNumber          INT,
     @CountryCode         NVARCHAR(5),
     @ProductId           INT            = NULL,
@@ -748,7 +748,7 @@ GO
 CREATE OR ALTER PROCEDURE dbo.usp_POS_WaitTicket_GetHeader
     @CompanyId    INT,
     @BranchId     INT,
-    @WaitTicketId INT
+    @WaitTicketId BIGINT
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -782,7 +782,7 @@ GO
 CREATE OR ALTER PROCEDURE dbo.usp_POS_WaitTicket_Recover
     @CompanyId            INT,
     @BranchId             INT,
-    @WaitTicketId         INT,
+    @WaitTicketId         BIGINT,
     @RecoveredByUserId    INT          = NULL,
     @RecoveredAtRegister  NVARCHAR(20) = NULL,
     @Resultado            INT OUTPUT,
@@ -811,7 +811,7 @@ GO
 --  Obtiene las lineas de un ticket de espera.
 -- -----------------------------------------------------------------------------
 CREATE OR ALTER PROCEDURE dbo.usp_POS_WaitTicketLine_GetItems
-    @WaitTicketId INT
+    @WaitTicketId BIGINT
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -842,7 +842,7 @@ GO
 CREATE OR ALTER PROCEDURE dbo.usp_POS_WaitTicket_Void
     @CompanyId    INT,
     @BranchId     INT,
-    @WaitTicketId INT,
+    @WaitTicketId BIGINT,
     @Resultado    INT OUTPUT,
     @Mensaje      NVARCHAR(500) OUTPUT
 AS
@@ -880,7 +880,7 @@ CREATE OR ALTER PROCEDURE dbo.usp_POS_SaleTicket_Create
     @PriceTier        NVARCHAR(50)   = N'Detal',
     @PaymentMethod    NVARCHAR(50)   = NULL,
     @FiscalPayload    NVARCHAR(MAX)  = NULL,
-    @WaitTicketId     INT            = NULL,
+    @WaitTicketId     BIGINT         = NULL,
     @NetAmount        DECIMAL(18,2)  = 0,
     @DiscountAmount   DECIMAL(18,2)  = 0,
     @TaxAmount        DECIMAL(18,2)  = 0,
@@ -914,7 +914,7 @@ GO
 --  Inserta una linea de ticket de venta.
 -- -----------------------------------------------------------------------------
 CREATE OR ALTER PROCEDURE dbo.usp_POS_SaleTicketLine_Insert
-    @SaleTicketId         INT,
+    @SaleTicketId         BIGINT,
     @LineNumber           INT,
     @CountryCode          NVARCHAR(5),
     @ProductId            INT            = NULL,
@@ -930,7 +930,7 @@ CREATE OR ALTER PROCEDURE dbo.usp_POS_SaleTicketLine_Insert
     @TotalAmount          DECIMAL(18,2),
     @SupervisorApprovalId INT            = NULL,
     @LineMetaJson         NVARCHAR(MAX)  = NULL,
-    @Resultado            INT OUTPUT,
+    @Resultado            BIGINT OUTPUT,
     @Mensaje              NVARCHAR(500) OUTPUT
 AS
 BEGIN
@@ -1458,10 +1458,10 @@ GO
 -- =============================================================================
 
 -- -----------------------------------------------------------------------------
---  usp_Inv_Movement_List
+--  usp_Movinvent_List (legacy master.InventoryMovement)
 --  Lista movimientos de inventario paginados.
 -- -----------------------------------------------------------------------------
-CREATE OR ALTER PROCEDURE dbo.usp_Inv_Movement_List
+CREATE OR ALTER PROCEDURE dbo.usp_Movinvent_List
     @Search     NVARCHAR(200) = NULL,
     @Tipo       NVARCHAR(50)  = NULL,
     @Offset     INT = 0,
@@ -2160,6 +2160,8 @@ BEGIN
     SET NOCOUNT ON;
 
     SELECT
+        ba.BankAccountId,
+        ba.BankId,
         ba.AccountNumber    AS Nro_Cta,
         b.BankName          AS Banco,
         ba.AccountName      AS Descripcion,
@@ -2223,6 +2225,178 @@ BEGIN
       AND (@ToDate   IS NULL OR m.MovementDate <= @ToDate)
     ORDER BY m.MovementDate DESC, m.BankMovementId DESC
     OFFSET @Offset ROWS FETCH NEXT @Limit ROWS ONLY;
+END;
+GO
+
+-- =============================================================================
+-- usp_Bank_Movement_LinkJournalEntry
+-- Vincula un movimiento bancario con un asiento contable autogenerado.
+-- =============================================================================
+CREATE OR ALTER PROCEDURE dbo.usp_Bank_Movement_LinkJournalEntry
+    @MovementId      BIGINT,
+    @JournalEntryId  BIGINT,
+    @Resultado       INT           OUTPUT,
+    @Mensaje         NVARCHAR(500) OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET @Resultado = 0;
+    SET @Mensaje   = N'';
+
+    IF NOT EXISTS (SELECT 1 FROM fin.BankMovement WHERE BankMovementId = @MovementId)
+    BEGIN
+        SET @Resultado = 0;
+        SET @Mensaje   = N'Movimiento no encontrado';
+        RETURN;
+    END;
+
+    UPDATE fin.BankMovement
+    SET JournalEntryId = @JournalEntryId
+    WHERE BankMovementId = @MovementId;
+
+    SET @Resultado = 1;
+    SET @Mensaje   = N'OK';
+END;
+GO
+
+-- =============================================================================
+-- usp_Bank_Reconciliation_GetLinkedEntries
+-- Obtiene asientos contables vinculados a una conciliación bancaria.
+-- Busca por: BankMovement.JournalEntryId + acct.DocumentLink(BANCOS/CONCILIACION).
+-- =============================================================================
+CREATE OR ALTER PROCEDURE dbo.usp_Bank_Reconciliation_GetLinkedEntries
+    @ReconciliationId BIGINT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT DISTINCT
+        je.JournalEntryId,
+        je.EntryNumber,
+        je.EntryDate,
+        je.Concept,
+        je.TotalDebit,
+        je.TotalCredit,
+        je.[Status],
+        je.SourceModule,
+        je.SourceDocumentNo
+    FROM fin.BankMovement m
+    INNER JOIN acct.JournalEntry je ON je.JournalEntryId = m.JournalEntryId
+    WHERE m.ReconciliationId = @ReconciliationId
+      AND m.JournalEntryId IS NOT NULL
+      AND je.IsDeleted = 0
+
+    UNION
+
+    SELECT
+        je2.JournalEntryId,
+        je2.EntryNumber,
+        je2.EntryDate,
+        je2.Concept,
+        je2.TotalDebit,
+        je2.TotalCredit,
+        je2.[Status],
+        je2.SourceModule,
+        je2.SourceDocumentNo
+    FROM acct.DocumentLink dl
+    INNER JOIN acct.JournalEntry je2 ON je2.JournalEntryId = dl.JournalEntryId
+    WHERE dl.ModuleCode       = N'BANCOS'
+      AND dl.DocumentType     = N'CONCILIACION'
+      AND dl.NativeDocumentId = @ReconciliationId
+      AND je2.IsDeleted = 0
+
+    ORDER BY EntryDate DESC, JournalEntryId DESC;
+END;
+GO
+
+-- ============================================================================
+--  CRUD: fin.BankAccount
+-- ============================================================================
+
+CREATE OR ALTER PROCEDURE dbo.usp_Bank_Account_Insert
+    @CompanyId       INT,
+    @BranchId        INT,
+    @BankId          BIGINT,
+    @AccountNumber   NVARCHAR(40),
+    @AccountName     NVARCHAR(150),
+    @CurrencyCode    CHAR(3),
+    @UserId          INT = NULL,
+    @Resultado       BIT OUTPUT,
+    @Mensaje         NVARCHAR(250) OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF EXISTS (SELECT 1 FROM fin.BankAccount WHERE CompanyId=@CompanyId AND AccountNumber=@AccountNumber)
+    BEGIN
+        SET @Resultado = 0;
+        SET @Mensaje = N'Ya existe una cuenta con ese número';
+        RETURN;
+    END
+
+    INSERT INTO fin.BankAccount(CompanyId, BranchId, BankId, AccountNumber, AccountName, CurrencyCode, CreatedByUserId, UpdatedByUserId)
+    VALUES (@CompanyId, @BranchId, @BankId, @AccountNumber, @AccountName, @CurrencyCode, @UserId, @UserId);
+
+    SET @Resultado = 1;
+    SET @Mensaje = N'Cuenta creada correctamente';
+END;
+GO
+
+CREATE OR ALTER PROCEDURE dbo.usp_Bank_Account_Update
+    @BankAccountId   BIGINT,
+    @CompanyId       INT,
+    @BankId          BIGINT,
+    @AccountNumber   NVARCHAR(40),
+    @AccountName     NVARCHAR(150),
+    @CurrencyCode    CHAR(3),
+    @IsActive        BIT = 1,
+    @UserId          INT = NULL,
+    @Resultado       BIT OUTPUT,
+    @Mensaje         NVARCHAR(250) OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    UPDATE fin.BankAccount
+    SET BankId=@BankId, AccountNumber=@AccountNumber, AccountName=@AccountName,
+        CurrencyCode=@CurrencyCode, IsActive=@IsActive,
+        UpdatedAt=SYSUTCDATETIME(), UpdatedByUserId=@UserId
+    WHERE BankAccountId=@BankAccountId AND CompanyId=@CompanyId;
+
+    IF @@ROWCOUNT = 0
+    BEGIN
+        SET @Resultado = 0;
+        SET @Mensaje = N'Cuenta no encontrada';
+        RETURN;
+    END
+
+    SET @Resultado = 1;
+    SET @Mensaje = N'Cuenta actualizada correctamente';
+END;
+GO
+
+CREATE OR ALTER PROCEDURE dbo.usp_Bank_Account_Delete
+    @BankAccountId   BIGINT,
+    @CompanyId       INT,
+    @Resultado       BIT OUTPUT,
+    @Mensaje         NVARCHAR(250) OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    UPDATE fin.BankAccount
+    SET IsActive=0, UpdatedAt=SYSUTCDATETIME()
+    WHERE BankAccountId=@BankAccountId AND CompanyId=@CompanyId;
+
+    IF @@ROWCOUNT = 0
+    BEGIN
+        SET @Resultado = 0;
+        SET @Mensaje = N'Cuenta no encontrada';
+        RETURN;
+    END
+
+    SET @Resultado = 1;
+    SET @Mensaje = N'Cuenta desactivada correctamente';
 END;
 GO
 

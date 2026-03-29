@@ -63,7 +63,7 @@ export default function CartItem({ item }: Props) {
 
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
           <Select
-            size="small"
+           
             value={item.quantity}
             onChange={(e) => updateQuantity(item.productCode, Number(e.target.value))}
             sx={{

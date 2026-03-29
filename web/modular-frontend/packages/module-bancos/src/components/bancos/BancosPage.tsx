@@ -1,40 +1,37 @@
 "use client";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  Box,
-  Button,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  IconButton,
-  Stack,
-  TextField,
-  Typography,
-  Paper,
+  Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Stack, TextField, Typography,
 } from "@mui/material";
-import { DataGrid, type GridColDef } from "@mui/x-data-grid";
-import AddIcon from "@mui/icons-material/Add";
-import EditIcon from "@mui/icons-material/Edit";
-import DeleteIcon from "@mui/icons-material/Delete";
+import SearchIcon from "@mui/icons-material/Search";
+import InputAdornment from "@mui/material/InputAdornment";
 import { useToast } from "@zentto/shared-ui";
-import {
-  useBancosList,
-  useCreateBanco,
-  useUpdateBanco,
-  useDeleteBanco,
-} from "../../hooks/useBancosAuxiliares";
+import type { ColumnDef } from "@zentto/datagrid-core";
+import { useGridLayoutSync } from "@zentto/shared-api";
+import { useBancosList, useCreateBanco, useUpdateBanco, useDeleteBanco } from "../../hooks/useBancosAuxiliares";
 
-const EMPTY_FORM = {
-  Nombre: "",
-  Contacto: "",
-  Direccion: "",
-  Telefonos: "",
-  Co_Usuario: "SUP",
-};
+const EMPTY_FORM = { Nombre: "", Contacto: "", Direccion: "", Telefonos: "", Co_Usuario: "SUP" };
+
+const COLUMNS: ColumnDef[] = [
+  { field: "Nombre", header: "Nombre", flex: 1, minWidth: 180, sortable: true },
+  { field: "Contacto", header: "Contacto", width: 160 },
+  { field: "Direccion", header: "Dirección", flex: 1, minWidth: 200 },
+  { field: "Telefonos", header: "Teléfonos", width: 150 },
+  {
+    field: "actions", header: "Acciones", type: "actions" as any, width: 100, pin: "right",
+    actions: [
+      { icon: "edit", label: "Editar", action: "edit", color: "#1976d2" },
+      { icon: "delete", label: "Eliminar", action: "delete", color: "#dc2626" },
+    ],
+  } as ColumnDef,
+];
+
+const GRID_ID = "module-bancos:bancos:list";
+
 
 export default function BancosPage() {
-  /* ── state ── */
+  const gridRef = useRef<any>(null);
+  const [registered, setRegistered] = useState(false);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(50);
@@ -43,196 +40,98 @@ export default function BancosPage() {
   const [form, setForm] = useState({ ...EMPTY_FORM });
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
 
-  /* ── queries & mutations ── */
   const { data, isLoading } = useBancosList({ search, page, limit });
   const crear = useCreateBanco();
   const actualizar = useUpdateBanco();
   const eliminar = useDeleteBanco();
   const { showToast } = useToast();
-
   const saving = crear.isPending || actualizar.isPending;
-
   const rows = (data?.rows ?? data?.items ?? []) as Record<string, any>[];
+  const { ready: layoutReady } = useGridLayoutSync(GRID_ID);
 
-  /* ── columns ── */
-  const columns = useMemo<GridColDef[]>(
-    () => [
-      { field: "Nombre", headerName: "Nombre", flex: 1, minWidth: 180 },
-      { field: "Contacto", headerName: "Contacto", width: 160 },
-      { field: "Direccion", headerName: "Dirección", flex: 1, minWidth: 200 },
-      { field: "Telefonos", headerName: "Teléfonos", width: 150 },
-      {
-        field: "acciones",
-        headerName: "Acciones",
-        width: 110,
-        sortable: false,
-        renderCell: (params) => (
-          <Stack direction="row" spacing={0.5}>
-            <IconButton size="small" onClick={() => handleEdit(params.row)}>
-              <EditIcon fontSize="small" />
-            </IconButton>
-            <IconButton
-              size="small"
-              color="error"
-              onClick={() => setDeleteTarget(params.row.Nombre)}
-            >
-              <DeleteIcon fontSize="small" />
-            </IconButton>
-          </Stack>
-        ),
-      },
-    ],
-    [],
-  );
+  useEffect(() => {
+    if (!layoutReady) return;
+    import("@zentto/datagrid").then(() => setRegistered(true));
+  }, [layoutReady]);
 
-  /* ── handlers ── */
-  const handleNew = () => {
-    setForm({ ...EMPTY_FORM });
-    setEditNombre(null);
-    setFormOpen(true);
-  };
+  useEffect(() => {
+    const el = gridRef.current; if (!el || !registered) return;
+    el.columns = COLUMNS; el.rows = rows; el.loading = isLoading;
+    el.getRowId = (r: any) => r.Nombre ?? r.NOMBRE ?? Math.random();
+  }, [rows, isLoading, registered]);
 
   const handleEdit = (row: Record<string, any>) => {
-    setForm({
-      Nombre: row.Nombre ?? "",
-      Contacto: row.Contacto ?? "",
-      Direccion: row.Direccion ?? "",
-      Telefonos: row.Telefonos ?? "",
-      Co_Usuario: "SUP",
-    });
-    setEditNombre(row.Nombre);
-    setFormOpen(true);
+    setForm({ Nombre: row.Nombre ?? "", Contacto: row.Contacto ?? "", Direccion: row.Direccion ?? "", Telefonos: row.Telefonos ?? "", Co_Usuario: "SUP" });
+    setEditNombre(row.Nombre); setFormOpen(true);
   };
 
+  useEffect(() => {
+    const el = gridRef.current; if (!el || !registered) return;
+    const handler = (e: CustomEvent) => {
+      const { action, row } = e.detail;
+      if (action === "edit") handleEdit(row);
+      if (action === "delete") setDeleteTarget(row.Nombre);
+    };
+    const createHandler = () => handleNew();
+    el.addEventListener("action-click", handler);
+    el.addEventListener("create-click", createHandler);
+    return () => { el.removeEventListener("action-click", handler); el.removeEventListener("create-click", createHandler); };
+  }, [registered, rows]);
+
+  const handleNew = () => { setForm({ ...EMPTY_FORM }); setEditNombre(null); setFormOpen(true); };
   const handleSave = async () => {
     try {
-      if (editNombre) {
-        await actualizar.mutateAsync({ nombre: editNombre, data: form });
-        showToast("Banco actualizado correctamente", "success");
-      } else {
-        await crear.mutateAsync(form);
-        showToast("Banco creado correctamente", "success");
-      }
+      if (editNombre) { await actualizar.mutateAsync({ nombre: editNombre, data: form }); showToast("Banco actualizado correctamente", "success"); }
+      else { await crear.mutateAsync(form); showToast("Banco creado correctamente", "success"); }
       setFormOpen(false);
-    } catch (err: any) {
-      showToast(err?.message ?? "Error al guardar", "error");
-    }
+    } catch (err: any) { showToast(err?.message ?? "Error al guardar", "error"); }
   };
-
   const handleDelete = async () => {
     if (!deleteTarget) return;
-    try {
-      await eliminar.mutateAsync(deleteTarget);
-      showToast("Banco eliminado correctamente", "success");
-      setDeleteTarget(null);
-    } catch (err: any) {
-      showToast(err?.message ?? "Error al eliminar", "error");
-    }
+    try { await eliminar.mutateAsync(deleteTarget); showToast("Banco eliminado correctamente", "success"); setDeleteTarget(null); }
+    catch (err: any) { showToast(err?.message ?? "Error al eliminar", "error"); }
   };
 
-  /* ── render ── */
   return (
     <Box>
-      {/* Header */}
-      <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
-        <Typography variant="h6">Bancos</Typography>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={handleNew}>
-          Nuevo Banco
-        </Button>
-      </Stack>
+      <Typography variant="h5" fontWeight={600} mb={2}>Entidades</Typography>
 
-      {/* Filters */}
-      <Stack direction="row" spacing={2} mb={2}>
-        <TextField
-          label="Buscar"
-          size="small"
-          value={search}
-          onChange={(e) => {
-            setSearch(e.target.value);
-            setPage(1);
-          }}
-          sx={{ minWidth: 300 }}
-        />
-      </Stack>
-
-      {/* Grid */}
-      <DataGrid
-        rows={rows}
-        columns={columns}
-        loading={isLoading}
-        rowCount={data?.total ?? rows.length}
-        pageSizeOptions={[25, 50, 100]}
-        paginationModel={{ page: page - 1, pageSize: limit }}
-        onPaginationModelChange={(m) => {
-          setPage(m.page + 1);
-          setLimit(m.pageSize);
-        }}
-        paginationMode="server"
-        disableRowSelectionOnClick
-        getRowId={(r) => r.Nombre ?? r.NOMBRE ?? Math.random()}
-        sx={{ minHeight: 400 }}
+      <TextField placeholder="Buscar banco..." size="small" value={search}
+        onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+        sx={{ mb: 2, maxWidth: 360 }}
+        InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon fontSize="small" /></InputAdornment> }}
       />
 
-      {/* Create / Edit Dialog */}
+      <Box sx={{ minHeight: 400 }}>
+        <zentto-grid ref={gridRef} grid-id={GRID_ID} height="400px" enable-create create-label="Nuevo Banco" enable-toolbar enable-header-menu enable-header-filters enable-clipboard enable-quick-search enable-context-menu enable-status-bar enable-configurator />
+      </Box>
+
       <Dialog open={formOpen} onClose={() => setFormOpen(false)} maxWidth="sm" fullWidth>
         <DialogTitle>{editNombre ? "Editar Banco" : "Nuevo Banco"}</DialogTitle>
         <DialogContent>
           <Stack spacing={2} mt={1}>
-            <TextField
-              label="Nombre"
-              fullWidth
-              value={form.Nombre}
-              disabled={!!editNombre}
-              onChange={(e) => setForm((f) => ({ ...f, Nombre: e.target.value }))}
-            />
-            <TextField
-              label="Contacto"
-              fullWidth
-              value={form.Contacto}
-              onChange={(e) => setForm((f) => ({ ...f, Contacto: e.target.value }))}
-            />
-            <TextField
-              label="Dirección"
-              fullWidth
-              value={form.Direccion}
-              onChange={(e) => setForm((f) => ({ ...f, Direccion: e.target.value }))}
-            />
-            <TextField
-              label="Teléfonos"
-              fullWidth
-              value={form.Telefonos}
-              onChange={(e) => setForm((f) => ({ ...f, Telefonos: e.target.value }))}
-            />
+            <TextField label="Nombre" fullWidth value={form.Nombre} disabled={!!editNombre} onChange={(e) => setForm((f) => ({ ...f, Nombre: e.target.value }))} />
+            <TextField label="Contacto" fullWidth value={form.Contacto} onChange={(e) => setForm((f) => ({ ...f, Contacto: e.target.value }))} />
+            <TextField label="Dirección" fullWidth value={form.Direccion} onChange={(e) => setForm((f) => ({ ...f, Direccion: e.target.value }))} />
+            <TextField label="Teléfonos" fullWidth value={form.Telefonos} onChange={(e) => setForm((f) => ({ ...f, Telefonos: e.target.value }))} />
           </Stack>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setFormOpen(false)}>Cancelar</Button>
-          <Button variant="contained" onClick={handleSave} disabled={saving}>
-            {editNombre ? "Actualizar" : "Guardar"}
-          </Button>
+          <Button variant="contained" onClick={handleSave} disabled={saving}>{editNombre ? "Actualizar" : "Guardar"}</Button>
         </DialogActions>
       </Dialog>
 
-      {/* Delete Confirmation Dialog */}
       <Dialog open={deleteTarget != null} onClose={() => setDeleteTarget(null)}>
         <DialogTitle>Confirmar Eliminación</DialogTitle>
-        <DialogContent>
-          <Typography>
-            ¿Está seguro de eliminar el banco &quot;{deleteTarget}&quot;?
-          </Typography>
-        </DialogContent>
+        <DialogContent><Typography>¿Está seguro de eliminar el banco &quot;{deleteTarget}&quot;?</Typography></DialogContent>
         <DialogActions>
           <Button onClick={() => setDeleteTarget(null)}>Cancelar</Button>
-          <Button
-            variant="contained"
-            color="error"
-            onClick={handleDelete}
-            disabled={eliminar.isPending}
-          >
-            Eliminar
-          </Button>
+          <Button variant="contained" color="error" onClick={handleDelete} disabled={eliminar.isPending}>Eliminar</Button>
         </DialogActions>
       </Dialog>
     </Box>
   );
 }
+
+declare global { namespace JSX { interface IntrinsicElements { 'zentto-grid': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & Record<string, any>, HTMLElement>; } } }

@@ -3,6 +3,12 @@
  * Usa SPs: usp_Inventario_List, GetByCodigo, Insert, Update, Delete
  */
 import { callSp, callSpOut, sql } from "../../db/query.js";
+import { getActiveScope } from "../_shared/scope.js";
+
+function scope() {
+  const s = getActiveScope();
+  return { companyId: s?.companyId ?? 1, branchId: s?.branchId ?? 1 };
+}
 
 export interface InventarioRow {
   CODIGO?: string;
@@ -25,6 +31,16 @@ export interface InventarioRow {
   Linea?: string;
   N_PARTE?: string;
   Barra?: string;
+  Servicio?: boolean;
+  Descripcion?: string;
+  PRECIO_VENTA1?: number;
+  PRECIO_VENTA2?: number;
+  PRECIO_VENTA3?: number;
+  COSTO_PROMEDIO?: number;
+  Alicuota?: number;
+  PLU?: number;
+  UbicaFisica?: string;
+  Garantia?: string;
   [key: string]: unknown;
 }
 
@@ -71,6 +87,7 @@ export async function listInventarioSP(params: ListInventarioParams = {}): Promi
   const { rows, output } = await callSpOut<InventarioRow>(
     "usp_Inventario_List",
     {
+      CompanyId: scope().companyId,
       Search: params.search || null,
       Categoria: params.categoria || null,
       Marca: params.marca || null,
@@ -92,7 +109,7 @@ export async function listInventarioSP(params: ListInventarioParams = {}): Promi
 export async function getInventarioByCodigoSP(codigo: string): Promise<InventarioRow | null> {
   const rows = await callSp<InventarioRow>(
     "usp_Inventario_GetByCodigo",
-    { Codigo: codigo }
+    { CompanyId: scope().companyId, Codigo: codigo }
   );
   return rows[0] || null;
 }
@@ -101,7 +118,7 @@ export async function getInventarioByCodigoSP(codigo: string): Promise<Inventari
 export async function insertInventarioSP(row: InventarioRow): Promise<SpResult> {
   const { output } = await callSpOut<never>(
     "usp_Inventario_Insert",
-    { RowXml: rowToXml(row) },
+    { CompanyId: scope().companyId, RowXml: rowToXml(row) },
     { Resultado: sql.Int, Mensaje: sql.NVarChar(500) }
   );
 
@@ -115,7 +132,7 @@ export async function insertInventarioSP(row: InventarioRow): Promise<SpResult> 
 export async function updateInventarioSP(codigo: string, row: Partial<InventarioRow>): Promise<SpResult> {
   const { output } = await callSpOut<never>(
     "usp_Inventario_Update",
-    { Codigo: codigo, RowXml: rowToXml(row) },
+    { CompanyId: scope().companyId, Codigo: codigo, RowXml: rowToXml(row) },
     { Resultado: sql.Int, Mensaje: sql.NVarChar(500) }
   );
 
@@ -129,7 +146,7 @@ export async function updateInventarioSP(codigo: string, row: Partial<Inventario
 export async function deleteInventarioSP(codigo: string): Promise<SpResult> {
   const { output } = await callSpOut<never>(
     "usp_Inventario_Delete",
-    { Codigo: codigo },
+    { CompanyId: scope().companyId, Codigo: codigo },
     { Resultado: sql.Int, Mensaje: sql.NVarChar(500) }
   );
 

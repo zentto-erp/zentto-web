@@ -1,8 +1,10 @@
 "use client";
 
-import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Chip, CircularProgress } from "@mui/material";
-import { formatDate } from "@zentto/shared-api";
-import { useTimezone } from "@zentto/shared-auth";
+import { useEffect, useRef, useState } from "react";
+import { Box, Typography, CircularProgress } from "@mui/material";
+import type { ColumnDef } from "@zentto/datagrid-core";
+import { useGridLayoutSync } from "@zentto/shared-api";
+
 
 interface OrderRow {
   orderNumber: string;
@@ -21,8 +23,67 @@ interface Props {
   onViewOrder?: (orderNumber: string) => void;
 }
 
+const COLUMNS: ColumnDef[] = [
+  { field: "orderNumber", header: "Pedido", flex: 1, sortable: true },
+  { field: "orderDate", header: "Fecha", flex: 1, type: "date", sortable: true },
+  { field: "totalAmount", header: "Total", flex: 1, type: "number", currency: "USD", aggregation: "sum" },
+  {
+    field: "isPaid",
+    header: "Estado",
+    flex: 1,
+    sortable: true,
+    groupable: true,
+    statusColors: { S: "success", N: "warning" },
+    statusVariant: "outlined",
+  },
+  {
+    field: "actions",
+    header: "Acciones",
+    type: "actions",
+    width: 80,
+    pin: "right",
+    actions: [
+      { icon: "view", label: "Ver pedido", action: "view", color: "#6b7280" },
+    ],
+  },
+];
+
+const GRID_ID = "module-ecommerce:order-history:list";
+
 export default function OrderHistory({ orders, loading, onViewOrder }: Props) {
-  const { timeZone } = useTimezone();
+  const gridRef = useRef<any>(null);
+  const [registered, setRegistered] = useState(false);
+  const { ready: layoutReady } = useGridLayoutSync(GRID_ID);
+
+  useEffect(() => {
+    if (!layoutReady) return;
+    import("@zentto/datagrid").then(() => setRegistered(true));
+  }, [layoutReady]);
+
+  const rows = orders.map((o) => ({
+    ...o,
+    id: o.orderNumber,
+  }));
+
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+    el.columns = COLUMNS;
+    el.rows = rows;
+    el.loading = !!loading;
+  }, [rows, loading, registered]);
+
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+    const handler = (e: CustomEvent) => {
+      const { action, row } = e.detail;
+      if (action === "view" && onViewOrder) onViewOrder(row.orderNumber);
+    };
+    el.addEventListener("action-click", handler);
+    return () => el.removeEventListener("action-click", handler);
+  }, [registered, rows, onViewOrder]);
+
   if (loading) {
     return (
       <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
@@ -39,39 +100,33 @@ export default function OrderHistory({ orders, loading, onViewOrder }: Props) {
     );
   }
 
+  if (!layoutReady || !registered) {
+    return <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}><CircularProgress /></Box>;
+  }
+
   return (
-    <TableContainer component={Paper}>
-      <Table size="small">
-        <TableHead>
-          <TableRow>
-            <TableCell>Pedido</TableCell>
-            <TableCell>Fecha</TableCell>
-            <TableCell align="right">Total</TableCell>
-            <TableCell>Estado</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {orders.map((o) => (
-            <TableRow
-              key={o.orderNumber}
-              hover
-              sx={{ cursor: onViewOrder ? "pointer" : "default" }}
-              onClick={() => onViewOrder?.(o.orderNumber)}
-            >
-              <TableCell>{o.orderNumber}</TableCell>
-              <TableCell>{formatDate(o.orderDate, { timeZone })}</TableCell>
-              <TableCell align="right">${o.totalAmount?.toFixed(2)}</TableCell>
-              <TableCell>
-                <Chip
-                  size="small"
-                  label={o.isPaid === "S" ? "Pagado" : "Pendiente"}
-                  color={o.isPaid === "S" ? "success" : "warning"}
-                />
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </TableContainer>
+    <zentto-grid
+      ref={gridRef}
+      grid-id={GRID_ID}
+      default-currency="USD"
+      export-filename="order-history"
+      height="400px"
+      enable-toolbar
+      enable-header-menu
+      enable-header-filters
+      enable-clipboard
+      enable-quick-search
+      enable-context-menu
+      enable-status-bar
+      enable-configurator
+    ></zentto-grid>
   );
+}
+
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'zentto-grid': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & Record<string, any>, HTMLElement>;
+    }
+  }
 }

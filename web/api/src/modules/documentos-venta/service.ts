@@ -214,6 +214,7 @@ export async function listDocumentosVenta(input: {
   limit?: string;
   from?: string;
   to?: string;
+  estado?: string;
 }) {
   const page = Math.max(Number(input.page || 1), 1);
   const limit = Math.min(Math.max(Number(input.limit || 50), 1), 500);
@@ -226,6 +227,7 @@ export async function listDocumentosVenta(input: {
       Codigo: input.codigo || null,
       FromDate: input.from || null,
       ToDate: input.to || null,
+      ...(input.estado ? { Estado: input.estado } : {}),
       Page: page,
       Limit: limit
     },

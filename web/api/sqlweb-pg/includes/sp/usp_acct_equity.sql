@@ -19,6 +19,7 @@
 -- =============================================================================
 --  SP 1: usp_Acct_EquityMovement_List
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_Acct_EquityMovement_List(INTEGER, INTEGER, SMALLINT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Acct_EquityMovement_List(
     p_company_id  INTEGER,
     p_branch_id   INTEGER,
@@ -74,6 +75,7 @@ $$;
 -- =============================================================================
 --  SP 2: usp_Acct_EquityMovement_Insert
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_Acct_EquityMovement_Insert(INTEGER, INTEGER, SMALLINT, VARCHAR(30), VARCHAR(30), DATE, NUMERIC(18,2), BIGINT, VARCHAR(400), INTEGER, TEXT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Acct_EquityMovement_Insert(
     p_company_id        INTEGER,
     p_branch_id         INTEGER,
@@ -131,9 +133,10 @@ $$;
 -- =============================================================================
 --  SP 3: usp_Acct_EquityMovement_Update
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_Acct_EquityMovement_Update(INTEGER, INTEGER, VARCHAR(30), DATE, NUMERIC(18,2), VARCHAR(400), INTEGER, TEXT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Acct_EquityMovement_Update(
     p_company_id          INTEGER,
-    p_equity_movement_id  INTEGER,
+    p_equity_movement_id  BIGINT,
     p_movement_type       VARCHAR(30)   DEFAULT NULL,
     p_movement_date       DATE          DEFAULT NULL,
     p_amount              NUMERIC(18,2) DEFAULT NULL,
@@ -173,9 +176,10 @@ $$;
 -- =============================================================================
 --  SP 4: usp_Acct_EquityMovement_Delete
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_Acct_EquityMovement_Delete(INTEGER, INTEGER, INTEGER, TEXT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Acct_EquityMovement_Delete(
     p_company_id          INTEGER,
-    p_equity_movement_id  INTEGER,
+    p_equity_movement_id  BIGINT,
     OUT p_resultado        INTEGER,
     OUT p_mensaje          TEXT
 )
@@ -214,6 +218,7 @@ $$;
 --  Retorna dos conjuntos de datos via RETURNS TABLE (primer recordset = detalle).
 --  Para el segundo recordset (totales) usar usp_Acct_Report_EquityChanges_Totals.
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_Acct_Report_EquityChanges(INTEGER, INTEGER, SMALLINT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Acct_Report_EquityChanges(
     p_company_id  INTEGER,
     p_branch_id   INTEGER,
@@ -332,6 +337,7 @@ END;
 $$;
 
 -- Funcion auxiliar: totales del reporte de cambios en el patrimonio
+DROP FUNCTION IF EXISTS usp_Acct_Report_EquityChanges_Totals(INTEGER, INTEGER, SMALLINT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Acct_Report_EquityChanges_Totals(
     p_company_id  INTEGER,
     p_branch_id   INTEGER,

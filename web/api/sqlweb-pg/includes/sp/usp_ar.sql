@@ -10,6 +10,7 @@
 --    Permite filtrar por cliente, tipo de documento y rango de fechas.
 -- =============================================================================
 DROP FUNCTION IF EXISTS usp_AR_Application_List;
+DROP FUNCTION IF EXISTS usp_AR_Application_List(BIGINT, VARCHAR(20), DATE, DATE, INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_AR_Application_List(
     p_customer_id    BIGINT       DEFAULT NULL,
     p_document_type  VARCHAR(20)  DEFAULT NULL,
@@ -87,6 +88,7 @@ $$;
 --    informacion del documento y del cliente asociado.
 -- =============================================================================
 DROP FUNCTION IF EXISTS usp_AR_Application_Get;
+DROP FUNCTION IF EXISTS usp_AR_Application_Get(BIGINT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_AR_Application_Get(
     p_application_id  BIGINT
 )
@@ -126,7 +128,7 @@ BEGIN
         d."DocumentType",
         d."IssueDate",
         d."DueDate",
-        d."CurrencyCode",
+        d."CurrencyCode"::VARCHAR(10),
         d."TotalAmount",
         d."PendingAmount",
         d."PaidFlag",
@@ -156,6 +158,7 @@ $$;
 --    Retorna: ok, ApplicationId, NewPending, Message
 -- =============================================================================
 DROP FUNCTION IF EXISTS usp_AR_Application_Apply;
+DROP FUNCTION IF EXISTS usp_AR_Application_Apply(BIGINT, DECIMAL(18,2), VARCHAR(120), DATE, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_AR_Application_Apply(
     p_receivable_document_id  BIGINT,
     p_amount                  DECIMAL(18,2),
@@ -256,6 +259,7 @@ $$;
 --    Retorna: ok, NewPending, Message
 -- =============================================================================
 DROP FUNCTION IF EXISTS usp_AR_Application_Reverse;
+DROP FUNCTION IF EXISTS usp_AR_Application_Reverse(BIGINT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_AR_Application_Reverse(
     p_application_id     BIGINT,
     p_updated_by_user_id INT DEFAULT NULL
@@ -336,6 +340,7 @@ $$;
 --    Retorna las columnas alias legacy + canonical para compatibilidad VB6.
 -- =============================================================================
 DROP FUNCTION IF EXISTS usp_AR_Application_ListByContext;
+DROP FUNCTION IF EXISTS usp_AR_Application_ListByContext(INT, INT, VARCHAR(100), VARCHAR(60), VARCHAR(10), INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_AR_Application_ListByContext(
     p_company_id     INT,
     p_branch_id      INT,
@@ -411,7 +416,7 @@ BEGIN
         a."ApplyDate",
         a."AppliedAmount",
         a."AppliedAmount",
-        d."CurrencyCode",
+        d."CurrencyCode"::VARCHAR(10),
         a."PaymentReference",
         a."PaymentReference",
         d."PendingAmount",
@@ -441,6 +446,7 @@ $$;
 --    Retorna las mismas columnas alias que ListByContext.
 -- =============================================================================
 DROP FUNCTION IF EXISTS usp_AR_Application_GetByContext;
+DROP FUNCTION IF EXISTS usp_AR_Application_GetByContext(BIGINT, INT, INT, VARCHAR(10)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_AR_Application_GetByContext(
     p_application_id  BIGINT,
     p_company_id      INT,
@@ -487,7 +493,7 @@ BEGIN
         a."ApplyDate",
         a."AppliedAmount",
         a."AppliedAmount",
-        d."CurrencyCode",
+        d."CurrencyCode"::VARCHAR(10),
         a."PaymentReference",
         a."PaymentReference",
         d."PendingAmount",
@@ -513,6 +519,7 @@ $$;
 --             CurrencyCode.
 -- =============================================================================
 DROP FUNCTION IF EXISTS usp_AR_Application_Resolve;
+DROP FUNCTION IF EXISTS usp_AR_Application_Resolve(INT, INT, VARCHAR(120), VARCHAR(24), VARCHAR(20)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_AR_Application_Resolve(
     p_company_id       INT,
     p_branch_id        INT,
@@ -535,7 +542,7 @@ BEGIN
         d."PendingAmount",
         d."TotalAmount",
         d."CustomerId",
-        d."CurrencyCode"
+        d."CurrencyCode"::VARCHAR(10)
     FROM ar."ReceivableDocument" d
     INNER JOIN master."Customer" c ON c."CustomerId" = d."CustomerId"
     WHERE d."CompanyId"       = p_company_id
@@ -563,6 +570,7 @@ $$;
 --    Retorna: ok (1=exito, 0=error), Message
 -- =============================================================================
 DROP FUNCTION IF EXISTS usp_AR_Application_Update;
+DROP FUNCTION IF EXISTS usp_AR_Application_Update(BIGINT, DECIMAL(18,2), DATE, VARCHAR(120), VARCHAR(10)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_AR_Application_Update(
     p_application_id     BIGINT,
     p_amount             DECIMAL(18,2)  DEFAULT NULL,

@@ -11,7 +11,6 @@ import {
     Chip,
     CircularProgress,
     Divider,
-    Grid,
     InputAdornment,
     IconButton,
     Stack,
@@ -19,6 +18,7 @@ import {
     Tooltip,
     Typography,
 } from '@mui/material';
+import { FormGrid, FormField } from '@zentto/shared-ui';
 import { useAuth } from '@zentto/shared-auth';
 import { apiGet, apiPost, apiPut } from '@zentto/shared-api';
 import dynamic from 'next/dynamic';
@@ -173,10 +173,10 @@ export default function PerfilPage() {
                 Gestiona tu información personal, avatar y acceso de seguridad.
             </Typography>
 
-            <Grid container spacing={3}>
+            <FormGrid spacing={3}>
 
                 {/* ── Tarjeta de Identidad ──────────────────────────── */}
-                <Grid item xs={12} md={4}>
+                <FormField xs={12} md={4}>
                     <Card variant="outlined">
                         <CardContent sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, py: 3 }}>
 
@@ -231,10 +231,10 @@ export default function PerfilPage() {
                             </Box>
                         </CardContent>
                     </Card>
-                </Grid>
+                </FormField>
 
                 {/* ── Información del Perfil ────────────────────────── */}
-                <Grid item xs={12} md={8}>
+                <FormField xs={12} md={8}>
                     <Stack spacing={2}>
 
                         {/* Nombre */}
@@ -351,9 +351,11 @@ export default function PerfilPage() {
                                                 InputProps={{
                                                     endAdornment: (
                                                         <InputAdornment position="end">
-                                                            <IconButton size="small" onClick={() => setShowCurrent(p => !p)}>
+                                                            <Tooltip title={showCurrent ? "Ocultar" : "Mostrar"}>
+                                                              <IconButton size="small" onClick={() => setShowCurrent(p => !p)}>
                                                                 {showCurrent ? <VisibilityOffIcon fontSize="small" /> : <VisibilityIcon fontSize="small" />}
-                                                            </IconButton>
+                                                              </IconButton>
+                                                            </Tooltip>
                                                         </InputAdornment>
                                                     ),
                                                 }}
@@ -368,9 +370,11 @@ export default function PerfilPage() {
                                                 InputProps={{
                                                     endAdornment: (
                                                         <InputAdornment position="end">
-                                                            <IconButton size="small" onClick={() => setShowNew(p => !p)}>
+                                                            <Tooltip title={showNew ? "Ocultar" : "Mostrar"}>
+                                                              <IconButton size="small" onClick={() => setShowNew(p => !p)}>
                                                                 {showNew ? <VisibilityOffIcon fontSize="small" /> : <VisibilityIcon fontSize="small" />}
-                                                            </IconButton>
+                                                              </IconButton>
+                                                            </Tooltip>
                                                         </InputAdornment>
                                                     ),
                                                 }}
@@ -386,9 +390,11 @@ export default function PerfilPage() {
                                                 InputProps={{
                                                     endAdornment: (
                                                         <InputAdornment position="end">
-                                                            <IconButton size="small" onClick={() => setShowConfirm(p => !p)}>
+                                                            <Tooltip title={showConfirm ? "Ocultar" : "Mostrar"}>
+                                                              <IconButton size="small" onClick={() => setShowConfirm(p => !p)}>
                                                                 {showConfirm ? <VisibilityOffIcon fontSize="small" /> : <VisibilityIcon fontSize="small" />}
-                                                            </IconButton>
+                                                              </IconButton>
+                                                            </Tooltip>
                                                         </InputAdornment>
                                                     ),
                                                 }}
@@ -428,8 +434,8 @@ export default function PerfilPage() {
                         )}
 
                     </Stack>
-                </Grid>
-            </Grid>
+                </FormField>
+            </FormGrid>
         </Box>
     );
 }

@@ -52,18 +52,19 @@ export default function LoginPage() {
             <AuthLogin
               subtext={
                 <Typography variant="subtitle1" textAlign="center" color="textSecondary" mb={1}>
-                  Ingresa tus credenciales para continuar
+                  Ingresa tus credenciales
                 </Typography>
               }
               subtitle={
                 <Stack spacing={1} justifyContent="center" mt={3}>
                   <Stack direction="row" spacing={1} justifyContent="center">
                     <Typography color="textSecondary" variant="body2" fontWeight="500">
-                      No tienes cuenta?
+                      ¿No tienes cuenta?
                     </Typography>
                     <Typography
                       component="a"
                       href="/authentication/register"
+                      variant="body2"
                       fontWeight="500"
                       sx={{
                         color: 'primary.main',
@@ -77,11 +78,12 @@ export default function LoginPage() {
                   </Stack>
                   <Stack direction="row" spacing={1} justifyContent="center">
                     <Typography color="textSecondary" variant="body2" fontWeight="500">
-                      Necesitas recuperar acceso?
+                      ¿Necesitas recuperar acceso?
                     </Typography>
                     <Typography
                       component="a"
                       href="/authentication/forgot-password"
+                      variant="body2"
                       fontWeight="500"
                       sx={{
                         color: 'primary.main',
@@ -90,7 +92,7 @@ export default function LoginPage() {
                         '&:hover': { textDecoration: 'underline' },
                       }}
                     >
-                      Recuperar contrasena
+                      Recuperar contraseña
                     </Typography>
                   </Stack>
                 </Stack>

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
     Alert,
     Autocomplete,
@@ -17,15 +17,16 @@ import {
     TextField,
     Tooltip,
     Typography,
+    CircularProgress,
 } from '@mui/material';
 import AddBusinessIcon from '@mui/icons-material/AddBusiness';
 import Inventory2OutlinedIcon from '@mui/icons-material/Inventory2Outlined';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
-import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
-import { GridColDef } from '@mui/x-data-grid';
-import { EditableDataGrid } from '@zentto/module-admin';
+import type { ColumnDef } from '@zentto/datagrid-core';
 import { useTimezone } from '@zentto/shared-auth';
-import { formatDateTime } from '@zentto/shared-api';
+import { formatDateTime, useGridLayoutSync } from '@zentto/shared-api';
+import { DatePicker } from '@zentto/shared-ui';
+import dayjs from 'dayjs';
 import {
     CompraRestauranteAdmin,
     CompraDetalleRowAdmin,
@@ -44,11 +45,25 @@ import {
     useUpsertProductoAdminMutation,
     useUpdateCompraMutation,
 } from '@/hooks/useRestauranteAdmin';
+import { useScopedGridId } from '@/lib/zentto-grid';
+
 
 type CompraDetalleRow = CompraDetalleInput & { rowId: string };
 type ApiRow = Record<string, unknown>;
 
 export default function AdminComprasPage() {
+    const gridRef = useRef<any>(null);
+    const detalleGridRef = useRef<any>(null);
+    const detalleCompraGridRef = useRef<any>(null);
+    const [registered, setRegistered] = useState(false);
+    const comprasGridId = useScopedGridId('compras-main');
+    const detalleDraftGridId = useScopedGridId('compras-detalle-draft');
+    const detalleExistenteGridId = useScopedGridId('compras-detalle-existente');
+    const { ready: comprasLayoutReady } = useGridLayoutSync(comprasGridId);
+    const { ready: detalleDraftLayoutReady } = useGridLayoutSync(detalleDraftGridId);
+    const { ready: detalleExistenteLayoutReady } = useGridLayoutSync(detalleExistenteGridId);
+    const layoutReady = comprasLayoutReady && detalleDraftLayoutReady && detalleExistenteLayoutReady;
+
     const { timeZone } = useTimezone();
     const [estado, setEstado] = useState('');
     const [from, setFrom] = useState('');
@@ -99,115 +114,126 @@ export default function AdminComprasPage() {
     const insumosDetalleQuery = useInsumosRestauranteLookupQuery(detalleInsumoSearch, openDetalleDialog);
     const compraDetalleQuery = useCompraDetalleQuery(compraDetalleId ?? undefined);
 
-    const rows = (data?.rows ?? []) as CompraRestauranteAdmin[];
-    const page = 1;
-    const pageSize = 100;
+    const comprasRows = (data?.rows ?? []) as CompraRestauranteAdmin[];
 
-    const columns = useMemo<GridColDef[]>(() => [
-        {
-            field: 'numCompra',
-            headerName: 'N° Compra',
-            minWidth: 180,
-            flex: 1,
-            renderCell: (params) => {
-                const rowId = Number((params.row as CompraRestauranteAdmin).id ?? 0);
-                return (
-                    <Button
-                        size="small"
-                        variant="text"
-                        startIcon={<VisibilityOutlinedIcon fontSize="small" />}
-                        onClick={() => {
-                            if (!rowId) return;
-                            setCompraDetalleId(rowId);
-                            setOpenDetalleDialog(true);
-                        }}
-                        sx={{ px: 0.5, minWidth: 'unset', textTransform: 'none', fontWeight: 700 }}
-                    >
-                        {String(params.value ?? '')}
-                    </Button>
-                );
-            },
-        },
-        {
-            field: 'proveedorId',
-            headerName: 'Proveedor',
-            minWidth: 240,
-            flex: 1.2,
-            editable: true,
-            valueGetter: (_value, row) => {
-                const r = row as ApiRow;
-                const proveedorId = String(r.proveedorId ?? r.ProveedorId ?? '').trim();
-                const proveedorNombre = String(r.proveedorNombre ?? r.ProveedorNombre ?? '').trim();
-                if (proveedorId && proveedorNombre) return `${proveedorId} — ${proveedorNombre}`;
-                return proveedorId || proveedorNombre || '';
-            },
-        },
-        {
-            field: 'fechaCompra',
-            headerName: 'Fecha',
-            minWidth: 170,
-            flex: 1,
-            valueFormatter: (value) => {
-                if (!value) return '';
-                const d = new Date(String(value));
-                return Number.isNaN(d.getTime()) ? String(value) : formatDateTime(String(value), { timeZone });
-            },
-        },
+    useEffect(() => {
+        if (!layoutReady) return;
+        import('@zentto/datagrid').then(() => setRegistered(true));
+    }, [layoutReady]);
+
+    // --- Main compras grid columns ---
+    const comprasColumns = useMemo<ColumnDef[]>(() => [
+        { field: 'numCompra', header: 'N. Compra', width: 180, sortable: true },
+        { field: 'proveedorLabel', header: 'Proveedor', flex: 1, minWidth: 240, sortable: true },
+        { field: 'fechaCompraLabel', header: 'Fecha', width: 170, sortable: true },
         {
             field: 'estado',
-            headerName: 'Estado',
-            minWidth: 150,
-            flex: 0.8,
-            editable: true,
-            type: 'singleSelect',
-            valueOptions: ['PENDIENTE', 'APROBADA', 'ANULADA'],
+            header: 'Estado',
+            width: 150,
+            sortable: true,
+            groupable: true,
+            statusColors: { PENDIENTE: 'warning', APROBADA: 'success', ANULADA: 'error' },
+            statusVariant: 'filled',
         },
+        { field: 'total', header: 'Total', width: 140, type: 'number', sortable: true, aggregation: 'sum' },
         {
-            field: 'total',
-            headerName: 'Total',
-            minWidth: 140,
-            flex: 0.8,
-            valueFormatter: (value) => Number(value ?? 0).toFixed(2),
+            field: 'actions', header: 'Acciones', type: 'actions', width: 100, pin: 'right',
+            actions: [
+                { icon: 'view', label: 'Ver detalle', action: 'view', color: '#1976d2' },
+                { icon: 'edit', label: 'Editar', action: 'edit', color: '#ed6c02' },
+            ],
         },
     ], []);
 
-    const detalleCompraColumns = useMemo<GridColDef[]>(() => [
-        { field: 'inventarioId', headerName: 'Artículo', minWidth: 180, flex: 1 },
-        { field: 'descripcion', headerName: 'Descripción', minWidth: 260, flex: 1.6, editable: true },
-        {
-            field: 'cantidad',
-            headerName: 'Cantidad',
-            minWidth: 120,
-            flex: 0.7,
-            type: 'number',
-            editable: true,
-            valueFormatter: (value) => Number(value ?? 0).toFixed(3),
-        },
-        {
-            field: 'precioUnit',
-            headerName: 'Precio Unit.',
-            minWidth: 120,
-            flex: 0.8,
-            type: 'number',
-            editable: true,
-            valueFormatter: (value) => Number(value ?? 0).toFixed(2),
-        },
-        {
-            field: 'subtotal',
-            headerName: 'Subtotal',
-            minWidth: 120,
-            flex: 0.8,
-            valueFormatter: (value) => Number(value ?? 0).toFixed(2),
-        },
-        {
-            field: 'iva',
-            headerName: 'IVA %',
-            minWidth: 100,
-            flex: 0.6,
-            type: 'number',
-            editable: true,
-            valueFormatter: (value) => Number(value ?? 0).toFixed(2),
-        },
+    const mappedComprasRows = useMemo(() =>
+        comprasRows.map((r: CompraRestauranteAdmin) => {
+            const proveedorId = String(r.proveedorId ?? '').trim();
+            const proveedorNombre = String(r.proveedorNombre ?? '').trim();
+            const proveedorLabel = proveedorId && proveedorNombre
+                ? `${proveedorId} — ${proveedorNombre}`
+                : proveedorId || proveedorNombre || '';
+            const fechaRaw = String(r.fechaCompra ?? '');
+            const d = new Date(fechaRaw);
+            const fechaCompraLabel = !fechaRaw || Number.isNaN(d.getTime()) ? fechaRaw : formatDateTime(fechaRaw, { timeZone });
+            return {
+                id: Number(r.id),
+                numCompra: String(r.numCompra ?? ''),
+                proveedorLabel,
+                fechaCompraLabel,
+                estado: String(r.estado ?? ''),
+                total: Number(r.total ?? 0).toFixed(2),
+            };
+        }),
+        [comprasRows, timeZone]
+    );
+
+    // Bind main grid
+    useEffect(() => {
+        const el = gridRef.current;
+        if (!el || !registered) return;
+        el.columns = comprasColumns;
+        el.rows = mappedComprasRows;
+        el.loading = isLoading;
+    }, [mappedComprasRows, isLoading, registered, comprasColumns]);
+
+    // Handle action-click on main grid
+    useEffect(() => {
+        const el = gridRef.current;
+        if (!el || !registered) return;
+        const handler = (e: CustomEvent) => {
+            const { action, row } = e.detail;
+            if (action === "view" || action === "edit") {
+                if (row?.id) {
+                    setCompraDetalleId(Number(row.id));
+                    setOpenDetalleDialog(true);
+                }
+            }
+        };
+        el.addEventListener("action-click", handler);
+        return () => el.removeEventListener("action-click", handler);
+    }, [registered]);
+
+    // Handle row click on main grid to open detail
+    useEffect(() => {
+        const el = gridRef.current;
+        if (!el || !registered) return;
+        const handler = (e: CustomEvent) => {
+            const row = e.detail?.row;
+            if (row?.id) {
+                setCompraDetalleId(Number(row.id));
+                setOpenDetalleDialog(true);
+            }
+        };
+        el.addEventListener('row-click', handler);
+        return () => el.removeEventListener('row-click', handler);
+    }, [registered]);
+
+    // --- Detalle (new compra) grid columns ---
+    const detalleColumns = useMemo<ColumnDef[]>(() => [
+        { field: 'inventarioId', header: 'Articulo', width: 180, sortable: true },
+        { field: 'descripcion', header: 'Descripcion', flex: 1, minWidth: 260, sortable: true },
+        { field: 'cantidad', header: 'Cantidad', width: 120, type: 'number', sortable: true },
+        { field: 'precioUnit', header: 'Precio Unit.', width: 130, type: 'number', sortable: true },
+        { field: 'iva', header: 'IVA %', width: 100, type: 'number', sortable: true },
+    ], []);
+
+    // Bind detalle grid (new compra)
+    useEffect(() => {
+        const el = detalleGridRef.current;
+        if (!el || !registered) return;
+        el.columns = detalleColumns;
+        el.rows = detalleRows.map((r) => ({ ...r, id: r.rowId }));
+        el.loading = false;
+    }, [detalleRows, registered, detalleColumns]);
+
+    // --- Detalle compra existente grid columns ---
+    const detalleCompraColumns = useMemo<ColumnDef[]>(() => [
+        { field: 'inventarioId', header: 'Articulo', width: 180, sortable: true },
+        { field: 'descripcion', header: 'Descripcion', flex: 1, minWidth: 260, sortable: true },
+        { field: 'cantidad', header: 'Cantidad', width: 120, type: 'number', sortable: true },
+        { field: 'precioUnit', header: 'Precio Unit.', width: 120, type: 'number', sortable: true },
+        { field: 'subtotal', header: 'Subtotal', width: 120, type: 'number', sortable: true, aggregation: 'sum' },
+        { field: 'iva', header: 'IVA %', width: 100, type: 'number', sortable: true },
     ], []);
 
     const detalleCompraRows = useMemo(() => {
@@ -216,21 +242,18 @@ export default function AdminComprasPage() {
             const rowId = row.id != null
                 ? String(row.id)
                 : `det-${compraDetalleId ?? 'x'}-${row.compraId ?? ''}-${row.inventarioId ?? ''}-${index}`;
-
-            return {
-                ...row,
-                __rowKey: rowId,
-            };
+            return { ...row, id: rowId };
         });
     }, [compraDetalleId, compraDetalleQuery.data?.detalle]);
 
-    const detalleColumns = useMemo<GridColDef[]>(() => [
-        { field: 'inventarioId', headerName: 'Artículo', minWidth: 180, flex: 1 },
-        { field: 'descripcion', headerName: 'Descripción', minWidth: 260, flex: 1.5, editable: true },
-        { field: 'cantidad', headerName: 'Cantidad', minWidth: 120, flex: 0.7, type: 'number', editable: true },
-        { field: 'precioUnit', headerName: 'Precio Unit.', minWidth: 130, flex: 0.8, type: 'number', editable: true },
-        { field: 'iva', headerName: 'IVA %', minWidth: 100, flex: 0.6, type: 'number', editable: true },
-    ], []);
+    // Bind detalle compra existente grid
+    useEffect(() => {
+        const el = detalleCompraGridRef.current;
+        if (!el || !registered) return;
+        el.columns = detalleCompraColumns;
+        el.rows = detalleCompraRows;
+        el.loading = compraDetalleQuery.isLoading || upsertCompraDetalleMutation.isPending || deleteCompraDetalleMutation.isPending;
+    }, [detalleCompraRows, compraDetalleQuery.isLoading, upsertCompraDetalleMutation.isPending, deleteCompraDetalleMutation.isPending, registered, detalleCompraColumns]);
 
     const resumenCompra = useMemo(() => {
         const subtotal = detalleRows.reduce((acc, item) => acc + (Number(item.cantidad || 0) * Number(item.precioUnit || 0)), 0);
@@ -277,7 +300,7 @@ export default function AdminComprasPage() {
         const codigo = proveedorForm.codigo.trim();
         const nombre = proveedorForm.nombre.trim();
         if (!codigo || !nombre) {
-            setProveedorError('Código y nombre son obligatorios.');
+            setProveedorError('Codigo y nombre son obligatorios.');
             return;
         }
 
@@ -308,7 +331,7 @@ export default function AdminComprasPage() {
         const codigo = productoForm.codigo.trim();
         const nombre = productoForm.nombre.trim();
         if (!codigo || !nombre) {
-            setProductoError('Código y nombre son obligatorios.');
+            setProductoError('Codigo y nombre son obligatorios.');
             return;
         }
 
@@ -360,7 +383,7 @@ export default function AdminComprasPage() {
 
         setLineErrors(nextErrors);
         if (nextErrors.insumo || nextErrors.cantidad || nextErrors.precioUnit || nextErrors.iva) {
-            setErrorMsg('Revise los campos marcados para agregar la línea.');
+            setErrorMsg('Revise los campos marcados para agregar la linea.');
             return;
         }
 
@@ -394,33 +417,9 @@ export default function AdminComprasPage() {
         }
     };
 
-    const handleUpdateDetalle = async (row: Record<string, unknown>) => {
-        const rowId = String(row.rowId ?? '');
-        const updated: CompraDetalleRow = {
-            rowId,
-            inventarioId: String(row.inventarioId ?? '').trim() || undefined,
-            descripcion: String(row.descripcion ?? '').trim(),
-            cantidad: Number(row.cantidad ?? 0),
-            precioUnit: Number(row.precioUnit ?? 0),
-            iva: Number(row.iva ?? 16),
-        };
-
-        if (!updated.descripcion || updated.cantidad <= 0 || updated.precioUnit < 0) {
-            throw new Error('Revise descripción, cantidad y precio unitario de la línea.');
-        }
-
-        setDetalleRows((prev) => prev.map((item) => (item.rowId === rowId ? updated : item)));
-        return updated as unknown as Record<string, unknown>;
-    };
-
-    const handleDeleteDetalle = async (row: Record<string, unknown>) => {
-        const rowId = String(row.rowId ?? '');
-        setDetalleRows((prev) => prev.filter((item) => item.rowId !== rowId));
-    };
-
     const handleCreateCompra = async () => {
         if (detalleRows.length === 0) {
-            setErrorMsg('Debe agregar al menos un artículo al detalle.');
+            setErrorMsg('Debe agregar al menos un articulo al detalle.');
             return;
         }
 
@@ -438,23 +437,10 @@ export default function AdminComprasPage() {
         }
     };
 
-    const handleUpdateCompra = async (row: Record<string, unknown>) => {
-        const id = Number(row.id ?? 0);
-        if (!id) return row;
-
-        await updateCompraMutation.mutateAsync({
-            id,
-            proveedorId: String(row.proveedorId ?? '').trim() || undefined,
-            estado: String(row.estado ?? '').trim() || undefined,
-        });
-
-        return row;
-    };
-
     const handleAddDetalleCompra = async () => {
         if (!compraDetalleId) return;
         if (!detalleInsumo?.codigo) {
-            setErrorMsg('Seleccione un artículo para agregar al detalle.');
+            setErrorMsg('Seleccione un articulo para agregar al detalle.');
             return;
         }
         if (!Number.isFinite(detalleCantidad) || detalleCantidad <= 0) {
@@ -483,33 +469,12 @@ export default function AdminComprasPage() {
         setErrorMsg(null);
     };
 
-    const handleUpdateDetalleCompra = async (row: Record<string, unknown>) => {
-        if (!compraDetalleId) return row;
-        const detalleId = Number(row.id ?? 0);
-        if (!detalleId) return row;
-
-        await upsertCompraDetalleMutation.mutateAsync({
-            compraId: compraDetalleId,
-            id: detalleId,
-            inventarioId: String(row.inventarioId ?? '').trim() || undefined,
-            descripcion: String(row.descripcion ?? '').trim(),
-            cantidad: Number(row.cantidad ?? 0),
-            precioUnit: Number(row.precioUnit ?? 0),
-            iva: Number(row.iva ?? 16),
-        });
-
-        return row;
-    };
-
-    const handleDeleteDetalleCompra = async (row: Record<string, unknown>) => {
-        if (!compraDetalleId) return;
-        const detalleId = Number(row.id ?? 0);
-        if (!detalleId) return;
-        await deleteCompraDetalleMutation.mutateAsync({ compraId: compraDetalleId, detalleId });
-    };
+    if (!layoutReady || !registered) {
+        return <Box sx={{ display: 'flex', justifyContent: 'center', mt: 10 }}><CircularProgress /></Box>;
+    }
 
     return (
-        <Box sx={{ p: 3 }}>
+        <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', height: '100%' }}>
             <Typography variant="h4" fontWeight="bold" sx={{ mb: 2 }}>
                 Compras Restaurante
             </Typography>
@@ -524,43 +489,44 @@ export default function AdminComprasPage() {
                     InputLabelProps={{ shrink: true, style: { fontWeight: 600 } }}
                     inputProps={{ style: { fontWeight: 500, fontSize: '0.98rem' } }}
                 />
-                <TextField
+                <DatePicker
                     label="Desde"
-                    type="date"
-                    size="medium"
-                    value={from}
-                    onChange={(e) => setFrom(e.target.value)}
-                    InputLabelProps={{ shrink: true, style: { fontWeight: 600 } }}
-                    inputProps={{ style: { fontWeight: 500, fontSize: '0.98rem' } }}
+                    value={from ? dayjs(from) : null}
+                    onChange={(v) => setFrom(v ? v.format('YYYY-MM-DD') : '')}
+                    slotProps={{ textField: { size: 'small', fullWidth: true } }}
                 />
-                <TextField
+                <DatePicker
                     label="Hasta"
-                    type="date"
-                    size="medium"
-                    value={to}
-                    onChange={(e) => setTo(e.target.value)}
-                    InputLabelProps={{ shrink: true, style: { fontWeight: 600 } }}
-                    inputProps={{ style: { fontWeight: 500, fontSize: '0.98rem' } }}
+                    value={to ? dayjs(to) : null}
+                    onChange={(v) => setTo(v ? v.format('YYYY-MM-DD') : '')}
+                    slotProps={{ textField: { size: 'small', fullWidth: true } }}
                 />
             </Paper>
 
-            <EditableDataGrid
-                rows={rows}
-                columns={columns}
-                loading={isLoading}
-                page={page}
-                pageSize={pageSize}
-                rowCount={rows.length}
-                onPageChange={() => { }}
-                onAddRow={() => {
-                    limpiarDialogo();
-                    setOpen(true);
-                }}
-                addButtonText="Nueva Compra"
-                onUpdateRow={handleUpdateCompra}
-                getRowId={(row: ApiRow) => Number(row.id)}
+            <Box sx={{ mb: 2 }}>
+                <Button
+                    variant="contained"
+                    onClick={() => { limpiarDialogo(); setOpen(true); }}
+                >
+                    Nueva Compra
+                </Button>
+            </Box>
+
+            <zentto-grid
+                ref={gridRef}
+                grid-id={comprasGridId}
+                height="calc(100vh - 360px)"
+                enable-toolbar
+                enable-header-menu
+                enable-header-filters
+                enable-clipboard
+                enable-quick-search
+                enable-context-menu
+                enable-status-bar
+                enable-configurator
             />
 
+            {/* Dialog: Nueva Compra */}
             <Dialog open={open} onClose={() => setOpen(false)} maxWidth="lg" fullWidth>
                 <DialogTitle>Nueva Compra Restaurante</DialogTitle>
                 <DialogContent dividers>
@@ -583,7 +549,7 @@ export default function AdminComprasPage() {
                                     <TextField
                                         {...params}
                                         label="Proveedor"
-                                        placeholder="Buscar por código, nombre o RIF"
+                                        placeholder="Buscar por codigo, nombre o RIF"
                                         helperText="Seleccione proveedor o cree uno nuevo"
                                         InputLabelProps={{ ...params.InputLabelProps, shrink: true, style: { fontWeight: 600 } }}
                                         inputProps={{ ...params.inputProps, style: { fontWeight: 500, fontSize: '0.98rem' } }}
@@ -629,7 +595,7 @@ export default function AdminComprasPage() {
 
                     <Paper variant="outlined" sx={{ p: 2, mb: 2 }}>
                         <Typography variant="subtitle1" fontWeight={700} sx={{ mb: 1 }}>
-                            Agregar artículo al detalle
+                            Agregar articulo al detalle
                         </Typography>
                         <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '2fr 1fr 1fr 1fr auto' }, gap: 1 }}>
                             <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr auto' }, gap: 1, alignItems: 'start' }}>
@@ -648,16 +614,16 @@ export default function AdminComprasPage() {
                                     renderInput={(params) => (
                                         <TextField
                                             {...params}
-                                            label="Artículo / Insumo"
-                                            placeholder="Buscar por código o descripción"
+                                            label="Articulo / Insumo"
+                                            placeholder="Buscar por codigo o descripcion"
                                             error={lineErrors.insumo}
-                                            helperText={lineErrors.insumo ? 'Debe seleccionar un artículo/insumo.' : 'Seleccione artículo/insumo o créelo rápido'}
+                                            helperText={lineErrors.insumo ? 'Debe seleccionar un articulo/insumo.' : 'Seleccione articulo/insumo o creelo rapido'}
                                             InputLabelProps={{ ...params.InputLabelProps, shrink: true, style: { fontWeight: 600 } }}
                                             inputProps={{ ...params.inputProps, style: { fontWeight: 500, fontSize: '0.98rem' } }}
                                         />
                                     )}
                                 />
-                                <Tooltip title="Crear artículo/insumo nuevo">
+                                <Tooltip title="Crear articulo/insumo nuevo">
                                     <IconButton
                                         onClick={openNuevoProducto}
                                         sx={{
@@ -696,7 +662,7 @@ export default function AdminComprasPage() {
                                 }}
                                 onKeyDown={handleLineaKeyDown}
                                 error={lineErrors.precioUnit}
-                                helperText={lineErrors.precioUnit ? 'Precio unitario inválido.' : ' '}
+                                helperText={lineErrors.precioUnit ? 'Precio unitario invalido.' : ' '}
                                 InputLabelProps={{ shrink: true, style: { fontWeight: 600 } }}
                                 inputProps={{ min: 0, step: 0.01, style: { fontWeight: 500, fontSize: '0.98rem' } }}
                             />
@@ -714,7 +680,7 @@ export default function AdminComprasPage() {
                                 InputLabelProps={{ shrink: true, style: { fontWeight: 600 } }}
                                 inputProps={{ min: 0, step: 0.01, style: { fontWeight: 500, fontSize: '0.98rem' } }}
                             />
-                            <Tooltip title="Agregar línea al detalle">
+                            <Tooltip title="Agregar linea al detalle">
                                 <IconButton
                                     onClick={handleAddDetalle}
                                     color="primary"
@@ -734,25 +700,26 @@ export default function AdminComprasPage() {
                         <Box sx={{ mt: 1.5, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                             <Chip
                                 size="small"
-                                label={insumoSeleccionado ? `Artículo: ${insumoSeleccionado.codigo}` : 'Artículo no seleccionado'}
+                                label={insumoSeleccionado ? `Articulo: ${insumoSeleccionado.codigo}` : 'Articulo no seleccionado'}
                                 color={insumoSeleccionado ? 'success' : 'default'}
                                 variant={insumoSeleccionado ? 'filled' : 'outlined'}
                             />
-                            <Chip size="small" label={`Líneas: ${detalleRows.length}`} variant="outlined" />
+                            <Chip size="small" label={`Lineas: ${detalleRows.length}`} variant="outlined" />
                         </Box>
                     </Paper>
 
-                    <EditableDataGrid
-                        rows={detalleRows}
-                        columns={detalleColumns}
-                        loading={false}
-                        page={1}
-                        pageSize={100}
-                        rowCount={detalleRows.length}
-                        onPageChange={() => { }}
-                        onUpdateRow={handleUpdateDetalle}
-                        onDeleteRow={handleDeleteDetalle}
-                        getRowId={(row: ApiRow) => String(row.rowId)}
+                    <zentto-grid
+                        ref={detalleGridRef}
+                        grid-id={detalleDraftGridId}
+                        height="300px"
+                        enable-toolbar
+                        enable-header-menu
+                        enable-header-filters
+                        enable-clipboard
+                        enable-quick-search
+                        enable-context-menu
+                        enable-status-bar
+                        enable-configurator
                     />
 
                     <Paper
@@ -791,13 +758,14 @@ export default function AdminComprasPage() {
                 </DialogActions>
             </Dialog>
 
+            {/* Dialog: Detalle de Compra existente */}
             <Dialog open={openDetalleDialog} onClose={() => setOpenDetalleDialog(false)} maxWidth="lg" fullWidth>
                 <DialogTitle>Detalle de Compra</DialogTitle>
                 <DialogContent dividers>
                     {compraDetalleQuery.isLoading ? (
                         <Typography>Cargando detalle...</Typography>
                     ) : !compraDetalleQuery.data?.compra ? (
-                        <Alert severity="info">No se encontró la compra seleccionada.</Alert>
+                        <Alert severity="info">No se encontro la compra seleccionada.</Alert>
                     ) : (
                         <>
                             {(() => {
@@ -805,7 +773,7 @@ export default function AdminComprasPage() {
                                 return (
                             <Paper variant="outlined" sx={{ p: 2, mb: 2 }}>
                                 <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(4, 1fr)' }, gap: 1 }}>
-                                    <Typography><strong>N° Compra:</strong> {String(compra.numCompra ?? '')}</Typography>
+                                    <Typography><strong>N. Compra:</strong> {String(compra.numCompra ?? '')}</Typography>
                                     <Typography>
                                         <strong>Proveedor:</strong>{' '}
                                         {String(compra.proveedorId ?? '')}
@@ -827,7 +795,7 @@ export default function AdminComprasPage() {
 
                             <Paper variant="outlined" sx={{ p: 2, mb: 2 }}>
                                 <Typography variant="subtitle1" fontWeight={700} sx={{ mb: 1 }}>
-                                    Agregar línea al detalle
+                                    Agregar linea al detalle
                                 </Typography>
                                 <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '2fr 1fr 1fr 1fr auto' }, gap: 1 }}>
                                     <Autocomplete
@@ -842,8 +810,8 @@ export default function AdminComprasPage() {
                                         renderInput={(params) => (
                                             <TextField
                                                 {...params}
-                                                label="Artículo / Insumo"
-                                                placeholder="Buscar por código o descripción"
+                                                label="Articulo / Insumo"
+                                                placeholder="Buscar por codigo o descripcion"
                                                 InputLabelProps={{ ...params.InputLabelProps, shrink: true }}
                                             />
                                         )}
@@ -878,17 +846,18 @@ export default function AdminComprasPage() {
                                 </Box>
                             </Paper>
 
-                            <EditableDataGrid
-                                rows={detalleCompraRows}
-                                columns={detalleCompraColumns}
-                                loading={compraDetalleQuery.isLoading || upsertCompraDetalleMutation.isPending || deleteCompraDetalleMutation.isPending}
-                                page={1}
-                                pageSize={100}
-                                rowCount={detalleCompraRows.length}
-                                onPageChange={() => { }}
-                                onUpdateRow={handleUpdateDetalleCompra}
-                                onDeleteRow={handleDeleteDetalleCompra}
-                                getRowId={(row: ApiRow) => String(row.__rowKey ?? row.id ?? crypto.randomUUID())}
+                            <zentto-grid
+                                ref={detalleCompraGridRef}
+                                grid-id={detalleExistenteGridId}
+                                height="300px"
+                                enable-toolbar
+                                enable-header-menu
+                                enable-header-filters
+                                enable-clipboard
+                                enable-quick-search
+                                enable-context-menu
+                                enable-status-bar
+                                enable-configurator
                             />
                         </>
                     )}
@@ -898,12 +867,13 @@ export default function AdminComprasPage() {
                 </DialogActions>
             </Dialog>
 
+            {/* Dialog: Nuevo Proveedor */}
             <Dialog open={openProveedorDialog} onClose={() => setOpenProveedorDialog(false)} maxWidth="sm" fullWidth>
                 <DialogTitle>Nuevo Proveedor</DialogTitle>
                 <DialogContent dividers>
                     <Box sx={{ display: 'grid', gap: 2, mt: 1 }}>
                         <TextField
-                            label="Código"
+                            label="Codigo"
                             value={proveedorForm.codigo}
                             onChange={(e) => setProveedorForm((prev) => ({ ...prev, codigo: e.target.value }))}
                             InputLabelProps={{ shrink: true, style: { fontWeight: 600 } }}
@@ -924,14 +894,14 @@ export default function AdminComprasPage() {
                             inputProps={{ style: { fontWeight: 500, fontSize: '0.98rem' } }}
                         />
                         <TextField
-                            label="Teléfono"
+                            label="Telefono"
                             value={proveedorForm.telefono}
                             onChange={(e) => setProveedorForm((prev) => ({ ...prev, telefono: e.target.value }))}
                             InputLabelProps={{ shrink: true, style: { fontWeight: 600 } }}
                             inputProps={{ style: { fontWeight: 500, fontSize: '0.98rem' } }}
                         />
                         <TextField
-                            label="Dirección"
+                            label="Direccion"
                             value={proveedorForm.direccion}
                             onChange={(e) => setProveedorForm((prev) => ({ ...prev, direccion: e.target.value }))}
                             InputLabelProps={{ shrink: true, style: { fontWeight: 600 } }}
@@ -946,12 +916,13 @@ export default function AdminComprasPage() {
                 </DialogActions>
             </Dialog>
 
+            {/* Dialog: Nuevo Producto / Insumo */}
             <Dialog open={openProductoDialog} onClose={() => setOpenProductoDialog(false)} maxWidth="sm" fullWidth>
                 <DialogTitle>Nuevo Producto / Insumo</DialogTitle>
                 <DialogContent dividers>
                     <Box sx={{ display: 'grid', gap: 2, mt: 1 }}>
                         <TextField
-                            label="Código"
+                            label="Codigo"
                             value={productoForm.codigo}
                             onChange={(e) => setProductoForm((prev) => ({ ...prev, codigo: e.target.value }))}
                             InputLabelProps={{ shrink: true, style: { fontWeight: 600 } }}
@@ -965,7 +936,7 @@ export default function AdminComprasPage() {
                             inputProps={{ style: { fontWeight: 500, fontSize: '0.98rem' } }}
                         />
                         <TextField
-                            label="Descripción"
+                            label="Descripcion"
                             value={productoForm.descripcion}
                             onChange={(e) => setProductoForm((prev) => ({ ...prev, descripcion: e.target.value }))}
                             InputLabelProps={{ shrink: true, style: { fontWeight: 600 } }}
@@ -987,4 +958,12 @@ export default function AdminComprasPage() {
             </Dialog>
         </Box>
     );
+}
+
+declare global {
+    namespace JSX {
+        interface IntrinsicElements {
+            'zentto-grid': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & Record<string, any>, HTMLElement>;
+        }
+    }
 }

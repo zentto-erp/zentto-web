@@ -13,6 +13,7 @@ export { requestLogger } from './requestLogger';
 export { default as QueryProvider } from './QueryProvider';
 export { useStore } from './store';
 export { usePosStore } from './usePosStore';
+export { useGridLayoutSync } from './useGridLayoutSync';
 export type {
   PrinterConfig, KitchenPrinterConfig, PrinterStatus,
   CajaConfig, ClientePos, CartItem, VentaEnEspera,
@@ -32,14 +33,17 @@ export {
   useCountries,
   useSaveCountry,
   getCountryDefaults,
+  useStates,
+  useLookup,
 } from './localizacion';
-export type { CountryPreset, BcvRates, CountryRecord } from './localizacion';
+export type { CountryPreset, BcvRates, CountryRecord, StateRecord, LookupRecord } from './localizacion';
 
 // Settings hydration
 export { useHydrateLocalizacion } from './useHydrateLocalizacion';
 export { useHydrateModuleSettings } from './useHydrateModuleSettings';
 export type { FrontendAddon } from './addons';
 export type { RequestLog } from './requestLogger';
+export type { GridLayoutSnapshot } from './types/grid-layout';
 
 // Usuarios hooks
 export {
@@ -69,3 +73,15 @@ export {
   useSaveModuleSettings, useSettingModules,
 } from './useSettings';
 export type { SettingsModule, AllSettings, SettingMeta } from './useSettings';
+
+// Notification Center hooks
+export {
+  useNotificationsList, useMarkNotificationsRead,
+  useTasksList, useToggleTask,
+  useMessagesList, useMarkMessageRead,
+} from './useNotifications';
+export type {
+  NotificationItem, NotificationFilters,
+  TaskItem, TaskFilters,
+  MessageItem, MessageFilters,
+} from './useNotifications';

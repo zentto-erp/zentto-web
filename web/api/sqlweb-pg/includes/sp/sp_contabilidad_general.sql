@@ -236,14 +236,14 @@ BEGIN
     INSERT INTO _det_asiento ("CodCuenta", "Descripcion", "CentroCosto",
                                "AuxiliarTipo", "AuxiliarCodigo", "Documento", "Debe", "Haber")
     SELECT
-        NULLIF(item->>'codCuenta', ''),
-        NULLIF(item->>'descripcion', ''),
-        NULLIF(item->>'centroCosto', ''),
-        NULLIF(item->>'auxiliarTipo', ''),
-        NULLIF(item->>'auxiliarCodigo', ''),
-        NULLIF(item->>'documento', ''),
-        COALESCE(NULLIF(item->>'debe', '')::NUMERIC(18,2), 0),
-        COALESCE(NULLIF(item->>'haber', '')::NUMERIC(18,2), 0)
+        NULLIF(item->>'codCuenta', ''::VARCHAR),
+        NULLIF(item->>'descripcion', ''::VARCHAR),
+        NULLIF(item->>'centroCosto', ''::VARCHAR),
+        NULLIF(item->>'auxiliarTipo', ''::VARCHAR),
+        NULLIF(item->>'auxiliarCodigo', ''::VARCHAR),
+        NULLIF(item->>'documento', ''::VARCHAR),
+        COALESCE(NULLIF(item->>'debe', ''::VARCHAR)::NUMERIC(18,2), 0),
+        COALESCE(NULLIF(item->>'haber', ''::VARCHAR)::NUMERIC(18,2), 0)
     FROM jsonb_array_elements(p_detalle_json) AS item;
 
     IF NOT EXISTS (SELECT 1 FROM _det_asiento) THEN

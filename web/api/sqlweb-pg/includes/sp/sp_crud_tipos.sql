@@ -51,6 +51,7 @@ END;
 $$;
 
 -- GET BY CODIGO
+DROP FUNCTION IF EXISTS usp_tipos_getbycodigo(INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_tipos_getbycodigo(
     p_codigo INT
 )
@@ -85,9 +86,9 @@ DECLARE
     v_co_usuario VARCHAR(10);
     v_nuevo_codigo INT;
 BEGIN
-    v_nombre     := NULLIF(p_row_json->>'Nombre', '');
-    v_categoria  := NULLIF(p_row_json->>'Categoria', '');
-    v_co_usuario := NULLIF(p_row_json->>'Co_Usuario', '');
+    v_nombre     := NULLIF(p_row_json->>'Nombre', ''::VARCHAR);
+    v_categoria  := NULLIF(p_row_json->>'Categoria', ''::VARCHAR);
+    v_co_usuario := NULLIF(p_row_json->>'Co_Usuario', ''::VARCHAR);
 
     BEGIN
         INSERT INTO public."Tipos" ("Nombre", "Categoria", "Co_Usuario")
@@ -121,9 +122,9 @@ BEGIN
         RETURN;
     END IF;
 
-    v_nombre     := NULLIF(p_row_json->>'Nombre', '');
-    v_categoria  := NULLIF(p_row_json->>'Categoria', '');
-    v_co_usuario := NULLIF(p_row_json->>'Co_Usuario', '');
+    v_nombre     := NULLIF(p_row_json->>'Nombre', ''::VARCHAR);
+    v_categoria  := NULLIF(p_row_json->>'Categoria', ''::VARCHAR);
+    v_co_usuario := NULLIF(p_row_json->>'Co_Usuario', ''::VARCHAR);
 
     BEGIN
         UPDATE public."Tipos"

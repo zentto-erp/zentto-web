@@ -14,6 +14,7 @@
 -- =============================================================================
 --  SP 1: usp_Acct_ReportTemplate_List
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_Acct_ReportTemplate_List(INTEGER, CHAR(2), VARCHAR(50)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Acct_ReportTemplate_List(
     p_company_id   INTEGER,
     p_country_code CHAR(2)       DEFAULT NULL,
@@ -59,6 +60,7 @@ $$;
 -- =============================================================================
 --  SP 2: usp_Acct_ReportTemplate_Get
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_Acct_ReportTemplate_Get(INTEGER, INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Acct_ReportTemplate_Get(
     p_company_id        INTEGER,
     p_report_template_id INTEGER
@@ -80,6 +82,7 @@ END;
 $$;
 
 -- Function for variables sub-query (second recordset)
+DROP FUNCTION IF EXISTS usp_Acct_ReportTemplate_Get_Variables(INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Acct_ReportTemplate_Get_Variables(
     p_report_template_id INTEGER
 )
@@ -107,6 +110,7 @@ $$;
 -- =============================================================================
 --  SP 3: usp_Acct_ReportTemplate_Upsert
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_Acct_ReportTemplate_Upsert(INTEGER, INTEGER, CHAR(2), VARCHAR(50), VARCHAR(200), VARCHAR(50), VARCHAR(300), TEXT, TEXT, TEXT, INTEGER, INTEGER, TEXT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Acct_ReportTemplate_Upsert(
     p_company_id        INTEGER,
     p_report_template_id INTEGER       DEFAULT NULL,
@@ -176,6 +180,7 @@ $$;
 -- =============================================================================
 --  SP 4: usp_Acct_ReportTemplate_Delete
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_Acct_ReportTemplate_Delete(INTEGER, INTEGER, INTEGER, TEXT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Acct_ReportTemplate_Delete(
     p_company_id        INTEGER,
     p_report_template_id INTEGER,
@@ -216,6 +221,7 @@ $$;
 --           usar usp_Acct_ReportTemplate_Render_Company y
 --           usp_Acct_ReportTemplate_Get_Variables.
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_Acct_ReportTemplate_Render(INTEGER, INTEGER, DATE, DATE, DATE) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Acct_ReportTemplate_Render(
     p_company_id        INTEGER,
     p_report_template_id INTEGER,
@@ -249,6 +255,7 @@ END;
 $$;
 
 -- Datos de empresa para render (segundo recordset)
+DROP FUNCTION IF EXISTS usp_Acct_ReportTemplate_Render_Company(INTEGER, DATE, DATE, DATE) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Acct_ReportTemplate_Render_Company(
     p_company_id        INTEGER,
     p_fecha_desde       DATE DEFAULT NULL,

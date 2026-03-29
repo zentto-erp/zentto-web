@@ -494,6 +494,7 @@ export async function registrarVenta(data: {
   fiscalPrinterSerial?: string;
   fiscalControlNumber?: string;
   zReportNumber?: number;
+  warehouseId?: number;
   items: CartItem[];
 }) {
   const scope = await resolveScopeWithOverrides({
@@ -594,6 +595,30 @@ export async function registrarVenta(data: {
       }
     }
   }
+
+  // Best-effort: create inventory movements for each line sold
+  try {
+    const warehouseId = data.warehouseId ?? null;
+    if (warehouseId) {
+      for (const line of lines) {
+        if (line.productId && !line.isVoid && line.quantity > 0) {
+          await callSp("usp_Inv_Movement_Create", {
+            CompanyId: scope.companyId,
+            BranchId: scope.branchId,
+            ProductId: line.productId,
+            FromWarehouseId: warehouseId,
+            MovementType: "SALE_OUT",
+            Quantity: line.quantity,
+            UnitCost: line.unitPrice ?? 0,
+            SourceDocumentType: "POS",
+            SourceDocumentNumber: data.numFactura,
+            Notes: "Venta POS",
+            UserId: soldByUserId,
+          });
+        }
+      }
+    }
+  } catch { /* never blocks POS sale */ }
 
   if (Number.isFinite(Number(data.esperaOrigenId)) && Number(data.esperaOrigenId) > 0) {
     await callSpOut(

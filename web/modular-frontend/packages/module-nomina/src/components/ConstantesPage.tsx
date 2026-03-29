@@ -1,9 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Box,
-  Paper,
   Button,
   TextField,
   Stack,
@@ -11,16 +10,32 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  IconButton,
-  Tooltip,
 } from "@mui/material";
-import { DataGrid, type GridColDef } from "@mui/x-data-grid";
-import AddIcon from "@mui/icons-material/Add";
-import EditIcon from "@mui/icons-material/Edit";
-import DeleteIcon from "@mui/icons-material/Delete";
+
+import type { ColumnDef } from "@zentto/datagrid-core";
+import { useGridLayoutSync } from "@zentto/shared-api";
 import { useConstantesList, useSaveConstante, useDeleteConstante, type ConstanteInput } from "../hooks/useNomina";
+import { buildNominaGridId, useNominaGridId, useNominaGridRegistration } from "./zenttoGridPersistence";
+
+const COLUMNS: ColumnDef[] = [
+  { field: "codigo", header: "Código", width: 150, sortable: true },
+  { field: "nombre", header: "Nombre", flex: 1, minWidth: 200, sortable: true },
+  { field: "valor", header: "Valor", width: 150, type: "number", sortable: true },
+  { field: "origen", header: "Origen", width: 120, sortable: true },
+  {
+    field: "actions", header: "Acciones", type: "actions", width: 100, pin: "right",
+    actions: [
+      { icon: "edit", label: "Editar", action: "edit", color: "#1976d2" },
+      { icon: "delete", label: "Eliminar", action: "delete", color: "#dc2626" },
+    ],
+  },
+];
+
+const GRID_ID = buildNominaGridId("constantes");
+
 
 export default function ConstantesPage() {
+  const gridRef = useRef<any>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [form, setForm] = useState<ConstanteInput>({ codigo: "", nombre: "", valor: 0 });
@@ -28,8 +43,20 @@ export default function ConstantesPage() {
   const { data, isLoading } = useConstantesList();
   const saveMutation = useSaveConstante();
   const deleteMutation = useDeleteConstante();
+  const { ready: layoutReady } = useGridLayoutSync(GRID_ID);
+  useNominaGridId(gridRef, GRID_ID);
+  const { registered } = useNominaGridRegistration(layoutReady);
 
   const rows = data?.data ?? data?.rows ?? [];
+
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+    el.columns = COLUMNS;
+    el.rows = rows;
+    el.loading = isLoading;
+    el.getRowId = (r: any) => r.codigo ?? Math.random();
+  }, [rows, isLoading, registered]);
 
   const handleNew = () => {
     setForm({ codigo: "", nombre: "", valor: 0 });
@@ -55,58 +82,48 @@ export default function ConstantesPage() {
     await deleteMutation.mutateAsync(codigo);
   };
 
-  const columns: GridColDef[] = [
-    { field: "codigo", headerName: "Código", width: 150 },
-    { field: "nombre", headerName: "Nombre", flex: 1, minWidth: 200 },
-    { field: "valor", headerName: "Valor", width: 150, type: "number" },
-    { field: "origen", headerName: "Origen", width: 120 },
-    {
-      field: "actions",
-      headerName: "Acciones",
-      width: 110,
-      sortable: false,
-      filterable: false,
-      renderCell: (params) => (
-        <Stack direction="row" spacing={0.5}>
-          <Tooltip title="Editar">
-            <IconButton size="small" color="primary" onClick={() => handleEdit(params.row)}>
-              <EditIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="Eliminar">
-            <IconButton size="small" color="error" onClick={() => handleDelete(params.row)}>
-              <DeleteIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-        </Stack>
-      ),
-    },
-  ];
-
   const handleSave = async () => {
     await saveMutation.mutateAsync(form);
     setDialogOpen(false);
     setForm({ codigo: "", nombre: "", valor: 0 });
   };
 
+  // Listen for row action events
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+
+    const handler = (e: CustomEvent) => {
+      const { action, row } = e.detail;
+      if (action === "edit") handleEdit(row);
+      if (action === "delete") handleDelete(row);
+    };
+    el.addEventListener("action-click", handler);
+    const createHandler = () => handleNew();
+    el.addEventListener("create-click", createHandler);
+    return () => { el.removeEventListener("action-click", handler); el.removeEventListener("create-click", createHandler); };
+  }, [registered, rows]);
+
   return (
     <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-      <Stack direction="row" justifyContent="flex-end" alignItems="center" mb={2}>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={handleNew}>
-          Nueva Constante
-        </Button>
-      </Stack>
-
-      <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, width: "100%" }}>
-        <DataGrid
-          rows={rows}
-          columns={columns}
-          loading={isLoading}
-          pageSizeOptions={[25, 50]}
-          disableRowSelectionOnClick
-          getRowId={(r) => r.codigo ?? Math.random()}
+      <Box sx={{ flex: 1, minHeight: 0 }}>
+        <zentto-grid
+          ref={gridRef}
+          height="calc(100vh - 200px)"
+          enable-toolbar
+          enable-header-menu
+          enable-header-filters
+          enable-clipboard
+          enable-quick-search
+          enable-context-menu
+          enable-status-bar
+          enable-configurator
+          enable-grouping
+          enable-pivot
+          enable-create
+          create-label="Nueva Constante"
         />
-      </Paper>
+      </Box>
 
       <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="sm" fullWidth>
         <DialogTitle>{editMode ? "Editar Constante" : "Nueva Constante"}</DialogTitle>
@@ -133,4 +150,12 @@ export default function ConstantesPage() {
       </Dialog>
     </Box>
   );
+}
+
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'zentto-grid': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & Record<string, any>, HTMLElement>;
+    }
+  }
 }

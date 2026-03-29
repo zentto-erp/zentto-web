@@ -1,0 +1,22 @@
+{
+  "name": "@zentto/shared-reports",
+  "version": "0.1.0",
+  "private": true,
+  "main": "src/index.tsx",
+  "types": "src/index.tsx",
+  "exports": {
+    ".": "./src/index.tsx",
+    "./components/*": "./src/components/*",
+    "./hooks/*": "./src/hooks/*",
+    "./config/*": "./src/config/*"
+  },
+  "dependencies": {
+    "@zentto/report-core": "^1.9.2",
+    "@zentto/report-designer": "^1.9.2",
+    "@zentto/report-viewer": "^1.9.2",
+    "@zentto/shared-api": "0.1.0",
+    "@zentto/shared-auth": "0.1.0",
+    "@zentto/shared-ui": "0.1.0",
+    "react": "^19.0.0"
+  }
+}

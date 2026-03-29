@@ -1,11 +1,13 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Paper, Stack, TextField, Typography } from '@mui/material';
-import { GridColDef } from '@mui/x-data-grid';
-import EditableDataGrid from '../../EditableDataGrid';
+import { Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Stack, TextField, Typography } from '@mui/material';
 import { ContextActionHeader } from '@zentto/shared-ui';
+import type { ColumnDef } from '@zentto/datagrid-core';
+import { useGridLayoutSync } from '@zentto/shared-api';
+import { useScopedGridId } from '../../../lib/zentto-grid';
+
 
 export type CatalogField = {
   name: string;
@@ -180,24 +182,33 @@ function resolveRowKey(row: CatalogRow, keyField: string): string | number | nul
   return String(value);
 }
 
-function mapDataGridType(sqlType?: string): GridColDef['type'] {
+function mapColumnType(sqlType?: string): string | undefined {
   const t = (sqlType || '').toLowerCase();
   if (['int', 'bigint', 'smallint', 'tinyint', 'decimal', 'numeric', 'float', 'real', 'money', 'smallmoney'].includes(t)) {
     return 'number';
   }
   if (['bit'].includes(t)) return 'boolean';
   if (['date'].includes(t)) return 'date';
-  if (['datetime', 'datetime2', 'smalldatetime', 'datetimeoffset', 'time'].includes(t)) return 'dateTime';
-  return 'string';
+  if (['datetime', 'datetime2', 'smalldatetime', 'datetimeoffset', 'time'].includes(t)) return 'date';
+  return undefined;
 }
 
 export default function CatalogoCrudBase({ endpoint, title, apiClient, fields, tableName, schema, timeZone }: CatalogoCrudBaseProps) {
   const queryClient = useQueryClient();
+  const gridRef = useRef<any>(null);
+  const [registered, setRegistered] = useState(false);
+  const gridId = useScopedGridId(`${endpoint || title}-catalogo`);
+  const { ready: layoutReady } = useGridLayoutSync(gridId);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [createValues, setCreateValues] = useState<Record<string, string>>({});
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+
+  useEffect(() => {
+    if (!layoutReady) return;
+    import('@zentto/datagrid').then(() => setRegistered(true));
+  }, [layoutReady]);
 
   const metadataQuery = useQuery<CatalogTableMetadata | null>({
     queryKey: [endpoint, 'catalog-meta', tableName || endpoint, schema || 'dbo'],
@@ -259,27 +270,38 @@ export default function CatalogoCrudBase({ endpoint, title, apiClient, fields, t
     [keyField, resolvedFields, rows]
   );
 
-  const gridColumns = useMemo<GridColDef[]>(
+  const gridColumns = useMemo<ColumnDef[]>(
     () => [
       {
         field: keyField,
-        headerName: prettifyLabel(keyField),
+        header: prettifyLabel(keyField),
         width: 120,
-        editable: false,
       },
       ...resolvedFields
         .filter((f) => !f.hidden)
         .map((f) => {
           const meta = metadataByColumn.get(f.name.toLowerCase());
-          return {
+          const colDef: ColumnDef = {
             field: f.name,
-            headerName: f.label || prettifyLabel(f.name),
+            header: f.label || prettifyLabel(f.name),
             flex: 1,
             minWidth: 160,
-            editable: !f.readOnly,
-            type: mapDataGridType(meta?.dataType),
-          } as GridColDef;
+          };
+          const colType = mapColumnType(meta?.dataType);
+          if (colType) colDef.type = colType as any;
+          return colDef;
         }),
+      {
+        field: 'actions',
+        header: 'Acciones',
+        type: 'actions' as any,
+        width: 100,
+        pin: 'right',
+        actions: [
+          { icon: "edit", label: 'Editar', action: 'edit', color: '#e67e22' },
+          { icon: "delete", label: 'Eliminar', action: 'delete', color: '#dc2626' },
+        ],
+      } as ColumnDef,
     ],
     [keyField, metadataByColumn, resolvedFields]
   );
@@ -344,19 +366,47 @@ export default function CatalogoCrudBase({ endpoint, title, apiClient, fields, t
     },
   });
 
+  // Bind data to web component
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+    el.columns = gridColumns;
+    el.rows = gridRows;
+    el.loading = listQuery.isLoading || metadataQuery.isLoading || updateMutation.isPending || deleteMutation.isPending;
+  }, [gridColumns, gridRows, listQuery.isLoading, metadataQuery.isLoading, updateMutation.isPending, deleteMutation.isPending, registered]);
+
+  // Listen for action-click and create-click events
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+
+    const actionHandler = async (e: CustomEvent) => {
+      const { action, row } = e.detail || {};
+      if (!row) return;
+      if (action === 'delete') {
+        await deleteMutation.mutateAsync(row as CatalogRow);
+      }
+      // edit could be handled here if needed
+    };
+    const createHandler = () => {
+      setCreateValues({});
+      setCreateDialogOpen(true);
+    };
+
+    el.addEventListener('action-click', actionHandler);
+    el.addEventListener('create-click', createHandler);
+    return () => {
+      el.removeEventListener('action-click', actionHandler);
+      el.removeEventListener('create-click', createHandler);
+    };
+  }, [registered, deleteMutation]);
+
   const isCreateDisabled = resolvedFields.some((f) => f.required && !asString(createValues[f.name]).trim());
 
   return (
     <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
       <ContextActionHeader
         title={title}
-        primaryAction={{
-          label: 'Nuevo',
-          onClick: () => {
-            setCreateValues({});
-            setCreateDialogOpen(true);
-          }
-        }}
         onSearch={(v) => {
           setSearch(v);
           setPage(1);
@@ -368,26 +418,25 @@ export default function CatalogoCrudBase({ endpoint, title, apiClient, fields, t
         {feedback && <Alert severity={feedback.type} sx={{ mb: 2 }}>{feedback.message}</Alert>}
 
         <Box sx={{ mt: 0, flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-          <EditableDataGrid
-            rows={gridRows}
-            columns={gridColumns}
-            loading={listQuery.isLoading || metadataQuery.isLoading || updateMutation.isPending || deleteMutation.isPending}
-            page={page}
-            pageSize={limit}
-            rowCount={total}
-            onPageChange={setPage}
-            onAddRow={() => {
-              setCreateValues({});
-              setCreateDialogOpen(true);
-            }}
-            onUpdateRow={async (row) => updateMutation.mutateAsync(row)}
-            onDeleteRow={async (row) => {
-              await deleteMutation.mutateAsync(row);
-            }}
-            addButtonText="Nuevo"
-            getRowId={(row) => String(resolveRowKey(row as CatalogRow, keyField) ?? row.id ?? crypto.randomUUID())}
-            timeZone={timeZone}
-          />
+          {registered && (
+            <zentto-grid
+              ref={gridRef}
+              grid-id={gridId}
+              default-currency="VES"
+              height="100%"
+              enable-toolbar
+              enable-header-menu
+              enable-header-filters
+              enable-clipboard
+              enable-quick-search
+              enable-context-menu
+              enable-status-bar
+              enable-editing
+              enable-configurator
+              enable-create
+              create-label="Nuevo"
+            ></zentto-grid>
+          )}
         </Box>
       </Box>
 
@@ -420,4 +469,12 @@ export default function CatalogoCrudBase({ endpoint, title, apiClient, fields, t
       </Dialog>
     </Box>
   );
+}
+
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'zentto-grid': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & Record<string, any>, HTMLElement>;
+    }
+  }
 }

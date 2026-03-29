@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   Box,
@@ -9,7 +9,6 @@ import {
   Button,
   TextField,
   Chip,
-  IconButton,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -19,16 +18,15 @@ import {
   Select,
   InputLabel,
   FormControl,
-  Tooltip,
   CircularProgress,
   Alert,
 } from "@mui/material";
-import { DataGrid, type GridColDef } from "@mui/x-data-grid";
-import VisibilityIcon from "@mui/icons-material/Visibility";
-import DeleteIcon from "@mui/icons-material/Delete";
-import AddIcon from "@mui/icons-material/Add";
-import { formatCurrency } from "@zentto/shared-api";
-import { ContextActionHeader } from "@zentto/shared-ui";
+import type { ColumnDef } from "@zentto/datagrid-core";
+import { useGridLayoutSync, formatCurrency } from "@zentto/shared-api";
+import { ContextActionHeader, DatePicker, FormGrid, FormField, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
+import dayjs from "dayjs";
+
+
 import {
   useActivosFijosList,
   useCategoriasList,
@@ -38,28 +36,13 @@ import {
   type CreateAssetInput,
 } from "../hooks/useActivosFijos";
 
-const STATUS_OPTIONS = [
-  { value: "", label: "Todos" },
-  { value: "ACTIVE", label: "Activo" },
-  { value: "DISPOSED", label: "Dado de baja" },
-  { value: "FULLY_DEPRECIATED", label: "Totalmente depreciado" },
-];
-
+import { buildContabilidadGridId, useContabilidadGridId, useContabilidadGridRegistration } from "./zenttoGridPersistence";
 const DEPRECIATION_METHODS = [
-  { value: "STRAIGHT_LINE", label: "Línea Recta" },
-  { value: "DOUBLE_DECLINING", label: "Doble Declinación" },
-  { value: "UNITS_PRODUCED", label: "Unidades Producidas" },
-  { value: "NONE", label: "Sin Depreciación" },
+  { value: "STRAIGHT_LINE", label: "Linea recta" },
+  { value: "DOUBLE_DECLINING", label: "Doble declinacion" },
+  { value: "UNITS_PRODUCED", label: "Unidades producidas" },
+  { value: "NONE", label: "Sin depreciacion" },
 ];
-
-const statusColor = (s: string) => {
-  switch (s) {
-    case "ACTIVE": return "success";
-    case "DISPOSED": return "error";
-    case "FULLY_DEPRECIATED": return "warning";
-    default: return "default";
-  }
-};
 
 const emptyForm: CreateAssetInput = {
   assetCode: "",
@@ -78,8 +61,54 @@ const emptyForm: CreateAssetInput = {
   serialNumber: "",
 };
 
+const ACTIVOS_FILTERS: FilterFieldDef[] = [
+  { field: "status", label: "Estado", type: "select", options: [
+    { value: "ACTIVE", label: "Activo" },
+    { value: "DISPOSED", label: "Dado de baja" },
+    { value: "FULLY_DEPRECIATED", label: "Totalmente depreciado" },
+  ]},
+  { field: "categoryCode", label: "Categoria", type: "select", options: [] },
+  { field: "fechaDesde", label: "Fecha desde", type: "date" },
+  { field: "fechaHasta", label: "Fecha hasta", type: "date" },
+];
+
+const COLUMNS: ColumnDef[] = [
+  { field: "AssetCode", header: "Codigo", width: 110, sortable: true },
+  { field: "Description", header: "Descripcion", flex: 1, minWidth: 200, sortable: true },
+  { field: "CategoryName", header: "Categoria", width: 150, sortable: true, groupable: true },
+  { field: "AcquisitionDate", header: "Fecha adq.", width: 120, sortable: true },
+  { field: "AcquisitionCost", header: "Costo adq.", width: 140, type: "number", currency: "VES", aggregation: "sum" },
+  { field: "BookValue", header: "Valor en Libros", width: 140, type: "number", currency: "VES", aggregation: "sum" },
+  {
+    field: "Status", header: "Estado", width: 150, sortable: true, groupable: true,
+    statusColors: { ACTIVE: "success", DISPOSED: "error", FULLY_DEPRECIATED: "warning" },
+    statusVariant: "outlined",
+  },
+  {
+    field: "actions",
+    header: "Acciones",
+    type: "actions",
+    width: 130,
+    pin: "right",
+    actions: [
+      { icon: "view", label: "Ver", action: "view" },
+      { icon: "edit", label: "Editar", action: "edit", color: "#e67e22" },
+      { icon: "delete", label: "Dar de baja", action: "delete", color: "#dc2626" },
+    ],
+  },
+];
+
+const GRID_IDS = {
+  gridRef: buildContabilidadGridId("activos-fijos-list", "main"),
+} as const;
+
 export default function ActivosFijosListPage() {
   const router = useRouter();
+  const gridRef = useRef<any>(null);
+    const { ready: gridLayoutReady } = useGridLayoutSync(GRID_IDS.gridRef);
+  useContabilidadGridId(gridRef, GRID_IDS.gridRef);
+  const layoutReady = gridLayoutReady;
+  const { registered } = useContabilidadGridRegistration(layoutReady);
   const [filter, setFilter] = useState<AssetFilter>({ page: 1, limit: 25 });
   const [openCreate, setOpenCreate] = useState(false);
   const [form, setForm] = useState<CreateAssetInput>({ ...emptyForm });
@@ -93,67 +122,38 @@ export default function ActivosFijosListPage() {
 
   const rows = data?.rows ?? [];
   const categorias: any[] = categoriasData?.rows ?? [];
+  const [search, setSearch] = useState("");
+  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
 
-  const columns: GridColDef[] = [
-    { field: "AssetCode", headerName: "Código", width: 110 },
-    { field: "Description", headerName: "Descripción", flex: 1, minWidth: 200 },
-    {
-      field: "CategoryName",
-      headerName: "Categoría",
-      width: 150,
-      renderCell: (p) => <Chip label={p.value} size="small" variant="outlined" />,
-    },
-    { field: "AcquisitionDate", headerName: "Fecha Adq.", width: 120 },
-    {
-      field: "AcquisitionCost",
-      headerName: "Costo Adq.",
-      width: 140,
-      renderCell: (p) => formatCurrency(p.value),
-    },
-    {
-      field: "BookValue",
-      headerName: "Valor en Libros",
-      width: 140,
-      renderCell: (p) => formatCurrency(p.value),
-    },
-    {
-      field: "Status",
-      headerName: "Estado",
-      width: 150,
-      renderCell: (p) => (
-        <Chip label={p.value} size="small" color={statusColor(p.value) as any} />
-      ),
-    },
-    {
-      field: "acciones",
-      headerName: "",
-      width: 100,
-      sortable: false,
-      renderCell: (p) => (
-        <Stack direction="row" spacing={0.5}>
-          <Tooltip title="Ver detalle">
-            <IconButton
-              size="small"
-              onClick={() => router.push(`/contabilidad/activos-fijos/${p.row.AssetId}`)}
-            >
-              <VisibilityIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-          {p.row.Status === "ACTIVE" && (
-            <Tooltip title="Dar de baja">
-              <IconButton
-                size="small"
-                color="error"
-                onClick={() => setDisposeId(p.row.AssetId)}
-              >
-                <DeleteIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
-          )}
-        </Stack>
-      ),
-    },
-  ];
+  const activosFilterDefs: FilterFieldDef[] = React.useMemo(() => {
+    const catOptions = categorias.map((c) => ({ value: c.CategoryCode, label: c.CategoryName }));
+    return ACTIVOS_FILTERS.map((f) =>
+      f.field === "categoryCode" ? { ...f, options: catOptions } : f
+    );
+  }, [categorias]);
+
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+    el.columns = COLUMNS;
+    el.rows = rows.map((r: any) => ({ ...r, id: r.AssetId }));
+    el.loading = isLoading;
+  }, [rows, isLoading, registered]);
+
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+    const handler = (e: any) => {
+      const { action, row } = e.detail;
+      if (action === 'view') router.push(`/contabilidad/activos-fijos/${row.AssetId}`);
+      if (action === 'edit') router.push(`/contabilidad/activos-fijos/${row.AssetId}/edit`);
+      if (action === 'delete') { setDisposeId(row.AssetId); setDisposeReason(""); }
+    };
+    const createHandler = () => setOpenCreate(true);
+    el.addEventListener('action-click', handler);
+    el.addEventListener('create-click', createHandler);
+    return () => { el.removeEventListener('action-click', handler); el.removeEventListener('create-click', createHandler); };
+  }, [registered, router]);
 
   const handleCreate = async () => {
     await createMutation.mutateAsync(form);
@@ -175,206 +175,123 @@ export default function ActivosFijosListPage() {
   const setField = <K extends keyof CreateAssetInput>(key: K, val: CreateAssetInput[K]) =>
     setForm((f) => ({ ...f, [key]: val }));
 
+  if (!registered) {
+    return <Box sx={{ display: "flex", justifyContent: "center", mt: 10 }}><CircularProgress /></Box>;
+  }
+
   return (
     <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-      <ContextActionHeader
-        title="Activos Fijos"
-        primaryAction={{
-          label: "Nuevo Activo",
-          onClick: () => setOpenCreate(true),
-        }}
-      />
+      <ContextActionHeader title="Activos fijos" />
 
       <Box sx={{ p: { xs: 2, md: 3 }, flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-        {/* Filtros */}
-        <Stack direction="row" spacing={2} mb={2} flexWrap="wrap">
-          <TextField
-            label="Buscar"
-            size="small"
-            value={filter.search || ""}
-            onChange={(e) => setFilter((f) => ({ ...f, search: e.target.value, page: 1 }))}
-            sx={{ minWidth: 200 }}
-          />
-          <FormControl size="small" sx={{ minWidth: 180 }}>
-            <InputLabel>Categoría</InputLabel>
-            <Select
-              label="Categoría"
-              value={filter.categoryCode || ""}
-              onChange={(e) => setFilter((f) => ({ ...f, categoryCode: e.target.value || undefined, page: 1 }))}
-            >
-              <MenuItem value="">Todas</MenuItem>
-              {categorias.map((c) => (
-                <MenuItem key={c.CategoryCode} value={c.CategoryCode}>
-                  {c.CategoryName}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-          <FormControl size="small" sx={{ minWidth: 180 }}>
-            <InputLabel>Estado</InputLabel>
-            <Select
-              label="Estado"
-              value={filter.status || ""}
-              onChange={(e) => setFilter((f) => ({ ...f, status: e.target.value || undefined, page: 1 }))}
-            >
-              {STATUS_OPTIONS.map((o) => (
-                <MenuItem key={o.value} value={o.value}>{o.label}</MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        </Stack>
+        <ZenttoFilterPanel
+          filters={activosFilterDefs}
+          values={filterValues}
+          onChange={(vals) => {
+            setFilterValues(vals);
+            setFilter((f) => ({
+              ...f,
+              status: vals.status || undefined,
+              categoryCode: vals.categoryCode || undefined,
+              page: 1,
+            }));
+          }}
+          searchPlaceholder="Buscar activo..."
+          searchValue={search}
+          onSearchChange={(v) => {
+            setSearch(v);
+            setFilter((f) => ({ ...f, search: v || undefined, page: 1 }));
+          }}
+        />
 
-        {/* DataGrid */}
         <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, width: "100%", elevation: 0, border: "1px solid #E5E7EB" }}>
-          <DataGrid
-            rows={rows}
-            columns={columns}
-            loading={isLoading}
-            pageSizeOptions={[25, 50]}
-            paginationModel={{ page: (filter.page ?? 1) - 1, pageSize: filter.limit ?? 25 }}
-            onPaginationModelChange={(m) =>
-              setFilter((f) => ({ ...f, page: m.page + 1, limit: m.pageSize }))
-            }
-            rowCount={data?.total ?? 0}
-            paginationMode="server"
-            disableRowSelectionOnClick
-            getRowId={(row) => row.AssetId}
-            sx={{ border: "none" }}
-          />
+          <zentto-grid
+            ref={gridRef}
+            default-currency="VES"
+            export-filename="activos-fijos"
+            height="100%"
+            show-totals
+            enable-create
+            create-label="Nuevo activo"
+            enable-toolbar
+            enable-header-menu
+            enable-header-filters
+            enable-clipboard
+            enable-quick-search
+            enable-context-menu
+            enable-status-bar
+            enable-configurator
+          ></zentto-grid>
         </Paper>
       </Box>
 
       {/* Dialog Crear Activo */}
       <Dialog open={openCreate} onClose={() => setOpenCreate(false)} maxWidth="md" fullWidth>
-        <DialogTitle>Nuevo Activo Fijo</DialogTitle>
+        <DialogTitle>Nuevo activo fijo</DialogTitle>
         <DialogContent>
-          <Stack spacing={2} sx={{ mt: 1 }}>
-            <Stack direction="row" spacing={2}>
-              <TextField
-                label="Código"
-                fullWidth
-                size="small"
-                value={form.assetCode}
-                onChange={(e) => setField("assetCode", e.target.value)}
-              />
-              <TextField
-                label="Número de Serie"
-                fullWidth
-                size="small"
-                value={form.serialNumber || ""}
-                onChange={(e) => setField("serialNumber", e.target.value)}
-              />
-            </Stack>
-            <TextField
-              label="Descripción"
-              fullWidth
-              size="small"
-              value={form.description}
-              onChange={(e) => setField("description", e.target.value)}
-            />
-            <Stack direction="row" spacing={2}>
-              <FormControl size="small" fullWidth>
-                <InputLabel>Categoría</InputLabel>
-                <Select
-                  label="Categoría"
-                  value={form.categoryId || ""}
-                  onChange={(e) => setField("categoryId", Number(e.target.value))}
-                >
+          <FormGrid spacing={2} sx={{ mt: 1 }}>
+            <FormField xs={12} sm={6}>
+              <TextField label="Codigo" fullWidth value={form.assetCode} onChange={(e) => setField("assetCode", e.target.value)} />
+            </FormField>
+            <FormField xs={12} sm={6}>
+              <TextField label="Numero de Serie" fullWidth value={form.serialNumber || ""} onChange={(e) => setField("serialNumber", e.target.value)} />
+            </FormField>
+            <FormField xs={12}>
+              <TextField label="Descripcion" fullWidth value={form.description} onChange={(e) => setField("description", e.target.value)} />
+            </FormField>
+            <FormField xs={12} sm={6}>
+              <FormControl fullWidth>
+                <InputLabel>Categoria</InputLabel>
+                <Select label="Categoria" value={form.categoryId || ""} onChange={(e) => setField("categoryId", Number(e.target.value))}>
                   {categorias.map((c) => (
-                    <MenuItem key={c.CategoryId} value={c.CategoryId}>
-                      {c.CategoryName}
-                    </MenuItem>
+                    <MenuItem key={c.CategoryId} value={c.CategoryId}>{c.CategoryName}</MenuItem>
                   ))}
                 </Select>
               </FormControl>
-              <TextField
-                label="Fecha Adquisición"
-                type="date"
-                fullWidth
-                size="small"
-                InputLabelProps={{ shrink: true }}
-                value={form.acquisitionDate}
-                onChange={(e) => setField("acquisitionDate", e.target.value)}
+            </FormField>
+            <FormField xs={12} sm={6}>
+              <DatePicker
+                label="Fecha adquisicion"
+                value={form.acquisitionDate ? dayjs(form.acquisitionDate) : null}
+                onChange={(v) => setField("acquisitionDate", v ? v.format('YYYY-MM-DD') : '')}
+                slotProps={{ textField: { size: 'small', fullWidth: true } }}
               />
-            </Stack>
-            <Stack direction="row" spacing={2}>
-              <TextField
-                label="Costo Adquisición"
-                type="number"
-                fullWidth
-                size="small"
-                value={form.acquisitionCost}
-                onChange={(e) => setField("acquisitionCost", Number(e.target.value))}
-              />
-              <TextField
-                label="Valor Residual"
-                type="number"
-                fullWidth
-                size="small"
-                value={form.residualValue || 0}
-                onChange={(e) => setField("residualValue", Number(e.target.value))}
-              />
-              <TextField
-                label="Vida Útil (meses)"
-                type="number"
-                fullWidth
-                size="small"
-                value={form.usefulLifeMonths}
-                onChange={(e) => setField("usefulLifeMonths", Number(e.target.value))}
-              />
-            </Stack>
-            <FormControl size="small" fullWidth>
-              <InputLabel>Método de Depreciación</InputLabel>
-              <Select
-                label="Método de Depreciación"
-                value={form.depreciationMethod || "STRAIGHT_LINE"}
-                onChange={(e) => setField("depreciationMethod", e.target.value)}
-              >
-                {DEPRECIATION_METHODS.map((m) => (
-                  <MenuItem key={m.value} value={m.value}>{m.label}</MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-            <Stack direction="row" spacing={2}>
-              <TextField
-                label="Cuenta Activo"
-                fullWidth
-                size="small"
-                value={form.assetAccountCode}
-                onChange={(e) => setField("assetAccountCode", e.target.value)}
-              />
-              <TextField
-                label="Cuenta Dep. Acum."
-                fullWidth
-                size="small"
-                value={form.deprecAccountCode}
-                onChange={(e) => setField("deprecAccountCode", e.target.value)}
-              />
-              <TextField
-                label="Cuenta Gasto"
-                fullWidth
-                size="small"
-                value={form.expenseAccountCode}
-                onChange={(e) => setField("expenseAccountCode", e.target.value)}
-              />
-            </Stack>
-            <Stack direction="row" spacing={2}>
-              <TextField
-                label="Centro de Costo"
-                fullWidth
-                size="small"
-                value={form.costCenterCode || ""}
-                onChange={(e) => setField("costCenterCode", e.target.value)}
-              />
-              <TextField
-                label="Ubicación"
-                fullWidth
-                size="small"
-                value={form.location || ""}
-                onChange={(e) => setField("location", e.target.value)}
-              />
-            </Stack>
-          </Stack>
+            </FormField>
+            <FormField xs={12} sm={4}>
+              <TextField label="Costo adquisicion" type="number" fullWidth value={form.acquisitionCost} onChange={(e) => setField("acquisitionCost", Number(e.target.value))} />
+            </FormField>
+            <FormField xs={12} sm={4}>
+              <TextField label="Valor residual" type="number" fullWidth value={form.residualValue || 0} onChange={(e) => setField("residualValue", Number(e.target.value))} />
+            </FormField>
+            <FormField xs={12} sm={4}>
+              <TextField label="Vida Util (meses)" type="number" fullWidth value={form.usefulLifeMonths} onChange={(e) => setField("usefulLifeMonths", Number(e.target.value))} />
+            </FormField>
+            <FormField xs={12}>
+              <FormControl fullWidth>
+                <InputLabel>Metodo de Depreciacion</InputLabel>
+                <Select label="Metodo de Depreciacion" value={form.depreciationMethod || "STRAIGHT_LINE"} onChange={(e) => setField("depreciationMethod", e.target.value)}>
+                  {DEPRECIATION_METHODS.map((m) => (
+                    <MenuItem key={m.value} value={m.value}>{m.label}</MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </FormField>
+            <FormField xs={12} sm={4}>
+              <TextField label="Cuenta activo" fullWidth value={form.assetAccountCode} onChange={(e) => setField("assetAccountCode", e.target.value)} />
+            </FormField>
+            <FormField xs={12} sm={4}>
+              <TextField label="Cuenta dep. acum." fullWidth value={form.deprecAccountCode} onChange={(e) => setField("deprecAccountCode", e.target.value)} />
+            </FormField>
+            <FormField xs={12} sm={4}>
+              <TextField label="Cuenta gasto" fullWidth value={form.expenseAccountCode} onChange={(e) => setField("expenseAccountCode", e.target.value)} />
+            </FormField>
+            <FormField xs={12} sm={6}>
+              <TextField label="Centro de Costo" fullWidth value={form.costCenterCode || ""} onChange={(e) => setField("costCenterCode", e.target.value)} />
+            </FormField>
+            <FormField xs={12} sm={6}>
+              <TextField label="Ubicacion" fullWidth value={form.location || ""} onChange={(e) => setField("location", e.target.value)} />
+            </FormField>
+          </FormGrid>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpenCreate(false)}>Cancelar</Button>
@@ -382,7 +299,7 @@ export default function ActivosFijosListPage() {
             variant="contained"
             onClick={handleCreate}
             disabled={createMutation.isPending || !form.assetCode || !form.description}
-            startIcon={createMutation.isPending ? <CircularProgress size={16} /> : <AddIcon />}
+            startIcon={createMutation.isPending ? <CircularProgress size={16} /> : undefined}
           >
             Crear
           </Button>
@@ -391,10 +308,10 @@ export default function ActivosFijosListPage() {
 
       {/* Dialog Dar de Baja */}
       <Dialog open={disposeId != null} onClose={() => setDisposeId(null)}>
-        <DialogTitle>Dar de Baja Activo</DialogTitle>
+        <DialogTitle>Dar de baja activo</DialogTitle>
         <DialogContent>
           <Alert severity="warning" sx={{ mb: 2 }}>
-            Esta acción registrará la baja del activo y no se puede deshacer.
+            Esta accion registrara la baja del activo y no se puede deshacer.
           </Alert>
           <TextField
             label="Motivo de la baja"
@@ -408,16 +325,19 @@ export default function ActivosFijosListPage() {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDisposeId(null)}>Cancelar</Button>
-          <Button
-            variant="contained"
-            color="error"
-            onClick={handleDispose}
-            disabled={!disposeReason || disposeMutation.isPending}
-          >
+          <Button variant="contained" color="error" onClick={handleDispose} disabled={!disposeReason || disposeMutation.isPending}>
             Dar de Baja
           </Button>
         </DialogActions>
       </Dialog>
     </Box>
   );
+}
+
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'zentto-grid': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & Record<string, any>, HTMLElement>;
+    }
+  }
 }

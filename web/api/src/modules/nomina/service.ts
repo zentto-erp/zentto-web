@@ -260,6 +260,32 @@ export async function saveConcepto(data: Partial<ConceptoNomina>) {
   };
 }
 
+export async function deleteConcepto(codigo: string) {
+  const scope = await getDefaultScope();
+  const code = String(codigo ?? "").trim().toUpperCase();
+  if (!code) return { success: false, message: "codigo obligatorio" };
+
+  const rows = await callSp("usp_HR_Payroll_DeleteConcept", {
+    CompanyId: scope.companyId,
+    ConceptCode: code,
+  });
+
+  return { success: true, message: "Concepto desactivado" };
+}
+
+export async function deleteConstante(codigo: string) {
+  const scope = await getDefaultScope();
+  const code = String(codigo ?? "").trim().toUpperCase();
+  if (!code) return { success: false, message: "codigo obligatorio" };
+
+  const rows = await callSp("usp_HR_Payroll_DeleteConstant", {
+    CompanyId: scope.companyId,
+    ConstantCode: code,
+  });
+
+  return { success: true, message: "Constante desactivada" };
+}
+
 async function loadConceptsForRun(
   payrollCode: string,
   conceptTypeFilter?: string,
@@ -612,6 +638,8 @@ export async function procesarVacaciones(payload: {
   return {
     success: true,
     message: `Vacaciones procesadas por ${days} dias`,
+    total,
+    dias: days,
   };
 }
 
@@ -713,6 +741,10 @@ export async function calcularLiquidacion(payload: {
   return {
     success: true,
     message: "Liquidacion calculada",
+    total,
+    prestaciones,
+    vacPendientes,
+    bonoSalida,
   };
 }
 

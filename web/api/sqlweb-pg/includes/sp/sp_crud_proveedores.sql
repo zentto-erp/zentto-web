@@ -1,347 +1,277 @@
 -- ============================================================
--- DatqBoxWeb PostgreSQL - sp_crud_proveedores.sql
--- CRUD de Proveedores. Tabla canonica: master."Supplier"
+-- FIX: sp_crud_proveedores.sql - Adapted for production schema
+-- master."Supplier" has: SupplierCode, SupplierName, FiscalId,
+--   Email, Phone, AddressLine, CreditLimit, TotalBalance, IsActive, IsDeleted, CompanyId
 -- ============================================================
 
--- ---------- 1. List (paginado con filtros) ----------
+-- ---------- 1. List ----------
+DROP FUNCTION IF EXISTS usp_proveedores_list CASCADE;
 CREATE OR REPLACE FUNCTION usp_proveedores_list(
-    p_search VARCHAR(100) DEFAULT NULL,
-    p_estado VARCHAR(60) DEFAULT NULL,
-    p_vendedor VARCHAR(2) DEFAULT NULL,
-    p_page INT DEFAULT 1,
-    p_limit INT DEFAULT 50
+    p_company_id INT         DEFAULT 1,
+    p_search   VARCHAR(100) DEFAULT NULL,
+    p_estado   VARCHAR(20)  DEFAULT NULL,
+    p_vendedor VARCHAR(60)  DEFAULT NULL,
+    p_page     INT          DEFAULT 1,
+    p_limit    INT          DEFAULT 50
 )
 RETURNS TABLE(
-    "CODIGO" VARCHAR(10),
-    "NOMBRE" VARCHAR(255),
-    "RIF" VARCHAR(20),
-    "SALDO_TOT" DOUBLE PRECISION,
-    "LIMITE" DOUBLE PRECISION,
-    "IsActive" BOOLEAN,
-    "IsDeleted" BOOLEAN,
-    "CompanyId" INT,
-    "SupplierCode" VARCHAR(10),
-    "SupplierName" VARCHAR(255),
-    "FiscalId" VARCHAR(20),
-    "TotalBalance" DOUBLE PRECISION,
-    "CreditLimit" DOUBLE PRECISION,
-    "NIT" VARCHAR(20),
-    "Direccion" VARCHAR(255),
-    "Direccion1" VARCHAR(255),
-    "Sucursal" VARCHAR(50),
-    "Telefono" VARCHAR(60),
-    "Fax" VARCHAR(10),
-    "Contacto" VARCHAR(30),
-    "VENDEDOR" VARCHAR(2),
-    "ESTADO" VARCHAR(60),
-    "Ciudad" VARCHAR(30),
-    "CodPostal" VARCHAR(10),
-    "Email" VARCHAR(50),
-    "PaginaWww" VARCHAR(50),
-    "CodUsuario" VARCHAR(10),
-    "Credito" DOUBLE PRECISION,
-    "ListaPrecio" INT,
-    "Notas" VARCHAR(50),
-    "TotalCount" BIGINT
+    "CODIGO"       VARCHAR,
+    "NOMBRE"       VARCHAR,
+    "RIF"          VARCHAR,
+    "NIT"          VARCHAR,
+    "DIRECCION"    VARCHAR,
+    "TELEFONO"     VARCHAR,
+    "FAX"          VARCHAR,
+    "CONTACTO"     VARCHAR,
+    "VENDEDOR"     VARCHAR,
+    "ESTADO"       VARCHAR,
+    "CIUDAD"       VARCHAR,
+    "CPOSTAL"      VARCHAR,
+    "EMAIL"        VARCHAR,
+    "PAGINA_WWW"   VARCHAR,
+    "COD_USUARIO"  VARCHAR,
+    "LIMITE"       DOUBLE PRECISION,
+    "CREDITO"      DOUBLE PRECISION,
+    "NOTAS"        VARCHAR,
+    "TotalCount"   INT
 )
 LANGUAGE plpgsql AS $$
 DECLARE
     v_offset INT;
-    v_total BIGINT;
-    v_search_param VARCHAR(100);
+    v_limit  INT;
+    v_search VARCHAR(100);
+    v_total  INT;
 BEGIN
-    v_offset := (COALESCE(NULLIF(p_page, 0), 1) - 1) * COALESCE(NULLIF(p_limit, 0), 50);
-    IF v_offset < 0 THEN v_offset := 0; END IF;
-    IF p_limit < 1 THEN p_limit := 50; END IF;
-    IF p_limit > 500 THEN p_limit := 500; END IF;
+    v_limit  := COALESCE(NULLIF(p_limit, 0), 50);
+    IF v_limit < 1  THEN v_limit := 50;  END IF;
+    IF v_limit > 500 THEN v_limit := 500; END IF;
 
-    v_search_param := NULL;
+    v_offset := (COALESCE(NULLIF(p_page, 0), 1) - 1) * v_limit;
+    IF v_offset < 0 THEN v_offset := 0; END IF;
+
+    v_search := NULL;
     IF p_search IS NOT NULL AND TRIM(p_search) <> '' THEN
-        v_search_param := '%' || p_search || '%';
+        v_search := '%' || p_search || '%';
     END IF;
 
     SELECT COUNT(1) INTO v_total
     FROM master."Supplier" s
     WHERE COALESCE(s."IsDeleted", FALSE) = FALSE
-      AND (v_search_param IS NULL
-           OR s."SupplierCode" LIKE v_search_param
-           OR s."SupplierName" LIKE v_search_param
-           OR s."FiscalId" LIKE v_search_param)
-      AND (p_estado IS NULL OR TRIM(p_estado) = '' OR s."ESTADO" = p_estado)
-      AND (p_vendedor IS NULL OR TRIM(p_vendedor) = '' OR s."VENDEDOR" = p_vendedor);
+      AND (p_company_id IS NULL OR s."CompanyId" = p_company_id)
+      AND (v_search IS NULL OR (s."SupplierCode" ILIKE v_search OR s."SupplierName" ILIKE v_search OR COALESCE(s."FiscalId",''::VARCHAR) ILIKE v_search));
 
     RETURN QUERY
     SELECT
-        s."SupplierCode"  AS "CODIGO",
-        s."SupplierName"  AS "NOMBRE",
-        s."FiscalId"      AS "RIF",
-        s."TotalBalance"  AS "SALDO_TOT",
-        s."CreditLimit"   AS "LIMITE",
-        s."IsActive",
-        s."IsDeleted",
-        s."CompanyId",
-        s."SupplierCode",
-        s."SupplierName",
-        s."FiscalId",
-        s."TotalBalance",
-        s."CreditLimit",
-        s."NIT",
-        s."Direccion",
-        s."Direccion1",
-        s."Sucursal",
-        s."Telefono",
-        s."Fax",
-        s."Contacto",
-        s."VENDEDOR",
-        s."ESTADO",
-        s."Ciudad",
-        s."CodPostal",
-        s."Email",
-        s."PaginaWww",
-        s."CodUsuario",
-        s."Credito",
-        s."ListaPrecio",
-        s."Notas",
-        v_total AS "TotalCount"
+        s."SupplierCode"::VARCHAR                       AS "CODIGO",
+        s."SupplierName"::VARCHAR                       AS "NOMBRE",
+        COALESCE(s."FiscalId",''::VARCHAR)::VARCHAR              AS "RIF",
+        NULL::VARCHAR                                   AS "NIT",
+        COALESCE(s."AddressLine",''::VARCHAR)::VARCHAR           AS "DIRECCION",
+        COALESCE(s."Phone",''::VARCHAR)::VARCHAR                 AS "TELEFONO",
+        NULL::VARCHAR                                   AS "FAX",
+        NULL::VARCHAR                                   AS "CONTACTO",
+        NULL::VARCHAR                                   AS "VENDEDOR",
+        CASE WHEN s."IsActive" THEN 'A' ELSE 'I' END::VARCHAR AS "ESTADO",
+        NULL::VARCHAR                                   AS "CIUDAD",
+        NULL::VARCHAR                                   AS "CPOSTAL",
+        COALESCE(s."Email",''::VARCHAR)::VARCHAR                 AS "EMAIL",
+        NULL::VARCHAR                                   AS "PAGINA_WWW",
+        NULL::VARCHAR                                   AS "COD_USUARIO",
+        COALESCE(s."CreditLimit",0)::DOUBLE PRECISION   AS "LIMITE",
+        COALESCE(s."CreditLimit",0)::DOUBLE PRECISION   AS "CREDITO",
+        NULL::VARCHAR                                   AS "NOTAS",
+        v_total                                         AS "TotalCount"
     FROM master."Supplier" s
     WHERE COALESCE(s."IsDeleted", FALSE) = FALSE
-      AND (v_search_param IS NULL
-           OR s."SupplierCode" LIKE v_search_param
-           OR s."SupplierName" LIKE v_search_param
-           OR s."FiscalId" LIKE v_search_param)
-      AND (p_estado IS NULL OR TRIM(p_estado) = '' OR s."ESTADO" = p_estado)
-      AND (p_vendedor IS NULL OR TRIM(p_vendedor) = '' OR s."VENDEDOR" = p_vendedor)
+      AND (v_search IS NULL OR (s."SupplierCode" ILIKE v_search OR s."SupplierName" ILIKE v_search OR COALESCE(s."FiscalId",''::VARCHAR) ILIKE v_search))
     ORDER BY s."SupplierCode"
-    LIMIT p_limit OFFSET v_offset;
+    LIMIT v_limit OFFSET v_offset;
 END;
 $$;
 
 -- ---------- 2. Get by Codigo ----------
+DROP FUNCTION IF EXISTS usp_proveedores_getbycodigo(INT, VARCHAR) CASCADE;
+DROP FUNCTION IF EXISTS usp_proveedores_getbycodigo(VARCHAR) CASCADE;
 CREATE OR REPLACE FUNCTION usp_proveedores_getbycodigo(
-    p_codigo VARCHAR(10)
+    p_company_id INT DEFAULT 1,
+    p_codigo VARCHAR(24) DEFAULT NULL
 )
 RETURNS TABLE(
-    "CODIGO" VARCHAR(10),
-    "NOMBRE" VARCHAR(255),
-    "RIF" VARCHAR(20),
-    "SALDO_TOT" DOUBLE PRECISION,
-    "LIMITE" DOUBLE PRECISION,
-    "IsActive" BOOLEAN,
-    "IsDeleted" BOOLEAN,
-    "CompanyId" INT,
-    "SupplierCode" VARCHAR(10),
-    "SupplierName" VARCHAR(255),
-    "FiscalId" VARCHAR(20),
-    "TotalBalance" DOUBLE PRECISION,
-    "CreditLimit" DOUBLE PRECISION,
-    "NIT" VARCHAR(20),
-    "Direccion" VARCHAR(255),
-    "Direccion1" VARCHAR(255),
-    "Sucursal" VARCHAR(50),
-    "Telefono" VARCHAR(60),
-    "Fax" VARCHAR(10),
-    "Contacto" VARCHAR(30),
-    "VENDEDOR" VARCHAR(2),
-    "ESTADO" VARCHAR(60),
-    "Ciudad" VARCHAR(30),
-    "CodPostal" VARCHAR(10),
-    "Email" VARCHAR(50),
-    "PaginaWww" VARCHAR(50),
-    "CodUsuario" VARCHAR(10),
-    "Credito" DOUBLE PRECISION,
-    "ListaPrecio" INT,
-    "Notas" VARCHAR(50)
+    "CODIGO"       VARCHAR,
+    "NOMBRE"       VARCHAR,
+    "RIF"          VARCHAR,
+    "NIT"          VARCHAR,
+    "DIRECCION"    VARCHAR,
+    "TELEFONO"     VARCHAR,
+    "FAX"          VARCHAR,
+    "CONTACTO"     VARCHAR,
+    "VENDEDOR"     VARCHAR,
+    "ESTADO"       VARCHAR,
+    "CIUDAD"       VARCHAR,
+    "CPOSTAL"      VARCHAR,
+    "EMAIL"        VARCHAR,
+    "PAGINA_WWW"   VARCHAR,
+    "COD_USUARIO"  VARCHAR,
+    "LIMITE"       DOUBLE PRECISION,
+    "CREDITO"      DOUBLE PRECISION,
+    "NOTAS"        VARCHAR
 )
 LANGUAGE plpgsql AS $$
 BEGIN
     RETURN QUERY
     SELECT
-        s."SupplierCode"  AS "CODIGO",
-        s."SupplierName"  AS "NOMBRE",
-        s."FiscalId"      AS "RIF",
-        s."TotalBalance"  AS "SALDO_TOT",
-        s."CreditLimit"   AS "LIMITE",
-        s."IsActive",
-        s."IsDeleted",
-        s."CompanyId",
-        s."SupplierCode",
-        s."SupplierName",
-        s."FiscalId",
-        s."TotalBalance",
-        s."CreditLimit",
-        s."NIT",
-        s."Direccion",
-        s."Direccion1",
-        s."Sucursal",
-        s."Telefono",
-        s."Fax",
-        s."Contacto",
-        s."VENDEDOR",
-        s."ESTADO",
-        s."Ciudad",
-        s."CodPostal",
-        s."Email",
-        s."PaginaWww",
-        s."CodUsuario",
-        s."Credito",
-        s."ListaPrecio",
-        s."Notas"
+        s."SupplierCode"::VARCHAR                       AS "CODIGO",
+        s."SupplierName"::VARCHAR                       AS "NOMBRE",
+        COALESCE(s."FiscalId",''::VARCHAR)::VARCHAR              AS "RIF",
+        NULL::VARCHAR                                   AS "NIT",
+        COALESCE(s."AddressLine",''::VARCHAR)::VARCHAR           AS "DIRECCION",
+        COALESCE(s."Phone",''::VARCHAR)::VARCHAR                 AS "TELEFONO",
+        NULL::VARCHAR                                   AS "FAX",
+        NULL::VARCHAR                                   AS "CONTACTO",
+        NULL::VARCHAR                                   AS "VENDEDOR",
+        CASE WHEN s."IsActive" THEN 'A' ELSE 'I' END::VARCHAR AS "ESTADO",
+        NULL::VARCHAR                                   AS "CIUDAD",
+        NULL::VARCHAR                                   AS "CPOSTAL",
+        COALESCE(s."Email",''::VARCHAR)::VARCHAR                 AS "EMAIL",
+        NULL::VARCHAR                                   AS "PAGINA_WWW",
+        NULL::VARCHAR                                   AS "COD_USUARIO",
+        COALESCE(s."CreditLimit",0)::DOUBLE PRECISION   AS "LIMITE",
+        COALESCE(s."CreditLimit",0)::DOUBLE PRECISION   AS "CREDITO",
+        NULL::VARCHAR                                   AS "NOTAS"
     FROM master."Supplier" s
     WHERE s."SupplierCode" = p_codigo
-      AND COALESCE(s."IsDeleted", FALSE) = FALSE;
+      AND COALESCE(s."IsDeleted", FALSE) = FALSE
+      AND (p_company_id IS NULL OR s."CompanyId" = p_company_id);
 END;
 $$;
 
--- ---------- 3. Insert (fila como JSONB) ----------
+-- ---------- 3. Insert ----------
+DROP FUNCTION IF EXISTS usp_proveedores_insert(JSONB) CASCADE;
 CREATE OR REPLACE FUNCTION usp_proveedores_insert(
     p_row_json JSONB
 )
 RETURNS TABLE(
     "Resultado" INT,
-    "Mensaje" VARCHAR(500)
+    "Mensaje"   VARCHAR(500)
 )
 LANGUAGE plpgsql AS $$
 DECLARE
     v_company_id INT;
-    v_codigo VARCHAR(10);
+    v_codigo     VARCHAR(24);
 BEGIN
-    SELECT "CompanyId" INTO v_company_id
-    FROM cfg."Company"
-    WHERE COALESCE("IsDeleted", FALSE) = FALSE
-    ORDER BY "CompanyId"
+    SELECT co."CompanyId" INTO v_company_id
+    FROM cfg."Company" co
+    WHERE COALESCE(co."IsDeleted", FALSE) = FALSE
+    ORDER BY co."CompanyId"
     LIMIT 1;
+
     IF v_company_id IS NULL THEN v_company_id := 1; END IF;
 
-    v_codigo := NULLIF(p_row_json->>'CODIGO', '');
+    v_codigo := NULLIF(TRIM(COALESCE(p_row_json->>'CODIGO', ''::VARCHAR)),''::VARCHAR);
 
-    IF EXISTS (SELECT 1 FROM master."Supplier" WHERE "SupplierCode" = v_codigo AND "CompanyId" = v_company_id) THEN
+    IF v_codigo IS NULL THEN
+        RETURN QUERY SELECT -1, 'CODIGO requerido'::VARCHAR(500);
+        RETURN;
+    END IF;
+
+    IF EXISTS (
+        SELECT 1 FROM master."Supplier"
+        WHERE "SupplierCode" = v_codigo AND "CompanyId" = v_company_id
+    ) THEN
         RETURN QUERY SELECT -1, 'Proveedor ya existe'::VARCHAR(500);
         RETURN;
     END IF;
 
-    BEGIN
-        INSERT INTO master."Supplier" (
-            "SupplierCode", "SupplierName", "FiscalId", "NIT",
-            "Direccion", "Direccion1", "Sucursal", "Telefono", "Fax",
-            "Contacto", "VENDEDOR", "ESTADO", "Ciudad", "CodPostal",
-            "Email", "PaginaWww", "CodUsuario", "CreditLimit", "Credito",
-            "ListaPrecio", "Notas", "IsActive", "IsDeleted", "CompanyId"
-        )
-        VALUES (
-            v_codigo,
-            NULLIF(p_row_json->>'NOMBRE', ''),
-            NULLIF(p_row_json->>'RIF', ''),
-            NULLIF(p_row_json->>'NIT', ''),
-            NULLIF(p_row_json->>'DIRECCION', ''),
-            NULLIF(p_row_json->>'DIRECCION1', ''),
-            NULLIF(p_row_json->>'SUCURSAL', ''),
-            NULLIF(p_row_json->>'TELEFONO', ''),
-            NULLIF(p_row_json->>'FAX', ''),
-            NULLIF(p_row_json->>'CONTACTO', ''),
-            NULLIF(p_row_json->>'VENDEDOR', ''),
-            NULLIF(p_row_json->>'ESTADO', ''),
-            NULLIF(p_row_json->>'CIUDAD', ''),
-            NULLIF(p_row_json->>'CPOSTAL', ''),
-            NULLIF(p_row_json->>'EMAIL', ''),
-            NULLIF(p_row_json->>'PAGINA_WWW', ''),
-            NULLIF(p_row_json->>'COD_USUARIO', ''),
-            CASE WHEN p_row_json->>'LIMITE' IS NULL OR p_row_json->>'LIMITE' = '' THEN NULL
-                 ELSE (p_row_json->>'LIMITE')::DOUBLE PRECISION END,
-            CASE WHEN p_row_json->>'CREDITO' IS NULL OR p_row_json->>'CREDITO' = '' THEN NULL
-                 ELSE (p_row_json->>'CREDITO')::DOUBLE PRECISION END,
-            CASE WHEN p_row_json->>'LISTA_PRECIO' IS NULL OR p_row_json->>'LISTA_PRECIO' = '' THEN 0
-                 ELSE (p_row_json->>'LISTA_PRECIO')::INT END,
-            NULLIF(p_row_json->>'NOTAS', ''),
-            TRUE,   -- IsActive
-            FALSE,  -- IsDeleted
-            v_company_id
-        );
+    INSERT INTO master."Supplier" (
+        "SupplierCode", "SupplierName", "FiscalId",
+        "Email", "Phone", "AddressLine",
+        "CreditLimit", "IsActive", "IsDeleted", "CompanyId"
+    )
+    VALUES (
+        v_codigo,
+        COALESCE(NULLIF(p_row_json->>'NOMBRE',''::VARCHAR), v_codigo),
+        NULLIF(p_row_json->>'RIF', ''::VARCHAR),
+        NULLIF(p_row_json->>'EMAIL', ''::VARCHAR),
+        NULLIF(p_row_json->>'TELEFONO', ''::VARCHAR),
+        NULLIF(p_row_json->>'DIRECCION', ''::VARCHAR),
+        CASE WHEN COALESCE(p_row_json->>'LIMITE',''::VARCHAR) = '' THEN 0
+             ELSE (p_row_json->>'LIMITE')::NUMERIC END,
+        TRUE,
+        FALSE,
+        v_company_id
+    );
 
-        RETURN QUERY SELECT 1, 'OK'::VARCHAR(500);
-    EXCEPTION WHEN OTHERS THEN
-        RETURN QUERY SELECT -99, SQLERRM::VARCHAR(500);
-    END;
+    RETURN QUERY SELECT 1, 'OK'::VARCHAR(500);
+
+EXCEPTION WHEN OTHERS THEN
+    RETURN QUERY SELECT -99, SQLERRM::VARCHAR(500);
 END;
 $$;
 
 -- ---------- 4. Update ----------
+DROP FUNCTION IF EXISTS usp_proveedores_update(VARCHAR, JSONB) CASCADE;
 CREATE OR REPLACE FUNCTION usp_proveedores_update(
-    p_codigo VARCHAR(10),
+    p_codigo   VARCHAR(24),
     p_row_json JSONB
 )
 RETURNS TABLE(
     "Resultado" INT,
-    "Mensaje" VARCHAR(500)
+    "Mensaje"   VARCHAR(500)
 )
 LANGUAGE plpgsql AS $$
 BEGIN
-    IF NOT EXISTS (SELECT 1 FROM master."Supplier" WHERE "SupplierCode" = p_codigo AND COALESCE("IsDeleted", FALSE) = FALSE) THEN
+    IF NOT EXISTS (
+        SELECT 1 FROM master."Supplier"
+        WHERE "SupplierCode" = p_codigo AND COALESCE("IsDeleted", FALSE) = FALSE
+    ) THEN
         RETURN QUERY SELECT -1, 'Proveedor no encontrado'::VARCHAR(500);
         RETURN;
     END IF;
 
-    BEGIN
-        UPDATE master."Supplier"
-        SET
-            "SupplierName" = COALESCE(NULLIF(p_row_json->>'NOMBRE', ''), "SupplierName"),
-            "FiscalId"     = COALESCE(NULLIF(p_row_json->>'RIF', ''), "FiscalId"),
-            "NIT"          = COALESCE(NULLIF(p_row_json->>'NIT', ''), "NIT"),
-            "Direccion"    = COALESCE(NULLIF(p_row_json->>'DIRECCION', ''), "Direccion"),
-            "Direccion1"   = COALESCE(NULLIF(p_row_json->>'DIRECCION1', ''), "Direccion1"),
-            "Sucursal"     = COALESCE(NULLIF(p_row_json->>'SUCURSAL', ''), "Sucursal"),
-            "Telefono"     = COALESCE(NULLIF(p_row_json->>'TELEFONO', ''), "Telefono"),
-            "Fax"          = COALESCE(NULLIF(p_row_json->>'FAX', ''), "Fax"),
-            "Contacto"     = COALESCE(NULLIF(p_row_json->>'CONTACTO', ''), "Contacto"),
-            "VENDEDOR"     = COALESCE(NULLIF(p_row_json->>'VENDEDOR', ''), "VENDEDOR"),
-            "ESTADO"       = COALESCE(NULLIF(p_row_json->>'ESTADO', ''), "ESTADO"),
-            "Ciudad"       = COALESCE(NULLIF(p_row_json->>'CIUDAD', ''), "Ciudad"),
-            "CodPostal"    = COALESCE(NULLIF(p_row_json->>'CPOSTAL', ''), "CodPostal"),
-            "Email"        = COALESCE(NULLIF(p_row_json->>'EMAIL', ''), "Email"),
-            "PaginaWww"    = COALESCE(NULLIF(p_row_json->>'PAGINA_WWW', ''), "PaginaWww"),
-            "CodUsuario"   = COALESCE(NULLIF(p_row_json->>'COD_USUARIO', ''), "CodUsuario"),
-            "CreditLimit"  = CASE WHEN p_row_json->>'LIMITE' IS NULL OR p_row_json->>'LIMITE' = ''
-                                  THEN "CreditLimit"
-                                  ELSE (p_row_json->>'LIMITE')::DOUBLE PRECISION END,
-            "Credito"      = CASE WHEN p_row_json->>'CREDITO' IS NULL OR p_row_json->>'CREDITO' = ''
-                                  THEN "Credito"
-                                  ELSE (p_row_json->>'CREDITO')::DOUBLE PRECISION END,
-            "ListaPrecio"  = CASE WHEN p_row_json->>'LISTA_PRECIO' IS NULL OR p_row_json->>'LISTA_PRECIO' = ''
-                                  THEN "ListaPrecio"
-                                  ELSE (p_row_json->>'LISTA_PRECIO')::INT END,
-            "Notas"        = COALESCE(NULLIF(p_row_json->>'NOTAS', ''), "Notas")
-        WHERE "SupplierCode" = p_codigo
-          AND COALESCE("IsDeleted", FALSE) = FALSE;
+    UPDATE master."Supplier" SET
+        "SupplierName" = COALESCE(NULLIF(p_row_json->>'NOMBRE', ''::VARCHAR), "SupplierName"),
+        "FiscalId"     = COALESCE(NULLIF(p_row_json->>'RIF', ''::VARCHAR), "FiscalId"),
+        "Email"        = COALESCE(NULLIF(p_row_json->>'EMAIL', ''::VARCHAR), "Email"),
+        "Phone"        = COALESCE(NULLIF(p_row_json->>'TELEFONO', ''::VARCHAR), "Phone"),
+        "AddressLine"  = COALESCE(NULLIF(p_row_json->>'DIRECCION', ''::VARCHAR), "AddressLine"),
+        "CreditLimit"  = CASE WHEN COALESCE(p_row_json->>'LIMITE',''::VARCHAR) = '' THEN "CreditLimit"
+                              ELSE (p_row_json->>'LIMITE')::NUMERIC END
+    WHERE "SupplierCode" = p_codigo
+      AND COALESCE("IsDeleted", FALSE) = FALSE;
 
-        RETURN QUERY SELECT 1, 'OK'::VARCHAR(500);
-    EXCEPTION WHEN OTHERS THEN
-        RETURN QUERY SELECT -99, SQLERRM::VARCHAR(500);
-    END;
+    RETURN QUERY SELECT 1, 'OK'::VARCHAR(500);
+
+EXCEPTION WHEN OTHERS THEN
+    RETURN QUERY SELECT -99, SQLERRM::VARCHAR(500);
 END;
 $$;
 
--- ---------- 5. Delete (soft delete via IsDeleted) ----------
+-- ---------- 5. Delete ----------
+DROP FUNCTION IF EXISTS usp_proveedores_delete(VARCHAR) CASCADE;
 CREATE OR REPLACE FUNCTION usp_proveedores_delete(
-    p_codigo VARCHAR(10)
+    p_codigo VARCHAR(24)
 )
 RETURNS TABLE(
     "Resultado" INT,
-    "Mensaje" VARCHAR(500)
+    "Mensaje"   VARCHAR(500)
 )
 LANGUAGE plpgsql AS $$
 BEGIN
-    IF NOT EXISTS (SELECT 1 FROM master."Supplier" WHERE "SupplierCode" = p_codigo AND COALESCE("IsDeleted", FALSE) = FALSE) THEN
+    IF NOT EXISTS (
+        SELECT 1 FROM master."Supplier"
+        WHERE "SupplierCode" = p_codigo AND COALESCE("IsDeleted", FALSE) = FALSE
+    ) THEN
         RETURN QUERY SELECT -1, 'Proveedor no encontrado'::VARCHAR(500);
         RETURN;
     END IF;
 
-    BEGIN
-        UPDATE master."Supplier"
-        SET "IsDeleted" = TRUE, "IsActive" = FALSE
-        WHERE "SupplierCode" = p_codigo;
+    UPDATE master."Supplier"
+    SET "IsDeleted" = TRUE, "IsActive" = FALSE
+    WHERE "SupplierCode" = p_codigo;
 
-        RETURN QUERY SELECT 1, 'OK'::VARCHAR(500);
-    EXCEPTION WHEN OTHERS THEN
-        RETURN QUERY SELECT -99, SQLERRM::VARCHAR(500);
-    END;
+    RETURN QUERY SELECT 1, 'OK'::VARCHAR(500);
+
+EXCEPTION WHEN OTHERS THEN
+    RETURN QUERY SELECT -99, SQLERRM::VARCHAR(500);
 END;
 $$;

@@ -10,7 +10,7 @@ export async function listMovInvent(params: { search?: string; tipo?: string; pa
   const tipo = params.tipo || null;
 
   const { rows, output } = await callSpOut<any>(
-    "usp_Inv_Movement_List",
+    "usp_Movinvent_List",
     {
       Search: search,
       Tipo: tipo,

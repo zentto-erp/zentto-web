@@ -79,28 +79,62 @@ export async function saveTasasToDB(tasas: TasasBCV): Promise<boolean> {
 }
 
 /**
+ * Obtiene la tasa más reciente guardada en cfg.ExchangeRateDaily.
+ */
+async function getLatestRateFromDB(): Promise<TasasBCV | null> {
+    try {
+        const result = await callSp('usp_Cfg_ExchangeRate_GetLatest', {});
+        const rows = Array.isArray(result) ? result as { CurrencyCode: string; RateToBase: number; RateDate: string }[] : [];
+        if (rows.length === 0) return null;
+
+        let USD = 0, EUR = 0, fecha = '';
+        for (const r of rows) {
+            if (r.CurrencyCode === 'USD') { USD = Number(r.RateToBase); fecha = r.RateDate; }
+            if (r.CurrencyCode === 'EUR') EUR = Number(r.RateToBase);
+        }
+        if (USD <= 0 && EUR <= 0) return null;
+
+        return { USD, EUR, fechaInformativa: fecha || 'BD' };
+    } catch (e) {
+        console.error('Failed to get latest rate from DB:', e);
+        return null;
+    }
+}
+
+/**
  * Returns currently known active rates.
+ * 1. Intenta scraping BCV en vivo
+ * 2. Si falla, usa la tasa más reciente de la BD
+ * 3. Si todo falla, retorna error
  */
 export async function getTasasBCV() {
     // 1. Try to fetch from web
     const liveRates = await fetchTasasBcvWeb();
 
-    // 2. Fallbacks
-    if (!liveRates) {
+    if (liveRates) {
+        // Persist the live rates
+        await saveTasasToDB(liveRates);
         return {
-            USD: 45.0, // Hardcoded fallback just for visual mock
-            EUR: 48.0,
-            fechaInformativa: "Fallback Local",
-            origen: "FALLBACK_NOT_FOUND"
+            ...liveRates,
+            origen: "BCV_WEB_AUTO"
         };
     }
 
-    // Attempt to persist the live rates as system parameters implicitly.
-    await saveTasasToDB(liveRates);
+    // 2. Fallback: tasa más reciente de la BD
+    const dbRates = await getLatestRateFromDB();
+    if (dbRates) {
+        return {
+            ...dbRates,
+            origen: "DB_LATEST"
+        };
+    }
 
+    // 3. Sin datos — retornar error claro
     return {
-        ...liveRates,
-        origen: "BCV_WEB_AUTO"
+        USD: 0,
+        EUR: 0,
+        fechaInformativa: "Sin datos",
+        origen: "NO_DATA"
     };
 }
 

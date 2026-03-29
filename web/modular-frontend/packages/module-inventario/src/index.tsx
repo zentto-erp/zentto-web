@@ -53,3 +53,28 @@ export { default as CatalogoCrudPage } from "./components/CatalogoCrudPage";
 
 // ── Pages ────────────────────────────────────────────────────
 export { default as InventarioHome } from "./pages/InventarioHome";
+
+// ── Hooks Avanzados (Seriales, Lotes, WMS) ──────────────────
+export {
+  useLotesList,
+  useCreateLote,
+  useSerialsList,
+  useSerialByNumber,
+  useCreateSerial,
+  useUpdateSerialStatus,
+  useWarehousesList,
+  useWarehouseZones,
+  useWarehouseBins,
+  useCreateWarehouse,
+  useBinStock,
+} from "./hooks/useInventarioAvanzado";
+
+export type {
+  LotFilter,
+  SerialFilter,
+} from "./hooks/useInventarioAvanzado";
+
+// ── Components Avanzados ─────────────────────────────────────
+export { default as LotesPage } from "./components/LotesPage";
+export { default as SerialesPage } from "./components/SerialesPage";
+export { default as AlmacenesWMSPage } from "./components/AlmacenesWMSPage";

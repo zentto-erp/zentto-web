@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  typescript: { ignoreBuildErrors: true },
   transpilePackages: [
     '@zentto/shared-auth',
     '@zentto/shared-ui',

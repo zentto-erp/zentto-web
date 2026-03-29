@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Box, TextField, Button, Checkbox, FormControlLabel, CircularProgress } from "@mui/material";
-import Grid from "@mui/material/Grid2";
+import { Box, TextField, Button, Checkbox, FormControlLabel, CircularProgress, MenuItem } from "@mui/material";
+import { FormGrid, FormField } from "@zentto/shared-ui";
+import { useCountries, useStates } from "@zentto/shared-api";
 import type { AddressFormData } from "../hooks/useStoreAccount";
 
 interface Props {
@@ -13,6 +14,10 @@ interface Props {
 }
 
 export default function AddressForm({ initial, onSave, onCancel, saving }: Props) {
+  const [country, setCountry] = useState(initial?.country ?? "VE");
+  const { data: countries = [] } = useCountries();
+  const { data: states = [] } = useStates(country);
+
   const [label, setLabel] = useState(initial?.label ?? "");
   const [recipientName, setRecipientName] = useState(initial?.recipientName ?? "");
   const [phone, setPhone] = useState(initial?.phone ?? "");
@@ -20,7 +25,6 @@ export default function AddressForm({ initial, onSave, onCancel, saving }: Props
   const [city, setCity] = useState(initial?.city ?? "");
   const [state, setState] = useState(initial?.state ?? "");
   const [zipCode, setZipCode] = useState(initial?.zipCode ?? "");
-  const [country, setCountry] = useState(initial?.country ?? "Venezuela");
   const [instructions, setInstructions] = useState(initial?.instructions ?? "");
   const [isDefault, setIsDefault] = useState(initial?.isDefault ?? false);
 
@@ -42,35 +46,57 @@ export default function AddressForm({ initial, onSave, onCancel, saving }: Props
 
   return (
     <Box component="form" onSubmit={handleSubmit} sx={{ p: 2, border: "1px dashed #ccc", borderRadius: 2, bgcolor: "#fafafa" }}>
-      <Grid container spacing={2}>
-        <Grid size={{ xs: 12, sm: 4 }}>
-          <TextField label="Etiqueta" placeholder='Ej: Casa, Oficina' value={label} onChange={(e) => setLabel(e.target.value)} fullWidth size="small" required />
-        </Grid>
-        <Grid size={{ xs: 12, sm: 4 }}>
-          <TextField label="Nombre del receptor" value={recipientName} onChange={(e) => setRecipientName(e.target.value)} fullWidth size="small" required />
-        </Grid>
-        <Grid size={{ xs: 12, sm: 4 }}>
-          <TextField label="Telefono" value={phone} onChange={(e) => setPhone(e.target.value)} fullWidth size="small" />
-        </Grid>
-        <Grid size={{ xs: 12 }}>
-          <TextField label="Direccion completa" value={addressLine} onChange={(e) => setAddressLine(e.target.value)} fullWidth size="small" multiline rows={2} required />
-        </Grid>
-        <Grid size={{ xs: 12, sm: 4 }}>
-          <TextField label="Ciudad" value={city} onChange={(e) => setCity(e.target.value)} fullWidth size="small" />
-        </Grid>
-        <Grid size={{ xs: 12, sm: 4 }}>
-          <TextField label="Estado" value={state} onChange={(e) => setState(e.target.value)} fullWidth size="small" />
-        </Grid>
-        <Grid size={{ xs: 6, sm: 2 }}>
-          <TextField label="Cod. postal" value={zipCode} onChange={(e) => setZipCode(e.target.value)} fullWidth size="small" />
-        </Grid>
-        <Grid size={{ xs: 6, sm: 2 }}>
-          <TextField label="Pais" value={country} onChange={(e) => setCountry(e.target.value)} fullWidth size="small" />
-        </Grid>
-        <Grid size={{ xs: 12 }}>
-          <TextField label="Instrucciones de entrega" placeholder="Ej: Porton azul, 2do piso" value={instructions} onChange={(e) => setInstructions(e.target.value)} fullWidth size="small" />
-        </Grid>
-        <Grid size={{ xs: 12 }}>
+      <FormGrid spacing={2}>
+        <FormField xs={12} sm={4}>
+          <TextField label="Etiqueta" placeholder='Ej: Casa, Oficina' value={label} onChange={(e) => setLabel(e.target.value)} required />
+        </FormField>
+        <FormField xs={12} sm={4}>
+          <TextField label="Nombre del receptor" value={recipientName} onChange={(e) => setRecipientName(e.target.value)} required />
+        </FormField>
+        <FormField xs={12} sm={4}>
+          <TextField label="Telefono" value={phone} onChange={(e) => setPhone(e.target.value)} />
+        </FormField>
+        <FormField xs={12}>
+          <TextField label="Direccion completa" value={addressLine} onChange={(e) => setAddressLine(e.target.value)} multiline rows={2} required />
+        </FormField>
+        <FormField xs={12} sm={4}>
+          <TextField label="Ciudad" value={city} onChange={(e) => setCity(e.target.value)} />
+        </FormField>
+        <FormField xs={12} sm={4}>
+          <TextField
+            select
+            label="Estado"
+            value={state}
+            onChange={(e) => setState(e.target.value)}
+            disabled={states.length === 0}
+          >
+            {states.map((s) => (
+              <MenuItem key={s.StateCode} value={s.StateName}>{s.StateName}</MenuItem>
+            ))}
+          </TextField>
+        </FormField>
+        <FormField xs={6} sm={2}>
+          <TextField label="Cod. postal" value={zipCode} onChange={(e) => setZipCode(e.target.value)} />
+        </FormField>
+        <FormField xs={6} sm={2}>
+          <TextField
+            select
+            label="Pais"
+            value={country}
+            onChange={(e) => {
+              setCountry(e.target.value);
+              setState("");
+            }}
+          >
+            {countries.map((c) => (
+              <MenuItem key={c.CountryCode} value={c.CountryCode}>{c.CountryName}</MenuItem>
+            ))}
+          </TextField>
+        </FormField>
+        <FormField xs={12}>
+          <TextField label="Instrucciones de entrega" placeholder="Ej: Porton azul, 2do piso" value={instructions} onChange={(e) => setInstructions(e.target.value)} />
+        </FormField>
+        <FormField xs={12}>
           <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <FormControlLabel
               control={<Checkbox checked={isDefault} onChange={(e) => setIsDefault(e.target.checked)} size="small" />}
@@ -83,8 +109,8 @@ export default function AddressForm({ initial, onSave, onCancel, saving }: Props
               </Button>
             </Box>
           </Box>
-        </Grid>
-      </Grid>
+        </FormField>
+      </FormGrid>
     </Box>
   );
 }

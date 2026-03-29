@@ -102,9 +102,38 @@ export async function getMetadata(force = false): Promise<TableMetadata[]> {
   return cache ?? [];
 }
 
+// Legacy Spanish names → PG table names (used by CatalogoCrudPage from frontend)
+const TABLE_ALIASES: Record<string, string> = {
+  categorias: "Category", marcas: "Brand", clases: "ProductClass",
+  tipos: "ProductType", lineas: "SupplierLine", unidades: "Unit",
+  almacenes: "Warehouse", monedas: "Currency", moneda: "Currency",
+  empresa: "CompanyProfile", feriados: "Holiday", correlativo: "DocumentSequence",
+  reportes: "ReportTemplate", "tasa-moneda": "ExchangeRateDaily",
+  "linea-proveedores": "SupplierLine",
+};
+
 export async function getTableMetadata(schema: string, table: string) {
-  const all = await getMetadata();
-  return all.find((m) => m.schema === schema && m.table === table) ?? null;
+  let all: TableMetadata[];
+  try {
+    all = await getMetadata();
+  } catch {
+    return null;
+  }
+  const exact = all.find((m) => m.schema === schema && m.table.toLowerCase() === table.toLowerCase());
+  if (exact) return exact;
+
+  // Try alias (Spanish → English table name)
+  const aliased = TABLE_ALIASES[table.toLowerCase()];
+  if (aliased) {
+    const byAlias = all.find((m) => m.table.toLowerCase() === aliased.toLowerCase());
+    if (byAlias) return byAlias;
+  }
+
+  // "dbo" is the SQL Server default schema — in PostgreSQL, fall back to table-name-only search
+  if (schema === "dbo" || schema === "") {
+    return all.find((m) => m.table.toLowerCase() === table.toLowerCase()) ?? null;
+  }
+  return null;
 }
 
 export function quoteIdent(name: string) {

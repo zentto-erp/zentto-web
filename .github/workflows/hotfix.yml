@@ -1,0 +1,96 @@
+name: Hotfix — Restart containers (no build)
+
+# Usar cuando solo cambia configuración (env vars, compose, nginx)
+# sin necesidad de reconstruir imágenes Docker.
+# Lanzar desde: GitHub Actions → Hotfix → Run workflow
+
+on:
+  workflow_dispatch:
+    inputs:
+      service:
+        description: 'Servicio a reiniciar'
+        required: true
+        default: 'api'
+        type: choice
+        options:
+          - api
+          - frontend
+          - all
+
+jobs:
+  hotfix:
+    name: Restart ${{ inputs.service }} on server
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Copiar archivos de config al servidor
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "docker-compose.prod.yml,nginx/zentto.conf"
+          target: /opt/zentto/
+
+      - name: Aplicar nginx y reiniciar ${{ inputs.service }}
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          SERVICE: ${{ inputs.service }}
+          AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
+          NOTIFY_API_KEY: ${{ secrets.NOTIFY_API_KEY }}
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          envs: SERVICE,AUTH_SECRET,NOTIFY_API_KEY
+          script: |
+            set -e
+            cd /opt/zentto
+            # Actualizar nginx config si existe
+            if [ -f nginx/zentto.conf ]; then
+              cp nginx/zentto.conf /etc/nginx/sites-available/zentto.conf
+              nginx -t && nginx -s reload
+              echo "✓ Nginx recargado"
+            fi
+            # Garantizar .env.frontend con variables críticas
+            ENV_FE="/opt/zentto/.env.frontend"
+            touch "$ENV_FE"
+            if [ -n "$AUTH_SECRET" ]; then
+              if grep -q '^AUTH_SECRET=' "$ENV_FE"; then
+                sed -i "s|^AUTH_SECRET=.*|AUTH_SECRET=$AUTH_SECRET|" "$ENV_FE"
+              else
+                echo "AUTH_SECRET=$AUTH_SECRET" >> "$ENV_FE"
+              fi
+              echo "✓ AUTH_SECRET en .env.frontend"
+            fi
+            if [ "$SERVICE" = "all" ]; then
+              docker compose -f docker-compose.prod.yml up -d --remove-orphans
+            else
+              docker compose -f docker-compose.prod.yml up -d --no-deps "$SERVICE"
+            fi
+            echo "✓ $SERVICE reiniciado: $(date -u)"
+            docker compose -f docker-compose.prod.yml ps
+
+  diagnose:
+    name: Ver logs del servidor
+    runs-on: ubuntu-latest
+    if: ${{ always() }}
+    needs: hotfix
+    permissions:
+      contents: read
+    steps:
+      - name: Logs API container
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            echo "=== API LOGS ==="
+            docker logs zentto-api --tail 50 2>&1 || echo "container no existe"
+            echo "=== ENV.API (sin secrets) ==="
+            grep -v "PASSWORD\|SECRET\|KEY\|TOKEN" /opt/zentto/.env.api 2>/dev/null || echo "no existe"

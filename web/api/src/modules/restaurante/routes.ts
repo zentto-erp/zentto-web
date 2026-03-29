@@ -2,22 +2,32 @@ import { Router } from "express";
 import { z } from "zod";
 import { listMesas, abrirPedido, agregarItemPedido, enviarComanda, cerrarPedido, getPedidoByMesa, contabilizarPedidoExistente, cancelarItemPedido } from "./service.js";
 import type { AuthenticatedRequest } from "../../middleware/auth.js";
+import { emitBusinessNotification } from "../_shared/notify.js";
+import { obs } from "../integrations/observability.js";
 
 export const restauranteRouter = Router();
 
 // Mesas
 restauranteRouter.get("/mesas", async (req, res) => {
-    const ambienteId = req.query.ambienteId as string | undefined;
-    const data = await listMesas(ambienteId);
-    res.json(data);
+    try {
+        const ambienteId = req.query.ambienteId as string | undefined;
+        const data = await listMesas(ambienteId);
+        res.json(data);
+    } catch (err: any) {
+        res.status(500).json({ error: err?.message || "internal_error" });
+    }
 });
 
 // Pedido activo por mesa
 restauranteRouter.get("/mesas/:mesaId/pedido", async (req, res) => {
-    const mesaId = Number(req.params.mesaId);
-    if (isNaN(mesaId)) return res.status(400).json({ error: "mesaId invalido" });
-    const data = await getPedidoByMesa(mesaId);
-    res.json(data);
+    try {
+        const mesaId = Number(req.params.mesaId);
+        if (isNaN(mesaId)) return res.status(400).json({ error: "mesaId invalido" });
+        const data = await getPedidoByMesa(mesaId);
+        res.json(data);
+    } catch (err: any) {
+        res.status(500).json({ error: err?.message || "internal_error" });
+    }
 });
 
 // Abrir pedido en mesa
@@ -31,8 +41,23 @@ const abrirSchema = z.object({
 restauranteRouter.post("/pedidos/abrir", async (req, res) => {
     const parsed = abrirSchema.safeParse(req.body);
     if (!parsed.success) return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
-    const result = await abrirPedido(parsed.data.mesaId, parsed.data.clienteNombre, parsed.data.clienteRif, parsed.data.codUsuario);
-    res.status(result.ok ? 201 : 400).json(result);
+    try {
+        const result = await abrirPedido(parsed.data.mesaId, parsed.data.clienteNombre, parsed.data.clienteRif, parsed.data.codUsuario);
+        res.status(result.ok ? 201 : 400).json(result);
+        if (result.ok) {
+            try { obs.event('restaurante.orden.created', {
+                entityId: (result as any).pedidoId,
+                mesaId: parsed.data.mesaId,
+                userId: (req as any).user?.userId,
+                userName: (req as any).user?.userName,
+                companyId: (req as any).user?.companyId,
+                module: 'restaurante',
+            }); } catch { /* never blocks */ }
+        }
+    } catch (err: any) {
+        console.error("[restaurante] abrirPedido error:", err);
+        res.status(500).json({ error: err?.message || "internal_error" });
+    }
 });
 
 // Agregar item a pedido
@@ -51,8 +76,13 @@ const itemSchema = z.object({
 restauranteRouter.post("/pedidos/item", async (req, res) => {
     const parsed = itemSchema.safeParse(req.body);
     if (!parsed.success) return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
-    const result = await agregarItemPedido(parsed.data);
-    res.status(result.ok ? 201 : 400).json(result);
+    try {
+        const result = await agregarItemPedido(parsed.data);
+        res.status(result.ok ? 201 : 400).json(result);
+    } catch (err: any) {
+        console.error("[restaurante] agregarItemPedido error:", err);
+        res.status(500).json({ error: err?.message || "internal_error" });
+    }
 });
 
 const cancelarItemSchema = z.object({
@@ -93,8 +123,20 @@ restauranteRouter.post("/pedidos/:pedidoId/items/:itemId/cancelar", async (req, 
 restauranteRouter.post("/pedidos/:pedidoId/comanda", async (req, res) => {
     const pedidoId = Number(req.params.pedidoId);
     if (isNaN(pedidoId)) return res.status(400).json({ error: "pedidoId invalido" });
-    const result = await enviarComanda(pedidoId);
-    res.json(result);
+    try {
+        const result = await enviarComanda(pedidoId);
+        res.json(result);
+        try { obs.event('restaurante.mesa.asignada', {
+            entityId: pedidoId,
+            userId: (req as any).user?.userId,
+            userName: (req as any).user?.userName,
+            companyId: (req as any).user?.companyId,
+            module: 'restaurante',
+        }); } catch { /* never blocks */ }
+    } catch (err: any) {
+        console.error("[restaurante] enviarComanda error:", err);
+        res.status(500).json({ error: err?.message || "internal_error" });
+    }
 });
 
 // Cerrar pedido
@@ -118,11 +160,44 @@ restauranteRouter.post("/pedidos/:pedidoId/cerrar", async (req, res) => {
     const parsed = cerrarSchema.safeParse(req.body ?? {});
     if (!parsed.success) return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
 
-    const result = await cerrarPedido({
-        pedidoId,
-        ...parsed.data,
-    });
-    res.json(result);
+    try {
+        const result = await cerrarPedido({ pedidoId, ...parsed.data });
+
+        // Notify: pedido cerrado (best-effort, solo si hay email)
+        if (result.ok) {
+          const email = String(req.body.emailCliente ?? "").trim();
+          if (email) {
+            emitBusinessNotification({
+              event: "RESTAURANT_ORDER_CLOSED",
+              to: email,
+              subject: `Cuenta cerrada - Mesa ${req.body.mesa ?? req.params.pedidoId}`,
+              data: { Pedido: String(req.params.pedidoId), Total: String((result as any).total ?? (result as any).montoTotal ?? "0") },
+            }).catch(() => {});
+          }
+        }
+
+        res.json(result);
+        if (result.ok) {
+            try { obs.audit('restaurante.orden.completada', {
+                userId: (req as any).user?.userId,
+                userName: (req as any).user?.userName,
+                companyId: (req as any).user?.companyId,
+                module: 'restaurante',
+                entity: 'Pedido',
+                entityId: pedidoId,
+            }); } catch { /* never blocks */ }
+            try { obs.event('restaurante.pago.registrado', {
+                entityId: pedidoId,
+                userId: (req as any).user?.userId,
+                userName: (req as any).user?.userName,
+                companyId: (req as any).user?.companyId,
+                module: 'restaurante',
+            }); } catch { /* never blocks */ }
+        }
+    } catch (err: any) {
+        console.error("[restaurante] cerrarPedido error:", err);
+        res.status(500).json({ error: err?.message || "internal_error" });
+    }
 });
 
 const contabilizarPedidoSchema = z.object({

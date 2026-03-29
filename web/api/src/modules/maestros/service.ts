@@ -94,9 +94,15 @@ export async function listMaestroRows(slug: string, params: { search?: string; p
     { TotalCount: sql.Int }
   );
 
+  // PG returns { TotalCount, JsonRow } where JsonRow is a jsonb object — flatten it
+  const flatRows = (rows || []).map((r: any) => {
+    if (r.JsonRow && typeof r.JsonRow === "object") return r.JsonRow;
+    return r;
+  });
+
   return {
-    rows,
-    total: Number(output.TotalCount ?? 0),
+    rows: flatRows,
+    total: Number(output.TotalCount ?? rows?.[0]?.TotalCount ?? 0),
     page,
     limit,
     table: meta.table,

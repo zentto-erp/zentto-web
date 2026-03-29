@@ -1,118 +1,166 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Box,
   Paper,
-  TextField,
-  Stack,
   Chip,
+  CircularProgress,
 } from "@mui/material";
-import { DataGrid, type GridColDef } from "@mui/x-data-grid";
-import { ContextActionHeader } from "@zentto/shared-ui";
-import { formatDateTime } from "@zentto/shared-api";
+import { ContextActionHeader, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
+import { formatDateTime, useGridLayoutSync } from "@zentto/shared-api";
 import { useTimezone } from "@zentto/shared-auth";
 import { useFiscalRecords, type FiscalRecordFilter } from "../hooks/useAuditoria";
+import type { ColumnDef } from "@zentto/datagrid-core";
+import { buildAuditoriaGridId, useAuditoriaGridRegistration } from "./zenttoGridPersistence";
+
+
+const FISCAL_FILTERS: FilterFieldDef[] = [
+  { field: "fechaDesde", label: "Fecha desde", type: "date" },
+  { field: "fechaHasta", label: "Fecha hasta", type: "date" },
+];
+
+const GRID_ID = buildAuditoriaGridId("fiscal-records", "list");
 
 export default function FiscalRecordsPage() {
   const { timeZone } = useTimezone();
   const [filter, setFilter] = useState<FiscalRecordFilter>({ page: 1, limit: 25 });
-  const { data, isLoading } = useFiscalRecords(filter);
+  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
+  const gridRef = useRef<any>(null);
+  const { ready: layoutReady } = useGridLayoutSync(GRID_ID);
+  const { registered } = useAuditoriaGridRegistration(layoutReady);
+
+const { data, isLoading } = useFiscalRecords(filter);
 
   const rows = data?.data ?? [];
   const total = data?.total ?? 0;
 
-  const columns: GridColDef[] = [
-    { field: "FiscalRecordId", headerName: "ID", width: 70 },
+  const columns: ColumnDef[] = [
+    { field: "FiscalRecordId", header: "ID", width: 70 },
     {
       field: "CreatedAt",
-      headerName: "Fecha",
+      header: "Fecha",
       width: 160,
-      renderCell: (p) => (p.value ? formatDateTime(p.value as string, { timeZone }) : "-"),
+      renderCell: (value: unknown) => (value ? formatDateTime(value as string, { timeZone }) : "-"),
     },
-    { field: "InvoiceNumber", headerName: "N° Factura", width: 140 },
-    { field: "InvoiceType", headerName: "Tipo", width: 100 },
-    { field: "CountryCode", headerName: "País", width: 70 },
+    { field: "InvoiceNumber", header: "N° Factura", width: 140 },
+    { field: "InvoiceType", header: "Tipo", width: 100 },
+    { field: "CountryCode", header: "País", width: 70 },
     {
       field: "RecordHash",
-      headerName: "Hash",
+      header: "Hash",
       width: 180,
-      renderCell: (p) => (
+      renderCell: ((value: unknown) => (
         <span style={{ fontFamily: "monospace", fontSize: "0.75rem" }}>
-          {p.value ? String(p.value).substring(0, 20) + "..." : "-"}
+          {value ? String(value).substring(0, 20) + "..." : "-"}
         </span>
-      ),
+      )) as unknown as ColumnDef["renderCell"],
     },
     {
       field: "SentToAuthority",
-      headerName: "Enviado",
+      header: "Enviado",
       width: 100,
-      renderCell: (p) => (
+      renderCell: ((value: unknown) => (
         <Chip
-          label={p.value ? "Sí" : "No"}
+          label={value ? "Sí" : "No"}
           size="small"
-          color={p.value ? "success" : "default"}
+          color={value ? "success" : "default"}
           variant="outlined"
         />
-      ),
+      )) as unknown as ColumnDef["renderCell"],
     },
     {
       field: "AuthorityStatus",
-      headerName: "Estado",
+      header: "Estado",
       width: 120,
-      renderCell: (p) => (
+      renderCell: ((value: unknown) => (
         <Chip
-          label={p.value ?? "N/A"}
+          label={(value as string) ?? "N/A"}
           size="small"
-          color={p.value === "ACCEPTED" ? "success" : p.value === "REJECTED" ? "error" : "default"}
+          color={value === "ACCEPTED" ? "success" : value === "REJECTED" ? "error" : "default"}
           variant="outlined"
         />
-      ),
+      )) as unknown as ColumnDef["renderCell"],
+    },
+    {
+      field: "actions",
+      header: "Acciones",
+      type: "actions",
+      width: 80,
+      pin: "right",
+      actions: [
+        { icon: "view", label: "Ver detalle", action: "view", color: "#6b7280" },
+      ],
     },
   ];
+
+  // Bind data to zentto-grid web component
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+    el.columns = columns;
+    el.rows = rows;
+    el.loading = isLoading;
+  }, [rows, isLoading, registered, columns]);
+
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+    const handler = (e: CustomEvent) => {
+      const { action, row } = e.detail;
+      if (action === "view") { /* TODO: ver detalle registro fiscal */ }
+    };
+    el.addEventListener("action-click", handler);
+    return () => el.removeEventListener("action-click", handler);
+  }, [registered, rows]);
 
   return (
     <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
       <ContextActionHeader title="Registros Fiscales" />
 
       <Box sx={{ p: { xs: 2, md: 3 }, flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-        <Stack direction="row" spacing={2} mb={2}>
-          <TextField
-            label="Desde"
-            type="date"
-            size="small"
-            InputLabelProps={{ shrink: true }}
-            value={filter.fechaDesde || ""}
-            onChange={(e) => setFilter((f) => ({ ...f, fechaDesde: e.target.value || undefined, page: 1 }))}
-          />
-          <TextField
-            label="Hasta"
-            type="date"
-            size="small"
-            InputLabelProps={{ shrink: true }}
-            value={filter.fechaHasta || ""}
-            onChange={(e) => setFilter((f) => ({ ...f, fechaHasta: e.target.value || undefined, page: 1 }))}
-          />
-        </Stack>
+        <ZenttoFilterPanel
+          filters={FISCAL_FILTERS}
+          values={filterValues}
+          onChange={(vals) => {
+            setFilterValues(vals);
+            setFilter((f) => ({
+              ...f,
+              fechaDesde: vals.fechaDesde || undefined,
+              fechaHasta: vals.fechaHasta || undefined,
+              page: 1,
+            }));
+          }}
+          searchPlaceholder="Buscar registros fiscales..."
+          searchValue=""
+          onSearchChange={() => {}}
+        />
 
         <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, border: "1px solid #E5E7EB" }}>
-          <DataGrid
-            rows={rows}
-            columns={columns}
-            loading={isLoading}
-            rowCount={total}
-            pageSizeOptions={[25, 50]}
-            paginationMode="server"
-            paginationModel={{ page: (filter.page ?? 1) - 1, pageSize: filter.limit ?? 25 }}
-            onPaginationModelChange={(m) =>
-              setFilter((f) => ({ ...f, page: m.page + 1, limit: m.pageSize }))
-            }
-            disableRowSelectionOnClick
-            getRowId={(row) => row.FiscalRecordId}
-            sx={{ border: "none" }}
-          />
+          <zentto-grid
+        grid-id={GRID_ID}
+        ref={gridRef}
+        export-filename="auditoria-fiscal-records-list"
+        height="calc(100vh - 280px)"
+        enable-toolbar
+        enable-header-menu
+        enable-header-filters
+        enable-clipboard
+        enable-quick-search
+        enable-context-menu
+        enable-status-bar
+        enable-configurator
+      ></zentto-grid>
         </Paper>
       </Box>
     </Box>
   );
+}
+
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'zentto-grid': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & Record<string, any>, HTMLElement>;
+    }
+  }
 }

@@ -42,6 +42,18 @@ CREATE TABLE IF NOT EXISTS sec."User"(
   "DeletedAt"         TIMESTAMP,
   "DeletedByUserId"   INT,
   "RowVer"            INT NOT NULL DEFAULT 1,
+  "UserType"          VARCHAR(10) DEFAULT 'USER',
+  "CanUpdate"         BOOLEAN NOT NULL DEFAULT TRUE,
+  "CanCreate"         BOOLEAN NOT NULL DEFAULT TRUE,
+  "CanDelete"         BOOLEAN NOT NULL DEFAULT FALSE,
+  "IsCreator"         BOOLEAN NOT NULL DEFAULT FALSE,
+  "CanChangePwd"      BOOLEAN NOT NULL DEFAULT TRUE,
+  "CanChangePrice"    BOOLEAN NOT NULL DEFAULT FALSE,
+  "CanGiveCredit"     BOOLEAN NOT NULL DEFAULT FALSE,
+  "Avatar"            TEXT,
+  "CompanyId"         INT DEFAULT 1,
+  "DisplayName"       VARCHAR(200),
+  "Role"              VARCHAR(30) DEFAULT 'admin',
   CONSTRAINT "UQ_sec_User_UserCode" UNIQUE ("UserCode")
 );
 
@@ -81,6 +93,10 @@ CREATE TABLE IF NOT EXISTS cfg."Country"(
   "CurrencyCode"      CHAR(3) NOT NULL,
   "TaxAuthorityCode"  VARCHAR(20) NOT NULL,
   "FiscalIdName"      VARCHAR(20) NOT NULL,
+  "TimeZoneIana"      VARCHAR(50) NULL,
+  "CurrencySymbol"    VARCHAR(10) NULL,
+  "DecimalSeparator"  CHAR(1) DEFAULT '.',
+  "ThousandsSeparator" CHAR(1) DEFAULT ',',
   "IsActive"          BOOLEAN NOT NULL DEFAULT TRUE,
   "CreatedAt"         TIMESTAMP NOT NULL DEFAULT (NOW() AT TIME ZONE 'UTC'),
   "UpdatedAt"         TIMESTAMP NOT NULL DEFAULT (NOW() AT TIME ZONE 'UTC')
@@ -125,6 +141,8 @@ CREATE TABLE IF NOT EXISTS cfg."Branch"(
   "BranchName"        VARCHAR(150) NOT NULL,
   "AddressLine"       VARCHAR(250),
   "Phone"             VARCHAR(40),
+  "CountryCode"       VARCHAR(5) NULL,
+  "CurrencyCode"      VARCHAR(5) NULL,
   "IsActive"          BOOLEAN NOT NULL DEFAULT TRUE,
   "CreatedAt"         TIMESTAMP NOT NULL DEFAULT (NOW() AT TIME ZONE 'UTC'),
   "UpdatedAt"         TIMESTAMP NOT NULL DEFAULT (NOW() AT TIME ZONE 'UTC'),

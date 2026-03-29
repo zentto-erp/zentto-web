@@ -1,0 +1,27 @@
+# Dependencias
+**/node_modules/
+**/dist/
+**/.next/
+**/bin/
+**/obj/
+**/.service-publish/
+
+# SQL — Claude no necesita leer todos los SPs para tareas de código
+web/api/sqlweb/
+web/api/sqlweb-pg/
+
+# Locks y snapshots
+**/package-lock.json
+web/api/db-snapshot/
+
+# Logs y temporales
+**/*.log
+**/logs/
+**/*.tsbuildinfo
+
+# Recursos binarios
+**/res/
+**/*.png
+**/*.jpg
+**/*.svg
+**/*.pdf

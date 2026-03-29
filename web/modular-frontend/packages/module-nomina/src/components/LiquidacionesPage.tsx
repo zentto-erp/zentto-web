@@ -1,104 +1,87 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
-  Box,
-  Paper,
-  Typography,
-  Button,
-  TextField,
-  Stack,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  CircularProgress,
+  Box, Typography, Button, Dialog, DialogTitle, DialogContent, DialogActions, CircularProgress,
 } from "@mui/material";
-import { DataGrid, type GridColDef } from "@mui/x-data-grid";
-import CalculateIcon from "@mui/icons-material/Calculate";
-import VisibilityIcon from "@mui/icons-material/Visibility";
-import IconButton from "@mui/material/IconButton";
+import type { ColumnDef } from "@zentto/datagrid-core";
 import { useRouter } from "next/navigation";
-import { formatCurrency } from "@zentto/shared-api";
-import {
-  useLiquidacionesList,
-  useLiquidacionDetalle,
-} from "../hooks/useNomina";
-import EmployeeSelector from "./EmployeeSelector";
+import { useGridLayoutSync } from "@zentto/shared-api";
+import { useLiquidacionesList, useLiquidacionDetalle } from "../hooks/useNomina";
+import { buildNominaGridId, useNominaGridId, useNominaGridRegistration } from "./zenttoGridPersistence";
 
-type LiquidacionDetalleItem = Record<string, any>;
+const COLUMNS: ColumnDef[] = [
+  { field: "liquidacionId", header: "ID", width: 100 },
+  { field: "cedula", header: "Cédula", width: 120, sortable: true },
+  { field: "nombre", header: "Empleado", flex: 1, sortable: true },
+  { field: "fechaRetiro", header: "Fecha Retiro", width: 120 },
+  { field: "causaRetiro", header: "Causa", width: 140 },
+  { field: "montoTotal", header: "Total", width: 140, type: "number", aggregation: "sum" },
+  {
+    field: "actions", header: "Acciones", type: "actions", width: 80, pin: "right",
+    actions: [
+      { icon: "view", label: "Ver liquidacion", action: "view" },
+    ],
+  },
+];
+
+const DETAIL_COLUMNS: ColumnDef[] = [
+  { field: "concepto", header: "Concepto", flex: 1, minWidth: 200 },
+  { field: "monto", header: "Monto", width: 140, type: "number" },
+];
+
+const LIQUIDACIONES_GRID_ID = buildNominaGridId("liquidaciones");
+const LIQUIDACIONES_DETAIL_GRID_ID = buildNominaGridId("liquidaciones", "detalle");
+
+
 
 export default function LiquidacionesPage() {
+  const gridRef = useRef<any>(null);
+  const detalleGridRef = useRef<any>(null);
   const router = useRouter();
   const [cedula, setCedula] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const { data, isLoading } = useLiquidacionesList({ cedula: cedula || undefined });
   const detalle = useLiquidacionDetalle(selectedId);
+  const { ready: liquidacionesLayoutReady } = useGridLayoutSync(LIQUIDACIONES_GRID_ID);
+  const { ready: liquidacionesDetailLayoutReady } = useGridLayoutSync(LIQUIDACIONES_DETAIL_GRID_ID);
+  useNominaGridId(gridRef, LIQUIDACIONES_GRID_ID);
+  useNominaGridId(detalleGridRef, LIQUIDACIONES_DETAIL_GRID_ID);
+  const { registered } = useNominaGridRegistration(liquidacionesLayoutReady && liquidacionesDetailLayoutReady);
 
   const rows = Array.isArray(data) ? data : data?.rows ?? [];
 
-  const columns: GridColDef[] = [
-    { field: "liquidacionId", headerName: "ID", width: 100 },
-    { field: "cedula", headerName: "Cédula", width: 120 },
-    { field: "nombre", headerName: "Empleado", flex: 1 },
-    { field: "fechaRetiro", headerName: "Fecha Retiro", width: 120 },
-    { field: "causaRetiro", headerName: "Causa", width: 140 },
-    {
-      field: "montoTotal",
-      headerName: "Total",
-      width: 140,
-      renderCell: (p) => formatCurrency(p.value ?? 0),
-    },
-    {
-      field: "acciones",
-      headerName: "",
-      width: 60,
-      sortable: false,
-      renderCell: (p) => (
-        <IconButton size="small" onClick={() => setSelectedId(p.row.liquidacionId)}>
-          <VisibilityIcon fontSize="small" />
-        </IconButton>
-      ),
-    },
-  ];
+  useEffect(() => {
+    const el = gridRef.current; if (!el || !registered) return;
+    el.columns = COLUMNS; el.rows = rows; el.loading = isLoading;
+    el.getRowId = (r: any) => r.liquidacionId ?? r.id ?? Math.random();
+  }, [rows, isLoading, registered]);
+
+  useEffect(() => {
+    const el = gridRef.current; if (!el || !registered) return;
+    const handler = (e: CustomEvent) => { if (e.detail.action === "view") setSelectedId(e.detail.row.liquidacionId); };
+    el.addEventListener("action-click", handler);
+    const createHandler = () => router.push("/nomina/liquidaciones/nueva");
+    el.addEventListener("create-click", createHandler);
+    return () => { el.removeEventListener("action-click", handler); el.removeEventListener("create-click", createHandler); };
+  }, [registered, rows]);
+
+  // Detail dialog grid
+  useEffect(() => {
+    const el = detalleGridRef.current; if (!el || !registered || !selectedId) return;
+    const dRows = ((detalle.data?.detalle ?? []) as any[]).map((d: any, i: number) => ({ ...d, _id: i }));
+    el.columns = DETAIL_COLUMNS; el.rows = dRows; el.loading = detalle.isLoading;
+    el.getRowId = (r: any) => r._id;
+  }, [detalle.data, detalle.isLoading, registered, selectedId]);
 
   return (
     <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-      <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
-        <Typography variant="h6" fontWeight={600}>
-          Liquidaciones
-        </Typography>
-        <Button
-          variant="contained"
-          startIcon={<CalculateIcon />}
-          onClick={() => router.push("/nomina/liquidaciones/nueva")}
-        >
-          Nueva Liquidación
-        </Button>
-      </Stack>
+      <Typography variant="h6" fontWeight={600} sx={{ mb: 2 }}>Liquidaciones</Typography>
 
-      <Stack direction="row" spacing={2} mb={2}>
-        <Box sx={{ minWidth: 320 }}>
-          <EmployeeSelector
-            value={cedula}
-            onChange={(code) => setCedula(code)}
-            label="Filtrar por empleado"
-            size="small"
-          />
-        </Box>
-      </Stack>
-
-      <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, width: "100%" }}>
-        <DataGrid
-          rows={rows}
-          columns={columns}
-          loading={isLoading}
-          pageSizeOptions={[25, 50]}
-          disableRowSelectionOnClick
-          getRowId={(r) => r.liquidacionId ?? r.id ?? Math.random()}
-        />
-      </Paper>
+      <Box sx={{ flex: 1, minHeight: 0 }}>
+        <zentto-grid ref={gridRef} height="calc(100vh - 200px)" show-totals enable-toolbar enable-header-menu enable-header-filters enable-clipboard enable-quick-search enable-context-menu enable-status-bar enable-configurator enable-grouping enable-pivot enable-create create-label="Nueva Liquidación" />
+      </Box>
 
       {/* Detalle */}
       <Dialog open={selectedId != null} onClose={() => setSelectedId(null)} maxWidth="md" fullWidth>
@@ -110,26 +93,17 @@ export default function LiquidacionesPage() {
               <Typography variant="body2"><strong>Fecha Retiro:</strong> {detalle.data.fechaRetiro}</Typography>
               <Typography variant="body2"><strong>Causa:</strong> {detalle.data.causaRetiro}</Typography>
               {detalle.data.detalle && (
-                <DataGrid
-                  rows={((detalle.data.detalle ?? []) as LiquidacionDetalleItem[]).map((d: LiquidacionDetalleItem, i: number) => ({ ...d, _id: i }))}
-                  columns={[
-                    { field: "concepto", headerName: "Concepto", flex: 1 },
-                    { field: "monto", headerName: "Monto", width: 140, renderCell: (p) => formatCurrency(p.value) },
-                  ]}
-                  autoHeight
-                  getRowId={(r) => r._id}
-                  disableRowSelectionOnClick
-                  hideFooter
-                  sx={{ mt: 2 }}
-                />
+                <Box sx={{ height: 300, mt: 2 }}>
+                  <zentto-grid ref={detalleGridRef} height="100%" enable-toolbar enable-header-menu enable-header-filters enable-clipboard enable-quick-search enable-context-menu enable-status-bar enable-configurator enable-grouping enable-pivot />
+                </Box>
               )}
             </Box>
           ) : <Typography>No se encontró información</Typography>}
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setSelectedId(null)}>Cerrar</Button>
-        </DialogActions>
+        <DialogActions><Button onClick={() => setSelectedId(null)}>Cerrar</Button></DialogActions>
       </Dialog>
     </Box>
   );
 }
+
+declare global { namespace JSX { interface IntrinsicElements { 'zentto-grid': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & Record<string, any>, HTMLElement>; } } }

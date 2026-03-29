@@ -50,7 +50,7 @@ const INSERTABLE_VARIABLES = [
   { label: "RIF", value: "{{companyRIF}}" },
   { label: "Fecha", value: "{{reportDate}}" },
   { label: "Moneda", value: "{{currency}}" },
-  { label: "Tabla Balance", value: "{{table:balanceGeneral}}" },
+  { label: "Tabla balance", value: "{{table:balanceGeneral}}" },
 ];
 
 const COUNTRY_FILTERS = ["VE", "ES", "Todos"] as const;
@@ -279,7 +279,7 @@ export default function PlantillasReportePage() {
                 <Stack direction="row" spacing={2} alignItems="flex-start" flexWrap="wrap">
                   <TextField
                     label="Nombre del Reporte"
-                    size="small"
+                   
                     value={editMeta.ReportName ?? ""}
                     onChange={(e) =>
                       setEditMeta((m) => ({ ...m, ReportName: e.target.value }))
@@ -288,7 +288,7 @@ export default function PlantillasReportePage() {
                   />
                   <TextField
                     label="Codigo"
-                    size="small"
+                   
                     value={editMeta.ReportCode ?? ""}
                     onChange={(e) =>
                       setEditMeta((m) => ({ ...m, ReportCode: e.target.value }))
@@ -296,8 +296,8 @@ export default function PlantillasReportePage() {
                     sx={{ width: 140 }}
                   />
                   <TextField
-                    label="Marco Legal"
-                    size="small"
+                    label="Marco legal"
+                   
                     value={editMeta.LegalFramework ?? ""}
                     onChange={(e) =>
                       setEditMeta((m) => ({ ...m, LegalFramework: e.target.value }))
@@ -306,7 +306,7 @@ export default function PlantillasReportePage() {
                   />
                   <TextField
                     label="Pais"
-                    size="small"
+                   
                     value={editMeta.CountryCode ?? ""}
                     onChange={(e) =>
                       setEditMeta((m) => ({ ...m, CountryCode: e.target.value }))
@@ -316,8 +316,8 @@ export default function PlantillasReportePage() {
                 </Stack>
                 <Stack direction="row" spacing={2} alignItems="center" mt={1.5}>
                   <TextField
-                    label="Referencia Legal"
-                    size="small"
+                    label="Referencia legal"
+                   
                     value={editMeta.LegalReference ?? ""}
                     onChange={(e) =>
                       setEditMeta((m) => ({ ...m, LegalReference: e.target.value }))

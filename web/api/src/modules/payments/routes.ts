@@ -164,6 +164,7 @@ paymentsRouter.delete("/accepted/:id", async (req, res) => {
 paymentsRouter.get("/card-readers", async (req, res) => {
   try {
     const empresaId = Number(req.query.empresaId);
+    if (!empresaId || isNaN(empresaId)) return res.status(400).json({ error: "empresaId required" });
     const sucursalId = req.query.sucursalId != null ? Number(req.query.sucursalId) : undefined;
     const readers = await configSvc.listCardReaders(empresaId, sucursalId);
     res.json(readers);
@@ -247,8 +248,10 @@ paymentsRouter.post("/process", async (req, res) => {
 
 paymentsRouter.get("/transactions", async (req, res) => {
   try {
+    const empresaId = Number(req.query.empresaId);
+    if (!empresaId || isNaN(empresaId)) return res.status(400).json({ error: "empresaId required" });
     const result = await searchTransactions({
-      empresaId: Number(req.query.empresaId),
+      empresaId,
       sucursalId: req.query.sucursalId != null ? Number(req.query.sucursalId) : undefined,
       providerCode: req.query.providerCode as string | undefined,
       sourceType: req.query.sourceType as string | undefined,

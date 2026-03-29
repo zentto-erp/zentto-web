@@ -42,10 +42,10 @@ import {
 // ─── Steps ───────────────────────────────────────────────────
 
 const STEPS = [
-  "Seleccionar Periodo",
-  "Checklist de Cierre",
-  "Generar Asientos de Cierre",
-  "Cerrar Periodo",
+  "Seleccionar periodo",
+  "Checklist de cierre",
+  "Generar asientos de cierre",
+  "Cerrar periodo",
 ];
 
 // ─── Step 1: Select Period ───────────────────────────────────
@@ -82,7 +82,7 @@ function StepSeleccionarPeriodo({
     <Box>
       <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 3 }}>
         <Typography variant="h6" fontWeight={600}>
-          Periodos Abiertos - {year}
+          Periodos abiertos - {year}
         </Typography>
         <Stack direction="row" spacing={1}>
           <Button size="small" variant="outlined" onClick={() => setYear(year - 1)}>
@@ -100,7 +100,7 @@ function StepSeleccionarPeriodo({
           onClick={handleEnsureYear}
           disabled={ensureYearMutation.isPending}
         >
-          {ensureYearMutation.isPending ? "Creando..." : `Asegurar Ano ${year}`}
+          {ensureYearMutation.isPending ? "Creando..." : `Asegurar año ${year}`}
         </Button>
       </Stack>
 
@@ -124,7 +124,7 @@ function StepSeleccionarPeriodo({
         </Box>
       ) : periodos.length === 0 ? (
         <Alert severity="info">
-          No hay periodos abiertos para el ano {year}. Use el boton &quot;Asegurar Ano&quot; para crear los periodos.
+          No hay periodos abiertos para el ano {year}. Use el boton &quot;Asegurar año&quot; para crear los periodos.
         </Alert>
       ) : (
         <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
@@ -299,7 +299,7 @@ function StepGenerarCierre({
   return (
     <Box>
       <Typography variant="h6" fontWeight={600} sx={{ mb: 2 }}>
-        Generar Asientos de Cierre - {periodo}
+        Generar asientos de cierre - {periodo}
       </Typography>
 
       <Alert severity="info" sx={{ mb: 3 }}>
@@ -353,7 +353,7 @@ function StepGenerarCierre({
           disabled={generateMutation.isPending}
           startIcon={generateMutation.isPending ? <CircularProgress size={20} /> : undefined}
         >
-          {generateMutation.isPending ? "Generando..." : "Generar Asientos de Cierre"}
+          {generateMutation.isPending ? "Generando..." : "Generar asientos de cierre"}
         </Button>
       )}
     </Box>
@@ -378,14 +378,14 @@ function StepCerrarPeriodo({ periodo }: { periodo: string }) {
   return (
     <Box>
       <Typography variant="h6" fontWeight={600} sx={{ mb: 2 }}>
-        Cerrar Periodo - {periodo}
+        Cerrar periodo - {periodo}
       </Typography>
 
       {closed ? (
         <Box textAlign="center" sx={{ py: 4 }}>
           <CheckCircleIcon sx={{ fontSize: 64, color: "success.main", mb: 2 }} />
           <Typography variant="h5" fontWeight={700} color="success.main">
-            Periodo Cerrado Exitosamente
+            Periodo cerrado exitosamente
           </Typography>
           <Typography variant="body1" color="text.secondary" sx={{ mt: 1 }}>
             El periodo {periodo} ha sido cerrado. No se podran registrar mas movimientos en este periodo.
@@ -430,7 +430,7 @@ function StepCerrarPeriodo({ periodo }: { periodo: string }) {
                 )
               }
             >
-              {closeMutation.isPending ? "Cerrando..." : "Confirmar Cierre del Periodo"}
+              {closeMutation.isPending ? "Cerrando..." : "Confirmar cierre del periodo"}
             </Button>
           </Stack>
         </>
@@ -482,7 +482,7 @@ export default function CierreContableWizard() {
   return (
     <Box sx={{ maxWidth: 900, mx: "auto" }}>
       <Typography variant="h5" fontWeight={700} sx={{ mb: 3 }}>
-        Cierre Contable
+        Cierre contable
       </Typography>
 
       {/* Stepper */}
@@ -526,7 +526,7 @@ export default function CierreContableWizard() {
         <Stack direction="row" spacing={1}>
           {activeStep === STEPS.length - 1 ? (
             <Button variant="outlined" onClick={handleReset}>
-              Nuevo Cierre
+              Nuevo cierre
             </Button>
           ) : (
             <Button

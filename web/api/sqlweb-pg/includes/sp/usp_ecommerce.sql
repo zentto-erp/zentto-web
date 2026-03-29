@@ -6,9 +6,9 @@
 -- Traducido de SQL Server stored procedures a PL/pgSQL.
 -- ============================================================
 
--- ───────────────────────────────────────────────────────
+-- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 -- 0. Esquema y tabla de resenas
--- ───────────────────────────────────────────────────────
+-- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 CREATE SCHEMA IF NOT EXISTS store;
 
 CREATE TABLE IF NOT EXISTS store."ProductReview" (
@@ -29,9 +29,9 @@ CREATE TABLE IF NOT EXISTS store."ProductReview" (
 CREATE INDEX IF NOT EXISTS "IX_ProductReview_Product"
     ON store."ProductReview" ("CompanyId", "ProductCode", "IsDeleted", "IsApproved");
 
--- ───────────────────────────────────────────────────────
+-- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 -- 0c. Tabla store."ProductHighlight"
--- ───────────────────────────────────────────────────────
+-- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 CREATE TABLE IF NOT EXISTS store."ProductHighlight" (
     "HighlightId"    SERIAL PRIMARY KEY,
     "CompanyId"      INT NOT NULL DEFAULT 1,
@@ -45,9 +45,9 @@ CREATE TABLE IF NOT EXISTS store."ProductHighlight" (
 CREATE INDEX IF NOT EXISTS "IX_ProductHighlight_Product"
     ON store."ProductHighlight" ("CompanyId", "ProductCode", "IsActive");
 
--- ───────────────────────────────────────────────────────
+-- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 -- 0d. Tabla store."ProductSpec"
--- ───────────────────────────────────────────────────────
+-- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 CREATE TABLE IF NOT EXISTS store."ProductSpec" (
     "SpecId"         SERIAL PRIMARY KEY,
     "CompanyId"      INT NOT NULL DEFAULT 1,
@@ -63,9 +63,9 @@ CREATE TABLE IF NOT EXISTS store."ProductSpec" (
 CREATE INDEX IF NOT EXISTS "IX_ProductSpec_Product"
     ON store."ProductSpec" ("CompanyId", "ProductCode", "IsActive");
 
--- ───────────────────────────────────────────────────────
+-- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 -- 14. Tabla master."CustomerAddress"
--- ───────────────────────────────────────────────────────
+-- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 CREATE TABLE IF NOT EXISTS master."CustomerAddress" (
     "AddressId"       SERIAL PRIMARY KEY,
     "CompanyId"       INT NOT NULL DEFAULT 1,
@@ -85,9 +85,9 @@ CREATE TABLE IF NOT EXISTS master."CustomerAddress" (
     "UpdatedAt"       TIMESTAMP NOT NULL DEFAULT (NOW() AT TIME ZONE 'UTC')
 );
 
--- ───────────────────────────────────────────────────────
+-- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 -- 15. Tabla master."CustomerPaymentMethod"
--- ───────────────────────────────────────────────────────
+-- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 CREATE TABLE IF NOT EXISTS master."CustomerPaymentMethod" (
     "PaymentMethodId" SERIAL PRIMARY KEY,
     "CompanyId"       INT NOT NULL DEFAULT 1,
@@ -110,9 +110,10 @@ CREATE TABLE IF NOT EXISTS master."CustomerPaymentMethod" (
 );
 
 
--- ───────────────────────────────────────────────────────
+-- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 -- 1. Catalogo publico de productos (con rating)
--- ───────────────────────────────────────────────────────
+-- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+DROP FUNCTION IF EXISTS usp_Store_Product_List(INT, INT, VARCHAR(200), VARCHAR(100), VARCHAR(100), NUMERIC(18,2), NUMERIC(18,2), INT, BOOLEAN, VARCHAR(30), INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Store_Product_List(
     p_company_id    INT            DEFAULT 1,
     p_branch_id     INT            DEFAULT 1,
@@ -249,9 +250,10 @@ BEGIN
 END;
 $$;
 
--- ───────────────────────────────────────────────────────
+-- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 -- 2. Detalle de producto por codigo (recordset 1: producto)
--- ───────────────────────────────────────────────────────
+-- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+DROP FUNCTION IF EXISTS usp_Store_Product_GetByCode(INT, INT, VARCHAR(80)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Store_Product_GetByCode(
     p_company_id  INT           DEFAULT 1,
     p_branch_id   INT           DEFAULT 1,
@@ -336,16 +338,17 @@ BEGIN
 END;
 $$;
 
--- ───────────────────────────────────────────────────────
+-- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 -- 2b. Imagenes del producto
--- ───────────────────────────────────────────────────────
+-- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+DROP FUNCTION IF EXISTS usp_Store_Product_GetImages(INT, INT, VARCHAR(80)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Store_Product_GetImages(
     p_company_id  INT           DEFAULT 1,
     p_branch_id   INT           DEFAULT 1,
     p_code        VARCHAR(80)   DEFAULT NULL
 )
 RETURNS TABLE(
-    "id"          INT,
+    "id"          BIGINT,
     "url"         VARCHAR(500),
     "role"        VARCHAR(50),
     "isPrimary"   BOOLEAN,
@@ -377,9 +380,10 @@ BEGIN
 END;
 $$;
 
--- ───────────────────────────────────────────────────────
+-- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 -- 2c. Highlights del producto
--- ───────────────────────────────────────────────────────
+-- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+DROP FUNCTION IF EXISTS usp_Store_Product_GetHighlights(INT, VARCHAR(80)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Store_Product_GetHighlights(
     p_company_id  INT           DEFAULT 1,
     p_code        VARCHAR(80)   DEFAULT NULL
@@ -397,9 +401,10 @@ BEGIN
 END;
 $$;
 
--- ───────────────────────────────────────────────────────
+-- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 -- 2d. Especificaciones tecnicas del producto
--- ───────────────────────────────────────────────────────
+-- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+DROP FUNCTION IF EXISTS usp_Store_Product_GetSpecs(INT, VARCHAR(80)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Store_Product_GetSpecs(
     p_company_id  INT           DEFAULT 1,
     p_code        VARCHAR(80)   DEFAULT NULL
@@ -423,9 +428,10 @@ BEGIN
 END;
 $$;
 
--- ───────────────────────────────────────────────────────
+-- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 -- 3. Categorias con conteo de productos
--- ───────────────────────────────────────────────────────
+-- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+DROP FUNCTION IF EXISTS usp_Store_Category_List(INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Store_Category_List(
     p_company_id INT DEFAULT 1
 )
@@ -457,9 +463,10 @@ BEGIN
 END;
 $$;
 
--- ───────────────────────────────────────────────────────
+-- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 -- 4. Marcas
--- ───────────────────────────────────────────────────────
+-- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+DROP FUNCTION IF EXISTS usp_Store_Brand_List(INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Store_Brand_List(
     p_company_id INT DEFAULT 1
 )
@@ -483,9 +490,10 @@ BEGIN
 END;
 $$;
 
--- ───────────────────────────────────────────────────────
+-- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 -- 5. Buscar o crear cliente por email
--- ───────────────────────────────────────────────────────
+-- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+DROP FUNCTION IF EXISTS usp_Store_Customer_FindOrCreate(INT, VARCHAR(150), VARCHAR(200), VARCHAR(40), VARCHAR(250), VARCHAR(30)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Store_Customer_FindOrCreate(
     p_company_id    INT            DEFAULT 1,
     p_email         VARCHAR(150)   DEFAULT NULL,
@@ -514,7 +522,7 @@ BEGIN
         RETURN;
     END IF;
 
-    SELECT COALESCE(MAX(REPLACE(c."CustomerCode", 'ECOM-', '')::INT), 0) + 1
+    SELECT COALESCE(MAX(REPLACE(c."CustomerCode", 'ECOM-',''::VARCHAR)::INT), 0) + 1
     INTO v_seq
     FROM master."Customer" c
     WHERE c."CompanyId" = p_company_id AND c."CustomerCode" LIKE 'ECOM-%';
@@ -526,7 +534,7 @@ BEGIN
         "IsActive", "IsDeleted", "CreatedAt", "UpdatedAt"
     ) VALUES (
         p_company_id, v_code, p_name, p_email, p_phone, p_address,
-        COALESCE(p_fiscal_id, ''),
+        COALESCE(p_fiscal_id,''::VARCHAR),
         TRUE, FALSE, NOW() AT TIME ZONE 'UTC', NOW() AT TIME ZONE 'UTC'
     );
 
@@ -534,9 +542,10 @@ BEGIN
 END;
 $$;
 
--- ───────────────────────────────────────────────────────
+-- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 -- 6. Registro de cuenta de cliente
--- ───────────────────────────────────────────────────────
+-- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+DROP FUNCTION IF EXISTS usp_Store_Customer_Register(INT, VARCHAR(150), VARCHAR(200), VARCHAR(500), VARCHAR(40), VARCHAR(250), VARCHAR(30)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Store_Customer_Register(
     p_company_id    INT            DEFAULT 1,
     p_email         VARCHAR(150)   DEFAULT NULL,
@@ -553,10 +562,9 @@ RETURNS TABLE(
 LANGUAGE plpgsql AS $$
 DECLARE
     v_customer_code VARCHAR(24);
-    v_r INT;
-    v_m VARCHAR(500);
+    v_user_code VARCHAR(40);
 BEGIN
-    IF EXISTS (SELECT 1 FROM sec."Users" WHERE "Email" = p_email AND "IsDeleted" = FALSE) THEN
+    IF EXISTS (SELECT 1 FROM sec."User" WHERE "Email" = p_email AND "IsDeleted" = FALSE) THEN
         RETURN QUERY SELECT -1, 'Ya existe una cuenta con este email'::VARCHAR(500);
         RETURN;
     END IF;
@@ -565,21 +573,30 @@ BEGIN
     SELECT r."CustomerCode" INTO v_customer_code
     FROM usp_Store_Customer_FindOrCreate(p_company_id, p_email, p_name, p_phone, p_address, p_fiscal_id) r;
 
-    INSERT INTO sec."Users" (
-        "CompanyId", "UserName", "Email", "PasswordHash", "DisplayName",
-        "IsAdmin", "IsActive", "IsDeleted", "Role", "CreatedAt"
+    -- Generate UserCode from email prefix
+    v_user_code := UPPER(LEFT(SPLIT_PART(p_email, '@', 1), 40));
+    IF EXISTS (SELECT 1 FROM sec."User" WHERE "UserCode" = v_user_code) THEN
+        v_user_code := LEFT(v_user_code, 34) || '_' || LPAD(FLOOR(RANDOM()*99999)::TEXT, 5, '0');
+    END IF;
+
+    INSERT INTO sec."User" (
+        "UserCode", "CompanyId", "UserName", "Email", "PasswordHash", "DisplayName",
+        "IsAdmin", "IsActive", "IsDeleted", "Role", "CreatedAt",
+        "CanUpdate", "CanCreate", "CanDelete", "IsCreator", "CanChangePwd", "CanChangePrice", "CanGiveCredit"
     ) VALUES (
-        p_company_id, p_email, p_email, p_password_hash, p_name,
-        FALSE, TRUE, FALSE, 'customer', NOW() AT TIME ZONE 'UTC'
+        v_user_code, p_company_id, p_email, p_email, p_password_hash, p_name,
+        FALSE, TRUE, FALSE, 'customer', NOW() AT TIME ZONE 'UTC',
+        FALSE, FALSE, FALSE, FALSE, TRUE, FALSE, FALSE
     );
 
     RETURN QUERY SELECT 1, 'Cuenta creada exitosamente'::VARCHAR(500);
 END;
 $$;
 
--- ───────────────────────────────────────────────────────
+-- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 -- 7. Login de cliente
--- ───────────────────────────────────────────────────────
+-- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+DROP FUNCTION IF EXISTS usp_Store_Customer_Login(VARCHAR(150)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Store_Customer_Login(
     p_email VARCHAR(150)
 )
@@ -609,30 +626,35 @@ BEGIN
         c."Phone"::VARCHAR(40),
         c."AddressLine"::VARCHAR(250),
         c."FiscalId"::VARCHAR(30)
-    FROM sec."Users" u
+    FROM sec."User" u
     LEFT JOIN master."Customer" c ON c."Email" = u."Email" AND c."CompanyId" = u."CompanyId" AND c."IsDeleted" = FALSE
     WHERE u."Email" = p_email AND u."IsDeleted" = FALSE AND u."Role" = 'customer'
     LIMIT 1;
 END;
 $$;
 
--- ───────────────────────────────────────────────────────
+-- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 -- 8. Crear pedido ecommerce (JSONB en lugar de XML)
--- ───────────────────────────────────────────────────────
+-- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+DROP FUNCTION IF EXISTS usp_Store_Order_Create(INT, INT, VARCHAR(24), VARCHAR(200), VARCHAR(150), VARCHAR(30), VARCHAR(40), VARCHAR(250), VARCHAR(500), JSONB, INT, INT, VARCHAR(30), INT, VARCHAR(500), VARCHAR(500)) CASCADE;
+DROP FUNCTION IF EXISTS usp_Store_Order_Create(INT, INT, VARCHAR(24), VARCHAR(200), VARCHAR(150), VARCHAR(30), VARCHAR(40), VARCHAR(250), VARCHAR(500), JSONB, INT, INT, VARCHAR(30)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Store_Order_Create(
-    p_company_id          INT             DEFAULT 1,
-    p_branch_id           INT             DEFAULT 1,
-    p_customer_code       VARCHAR(24)     DEFAULT NULL,
-    p_customer_name       VARCHAR(200)    DEFAULT NULL,
-    p_customer_email      VARCHAR(150)    DEFAULT NULL,
-    p_fiscal_id           VARCHAR(30)     DEFAULT NULL,
-    p_phone               VARCHAR(40)     DEFAULT NULL,
-    p_address             VARCHAR(250)    DEFAULT NULL,
-    p_notes               VARCHAR(500)    DEFAULT NULL,
-    p_items_json          JSONB           DEFAULT NULL,
-    p_address_id          INT             DEFAULT NULL,
-    p_payment_method_id   INT             DEFAULT NULL,
-    p_payment_method_type VARCHAR(30)     DEFAULT NULL
+    p_company_id            INT             DEFAULT 1,
+    p_branch_id             INT             DEFAULT 1,
+    p_customer_code         VARCHAR(24)     DEFAULT NULL,
+    p_customer_name         VARCHAR(200)    DEFAULT NULL,
+    p_customer_email        VARCHAR(150)    DEFAULT NULL,
+    p_fiscal_id             VARCHAR(30)     DEFAULT NULL,
+    p_phone                 VARCHAR(40)     DEFAULT NULL,
+    p_address               VARCHAR(250)    DEFAULT NULL,
+    p_notes                 VARCHAR(500)    DEFAULT NULL,
+    p_items_json            JSONB           DEFAULT NULL,
+    p_address_id            INT             DEFAULT NULL,
+    p_payment_method_id     INT             DEFAULT NULL,
+    p_payment_method_type   VARCHAR(30)     DEFAULT NULL,
+    p_billing_address_id    INT             DEFAULT NULL,
+    p_shipping_address_text VARCHAR(500)    DEFAULT NULL,
+    p_billing_address_text  VARCHAR(500)    DEFAULT NULL
 )
 RETURNS TABLE(
     "OrderNumber" VARCHAR(60),
@@ -660,7 +682,7 @@ BEGIN
     WHERE "OperationType" = 'PEDIDO' AND "DocumentNumber" LIKE 'ECOM-' || v_today || '-%';
 
     v_order_number := 'ECOM-' || v_today || '-' || LPAD(v_seq::TEXT, 4, '0');
-    v_order_token  := LOWER(REPLACE(gen_random_uuid()::TEXT, '-', ''));
+    v_order_token  := LOWER(REPLACE(gen_random_uuid()::TEXT, '-',''::VARCHAR));
 
     -- Calcular totales desde JSON
     SELECT COALESCE(SUM((item->>'st')::NUMERIC(18,2)), 0),
@@ -676,18 +698,19 @@ BEGIN
         "Subtotal", "TaxableAmount", "ExemptAmount", "TaxAmount", "TotalAmount", "DiscountAmount",
         "IsVoided", "IsCanceled", "IsInvoiced", "IsDelivered",
         "Notes", "CurrencyCode", "ExchangeRate",
+        "ShippingAddressId", "BillingAddressId", "ShippingAddress", "BillingAddress",
         "CreatedAt", "UpdatedAt", "IsDeleted"
     ) VALUES (
         v_order_number, 'ECOM', 'PEDIDO',
-        p_customer_code, p_customer_name, COALESCE(p_fiscal_id, ''),
+        p_customer_code, p_customer_name, COALESCE(p_fiscal_id,''::VARCHAR),
         CURRENT_DATE, TO_CHAR(NOW(), 'HH24:MI:SS'),
         v_total_sub, v_total_sub, 0, v_total_tax, v_total_sub + v_total_tax, 0,
         FALSE, 'N', 'N', 'N',
-        COALESCE(p_notes, '') || ' | token=' || v_order_token
-            || CASE WHEN p_address_id IS NOT NULL THEN ' | addressId=' || p_address_id::TEXT ELSE '' END
-            || CASE WHEN p_payment_method_id IS NOT NULL THEN ' | paymentMethodId=' || p_payment_method_id::TEXT ELSE '' END
-            || CASE WHEN p_payment_method_type IS NOT NULL THEN ' | paymentType=' || p_payment_method_type ELSE '' END,
+        COALESCE(p_notes,''::VARCHAR) || ' | token=' || v_order_token,
         'USD', 1.0,
+        p_address_id, COALESCE(p_billing_address_id, p_address_id),
+        COALESCE(p_shipping_address_text, p_address),
+        COALESCE(p_billing_address_text, p_shipping_address_text, p_address),
         NOW() AT TIME ZONE 'UTC', NOW() AT TIME ZONE 'UTC', FALSE
     );
 
@@ -725,6 +748,37 @@ BEGIN
     ) d
     WHERE d.pc = pr."ProductCode" AND pr."CompanyId" = p_company_id;
 
+    -- Registrar movimiento en inventario avanzado (inv.StockMovement)
+    -- Solo si la tabla existe (compatibilidad con instalaciones sin inv.*)
+    BEGIN
+        INSERT INTO inv."StockMovement" (
+            "CompanyId", "BranchId", "ProductId",
+            "MovementType", "Quantity", "UnitCost", "TotalCost",
+            "SourceDocumentType", "SourceDocumentNumber",
+            "Notes", "MovementDate", "CreatedAt"
+        )
+        SELECT
+            p_company_id,
+            p_branch_id,
+            pr."ProductId",
+            'SALE_OUT',
+            (item->>'qty')::NUMERIC(18,4),
+            COALESCE(pr."CostPrice", pr."SalesPrice", 0),
+            (item->>'qty')::NUMERIC(18,4) * COALESCE(pr."CostPrice", pr."SalesPrice", 0),
+            'ECOM_PEDIDO',
+            v_order_number,
+            'Pedido ecommerce',
+            NOW() AT TIME ZONE 'UTC',
+            NOW() AT TIME ZONE 'UTC'
+        FROM jsonb_array_elements(p_items_json) AS item
+        INNER JOIN master."Product" pr
+            ON pr."ProductCode" = (item->>'pc')
+            AND pr."CompanyId" = p_company_id;
+    EXCEPTION WHEN undefined_table THEN
+        -- inv.StockMovement no existe en esta instalaciÃ³n, ignorar
+        NULL;
+    END;
+
     RETURN QUERY SELECT v_order_number, v_order_token, 1, 'Pedido creado exitosamente'::VARCHAR(500);
 
 EXCEPTION WHEN OTHERS THEN
@@ -732,9 +786,10 @@ EXCEPTION WHEN OTHERS THEN
 END;
 $$;
 
--- ───────────────────────────────────────────────────────
+-- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 -- 9. Historial de pedidos
--- ───────────────────────────────────────────────────────
+-- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+DROP FUNCTION IF EXISTS usp_Store_Order_List(INT, VARCHAR(24), INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Store_Order_List(
     p_company_id    INT DEFAULT 1,
     p_customer_code VARCHAR(24) DEFAULT NULL,
@@ -775,9 +830,10 @@ BEGIN
 END;
 $$;
 
--- ───────────────────────────────────────────────────────
+-- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 -- 10. Detalle de pedido por numero (cabecera)
--- ───────────────────────────────────────────────────────
+-- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+DROP FUNCTION IF EXISTS usp_Store_Order_GetByNumber(INT, VARCHAR(60)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Store_Order_GetByNumber(
     p_company_id   INT DEFAULT 1,
     p_order_number VARCHAR(60) DEFAULT NULL
@@ -811,9 +867,10 @@ BEGIN
 END;
 $$;
 
--- ───────────────────────────────────────────────────────
+-- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 -- 10b. Detalle de pedido por numero (lineas)
--- ───────────────────────────────────────────────────────
+-- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+DROP FUNCTION IF EXISTS usp_Store_Order_GetByNumber_Lines(VARCHAR(60)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Store_Order_GetByNumber_Lines(
     p_order_number VARCHAR(60) DEFAULT NULL
 )
@@ -840,9 +897,10 @@ BEGIN
 END;
 $$;
 
--- ───────────────────────────────────────────────────────
+-- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 -- 11. Obtener pedido por token
--- ───────────────────────────────────────────────────────
+-- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+DROP FUNCTION IF EXISTS usp_Store_Order_GetByToken(INT, VARCHAR(100)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Store_Order_GetByToken(
     p_company_id INT DEFAULT 1,
     p_token      VARCHAR(100) DEFAULT NULL
@@ -878,9 +936,10 @@ BEGIN
 END;
 $$;
 
--- ───────────────────────────────────────────────────────
+-- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 -- 12. Listar resenas de un producto (resumen + lista)
--- ───────────────────────────────────────────────────────
+-- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+DROP FUNCTION IF EXISTS usp_Store_Review_List_Summary(INT, VARCHAR(80)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Store_Review_List_Summary(
     p_company_id   INT DEFAULT 1,
     p_product_code VARCHAR(80) DEFAULT NULL
@@ -909,6 +968,7 @@ BEGIN
 END;
 $$;
 
+DROP FUNCTION IF EXISTS usp_Store_Review_List_Items(INT, VARCHAR(80), INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Store_Review_List_Items(
     p_company_id   INT DEFAULT 1,
     p_product_code VARCHAR(80) DEFAULT NULL,
@@ -939,9 +999,10 @@ BEGIN
 END;
 $$;
 
--- ───────────────────────────────────────────────────────
+-- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 -- 13. Crear resena
--- ───────────────────────────────────────────────────────
+-- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+DROP FUNCTION IF EXISTS usp_Store_Review_Create(INT, VARCHAR(80), INT, VARCHAR(200), VARCHAR(2000), VARCHAR(200), VARCHAR(150)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Store_Review_Create(
     p_company_id    INT DEFAULT 1,
     p_product_code  VARCHAR(80)  DEFAULT NULL,
@@ -974,9 +1035,10 @@ BEGIN
 END;
 $$;
 
--- ───────────────────────────────────────────────────────
+-- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 -- 16. Listar direcciones del cliente
--- ───────────────────────────────────────────────────────
+-- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+DROP FUNCTION IF EXISTS usp_Store_Address_List(INT, VARCHAR(24)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Store_Address_List(
     p_company_id    INT          DEFAULT 1,
     p_customer_code VARCHAR(24)  DEFAULT NULL
@@ -1007,9 +1069,10 @@ BEGIN
 END;
 $$;
 
--- ───────────────────────────────────────────────────────
+-- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 -- 17. Upsert direccion del cliente
--- ───────────────────────────────────────────────────────
+-- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+DROP FUNCTION IF EXISTS usp_Store_Address_Upsert(INT, INT, VARCHAR(24), VARCHAR(50), VARCHAR(200), VARCHAR(40), VARCHAR(300), VARCHAR(100), VARCHAR(100), VARCHAR(20), VARCHAR(50), VARCHAR(300), BOOLEAN) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Store_Address_Upsert(
     p_address_id     INT           DEFAULT NULL,
     p_company_id     INT           DEFAULT 1,
@@ -1080,9 +1143,10 @@ EXCEPTION WHEN OTHERS THEN
 END;
 $$;
 
--- ───────────────────────────────────────────────────────
+-- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 -- 18. Eliminar direccion (soft delete)
--- ───────────────────────────────────────────────────────
+-- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+DROP FUNCTION IF EXISTS usp_Store_Address_Delete(INT, VARCHAR(24)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Store_Address_Delete(
     p_address_id    INT          DEFAULT NULL,
     p_customer_code VARCHAR(24)  DEFAULT NULL
@@ -1104,9 +1168,10 @@ BEGIN
 END;
 $$;
 
--- ───────────────────────────────────────────────────────
+-- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 -- 19. Listar metodos de pago del cliente
--- ───────────────────────────────────────────────────────
+-- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+DROP FUNCTION IF EXISTS usp_Store_PaymentMethod_List(INT, VARCHAR(24)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Store_PaymentMethod_List(
     p_company_id    INT          DEFAULT 1,
     p_customer_code VARCHAR(24)  DEFAULT NULL
@@ -1141,9 +1206,10 @@ BEGIN
 END;
 $$;
 
--- ───────────────────────────────────────────────────────
+-- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 -- 20. Upsert metodo de pago del cliente
--- ───────────────────────────────────────────────────────
+-- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+DROP FUNCTION IF EXISTS usp_Store_PaymentMethod_Upsert(INT, INT, VARCHAR(24), VARCHAR(30), VARCHAR(50), VARCHAR(100), VARCHAR(40), VARCHAR(40), VARCHAR(150), VARCHAR(200), VARCHAR(30), VARCHAR(20), VARCHAR(4), VARCHAR(7), BOOLEAN) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Store_PaymentMethod_Upsert(
     p_payment_method_id INT           DEFAULT NULL,
     p_company_id        INT           DEFAULT 1,
@@ -1218,9 +1284,10 @@ EXCEPTION WHEN OTHERS THEN
 END;
 $$;
 
--- ───────────────────────────────────────────────────────
+-- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 -- 21. Eliminar metodo de pago (soft delete)
--- ───────────────────────────────────────────────────────
+-- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+DROP FUNCTION IF EXISTS usp_Store_PaymentMethod_Delete(INT, VARCHAR(24)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Store_PaymentMethod_Delete(
     p_payment_method_id INT          DEFAULT NULL,
     p_customer_code     VARCHAR(24)  DEFAULT NULL

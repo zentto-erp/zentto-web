@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
     Box,
     Typography,
@@ -20,10 +20,9 @@ import {
     Alert,
     Autocomplete,
 } from '@mui/material';
-import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
 import DeleteIcon from '@mui/icons-material/Delete';
-import { GridColDef } from '@mui/x-data-grid';
-import { EditableDataGrid } from '@zentto/module-admin';
+import type { ColumnDef } from '@zentto/datagrid-core';
+import { useGridLayoutSync } from '@zentto/shared-api';
 import {
     ProductoMenuAdmin,
     RecetaItemAdmin,
@@ -34,8 +33,14 @@ import {
     useProductosAdminQuery,
     useUpsertRecetaItemMutation,
 } from '@/hooks/useRestauranteAdmin';
+import { useScopedGridId } from '@/lib/zentto-grid';
+
 
 export default function AdminRecetasPage() {
+    const gridRef = useRef<any>(null);
+    const [registered, setRegistered] = useState(false);
+    const gridId = useScopedGridId('recetas-main');
+    const { ready: layoutReady } = useGridLayoutSync(gridId);
     const { data: productosData, isLoading } = useProductosAdminQuery();
     const [productoSeleccionado, setProductoSeleccionado] = useState<ProductoMenuAdmin | null>(null);
     const [inventarioId, setInventarioId] = useState('');
@@ -54,50 +59,88 @@ export default function AdminRecetasPage() {
     const upsertRecetaMutation = useUpsertRecetaItemMutation();
     const deleteRecetaMutation = useDeleteRecetaItemMutation();
 
-    const page = 1;
-    const pageSize = 100;
-
     const productos = (productosData?.rows ?? []) as ProductoMenuAdmin[];
     const loading = isLoading;
 
-    const columns = useMemo<GridColDef[]>(() => [
-        { field: 'nombre', headerName: 'Plato o Bebida', minWidth: 280, flex: 1.3 },
+    useEffect(() => {
+        if (!layoutReady) return;
+        import('@zentto/datagrid').then(() => setRegistered(true));
+    }, [layoutReady]);
+
+    const columns = useMemo<ColumnDef[]>(() => [
+        { field: 'nombre', header: 'Plato o Bebida', flex: 1, minWidth: 280, sortable: true },
+        { field: 'recetaEstado', header: 'Ingredientes / Insumos Asociados', width: 260, sortable: true },
         {
-            field: 'recetaEstado',
-            headerName: 'Ingredientes / Insumos Asociados',
-            minWidth: 260,
-            flex: 1,
-            valueGetter: () => 'Asignación de Inventario requerida',
-        },
-        {
-            field: 'actions',
-            headerName: 'Configurar Receta',
-            minWidth: 200,
-            flex: 0.9,
-            sortable: false,
-            filterable: false,
-            renderCell: (params) => (
-                <Button
-                    variant="outlined"
-                    startIcon={<ReceiptLongIcon />}
-                    size="small"
-                    onClick={() => {
-                        const row = params.row as ProductoMenuAdmin;
-                        setProductoSeleccionado(row);
-                        setInventarioId('');
-                        setInsumoSeleccionado(null);
-                        setInventarioSearchText('');
-                        setCantidad(1);
-                        setUnidad('UND');
-                        setComentario('');
-                        setErrorMsg(null);
-                    }}
-                >
-                    Editar Receta
-                </Button>
-            ),
+            field: 'actions', header: 'Acciones', type: 'actions', width: 80, pin: 'right',
+            actions: [
+                { icon: 'edit', label: 'Editar receta', action: 'edit', color: '#1976d2' },
+            ],
         },
     ], []);
+
+    const rows = useMemo(() =>
+        productos.map((p) => ({
+            id: Number(p.id),
+            nombre: p.nombre,
+            recetaEstado: 'Asignacion de Inventario requerida',
+        })),
+        [productos]
+    );
+
+    useEffect(() => {
+        const el = gridRef.current;
+        if (!el || !registered) return;
+        el.columns = columns;
+        el.rows = rows;
+        el.loading = loading;
+    }, [rows, loading, registered, columns]);
+
+    useEffect(() => {
+        const el = gridRef.current;
+        if (!el || !registered) return;
+        const handler = (e: CustomEvent) => {
+            const { action, row } = e.detail;
+            if (action === "edit") {
+                const prod = productos.find((p) => Number(p.id) === row.id);
+                if (prod) {
+                    setProductoSeleccionado(prod);
+                    setInventarioId('');
+                    setInsumoSeleccionado(null);
+                    setInventarioSearchText('');
+                    setCantidad(1);
+                    setUnidad('UND');
+                    setComentario('');
+                    setErrorMsg(null);
+                }
+            }
+        };
+        el.addEventListener("action-click", handler);
+        return () => el.removeEventListener("action-click", handler);
+    }, [registered, productos]);
+
+    // Handle row click to open receta dialog
+    useEffect(() => {
+        const el = gridRef.current;
+        if (!el || !registered) return;
+        const handler = (e: CustomEvent) => {
+            const row = e.detail?.row;
+            if (row) {
+                const prod = productos.find((p) => Number(p.id) === row.id);
+                if (prod) {
+                    setProductoSeleccionado(prod);
+                    setInventarioId('');
+                    setInsumoSeleccionado(null);
+                    setInventarioSearchText('');
+                    setCantidad(1);
+                    setUnidad('UND');
+                    setComentario('');
+                    setErrorMsg(null);
+                }
+            }
+        };
+        el.addEventListener('row-click', handler);
+        return () => el.removeEventListener('row-click', handler);
+    }, [registered, productos]);
 
     const recetaRows = (detalleQuery.data?.receta ?? []) as RecetaItemAdmin[];
 
@@ -105,7 +148,7 @@ export default function AdminRecetasPage() {
         if (!productoSeleccionado) return;
 
         if (!inventarioId.trim()) {
-            setErrorMsg('Debe indicar el código de insumo/inventario.');
+            setErrorMsg('Debe indicar el codigo de insumo/inventario.');
             return;
         }
 
@@ -136,8 +179,12 @@ export default function AdminRecetasPage() {
         await deleteRecetaMutation.mutateAsync({ id: Number(item.id), productoId: Number(productoSeleccionado.id) });
     };
 
+    if (!layoutReady || !registered) {
+        return <Box sx={{ display: 'flex', justifyContent: 'center', mt: 10 }}><CircularProgress /></Box>;
+    }
+
     return (
-        <Box sx={{ p: 3 }}>
+        <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', height: '100%' }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
                 <Typography variant="h4" fontWeight="bold">Configurar Recetas e Insumos</Typography>
             </Box>
@@ -151,20 +198,23 @@ export default function AdminRecetasPage() {
                 </Typography>
             </Paper>
 
-            {loading ? (
+            {loading && !rows.length ? (
                 <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
                     <CircularProgress />
                 </Box>
             ) : (
-                <EditableDataGrid
-                    rows={productos}
-                    columns={columns}
-                    loading={loading}
-                    page={page}
-                    pageSize={pageSize}
-                    rowCount={productos.length}
-                    onPageChange={() => { }}
-                    getRowId={(row) => Number(row.id)}
+                <zentto-grid
+                    ref={gridRef}
+                    grid-id={gridId}
+                    height="calc(100vh - 320px)"
+                    enable-toolbar
+                    enable-header-menu
+                    enable-header-filters
+                    enable-clipboard
+                    enable-quick-search
+                    enable-context-menu
+                    enable-status-bar
+                    enable-configurator
                 />
             )}
 
@@ -210,7 +260,7 @@ export default function AdminRecetasPage() {
                                             <Box>
                                                 <Typography fontWeight={700}>{option.codigo}</Typography>
                                                 <Typography variant="body2" color="text.secondary">
-                                                    {option.descripcion || 'Sin descripción'}
+                                                    {option.descripcion || 'Sin descripcion'}
                                                     {typeof option.existencia === 'number' ? ` • Stock: ${option.existencia}` : ''}
                                                 </Typography>
                                             </Box>
@@ -223,7 +273,7 @@ export default function AdminRecetasPage() {
                                         fullWidth
                                         size="medium"
                                         label="Buscar Insumo"
-                                        placeholder="Código o descripción"
+                                        placeholder="Codigo o descripcion"
                                         InputLabelProps={{ ...params.InputLabelProps, shrink: true, style: { fontWeight: 600 } }}
                                         inputProps={{ ...params.inputProps, style: { fontWeight: 500, fontSize: '0.98rem' } }}
                                         helperText="Seleccione un insumo o producto/plato (puede ser combo)"
@@ -286,7 +336,7 @@ export default function AdminRecetasPage() {
                             <CircularProgress size={24} />
                         </Box>
                     ) : recetaRows.length === 0 ? (
-                        <Alert severity="info">Este producto aún no tiene receta cargada.</Alert>
+                        <Alert severity="info">Este producto aun no tiene receta cargada.</Alert>
                     ) : (
                         <List dense>
                             {recetaRows.map((item) => (
@@ -305,7 +355,7 @@ export default function AdminRecetasPage() {
                                 >
                                     <ListItemText
                                         primary={<Typography fontWeight={700}>{`${item.inventarioNombre || item.inventarioId} — ${item.cantidad} ${item.unidad || ''}`}</Typography>}
-                                        secondary={item.comentario || `Código: ${item.inventarioId}`}
+                                        secondary={item.comentario || `Codigo: ${item.inventarioId}`}
                                     />
                                 </ListItem>
                             ))}
@@ -318,4 +368,12 @@ export default function AdminRecetasPage() {
             </Dialog>
         </Box>
     );
+}
+
+declare global {
+    namespace JSX {
+        interface IntrinsicElements {
+            'zentto-grid': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & Record<string, any>, HTMLElement>;
+        }
+    }
 }

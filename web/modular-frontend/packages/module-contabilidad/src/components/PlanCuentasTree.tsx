@@ -19,6 +19,7 @@ import {
   Alert,
   Divider,
   MenuItem,
+  Tooltip,
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
@@ -156,20 +157,22 @@ function TreeRow({
       >
         {/* Expand/Collapse */}
         {hasChildren ? (
-          <IconButton
-            size="small"
-            onClick={(e) => {
-              e.stopPropagation();
-              onToggle(node.codCuenta);
-            }}
-            sx={{ mr: 0.5, p: 0.3 }}
-          >
-            {isExpanded ? (
-              <ExpandMoreIcon fontSize="small" />
-            ) : (
-              <ChevronRightIcon fontSize="small" />
-            )}
-          </IconButton>
+          <Tooltip title={isExpanded ? "Colapsar" : "Expandir"}>
+            <IconButton
+              size="small"
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggle(node.codCuenta);
+              }}
+              sx={{ mr: 0.5, p: 0.3 }}
+            >
+              {isExpanded ? (
+                <ExpandMoreIcon fontSize="small" />
+              ) : (
+                <ChevronRightIcon fontSize="small" />
+              )}
+            </IconButton>
+          </Tooltip>
         ) : (
           <Box sx={{ width: 28, mr: 0.5 }} />
         )}
@@ -337,7 +340,7 @@ function DetailPanel({ account }: { account: CuentaNode | null }) {
         {account.children.length > 0 && (
           <Box>
             <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: "block" }}>
-              Cuentas Hijas
+              Cuentas hijas
             </Typography>
             {account.children.map((child) => (
               <Typography
@@ -390,7 +393,7 @@ function CreateCuentaDialog({
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>Crear Cuenta Contable</DialogTitle>
+      <DialogTitle>Crear cuenta contable</DialogTitle>
       <DialogContent>
         {error && (
           <Alert severity="error" sx={{ mb: 2, mt: 1 }}>
@@ -404,21 +407,18 @@ function CreateCuentaDialog({
             onChange={(e) => setForm({ ...form, codCuenta: e.target.value })}
             placeholder="Ej: 1.1.01.001"
             fullWidth
-            size="small"
           />
           <TextField
             label="Descripcion"
             value={form.descripcion}
             onChange={(e) => setForm({ ...form, descripcion: e.target.value })}
             fullWidth
-            size="small"
           />
           <TextField
             label="Naturaleza"
             select
             value={form.tipo}
             onChange={(e) => setForm({ ...form, tipo: e.target.value })}
-            size="small"
           >
             <MenuItem value="D">Deudora</MenuItem>
             <MenuItem value="A">Acreedora</MenuItem>
@@ -428,7 +428,6 @@ function CreateCuentaDialog({
             type="number"
             value={form.nivel}
             onChange={(e) => setForm({ ...form, nivel: Number(e.target.value) })}
-            size="small"
             inputProps={{ min: 1, max: 6 }}
           />
         </Stack>
@@ -541,14 +540,14 @@ export default function PlanCuentasTree() {
         sx={{ mb: 2 }}
       >
         <Typography variant="h5" fontWeight={700}>
-          Plan de Cuentas - Vista Arbol
+          Plan de cuentas - vista árbol
         </Typography>
         <Button
           variant="contained"
           startIcon={<AddIcon />}
           onClick={() => setCreateOpen(true)}
         >
-          Crear Cuenta
+          Crear cuenta
         </Button>
       </Stack>
 
@@ -558,7 +557,6 @@ export default function PlanCuentasTree() {
           placeholder="Buscar por codigo o nombre..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          size="small"
           sx={{ flex: 1, maxWidth: 400 }}
           InputProps={{
             startAdornment: (

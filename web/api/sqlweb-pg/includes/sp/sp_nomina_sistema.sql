@@ -19,6 +19,7 @@ CREATE TABLE IF NOT EXISTS hr."PayrollCalcVariable" (
 -- =============================================
 -- Funcion: fn_EvaluarExpr
 -- =============================================
+DROP FUNCTION IF EXISTS fn_evaluar_expr(TEXT) CASCADE;
 CREATE OR REPLACE FUNCTION fn_evaluar_expr(p_expr TEXT)
 RETURNS NUMERIC(18,6)
 LANGUAGE plpgsql AS $$
@@ -32,6 +33,7 @@ $$;
 -- =============================================
 -- Funcion: fn_Nomina_GetVariable
 -- =============================================
+DROP FUNCTION IF EXISTS fn_nomina_get_variable(VARCHAR(80), VARCHAR(120)) CASCADE;
 CREATE OR REPLACE FUNCTION fn_nomina_get_variable(
   p_session_id VARCHAR(80),
   p_variable VARCHAR(120)
@@ -53,6 +55,7 @@ $$;
 -- =============================================
 -- Funcion: fn_Nomina_ContarFeriados
 -- =============================================
+DROP FUNCTION IF EXISTS fn_nomina_contar_feriados(DATE, DATE) CASCADE;
 CREATE OR REPLACE FUNCTION fn_nomina_contar_feriados(
   p_fecha_desde DATE,
   p_fecha_hasta DATE
@@ -69,6 +72,7 @@ $$;
 -- =============================================
 -- Funcion: fn_Nomina_ContarDomingos
 -- =============================================
+DROP FUNCTION IF EXISTS fn_nomina_contar_domingos(DATE, DATE) CASCADE;
 CREATE OR REPLACE FUNCTION fn_nomina_contar_domingos(
   p_fecha_desde DATE,
   p_fecha_hasta DATE
@@ -94,6 +98,7 @@ $$;
 -- Funcion: sp_Nomina_GetScope
 -- Retorna CompanyId y BranchId
 -- =============================================
+DROP FUNCTION IF EXISTS sp_nomina_get_scope(INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION sp_nomina_get_scope(
   OUT p_company_id INT,
   OUT p_branch_id INT
@@ -127,6 +132,7 @@ $$;
 -- =============================================
 -- Funcion: sp_Nomina_LimpiarVariables
 -- =============================================
+DROP FUNCTION IF EXISTS sp_nomina_limpiar_variables(VARCHAR(80)) CASCADE;
 CREATE OR REPLACE FUNCTION sp_nomina_limpiar_variables(
   p_session_id VARCHAR(80)
 )
@@ -140,6 +146,7 @@ $$;
 -- =============================================
 -- Funcion: sp_Nomina_SetVariable
 -- =============================================
+DROP FUNCTION IF EXISTS sp_nomina_set_variable(VARCHAR(80), VARCHAR(120), NUMERIC(18,6), VARCHAR(255)) CASCADE;
 CREATE OR REPLACE FUNCTION sp_nomina_set_variable(
   p_session_id VARCHAR(80),
   p_variable VARCHAR(120),
@@ -161,6 +168,7 @@ $$;
 -- =============================================
 -- Funcion: sp_Nomina_CargarConstantes
 -- =============================================
+DROP FUNCTION IF EXISTS sp_nomina_cargar_constantes(VARCHAR(80)) CASCADE;
 CREATE OR REPLACE FUNCTION sp_nomina_cargar_constantes(
   p_session_id VARCHAR(80)
 )
@@ -193,6 +201,7 @@ $$;
 -- =============================================
 -- Funcion: sp_Nomina_CalcularAntiguedad
 -- =============================================
+DROP FUNCTION IF EXISTS sp_nomina_calcular_antiguedad(VARCHAR(80), VARCHAR(32), DATE) CASCADE;
 CREATE OR REPLACE FUNCTION sp_nomina_calcular_antiguedad(
   p_session_id VARCHAR(80),
   p_cedula VARCHAR(32),
@@ -239,6 +248,7 @@ $$;
 -- =============================================
 -- Funcion: sp_Nomina_PrepararVariablesBase
 -- =============================================
+DROP FUNCTION IF EXISTS sp_nomina_preparar_variables_base(VARCHAR(80), VARCHAR(32), VARCHAR(20), DATE, DATE) CASCADE;
 CREATE OR REPLACE FUNCTION sp_nomina_preparar_variables_base(
   p_session_id VARCHAR(80),
   p_cedula VARCHAR(32),

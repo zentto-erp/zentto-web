@@ -1,12 +1,12 @@
 -- ============================================================
 -- DatqBoxWeb PostgreSQL - sp_CerrarMesInventario.sql
 -- Calcula y guarda el cierre de inventario de un mes.
--- Ese cierre será el inventario inicial del mes siguiente.
+-- Ese cierre serÃ¡ el inventario inicial del mes siguiente.
 -- ============================================================
 
 -- =============================================
 -- sp_CerrarMesInventario: calcula y guarda el cierre de inventario de un mes.
--- Fuente: MovInvent (que se llena con cada operación de venta/compra/ajuste).
+-- Fuente: MovInvent (que se llena con cada operaciÃ³n de venta/compra/ajuste).
 -- Ejecutar al cierre del mes: SELECT * FROM public.sp_CerrarMesInventario('01/2026');
 -- =============================================
 

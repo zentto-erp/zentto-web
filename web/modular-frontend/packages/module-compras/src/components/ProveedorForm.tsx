@@ -10,13 +10,13 @@ import {
   Paper,
   CircularProgress,
   Alert,
-  Grid,
   Typography,
   Select,
   MenuItem,
   FormControl,
   InputLabel,
 } from "@mui/material";
+import { FormGrid, FormField } from "@zentto/shared-ui";
 import { useProveedorById, useCreateProveedor, useUpdateProveedor } from "../hooks/useProveedores";
 import { Proveedor, CreateProveedorDTO, UpdateProveedorDTO } from "@zentto/shared-api/types";
 
@@ -167,99 +167,88 @@ export default function ProveedorForm({ proveedorCodigo }: ProveedorFormProps) {
       )}
 
       <Paper component="form" onSubmit={handleSubmit} sx={{ p: 3 }}>
-        <Grid container spacing={2}>
+        <FormGrid spacing={2}>
           {/* Codigo (Read-only en edicion) */}
           {isEdit && (
-            <Grid item xs={12} sm={6}>
+            <FormField xs={12} sm={6}>
               <TextField
                 label="Codigo"
                 value={formData.codigo || ""}
                 disabled
-                fullWidth
-                size="small"
+               
               />
-            </Grid>
+            </FormField>
           )}
 
           {/* Nombre */}
-          <Grid item xs={12} sm={isEdit ? 6 : 12}>
+          <FormField xs={12} sm={isEdit ? 6 : 12}>
             <TextField
               label="Nombre del Proveedor"
               placeholder="Ej: Empresa XYZ"
               value={formData.nombre}
               onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-              fullWidth
-              size="small"
               required
               error={!!errors.nombre}
               helperText={errors.nombre}
             />
-          </Grid>
+          </FormField>
 
           {/* RIF */}
-          <Grid item xs={12} sm={6}>
+          <FormField xs={12} sm={6}>
             <TextField
               label="RIF"
               placeholder="Ej: J12345678"
               value={formData.rif}
               onChange={(e) => setFormData({ ...formData, rif: e.target.value.toUpperCase() })}
-              fullWidth
-              size="small"
               required
               error={!!errors.rif}
               helperText={errors.rif}
             />
-          </Grid>
+          </FormField>
 
           {/* Direccion */}
-          <Grid item xs={12}>
+          <FormField xs={12}>
             <TextField
               label="Direccion"
               placeholder="Calle, numero, ciudad"
               value={formData.direccion}
               onChange={(e) => setFormData({ ...formData, direccion: e.target.value })}
-              fullWidth
               multiline
               rows={3}
-              size="small"
               required
               error={!!errors.direccion}
               helperText={errors.direccion}
             />
-          </Grid>
+          </FormField>
 
           {/* Telefono */}
-          <Grid item xs={12} sm={6}>
+          <FormField xs={12} sm={6}>
             <TextField
               label="Telefono"
               placeholder="+58 212 1234567"
               value={formData.telefono}
               onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
-              fullWidth
-              size="small"
               type="tel"
             />
-          </Grid>
+          </FormField>
 
           {/* Email */}
-          <Grid item xs={12} sm={6}>
+          <FormField xs={12} sm={6}>
             <TextField
               label="Email"
               placeholder="proveedor@example.com"
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              fullWidth
-              size="small"
               type="email"
               error={!!errors.email}
               helperText={errors.email}
             />
-          </Grid>
+          </FormField>
 
           {/* Estado */}
           {isEdit && (
-            <Grid item xs={12} sm={6}>
-              <FormControl fullWidth size="small">
+            <FormField xs={12} sm={6}>
+              <FormControl>
                 <InputLabel>Estado</InputLabel>
                 <Select
                   value={estado}
@@ -270,9 +259,9 @@ export default function ProveedorForm({ proveedorCodigo }: ProveedorFormProps) {
                   <MenuItem value="Inactivo">Inactivo</MenuItem>
                 </Select>
               </FormControl>
-            </Grid>
+            </FormField>
           )}
-        </Grid>
+        </FormGrid>
 
         {/* Actions */}
         <Box sx={{ display: "flex", gap: 2, mt: 4, justifyContent: "flex-end" }}>

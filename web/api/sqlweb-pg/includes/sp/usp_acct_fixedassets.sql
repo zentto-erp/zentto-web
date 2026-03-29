@@ -27,6 +27,7 @@
 -- 1. usp_Acct_FixedAssetCategory_List
 --    Listado paginado de categorias de activos fijos.
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_Acct_FixedAssetCategory_List(INTEGER, VARCHAR(100), INTEGER, INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Acct_FixedAssetCategory_List(
     p_company_id INTEGER,
     p_search     VARCHAR(100) DEFAULT NULL,
@@ -57,27 +58,27 @@ BEGIN
 
     SELECT COUNT(*)
     INTO v_total_count
-    FROM acct."FixedAssetCategory"
-    WHERE "CompanyId"  = p_company_id
-      AND "IsDeleted"  = FALSE
+    FROM acct."FixedAssetCategory" fac
+    WHERE fac."CompanyId"  = p_company_id
+      AND fac."IsDeleted"  = FALSE
       AND (p_search IS NULL
-           OR "CategoryCode" LIKE '%' || p_search || '%'
-           OR "CategoryName" LIKE '%' || p_search || '%');
+           OR fac."CategoryCode" LIKE '%' || p_search || '%'
+           OR fac."CategoryName" LIKE '%' || p_search || '%');
 
     RETURN QUERY
     SELECT v_total_count,
-           "CategoryId", "CategoryCode", "CategoryName",
-           "DefaultUsefulLifeMonths", "DefaultDepreciationMethod",
-           "DefaultResidualPercent",
-           "DefaultAssetAccountCode", "DefaultDeprecAccountCode",
-           "DefaultExpenseAccountCode", "CountryCode"
-    FROM acct."FixedAssetCategory"
-    WHERE "CompanyId"  = p_company_id
-      AND "IsDeleted"  = FALSE
+           fac."CategoryId", fac."CategoryCode", fac."CategoryName",
+           fac."DefaultUsefulLifeMonths", fac."DefaultDepreciationMethod",
+           fac."DefaultResidualPercent",
+           fac."DefaultAssetAccountCode", fac."DefaultDeprecAccountCode",
+           fac."DefaultExpenseAccountCode", fac."CountryCode"
+    FROM acct."FixedAssetCategory" fac
+    WHERE fac."CompanyId"  = p_company_id
+      AND fac."IsDeleted"  = FALSE
       AND (p_search IS NULL
-           OR "CategoryCode" LIKE '%' || p_search || '%'
-           OR "CategoryName" LIKE '%' || p_search || '%')
-    ORDER BY "CategoryCode"
+           OR fac."CategoryCode" LIKE '%' || p_search || '%'
+           OR fac."CategoryName" LIKE '%' || p_search || '%')
+    ORDER BY fac."CategoryCode"
     LIMIT p_limit OFFSET (p_page - 1) * p_limit;
 END;
 $$;
@@ -86,6 +87,7 @@ $$;
 -- 2. usp_Acct_FixedAssetCategory_Get
 --    Detalle de una categoria de activo fijo.
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_Acct_FixedAssetCategory_Get(INTEGER, VARCHAR(20)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Acct_FixedAssetCategory_Get(
     p_company_id   INTEGER,
     p_category_code VARCHAR(20)
@@ -108,6 +110,7 @@ $$;
 -- 3. usp_Acct_FixedAssetCategory_Upsert
 --    Crear o actualizar una categoria de activo fijo.
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_Acct_FixedAssetCategory_Upsert(INTEGER, VARCHAR(20), VARCHAR(200), INTEGER, VARCHAR(20), NUMERIC(5,2), VARCHAR(20), VARCHAR(20), VARCHAR(20), VARCHAR(2), INTEGER, TEXT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Acct_FixedAssetCategory_Upsert(
     p_company_id                  INTEGER,
     p_category_code               VARCHAR(20),
@@ -171,6 +174,7 @@ $$;
 -- 4. usp_Acct_FixedAsset_List
 --    Listado paginado de activos fijos con valor en libros calculado.
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_Acct_FixedAsset_List(INTEGER, INTEGER, VARCHAR(20), VARCHAR(20), VARCHAR(20), VARCHAR(100), INTEGER, INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Acct_FixedAsset_List(
     p_company_id      INTEGER,
     p_branch_id       INTEGER      DEFAULT NULL,
@@ -264,6 +268,7 @@ $$;
 -- 5. usp_Acct_FixedAsset_Get
 --    Detalle completo de un activo fijo con valor en libros calculado.
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_Acct_FixedAsset_Get(INTEGER, BIGINT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Acct_FixedAsset_Get(
     p_company_id INTEGER,
     p_asset_id   BIGINT
@@ -297,6 +302,7 @@ $$;
 -- 6. usp_Acct_FixedAsset_Insert
 --    Registrar un nuevo activo fijo.
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_Acct_FixedAsset_Insert(INTEGER, INTEGER, VARCHAR(40), VARCHAR(250), INTEGER, DATE, NUMERIC(18,2), NUMERIC(18,2), INTEGER, VARCHAR(20), VARCHAR(20), VARCHAR(20), VARCHAR(20), VARCHAR(20), VARCHAR(200), VARCHAR(100), INTEGER, VARCHAR(3), VARCHAR(40), BIGINT, INTEGER, TEXT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Acct_FixedAsset_Insert(
     p_company_id          INTEGER,
     p_branch_id           INTEGER,
@@ -365,6 +371,7 @@ $$;
 -- 7. usp_Acct_FixedAsset_Update
 --    Actualizar campos editables de un activo fijo.
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_Acct_FixedAsset_Update(INTEGER, BIGINT, VARCHAR(250), VARCHAR(200), VARCHAR(100), VARCHAR(20), VARCHAR(3), VARCHAR(40), INTEGER, TEXT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Acct_FixedAsset_Update(
     p_company_id       INTEGER,
     p_asset_id         BIGINT,
@@ -416,6 +423,7 @@ $$;
 -- 8. usp_Acct_FixedAsset_Dispose
 --    Desincorporar un activo fijo (cambiar estado a DISPOSED).
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_Acct_FixedAsset_Dispose(INTEGER, BIGINT, DATE, NUMERIC(18,2), VARCHAR(500), VARCHAR(40), INTEGER, TEXT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Acct_FixedAsset_Dispose(
     p_company_id     INTEGER,
     p_asset_id       BIGINT,
@@ -467,6 +475,7 @@ $$;
 --    Soporta metodos STRAIGHT_LINE y DOUBLE_DECLINING.
 --    p_preview = TRUE solo devuelve preview sin insertar registros.
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_Acct_FixedAsset_CalculateDepreciation(INTEGER, INTEGER, VARCHAR(7), VARCHAR(20), BOOLEAN, VARCHAR(40), INTEGER, TEXT, INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Acct_FixedAsset_CalculateDepreciation(
     p_company_id       INTEGER,
     p_branch_id        INTEGER,
@@ -596,9 +605,125 @@ END;
 $$;
 
 -- =============================================================================
+-- 9b. usp_Acct_FixedAsset_DepreciationPreview
+--     Preview de depreciacion sin insertar registros.
+--     Reemplaza el enfoque de tabla temporal ON COMMIT DROP (incompatible con
+--     el pool de conexiones auto-commit de pgCallSpOut).
+--     Retorna SETOF TABLE para ser llamado via callSp().
+-- =============================================================================
+DROP FUNCTION IF EXISTS usp_Acct_FixedAsset_DepreciationPreview(INTEGER, INTEGER, VARCHAR(7), VARCHAR(20)) CASCADE;
+CREATE OR REPLACE FUNCTION usp_Acct_FixedAsset_DepreciationPreview(
+    p_company_id       INTEGER,
+    p_branch_id        INTEGER,
+    p_period_code      VARCHAR(7),
+    p_cost_center_code VARCHAR(20) DEFAULT NULL
+)
+RETURNS TABLE(
+    "AssetCode"               VARCHAR(40),
+    "Description"             VARCHAR(250),
+    "DepreciationMethod"      VARCHAR(20),
+    "AcquisitionCost"         NUMERIC(18,2),
+    "ResidualValue"           NUMERIC(18,2),
+    "UsefulLifeMonths"        INTEGER,
+    "PreviousAccum"           NUMERIC(18,2),
+    "Amount"                  NUMERIC(18,2),
+    "AccumulatedDepreciation" NUMERIC(18,2),
+    "BookValue"               NUMERIC(18,2)
+)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    v_period_start DATE;
+    v_period_end   DATE;
+BEGIN
+    v_period_start := CAST(p_period_code || '-01' AS DATE);
+    v_period_end   := (DATE_TRUNC('month', v_period_start) + INTERVAL '1 month - 1 day')::DATE;
+
+    RETURN QUERY
+    WITH eligible AS (
+        SELECT
+            a."AssetId",
+            a."AssetCode",
+            a."Description",
+            a."AcquisitionCost",
+            a."ResidualValue",
+            a."UsefulLifeMonths",
+            a."DepreciationMethod",
+            COALESCE((
+                SELECT SUM(d."Amount")
+                FROM acct."FixedAssetDepreciation" d
+                WHERE d."AssetId" = a."AssetId"
+            ), 0) AS previous_accum
+        FROM acct."FixedAsset" a
+        WHERE a."CompanyId"          = p_company_id
+          AND a."BranchId"           = p_branch_id
+          AND a."Status"             = 'ACTIVE'
+          AND a."IsDeleted"          = FALSE
+          AND a."DepreciationMethod" <> 'NONE'
+          AND a."AcquisitionDate"    <= v_period_end
+          AND NOT EXISTS (
+              SELECT 1 FROM acct."FixedAssetDepreciation" d2
+              WHERE d2."AssetId"    = a."AssetId"
+                AND d2."PeriodCode" = p_period_code
+          )
+          AND (p_cost_center_code IS NULL OR a."CostCenterCode" = p_cost_center_code)
+    ),
+    calc AS (
+        SELECT
+            e."AssetCode",
+            e."Description",
+            e."DepreciationMethod",
+            e."AcquisitionCost",
+            e."ResidualValue",
+            e."UsefulLifeMonths",
+            e.previous_accum,
+            CASE
+                WHEN e."DepreciationMethod" = 'STRAIGHT_LINE' AND e."UsefulLifeMonths" > 0
+                    THEN ROUND((e."AcquisitionCost" - e."ResidualValue") / e."UsefulLifeMonths", 2)
+                WHEN e."DepreciationMethod" = 'DOUBLE_DECLINING' AND e."UsefulLifeMonths" > 0
+                    THEN ROUND((2.0 / e."UsefulLifeMonths") * (e."AcquisitionCost" - e.previous_accum), 2)
+                ELSE 0
+            END AS raw_amount
+        FROM eligible e
+    ),
+    capped AS (
+        SELECT
+            c."AssetCode",
+            c."Description",
+            c."DepreciationMethod",
+            c."AcquisitionCost",
+            c."ResidualValue",
+            c."UsefulLifeMonths",
+            c.previous_accum,
+            CASE
+                WHEN c.previous_accum + c.raw_amount > c."AcquisitionCost" - c."ResidualValue"
+                    THEN c."AcquisitionCost" - c."ResidualValue" - c.previous_accum
+                ELSE c.raw_amount
+            END AS calc_amount
+        FROM calc c
+    )
+    SELECT
+        cp."AssetCode",
+        cp."Description",
+        cp."DepreciationMethod",
+        cp."AcquisitionCost",
+        cp."ResidualValue",
+        cp."UsefulLifeMonths",
+        cp.previous_accum                               AS "PreviousAccum",
+        cp.calc_amount                                  AS "Amount",
+        cp.previous_accum + cp.calc_amount              AS "AccumulatedDepreciation",
+        cp."AcquisitionCost" - (cp.previous_accum + cp.calc_amount) AS "BookValue"
+    FROM capped cp
+    WHERE cp.calc_amount > 0
+    ORDER BY cp."AssetCode";
+END;
+$$;
+
+-- =============================================================================
 -- 10. usp_Acct_FixedAsset_DepreciationHistory
 --     Historial de depreciacion de un activo fijo, paginado.
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_Acct_FixedAsset_DepreciationHistory(INTEGER, BIGINT, INTEGER, INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Acct_FixedAsset_DepreciationHistory(
     p_company_id INTEGER,
     p_asset_id   BIGINT,
@@ -653,6 +778,7 @@ $$;
 -- 11. usp_Acct_FixedAsset_AddImprovement
 --     Registrar una mejora/adicion a un activo fijo.
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_Acct_FixedAsset_AddImprovement(INTEGER, BIGINT, DATE, VARCHAR(500), NUMERIC(18,2), INTEGER, VARCHAR(40), INTEGER, TEXT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Acct_FixedAsset_AddImprovement(
     p_company_id          INTEGER,
     p_asset_id            BIGINT,
@@ -710,6 +836,7 @@ $$;
 -- 12. usp_Acct_FixedAsset_Revalue
 --     Revaluacion de un activo fijo por indice multiplicador.
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_Acct_FixedAsset_Revalue(INTEGER, BIGINT, DATE, NUMERIC(12,6), VARCHAR(2), VARCHAR(40), INTEGER, TEXT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Acct_FixedAsset_Revalue(
     p_company_id       INTEGER,
     p_asset_id         BIGINT,
@@ -779,6 +906,7 @@ $$;
 -- 13. usp_Acct_FixedAsset_Report_Book
 --     Libro de activos fijos a una fecha de corte.
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_Acct_FixedAsset_Report_Book(INTEGER, INTEGER, DATE, VARCHAR(20)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Acct_FixedAsset_Report_Book(
     p_company_id   INTEGER,
     p_branch_id    INTEGER,
@@ -834,6 +962,7 @@ $$;
 --     Proyeccion de depreciacion mensual para un activo fijo.
 --     Genera tabla de meses desde fecha de adquisicion hasta fin de vida util.
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_Acct_FixedAsset_Report_DepreciationSchedule(INTEGER, BIGINT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Acct_FixedAsset_Report_DepreciationSchedule(
     p_company_id INTEGER,
     p_asset_id   BIGINT
@@ -924,6 +1053,7 @@ $$;
 -- 15. usp_Acct_FixedAsset_Report_ByCategory
 --     Resumen de activos fijos agrupados por categoria a una fecha de corte.
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_Acct_FixedAsset_Report_ByCategory(INTEGER, INTEGER, DATE) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Acct_FixedAsset_Report_ByCategory(
     p_company_id  INTEGER,
     p_branch_id   INTEGER,

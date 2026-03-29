@@ -119,7 +119,7 @@ export default function BancosPage() {
       <Paper sx={{ p: 2, mb: 2 }}>
         <Grid container spacing={1}>
           <Grid item xs={12} md={4}>
-            <TextField fullWidth size="small" label="Buscar banco" value={search} onChange={(e) => setSearch(e.target.value)} />
+            <TextField fullWidth label="Buscar banco" value={search} onChange={(e) => setSearch(e.target.value)} />
           </Grid>
           <Grid item xs={12} md={4}>
             <Button variant="outlined" onClick={() => setMovOpen(true)}>Generar Movimiento Bancario</Button>
@@ -131,19 +131,19 @@ export default function BancosPage() {
         <Typography variant="subtitle1" sx={{ mb: 1 }}>Nuevo / Editar Banco</Typography>
         <Grid container spacing={1}>
           <Grid item xs={12} md={3}>
-            <TextField fullWidth size="small" label="Nombre" value={form.Nombre} onChange={(e) => setForm((s) => ({ ...s, Nombre: e.target.value }))} />
+            <TextField fullWidth label="Nombre" value={form.Nombre} onChange={(e) => setForm((s) => ({ ...s, Nombre: e.target.value }))} />
           </Grid>
           <Grid item xs={12} md={2}>
-            <TextField fullWidth size="small" label="Contacto" value={form.Contacto} onChange={(e) => setForm((s) => ({ ...s, Contacto: e.target.value }))} />
+            <TextField fullWidth label="Contacto" value={form.Contacto} onChange={(e) => setForm((s) => ({ ...s, Contacto: e.target.value }))} />
           </Grid>
           <Grid item xs={12} md={3}>
-            <TextField fullWidth size="small" label="Direccion" value={form.Direccion} onChange={(e) => setForm((s) => ({ ...s, Direccion: e.target.value }))} />
+            <TextField fullWidth label="Direccion" value={form.Direccion} onChange={(e) => setForm((s) => ({ ...s, Direccion: e.target.value }))} />
           </Grid>
           <Grid item xs={12} md={2}>
-            <TextField fullWidth size="small" label="Telefonos" value={form.Telefonos} onChange={(e) => setForm((s) => ({ ...s, Telefonos: e.target.value }))} />
+            <TextField fullWidth label="Telefonos" value={form.Telefonos} onChange={(e) => setForm((s) => ({ ...s, Telefonos: e.target.value }))} />
           </Grid>
           <Grid item xs={12} md={2}>
-            <TextField fullWidth size="small" label="Usuario" value={form.Co_Usuario} onChange={(e) => setForm((s) => ({ ...s, Co_Usuario: e.target.value }))} />
+            <TextField fullWidth label="Usuario" value={form.Co_Usuario} onChange={(e) => setForm((s) => ({ ...s, Co_Usuario: e.target.value }))} />
           </Grid>
           <Grid item xs={12} md={2}>
             <Button fullWidth variant="contained" onClick={onCreate} disabled={crear.isPending}>Crear</Button>
@@ -208,7 +208,7 @@ export default function BancosPage() {
                 select
                 SelectProps={{ native: true }}
                 fullWidth
-                size="small"
+               
                 label="Cuenta"
                 value={mov.Nro_Cta}
                 onChange={(e) => setMov((s) => ({ ...s, Nro_Cta: e.target.value }))}
@@ -220,7 +220,7 @@ export default function BancosPage() {
               </TextField>
             </Grid>
             <Grid item xs={12} md={2}>
-              <TextField select SelectProps={{ native: true }} fullWidth size="small" label="Tipo" value={mov.Tipo} onChange={(e) => setMov((s) => ({ ...s, Tipo: e.target.value }))}>
+              <TextField select SelectProps={{ native: true }} fullWidth label="Tipo" value={mov.Tipo} onChange={(e) => setMov((s) => ({ ...s, Tipo: e.target.value }))}>
                 <option value="DEP">DEP</option>
                 <option value="PCH">PCH</option>
                 <option value="NCR">NCR</option>
@@ -229,25 +229,25 @@ export default function BancosPage() {
               </TextField>
             </Grid>
             <Grid item xs={12} md={3}>
-              <TextField fullWidth size="small" label="Nro Ref" value={mov.Nro_Ref} onChange={(e) => setMov((s) => ({ ...s, Nro_Ref: e.target.value }))} />
+              <TextField fullWidth label="Nro Ref" value={mov.Nro_Ref} onChange={(e) => setMov((s) => ({ ...s, Nro_Ref: e.target.value }))} />
             </Grid>
             <Grid item xs={12} md={3}>
-              <TextField fullWidth size="small" label="Monto" type="number" value={mov.Monto} onChange={(e) => setMov((s) => ({ ...s, Monto: Number(e.target.value) }))} />
+              <TextField fullWidth label="Monto" type="number" value={mov.Monto} onChange={(e) => setMov((s) => ({ ...s, Monto: Number(e.target.value) }))} />
             </Grid>
             <Grid item xs={12} md={6}>
-              <TextField fullWidth size="small" label="Beneficiario" value={mov.Beneficiario} onChange={(e) => setMov((s) => ({ ...s, Beneficiario: e.target.value }))} />
+              <TextField fullWidth label="Beneficiario" value={mov.Beneficiario} onChange={(e) => setMov((s) => ({ ...s, Beneficiario: e.target.value }))} />
             </Grid>
             <Grid item xs={12} md={6}>
-              <TextField fullWidth size="small" label="Concepto" value={mov.Concepto} onChange={(e) => setMov((s) => ({ ...s, Concepto: e.target.value }))} />
+              <TextField fullWidth label="Concepto" value={mov.Concepto} onChange={(e) => setMov((s) => ({ ...s, Concepto: e.target.value }))} />
             </Grid>
             <Grid item xs={12} md={6}>
-              <TextField fullWidth size="small" label="Categoria" value={mov.Categoria} onChange={(e) => setMov((s) => ({ ...s, Categoria: e.target.value }))} />
+              <TextField fullWidth label="Categoria" value={mov.Categoria} onChange={(e) => setMov((s) => ({ ...s, Categoria: e.target.value }))} />
             </Grid>
             <Grid item xs={12} md={3}>
-              <TextField fullWidth size="small" label="Doc Rel" value={mov.Documento_Relacionado} onChange={(e) => setMov((s) => ({ ...s, Documento_Relacionado: e.target.value }))} />
+              <TextField fullWidth label="Doc Rel" value={mov.Documento_Relacionado} onChange={(e) => setMov((s) => ({ ...s, Documento_Relacionado: e.target.value }))} />
             </Grid>
             <Grid item xs={12} md={3}>
-              <TextField fullWidth size="small" label="Tipo Doc Rel" value={mov.Tipo_Doc_Rel} onChange={(e) => setMov((s) => ({ ...s, Tipo_Doc_Rel: e.target.value }))} />
+              <TextField fullWidth label="Tipo Doc Rel" value={mov.Tipo_Doc_Rel} onChange={(e) => setMov((s) => ({ ...s, Tipo_Doc_Rel: e.target.value }))} />
             </Grid>
           </Grid>
         </DialogContent>

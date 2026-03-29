@@ -6,7 +6,7 @@ import {
   Stack,
   Button,
   FormControl,
-  OutlinedInput,
+  TextField,
   FormHelperText,
   InputAdornment,
   IconButton,
@@ -17,6 +17,7 @@ import {
   CircularProgress,
   Select,
   MenuItem,
+  Tooltip,
 } from '@mui/material';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -26,6 +27,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { signIn } from 'next-auth/react';
 import { useToast } from '@zentto/shared-ui';
+import TurnstileCaptcha from './TurnstileCaptcha';
 
 interface loginType {
   title?: string;
@@ -45,7 +47,7 @@ type CompanyOption = {
 
 const loginSchema = z.object({
   email: z.string().min(1, 'El usuario es requerido'),
-  password: z.string().min(1, 'La contrasena es requerida'),
+  password: z.string().min(1, 'La contraseña es requerida'),
 });
 
 type LoginFormData = z.infer<typeof loginSchema>;
@@ -61,7 +63,10 @@ const AuthLogin = ({ title, subtitle, subtext }: loginType) => {
   const [loadingCompanies, setLoadingCompanies] = React.useState(false);
   const [companyOptions, setCompanyOptions] = React.useState<CompanyOption[]>([]);
   const [selectedScope, setSelectedScope] = React.useState<string>('');
+  const [captchaToken, setCaptchaToken] = React.useState<string | null>(null);
   const { showToast } = useToast();
+
+  const captchaSiteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || '';
 
   const {
     control,
@@ -91,7 +96,7 @@ const AuthLogin = ({ title, subtitle, subtext }: loginType) => {
     const error = searchParams.get('error');
     if (error) {
       if (error === 'CredentialsSignin') {
-        setErrorMsg('Usuario o contrasena incorrectos');
+        setErrorMsg('Usuario o contraseña incorrectos');
       } else {
         setErrorMsg('Error al iniciar sesion. Intente nuevamente.');
       }
@@ -107,7 +112,8 @@ const AuthLogin = ({ title, subtitle, subtext }: loginType) => {
       return;
     }
 
-    const loginUser = normalized.includes('@') ? normalized.split('@')[0] : normalized;
+    const loginUser = normalized.toUpperCase();
+    if (loginUser.length < 3) return;
 
     const timer = setTimeout(async () => {
       setLoadingCompanies(true);
@@ -194,6 +200,7 @@ const AuthLogin = ({ title, subtitle, subtext }: loginType) => {
         password: data.password,
         companyId: companyId ? String(companyId) : undefined,
         branchId: branchId ? String(branchId) : undefined,
+        captchaToken: captchaToken ?? undefined,
         callbackUrl: '/',
         redirect: false,
       });
@@ -204,7 +211,7 @@ const AuthLogin = ({ title, subtitle, subtext }: loginType) => {
           setEmailNotVerified(true);
           setErrorMsg('Debes verificar tu correo antes de iniciar sesion.');
         } else {
-          setErrorMsg('Usuario o contrasena incorrectos');
+          setErrorMsg('Usuario o contraseña incorrectos');
         }
         setIsSubmitting(false);
       } else if (result?.ok) {
@@ -254,102 +261,75 @@ const AuthLogin = ({ title, subtitle, subtext }: loginType) => {
             name="email"
             control={control}
             render={({ field }) => (
-              <FormControl error={!!errors.email} fullWidth>
-                <Typography
-                  variant="body2"
-                  fontWeight={600}
-                  component="label"
-                  htmlFor="email"
-                  sx={{ mb: 1, color: 'text.primary' }}
-                >
-                  Usuario
-                </Typography>
-                <OutlinedInput
-                  {...field}
-                  id="email"
-                  placeholder="Ingresa tu usuario"
-                  autoComplete="username"
-                  disabled={isSubmitting}
-                  sx={{
-                    '& .MuiOutlinedInput-input': {
-                      py: 1.75,
-                      px: 2,
-                    },
-                    '& .MuiOutlinedInput-notchedOutline': {
-                      borderRadius: 2,
-                    },
-                  }}
-                />
-                {errors.email && <FormHelperText>{errors.email.message}</FormHelperText>}
-              </FormControl>
+              <TextField
+                {...field}
+                id="email"
+                label="Usuario"
+                placeholder="Ingresa tu usuario"
+                autoComplete="username"
+                disabled={isSubmitting}
+                fullWidth
+                error={!!errors.email}
+                helperText={errors.email?.message}
+              />
             )}
           />
 
           {(loadingCompanies || companyOptions.length > 0) && (
-            <FormControl fullWidth>
-              <Typography variant="body2" fontWeight={600} sx={{ mb: 1, color: 'text.primary' }}>
-                Empresa / Sucursal
-              </Typography>
-              <Select
-                value={selectedScope}
-                onChange={(e) => setSelectedScope(String(e.target.value))}
-                disabled={isSubmitting || loadingCompanies || companyOptions.length === 0}
-              >
-                {companyOptions.map((opt) => (
-                  <MenuItem key={`${opt.companyId}:${opt.branchId}`} value={`${opt.companyId}:${opt.branchId}`}>
-                    {`${opt.companyCode} - ${opt.companyName} / ${opt.branchCode} - ${opt.branchName}`}
-                  </MenuItem>
-                ))}
-              </Select>
-              {loadingCompanies && <FormHelperText>Cargando empresas...</FormHelperText>}
-            </FormControl>
+            <TextField
+              select
+              label="Empresa / Sucursal"
+              value={selectedScope}
+              onChange={(e) => setSelectedScope(String(e.target.value))}
+              disabled={isSubmitting || loadingCompanies || companyOptions.length === 0}
+              fullWidth
+              helperText={loadingCompanies ? 'Cargando empresas...' : undefined}
+            >
+              {companyOptions.map((opt) => (
+                <MenuItem key={`${opt.companyId}:${opt.branchId}`} value={`${opt.companyId}:${opt.branchId}`}>
+                  {`${opt.companyCode} - ${opt.companyName} / ${opt.branchCode} - ${opt.branchName}`}
+                </MenuItem>
+              ))}
+            </TextField>
           )}
 
           <Controller
             name="password"
             control={control}
             render={({ field }) => (
-              <FormControl error={!!errors.password} fullWidth>
-                <Typography
-                  variant="body2"
-                  fontWeight={600}
-                  component="label"
-                  htmlFor="password"
-                  sx={{ mb: 1, color: 'text.primary' }}
-                >
-                  Contrasena
-                </Typography>
-                <OutlinedInput
-                  {...field}
-                  id="password"
-                  type={showPassword ? 'text' : 'password'}
-                  placeholder="Contrasena"
-                  autoComplete="current-password"
-                  disabled={isSubmitting}
-                  sx={{
-                    '& .MuiOutlinedInput-input': {
-                      py: 1.75,
-                      px: 2,
-                    },
-                    '& .MuiOutlinedInput-notchedOutline': {
-                      borderRadius: 2,
-                    },
-                  }}
-                  endAdornment={
-                    <InputAdornment position="end">
-                      <IconButton
-                        onClick={() => setShowPassword(!showPassword)}
-                        edge="end"
-                        disabled={isSubmitting}
-                        size="small"
-                      >
-                        {showPassword ? <VisibilityOff /> : <Visibility />}
-                      </IconButton>
-                    </InputAdornment>
-                  }
-                />
-                {errors.password && <FormHelperText>{errors.password.message}</FormHelperText>}
-              </FormControl>
+              <TextField
+                {...field}
+                id="password"
+                label="Contraseña"
+                type={showPassword ? 'text' : 'password'}
+                placeholder="Contraseña"
+                autoComplete="current-password"
+                disabled={isSubmitting}
+                fullWidth
+                error={!!errors.password}
+                helperText={errors.password?.message}
+                slotProps={{
+                  input: {
+                    endAdornment: field.value ? (
+                      <InputAdornment position="end">
+                        <Tooltip title={showPassword ? "Ocultar contrasena" : "Mostrar contrasena"}>
+                          <span>
+                            <IconButton
+                              onClick={() => setShowPassword(!showPassword)}
+                              edge="end"
+                              disabled={isSubmitting}
+                              size="small"
+                              sx={{ p: 0.5 }}
+                            >
+                              {showPassword ? <VisibilityOff sx={{ fontSize: 18 }} /> : <Visibility sx={{ fontSize: 18 }} />}
+                            </IconButton>
+                          </span>
+                        </Tooltip>
+                      </InputAdornment>
+                    ) : null,
+                  },
+                }}
+              />
             )}
           />
 
@@ -381,9 +361,15 @@ const AuthLogin = ({ title, subtitle, subtext }: loginType) => {
               variant="body2"
               sx={{ textDecoration: 'none', color: 'primary.main', '&:hover': { textDecoration: 'underline' } }}
             >
-              Olvide mi contrasena
+              Olvidé mi contraseña
             </Typography>
           </Stack>
+
+          {/* TODO: Turnstile deshabilitado temporalmente — loop de verificación en producción
+          {captchaSiteKey && (
+            <TurnstileCaptcha onTokenChange={(t) => setCaptchaToken(t || null)} />
+          )}
+          */}
 
           <Button
             type="submit"

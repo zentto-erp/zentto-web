@@ -12,6 +12,7 @@ import {
   resendVerificationSchema,
   SYSTEM_MODULES,
 } from "./types.js";
+import { getPlanModules } from "../license/license.types.js";
 import {
   authenticateUsuario,
   extractPermisos,
@@ -282,6 +283,7 @@ authRouter.get("/login-options", loginOptionsLimiter, async (req, res) => {
 
 // --- POST /v1/auth/login --------------------------------------
 authRouter.post("/login", loginLimiter, async (req, res) => {
+  try {
   const parsed = loginSchema.safeParse(req.body);
   if (!parsed.success) {
     return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
@@ -333,7 +335,9 @@ authRouter.post("/login", loginLimiter, async (req, res) => {
   if (isAdmin) {
     allowedModules = [...SYSTEM_MODULES];
   } else if (modulosAcceso.length === 0) {
-    allowedModules = ["dashboard", "facturas", "clientes", "inventario", "articulos"];
+    // Sin módulos configurados → usar plan STARTER como fallback seguro
+    // (no FREE, para no romper tenants activos sin plan configurado)
+    allowedModules = getPlanModules('STARTER');
   } else {
     allowedModules = modulosAcceso
       .filter((m) => m.permitido)
@@ -390,6 +394,10 @@ authRouter.post("/login", loginLimiter, async (req, res) => {
       isAdmin,
     },
   });
+  } catch (err: any) {
+    console.error("[LOGIN CRASH]", err?.message, err?.stack);
+    return res.status(500).json({ error: "login_internal_error", message: err?.message, stack: err?.stack?.split("\n").slice(0, 5) });
+  }
 });
 
 // --- GET /v1/auth/companies -----------------------------------

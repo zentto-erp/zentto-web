@@ -19,11 +19,13 @@ import {
     ListItem,
     ListItemIcon,
     ListItemText,
+    Tooltip,
 } from '@mui/material';
 import Grid from '@mui/material/Grid2';
 import dynamic from 'next/dynamic';
 import { useAuth } from '@zentto/shared-auth';
 import { useRouter } from 'next/navigation';
+import { resolveAppHref } from '@/lib/app-links';
 
 // Icons
 const AccountBalanceWalletIcon = dynamic(() => import('@mui/icons-material/AccountBalanceWallet'), { ssr: false });
@@ -41,6 +43,11 @@ const CheckCircleIcon = dynamic(() => import('@mui/icons-material/CheckCircle'),
 const StarIcon = dynamic(() => import('@mui/icons-material/Star'), { ssr: false });
 const UpdateIcon = dynamic(() => import('@mui/icons-material/Update'), { ssr: false });
 const PeopleIcon = dynamic(() => import('@mui/icons-material/People'), { ssr: false });
+const RocketLaunchIcon = dynamic(() => import('@mui/icons-material/RocketLaunch'), { ssr: false });
+const LockIcon = dynamic(() => import('@mui/icons-material/Lock'), { ssr: false });
+const PrecisionManufacturingIcon = dynamic(() => import('@mui/icons-material/PrecisionManufacturing'), { ssr: false });
+const DirectionsCarIcon = dynamic(() => import('@mui/icons-material/DirectionsCar'), { ssr: false });
+const GroupsIcon = dynamic(() => import('@mui/icons-material/Groups'), { ssr: false });
 
 interface StoreApp {
     id: string;
@@ -187,6 +194,71 @@ const CATALOG: StoreApp[] = [
         version: '1.3.2',
         author: 'Zentto'
     },
+    {
+        id: 'logistica',
+        name: 'Logística',
+        description: 'Recepción de mercancía, devoluciones, albaranes y transportistas.',
+        fullDescription: 'Gestione toda la cadena logística de su empresa. Reciba mercancía con inspección de calidad, procese devoluciones a proveedores, genere albaranes de entrega con firma digital y administre su flota de transportistas.',
+        icon: <LocalShippingIcon sx={{ fontSize: 40, color: '#fff' }} />,
+        bgColor: '#1ABC9C',
+        category: 'Operaciones',
+        path: '/logistica',
+        features: ['Recepción mercancía', 'Inspección de calidad', 'Devoluciones', 'Albaranes / Guías despacho', 'Transportistas', 'Firma digital de entrega'],
+        version: '1.0.0',
+        author: 'Zentto'
+    },
+    {
+        id: 'crm',
+        name: 'CRM',
+        description: 'Pipeline de ventas, leads, actividades y seguimiento comercial.',
+        fullDescription: 'Impulse su fuerza de ventas con un CRM completo. Visualice su pipeline en tablero Kanban, gestione leads con probabilidad de cierre, registre actividades (llamadas, emails, reuniones) y analice su tasa de conversión.',
+        icon: <GroupsIcon sx={{ fontSize: 40, color: '#fff' }} />,
+        bgColor: '#E74C3C',
+        category: 'Ventas',
+        path: '/crm',
+        features: ['Pipeline Kanban', 'Leads con probabilidad', 'Actividades y tareas', 'Historial de cambios', 'Funnel de conversión', 'Multi-pipeline'],
+        version: '1.0.0',
+        author: 'Zentto'
+    },
+    {
+        id: 'manufactura',
+        name: 'Manufactura',
+        description: 'Listas de materiales (BOM), centros de trabajo y órdenes de producción.',
+        fullDescription: 'Controle su proceso productivo de principio a fin. Defina listas de materiales con componentes y costos, configure centros de trabajo con capacidad, y gestione órdenes de producción con seguimiento de estado en tiempo real.',
+        icon: <PrecisionManufacturingIcon sx={{ fontSize: 40, color: '#fff' }} />,
+        bgColor: '#8E44AD',
+        category: 'Operaciones',
+        path: '/manufactura',
+        features: ['Listas de materiales (BOM)', 'Centros de trabajo', 'Órdenes de producción', 'Control de costos', 'Seguimiento en tiempo real', 'Integración contable'],
+        version: '1.0.0',
+        author: 'Zentto'
+    },
+    {
+        id: 'flota',
+        name: 'Control de Flota',
+        description: 'Vehículos, combustible, mantenimiento preventivo y registro de viajes.',
+        fullDescription: 'Administre todos los vehículos de su empresa. Registre cargas de combustible con costos, programe mantenimiento preventivo y correctivo, lleve control de viajes con origen/destino y analice costos operativos por vehículo.',
+        icon: <DirectionsCarIcon sx={{ fontSize: 40, color: '#fff' }} />,
+        bgColor: '#2C3E50',
+        category: 'Operaciones',
+        path: '/flota',
+        features: ['Registro de vehículos', 'Control de combustible', 'Mantenimiento preventivo', 'Registro de viajes', 'Costos por vehículo', 'Alertas de servicio'],
+        version: '1.0.0',
+        author: 'Zentto'
+    },
+    {
+        id: 'shipping',
+        name: 'Zentto Shipping',
+        description: 'Portal de paquetería: envía, rastrea y gestiona paquetes con múltiples carriers.',
+        fullDescription: 'Plataforma completa de envíos para clientes finales. Registro de clientes, cotización multi-carrier (Zoom, MRW, Liberty Express), generación de guías, rastreo en tiempo real con timeline, gestión de aduanas para envíos internacionales, y notificaciones automáticas en cada cambio de estado.',
+        icon: <LocalShippingIcon sx={{ fontSize: 40, color: '#fff' }} />,
+        bgColor: '#1565C0',
+        category: 'Operaciones',
+        path: '/shipping',
+        features: ['Envíos nacionales e internacionales', 'Cotización multi-carrier', 'Rastreo en tiempo real', 'Gestión de aduanas', 'Notificaciones automáticas', 'Portal público de rastreo', 'Zoom / MRW / Liberty Express'],
+        version: '1.0.0',
+        author: 'Zentto'
+    },
 ];
 
 export default function AppsStorePage() {
@@ -196,14 +268,21 @@ export default function AppsStorePage() {
     const [selectedApp, setSelectedApp] = useState<StoreApp | null>(null);
 
     const isInstalled = (id: string) => {
-        if (isAdmin) return true;
+        // Admin con todos los modulos = tiene suscripcion activa
+        if (isAdmin && modulos.length > 0) return true;
         if (id === 'ventas') return modulos.includes('facturas') || modulos.includes('cxc');
         if (id === 'compras') return modulos.includes('compras') || modulos.includes('cxp');
         return modulos.includes(id);
     };
 
     const handleOpenApp = (app: StoreApp) => {
-        router.push(app.path);
+        const href = resolveAppHref(app.id, app.path);
+        if (href === app.path) {
+            router.push(href);
+            return;
+        }
+
+        window.location.assign(href);
     };
 
     return (
@@ -280,16 +359,18 @@ export default function AppsStorePage() {
                                     ) : (
                                         <Button
                                             variant="contained"
-                                            color="primary"
                                             size="small"
+                                            startIcon={<LockIcon />}
+                                            onClick={() => router.push('/pricing')}
                                             sx={{
-                                                bgcolor: theme.palette.primary.main,
+                                                bgcolor: '#6C63FF',
                                                 fontWeight: 600,
                                                 textTransform: 'none',
-                                                boxShadow: 'none'
+                                                boxShadow: 'none',
+                                                '&:hover': { bgcolor: '#5b54e6' },
                                             }}
                                         >
-                                            Instalar
+                                            Suscribirse
                                         </Button>
                                     )}
                                     <Button
@@ -341,9 +422,11 @@ export default function AppsStorePage() {
                                     />
                                 </Box>
                             </Box>
-                            <IconButton onClick={() => setSelectedApp(null)} size="small">
+                            <Tooltip title="Cerrar">
+                              <IconButton onClick={() => setSelectedApp(null)} size="small">
                                 <CloseIcon />
-                            </IconButton>
+                              </IconButton>
+                            </Tooltip>
                         </DialogTitle>
 
                         <DialogContent>
@@ -380,7 +463,7 @@ export default function AppsStorePage() {
                                 </Box>
                             </Box>
 
-                            {isInstalled(selectedApp.id) && (
+                            {isInstalled(selectedApp.id) ? (
                                 <Box sx={{
                                     p: 2,
                                     bgcolor: '#e8f5e9',
@@ -392,6 +475,20 @@ export default function AppsStorePage() {
                                     <CheckCircleIcon color="success" />
                                     <Typography variant="body2" color="success.dark">
                                         Esta aplicación está instalada y lista para usar.
+                                    </Typography>
+                                </Box>
+                            ) : (
+                                <Box sx={{
+                                    p: 2,
+                                    bgcolor: '#f3f0ff',
+                                    borderRadius: 1,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 1
+                                }}>
+                                    <RocketLaunchIcon sx={{ color: '#6C63FF' }} />
+                                    <Typography variant="body2" sx={{ color: '#5b54e6' }}>
+                                        Suscribete a un plan para acceder a este modulo.
                                     </Typography>
                                 </Box>
                             )}
@@ -416,8 +513,16 @@ export default function AppsStorePage() {
                                     Abrir Aplicación
                                 </Button>
                             ) : (
-                                <Button variant="contained" color="primary">
-                                    Instalar Ahora
+                                <Button
+                                    variant="contained"
+                                    startIcon={<RocketLaunchIcon />}
+                                    onClick={() => {
+                                        setSelectedApp(null);
+                                        router.push('/pricing');
+                                    }}
+                                    sx={{ bgcolor: '#6C63FF', '&:hover': { bgcolor: '#5b54e6' } }}
+                                >
+                                    Ver planes y suscribirse
                                 </Button>
                             )}
                         </DialogActions>

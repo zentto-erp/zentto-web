@@ -1,6 +1,7 @@
 ﻿import type { Request, Response, NextFunction } from "express";
 import { verifyJwt, type JwtPayload, type CompanyAccessClaim } from "../auth/jwt.js";
 import { runWithRequestContext, type RequestScope } from "../context/request-context.js";
+import { env } from "../config/env.js";
 
 const PUBLIC_PATHS = new Set([
   "/auth/login",
@@ -97,7 +98,7 @@ function resolveScope(payload: JwtPayload, req: Request): RequestScope | null {
   return match ?? null;
 }
 
-export function requireJwt(req: Request, res: Response, next: NextFunction) {
+export async function requireJwt(req: Request, res: Response, next: NextFunction) {
   if (req.method === "OPTIONS") {
     return next();
   }
@@ -136,7 +137,31 @@ export function requireJwt(req: Request, res: Response, next: NextFunction) {
     (req as AuthenticatedRequest).user = scopedUser;
     (req as AuthenticatedRequest).scope = scope;
 
-    return runWithRequestContext({ user: scopedUser, scope }, () => next());
+    // Resolver BD del tenant (solo PostgreSQL, imports lazy para evitar crash en carga)
+    let tenantPool;
+    if ((env.dbType ?? "postgres") === "postgres") {
+      try {
+        const { resolveTenantDb } = await import("../db/tenant-resolver.js");
+        const { getTenantPool, getMasterPool } = await import("../db/pg-pool-manager.js");
+
+        const dbMode = req.headers["x-db-mode"] as string | undefined;
+        if (dbMode === "demo") {
+          tenantPool = getMasterPool();
+          scope.dbName = process.env.PG_DATABASE || "zentto_prod";
+          scope.isDemo = true;
+        } else {
+          const tenantDb = await resolveTenantDb(scope.companyId);
+          tenantPool = getTenantPool(tenantDb);
+          scope.dbName = tenantDb.dbName;
+          scope.isDemo = tenantDb.isDemo ?? false;
+        }
+      } catch (err) {
+        // Si el tenant resolver no está disponible (tabla no creada aún), seguir sin tenant pool
+        console.warn("[auth] Tenant resolver not available, using default pool:", (err as Error).message);
+      }
+    }
+
+    return runWithRequestContext({ user: scopedUser, scope, tenantPool }, () => next());
   } catch {
     return res.status(401).json({ error: "invalid_token" });
   }

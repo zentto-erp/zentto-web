@@ -19,3 +19,7 @@ SpainInside_WEB/
 *.db
 *.db-shm
 *.db-wal
+# Repos extraídos a zentto-erp (ya no son parte de este repo)
+BrokerPlatform/
+DatqBox.LocalFiscalAgent/
+md/

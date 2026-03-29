@@ -5,6 +5,7 @@
 -- ============================================================
 
 -- ---------- 1. List (paginado con filtros) ----------
+DROP FUNCTION IF EXISTS usp_compras_list(VARCHAR(100), VARCHAR(10), VARCHAR(50), DATE, DATE, INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_compras_list(
     p_search      VARCHAR(100) DEFAULT NULL,
     p_proveedor   VARCHAR(10)  DEFAULT NULL,
@@ -79,6 +80,7 @@ END;
 $$;
 
 -- ---------- 2. Get by NUM_FACT ----------
+DROP FUNCTION IF EXISTS usp_compras_getbynumfact(VARCHAR(25)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_compras_getbynumfact(
     p_num_fact VARCHAR(25)
 )

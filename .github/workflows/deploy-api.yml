@@ -1,0 +1,392 @@
+name: Deploy API
+
+on:
+  # Solo deploya a producción cuando un PR se mergea a main
+  pull_request:
+    branches: [main]
+    types: [closed]
+    paths:
+      - 'web/api/**'
+      - 'docker/Dockerfile.api'
+      - 'docker-compose.prod.yml'
+      - 'scripts/deploy-db.sh'
+      - 'scripts/goose-entrypoint.sh'
+      - 'scripts/migrate.sh'
+      - 'scripts/goose-deploy.sh'
+      - 'scripts/goose-deploy-all.sh'
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-api
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  packages: write
+  actions: write
+
+env:
+  IMAGE: ghcr.io/zentto-erp/zentto-web/api:latest
+  REPO: zentto-erp/zentto-web
+
+jobs:
+  # Gate: solo ejecutar si el PR fue mergeado (no cerrado sin merge)
+  # workflow_dispatch bypassa esta condición automáticamente
+  # ── Step 0: Hacer repo público para usar minutos gratuitos ───
+  set-public:
+    if: github.event.pull_request.merged == true || github.event_name == 'workflow_dispatch'
+    name: Make repo public (free minutes)
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Make repo public
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X PATCH \
+            -H "Authorization: token ${{ secrets.GHCR_PAT }}" \
+            -H "Accept: application/vnd.github+json" \
+            https://api.github.com/repos/${{ env.REPO }} \
+            -d '{"private":false}')
+          echo "HTTP status: $STATUS"
+          if [ "$STATUS" != "200" ]; then
+            echo "⚠ No se pudo hacer el repo público (status $STATUS) — continuando de todas formas"
+          else
+            echo "✓ Repo es ahora público"
+          fi
+
+  # ── Gate 1: TypeScript debe compilar sin errores ─────────────
+  type-check:
+    name: TypeScript Check (bloqueante)
+    runs-on: ubuntu-22.04
+    needs: set-public
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: web/api/package-lock.json
+
+      - name: Install dependencies
+        working-directory: web/api
+        run: npm ci
+
+      - name: TypeScript build check
+        working-directory: web/api
+        run: npx tsc -p tsconfig.build.json --noEmit
+
+      - name: Audit OpenAPI coverage
+        working-directory: web/api
+        run: npm run audit:openapi
+
+  # ── Gate 2: SP Contract Tests (PostgreSQL) ──────────────────
+  schema-tests:
+    name: SP Contract Tests (bloqueante)
+    runs-on: ubuntu-22.04
+    needs: type-check
+
+    services:
+      postgres:
+        image: public.ecr.aws/docker/library/postgres:16
+        env:
+          POSTGRES_USER: zentto_app
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_DB: zentto_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: web/api/package-lock.json
+
+      - name: Install dependencies
+        working-directory: web/api
+        run: npm ci
+
+      - name: Bootstrap schema (goose-style cold bootstrap)
+        working-directory: web/api
+        env:
+          PGPASSWORD: test_password
+          PG_HOST: 127.0.0.1
+          PG_PORT: 5432
+          PG_DATABASE: zentto_test
+          PG_USER: zentto_app
+          PG_PASSWORD: test_password
+          DB_TYPE: postgres
+        run: |
+          # Validar el mismo flujo que usa producción/tenant provisioning.
+          psql -h 127.0.0.1 -U zentto_app -d zentto_test -v ON_ERROR_STOP=1 -c "CREATE EXTENSION IF NOT EXISTS pgcrypto;"
+          psql -h 127.0.0.1 -U zentto_app -d zentto_test -v ON_ERROR_STOP=1 -c "CREATE EXTENSION IF NOT EXISTS unaccent;"
+          psql -h 127.0.0.1 -U zentto_app -d zentto_test -v ON_ERROR_STOP=1 -c "CREATE EXTENSION IF NOT EXISTS pg_trgm;"
+          psql -h 127.0.0.1 -U zentto_app -d zentto_test -v ON_ERROR_STOP=1 -c "CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";"
+          psql -h 127.0.0.1 -U zentto_app -d zentto_test -v ON_ERROR_STOP=1 -c "CREATE EXTENSION IF NOT EXISTS btree_gin;"
+          curl -fsSL -o /usr/local/bin/goose https://github.com/pressly/goose/releases/download/v3.24.1/goose_linux_x86_64
+          chmod +x /usr/local/bin/goose
+          bash ../../scripts/migrate.sh up
+          cd sqlweb-pg
+          psql -h 127.0.0.1 -U zentto_app -d zentto_test -v ON_ERROR_STOP=1 -f run-functions.sql
+          psql -h 127.0.0.1 -U zentto_app -d zentto_test -v ON_ERROR_STOP=1 -f run-seeds-config.sql
+          psql -h 127.0.0.1 -U zentto_app -d zentto_test -v ON_ERROR_STOP=1 -f run-seeds-starter.sql
+
+      - name: Run SP contract tests
+        working-directory: web/api
+        env:
+          PG_HOST: 127.0.0.1
+          PG_PORT: 5432
+          PG_DATABASE: zentto_test
+          PG_USER: zentto_app
+          PG_PASSWORD: test_password
+        run: npm run test:schema
+
+  # ── Build & Push Docker image ───────────────────────────────
+  build:
+    name: Build & Push API
+    needs: schema-tests
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: docker/Dockerfile.api
+          push: true
+          tags: ${{ env.IMAGE }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  migrate-pg:
+    name: Run PostgreSQL migrations (goose)
+    needs: build
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Copy migrations and script to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "web/api/migrations/postgres,web/api/sqlweb-pg,scripts/goose-deploy.sh,scripts/goose-deploy-all.sh,scripts/hotfix-sec-functions.sql,scripts/debug-sec-function.sql"
+          target: /opt/zentto/_deploy_tmp/
+          strip_components: 0
+
+      - name: Run goose migrations
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          PG_DATABASE: ${{ secrets.PG_DATABASE }}
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          envs: PG_DATABASE
+          script: |
+            set -e
+            mkdir -p /opt/zentto/migrations/postgres /opt/zentto/sqlweb-pg
+            cp -f /opt/zentto/_deploy_tmp/web/api/migrations/postgres/* /opt/zentto/migrations/postgres/
+            cp -rf /opt/zentto/_deploy_tmp/web/api/sqlweb-pg/* /opt/zentto/sqlweb-pg/
+            cp -f /opt/zentto/_deploy_tmp/scripts/goose-deploy.sh /opt/zentto/goose-deploy.sh
+            cp -f /opt/zentto/_deploy_tmp/scripts/goose-deploy-all.sh /opt/zentto/goose-deploy-all.sh
+            cp -f /opt/zentto/_deploy_tmp/scripts/hotfix-sec-functions.sql /opt/zentto/hotfix-sec-functions.sql 2>/dev/null || true
+            cp -f /opt/zentto/_deploy_tmp/scripts/debug-sec-function.sql /opt/zentto/debug-sec-function.sql 2>/dev/null || true
+            chmod +x /opt/zentto/goose-deploy.sh /opt/zentto/goose-deploy-all.sh
+            rm -rf /opt/zentto/_deploy_tmp
+            PG_DATABASE="$PG_DATABASE" /opt/zentto/goose-deploy-all.sh
+
+  deploy:
+    name: Deploy API to server
+    needs: migrate-pg
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: docker-compose.prod.yml
+          target: /opt/zentto/
+
+      - uses: appleboy/ssh-action@v1.0.3
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_ACTOR: ${{ github.actor }}
+          NOTIFY_API_KEY: ${{ secrets.NOTIFY_API_KEY }}
+          CF_API_KEY: ${{ secrets.CLOUDFLARE_API_KEY }}
+          CF_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
+          CF_EMAIL: ${{ secrets.CLOUDFLARE_EMAIL }}
+          HETZNER_S3_ENDPOINT: ${{ secrets.HETZNER_S3_ENDPOINT }}
+          HETZNER_S3_BUCKET: ${{ secrets.HETZNER_S3_BUCKET }}
+          HETZNER_S3_ACCESS_KEY: ${{ secrets.HETZNER_S3_ACCESS_KEY }}
+          HETZNER_S3_SECRET_KEY: ${{ secrets.HETZNER_S3_SECRET_KEY }}
+          HETZNER_S3_REGION: ${{ secrets.HETZNER_S3_REGION }}
+          MASTER_KEY: ${{ secrets.MASTER_KEY }}
+          GH_SUPPORT_WEBHOOK_SECRET: ${{ secrets.GH_SUPPORT_WEBHOOK_SECRET }}
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          envs: GHCR_TOKEN,GITHUB_ACTOR,NOTIFY_API_KEY,CF_API_KEY,CF_ZONE_ID,CF_EMAIL,HETZNER_S3_ENDPOINT,HETZNER_S3_BUCKET,HETZNER_S3_ACCESS_KEY,HETZNER_S3_SECRET_KEY,HETZNER_S3_REGION,MASTER_KEY,GH_SUPPORT_WEBHOOK_SECRET
+          script: |
+            set -e
+            NEW_KEY="ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ/QVi9dbf2PRV73J9LvxyMAVp9/RQDFL/sfd2hLhsPg zentto-server"
+            grep -qF "$NEW_KEY" ~/.ssh/authorized_keys 2>/dev/null || echo "$NEW_KEY" >> ~/.ssh/authorized_keys
+
+            # ── Firewall: Docker (172.18.x) → PostgreSQL ──
+            if ! ufw status | grep -q '172.18.0.0/16.*5432'; then
+              ufw allow from 172.18.0.0/16 to any port 5432 comment 'Docker zentto-net to PostgreSQL'
+            fi
+            if ! iptables -L DOCKER-USER -n 2>/dev/null | grep -q '172.18.0.0/16.*5432'; then
+              iptables -I DOCKER-USER -s 172.18.0.0/16 -p tcp --dport 5432 -j ACCEPT
+            fi
+            if ! grep -q 'Docker PostgreSQL zentto' /etc/ufw/after.rules 2>/dev/null; then
+              sed -i '/^COMMIT$/i -A DOCKER-USER -s 172.18.0.0/16 -p tcp --dport 5432 -j ACCEPT # Docker PostgreSQL zentto' /etc/ufw/after.rules
+            fi
+
+            # ── Firewall: Kafka + Elasticsearch ──
+            if ! ufw status | grep -q '172.18.0.0/16.*9092'; then
+              ufw allow from 172.18.0.0/16 to any port 9092 comment 'Docker zentto-net to Kafka'
+            fi
+            if ! ufw status | grep -q '172.18.0.0/16.*9200'; then
+              ufw allow from 172.18.0.0/16 to any port 9200 comment 'Docker zentto-net to Elasticsearch'
+            fi
+
+            # ── pg_hba.conf ──
+            PG_HBA=$(find /etc/postgresql -name pg_hba.conf 2>/dev/null | head -1)
+            if [ -n "$PG_HBA" ] && ! grep -q '172.18.0.0/16' "$PG_HBA"; then
+              echo 'host    zentto_prod    zentto_app    172.18.0.0/16    scram-sha-256' >> "$PG_HBA"
+              systemctl reload postgresql
+            fi
+
+            # ── Mail + Observabilidad ──
+            ENV_API="/opt/zentto/.env.api"
+            if [ -f "$ENV_API" ]; then
+              if ! grep -q '^AUTH_MAIL_WEBHOOK_URL=' "$ENV_API"; then
+                echo '' >> "$ENV_API"
+                echo 'AUTH_MAIL_WEBHOOK_URL=https://notify.zentto.net/api/email/send' >> "$ENV_API"
+                echo "AUTH_MAIL_WEBHOOK_TOKEN=$NOTIFY_API_KEY" >> "$ENV_API"
+                echo 'MAIL_FROM=Zentto <no-reply@zentto.net>' >> "$ENV_API"
+              else
+                sed -i "s|^AUTH_MAIL_WEBHOOK_TOKEN=.*|AUTH_MAIL_WEBHOOK_TOKEN=$NOTIFY_API_KEY|" "$ENV_API"
+              fi
+              if ! grep -q '^STORE_URL=' "$ENV_API"; then
+                echo 'STORE_URL=https://app.zentto.net' >> "$ENV_API"
+              fi
+              if grep -q '^KAFKA_ENABLED=' "$ENV_API"; then
+                sed -i "s|^KAFKA_ENABLED=.*|KAFKA_ENABLED=true|" "$ENV_API"
+                sed -i "s|^KAFKA_BROKERS=.*|KAFKA_BROKERS=172.18.0.1:9092|" "$ENV_API"
+                grep -q '^ELASTICSEARCH_HOST=' "$ENV_API" \
+                  && sed -i "s|^ELASTICSEARCH_HOST=.*|ELASTICSEARCH_HOST=http://172.18.0.1:9200|" "$ENV_API" \
+                  || echo 'ELASTICSEARCH_HOST=http://172.18.0.1:9200' >> "$ENV_API"
+              else
+                echo '' >> "$ENV_API"
+                echo 'KAFKA_ENABLED=true' >> "$ENV_API"
+                echo 'KAFKA_BROKERS=172.18.0.1:9092' >> "$ENV_API"
+                echo 'ELASTICSEARCH_HOST=http://172.18.0.1:9200' >> "$ENV_API"
+              fi
+            fi
+
+            # ── Cloudflare DNS (tenant provisioning) ──
+            if [ -f "$ENV_API" ] && [ -n "$CF_API_KEY" ]; then
+              grep -q '^CLOUDFLARE_API_KEY=' "$ENV_API" \
+                && sed -i "s|^CLOUDFLARE_API_KEY=.*|CLOUDFLARE_API_KEY=$CF_API_KEY|" "$ENV_API" \
+                || echo "CLOUDFLARE_API_KEY=$CF_API_KEY" >> "$ENV_API"
+              grep -q '^CLOUDFLARE_ZONE_ID=' "$ENV_API" \
+                || echo "CLOUDFLARE_ZONE_ID=$CF_ZONE_ID" >> "$ENV_API"
+              grep -q '^CLOUDFLARE_EMAIL=' "$ENV_API" \
+                || echo "CLOUDFLARE_EMAIL=$CF_EMAIL" >> "$ENV_API"
+            fi
+
+            # ── Hetzner Object Storage (backups) ──
+            if [ -f "$ENV_API" ] && [ -n "$HETZNER_S3_ENDPOINT" ]; then
+              grep -q '^HETZNER_S3_ENDPOINT=' "$ENV_API" \
+                && sed -i "s|^HETZNER_S3_ENDPOINT=.*|HETZNER_S3_ENDPOINT=$HETZNER_S3_ENDPOINT|" "$ENV_API" \
+                || echo "HETZNER_S3_ENDPOINT=$HETZNER_S3_ENDPOINT" >> "$ENV_API"
+              grep -q '^HETZNER_S3_BUCKET=' "$ENV_API" \
+                && sed -i "s|^HETZNER_S3_BUCKET=.*|HETZNER_S3_BUCKET=$HETZNER_S3_BUCKET|" "$ENV_API" \
+                || echo "HETZNER_S3_BUCKET=$HETZNER_S3_BUCKET" >> "$ENV_API"
+              grep -q '^HETZNER_S3_ACCESS_KEY=' "$ENV_API" \
+                && sed -i "s|^HETZNER_S3_ACCESS_KEY=.*|HETZNER_S3_ACCESS_KEY=$HETZNER_S3_ACCESS_KEY|" "$ENV_API" \
+                || echo "HETZNER_S3_ACCESS_KEY=$HETZNER_S3_ACCESS_KEY" >> "$ENV_API"
+              grep -q '^HETZNER_S3_SECRET_KEY=' "$ENV_API" \
+                && sed -i "s|^HETZNER_S3_SECRET_KEY=.*|HETZNER_S3_SECRET_KEY=$HETZNER_S3_SECRET_KEY|" "$ENV_API" \
+                || echo "HETZNER_S3_SECRET_KEY=$HETZNER_S3_SECRET_KEY" >> "$ENV_API"
+              grep -q '^HETZNER_S3_REGION=' "$ENV_API" \
+                && sed -i "s|^HETZNER_S3_REGION=.*|HETZNER_S3_REGION=$HETZNER_S3_REGION|" "$ENV_API" \
+                || echo "HETZNER_S3_REGION=$HETZNER_S3_REGION" >> "$ENV_API"
+              grep -q '^BACKUP_DIR=' "$ENV_API" \
+                || echo 'BACKUP_DIR=/backups/zentto' >> "$ENV_API"
+            fi
+
+            # ── Master Key (backoffice) ──
+            if [ -f "$ENV_API" ] && [ -n "$MASTER_KEY" ]; then
+              grep -q '^MASTER_KEY=' "$ENV_API" \
+                && sed -i "s|^MASTER_KEY=.*|MASTER_KEY=$MASTER_KEY|" "$ENV_API" \
+                || echo "MASTER_KEY=$MASTER_KEY" >> "$ENV_API"
+            fi
+
+            # ── GitHub Support Webhook Secret ──
+            if [ -f "$ENV_API" ] && [ -n "$GH_SUPPORT_WEBHOOK_SECRET" ]; then
+              grep -q '^GITHUB_WEBHOOK_SECRET=' "$ENV_API" \
+                && sed -i "s|^GITHUB_WEBHOOK_SECRET=.*|GITHUB_WEBHOOK_SECRET=$GH_SUPPORT_WEBHOOK_SECRET|" "$ENV_API" \
+                || echo "GITHUB_WEBHOOK_SECRET=$GH_SUPPORT_WEBHOOK_SECRET" >> "$ENV_API"
+            fi
+
+            # ── Directorio de backups en host ──
+            mkdir -p /opt/zentto/backups
+            chmod 755 /opt/zentto/backups
+
+            # ── Deploy container ──
+            cd /opt/zentto
+            echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+            docker compose -f docker-compose.prod.yml pull api
+            docker rm -f zentto-api 2>/dev/null || true
+            docker compose -f docker-compose.prod.yml up -d --force-recreate --no-deps api
+            sleep 8
+            curl -fsS http://127.0.0.1:4000/health >/dev/null
+            docker image prune -f
+            echo "✓ API desplegada: $(date -u)"
+
+  # ── Step final: SIEMPRE volver a privado ─────────────────────
+  set-private:
+    name: Restore repo to private
+    runs-on: ubuntu-22.04
+    needs: deploy
+    if: always()
+    steps:
+      - name: Make repo private
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X PATCH \
+            -H "Authorization: token ${{ secrets.GHCR_PAT }}" \
+            -H "Accept: application/vnd.github+json" \
+            https://api.github.com/repos/${{ env.REPO }} \
+            -d '{"private":true}')
+          echo "HTTP status: $STATUS"
+          if [ "$STATUS" = "200" ]; then
+            echo "✓ Repo restaurado a privado"
+          else
+            echo "⚠ No se pudo restaurar privado (status $STATUS) — verificar manualmente"
+            exit 1
+          fi

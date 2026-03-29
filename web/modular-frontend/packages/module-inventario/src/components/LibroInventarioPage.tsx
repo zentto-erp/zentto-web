@@ -21,6 +21,8 @@ import Grid from "@mui/material/Grid2";
 import MenuBookIcon from "@mui/icons-material/MenuBook";
 import DownloadIcon from "@mui/icons-material/Download";
 import { useLibroInventario } from "../hooks/useInventario";
+import { DatePicker } from "@zentto/shared-ui";
+import dayjs from "dayjs";
 import { formatCurrency, toDateOnly } from "@zentto/shared-api";
 import { useTimezone } from "@zentto/shared-auth";
 
@@ -81,25 +83,19 @@ export default function LibroInventarioPage() {
       <Paper sx={{ p: 2, mb: 3 }}>
         <Grid container spacing={2} alignItems="center">
           <Grid size={{ xs: 12, sm: 4 }}>
-            <TextField
+            <DatePicker
               label="Desde"
-              type="date"
-              value={fechaDesde}
-              onChange={(e) => setFechaDesde(e.target.value)}
-              fullWidth
-              size="small"
-              InputLabelProps={{ shrink: true }}
+              value={fechaDesde ? dayjs(fechaDesde) : null}
+              onChange={(v) => setFechaDesde(v ? v.format('YYYY-MM-DD') : '')}
+              slotProps={{ textField: { size: 'small', fullWidth: true } }}
             />
           </Grid>
           <Grid size={{ xs: 12, sm: 4 }}>
-            <TextField
+            <DatePicker
               label="Hasta"
-              type="date"
-              value={fechaHasta}
-              onChange={(e) => setFechaHasta(e.target.value)}
-              fullWidth
-              size="small"
-              InputLabelProps={{ shrink: true }}
+              value={fechaHasta ? dayjs(fechaHasta) : null}
+              onChange={(v) => setFechaHasta(v ? v.format('YYYY-MM-DD') : '')}
+              slotProps={{ textField: { size: 'small', fullWidth: true } }}
             />
           </Grid>
           <Grid size={{ xs: 12, sm: 4 }}>

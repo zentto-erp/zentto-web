@@ -89,7 +89,7 @@ export default function ContextActionHeader({
                 {onSearch && (
                     <Box sx={{ minWidth: 300 }}>
                         <TextField
-                            size="small"
+                           
                             placeholder={searchPlaceholder}
                             fullWidth
                             onChange={(e) => onSearch(e.target.value)}

@@ -7,7 +7,6 @@ import {
   CircularProgress, Alert, Stack, Chip, Divider, LinearProgress,
   Dialog, DialogTitle, DialogContent, DialogActions,
 } from "@mui/material";
-import Grid from "@mui/material/Grid2";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
@@ -20,8 +19,9 @@ import RocketLaunchIcon from "@mui/icons-material/RocketLaunch";
 import DescriptionIcon from "@mui/icons-material/Description";
 import dynamic from "next/dynamic";
 const DocumentViewerModal = dynamic(() => import("./DocumentViewerModal"), { ssr: false });
-import { brandColors } from "@zentto/shared-ui";
-import { formatCurrency } from "@zentto/shared-api";
+import { brandColors, FormGrid, FormField, DatePicker } from "@zentto/shared-ui";
+import dayjs from "dayjs";
+import { formatCurrency, useLookup } from "@zentto/shared-api";
 import {
   useGenerateDraft,
   useBatchSummary,
@@ -57,6 +57,7 @@ export default function NominaBatchWizard({ onBack }: Props) {
     soloActivos: true,
   });
 
+  const { data: frequencies = [] } = useLookup('PAYROLL_FREQUENCY');
   const generateDraft = useGenerateDraft();
   const summary = useBatchSummary(batchId);
   const batchGrid = useBatchGrid(docEmployee === "__batch__" ? batchId : null);
@@ -168,55 +169,45 @@ export default function NominaBatchWizard({ onBack }: Props) {
             <Typography variant="h6" sx={{ mb: 3, fontWeight: 600 }}>
               Configurar Lote de Nómina
             </Typography>
-            <Grid container spacing={3}>
-              <Grid size={{ xs: 12, md: 4 }}>
-                <FormControl fullWidth size="small">
+            <FormGrid spacing={3}>
+              <FormField xs={12} md={4}>
+                <FormControl>
                   <InputLabel>Tipo de Nómina</InputLabel>
                   <Select
                     value={config.nomina}
                     label="Tipo de Nómina"
                     onChange={(e) => setConfig((c) => ({ ...c, nomina: e.target.value }))}
                   >
-                    <MenuItem value="SEMANAL">Semanal</MenuItem>
-                    <MenuItem value="QUINCENAL">Quincenal</MenuItem>
-                    <MenuItem value="MENSUAL">Mensual</MenuItem>
-                    <MenuItem value="ESPECIAL">Especial</MenuItem>
+                    {frequencies.map(f => <MenuItem key={f.Code} value={f.Code}>{f.Label}</MenuItem>)}
                   </Select>
                 </FormControl>
-              </Grid>
-              <Grid size={{ xs: 12, md: 4 }}>
-                <TextField
+              </FormField>
+              <FormField xs={12} md={4}>
+                <DatePicker
                   label="Fecha Inicio"
-                  type="date"
-                  fullWidth
-                  size="small"
-                  InputLabelProps={{ shrink: true }}
-                  value={config.fechaInicio}
-                  onChange={(e) => setConfig((c) => ({ ...c, fechaInicio: e.target.value }))}
+                  value={config.fechaInicio ? dayjs(config.fechaInicio) : null}
+                  onChange={(v) => setConfig((c) => ({ ...c, fechaInicio: v ? v.format('YYYY-MM-DD') : '' }))}
+                  slotProps={{ textField: { size: 'small', fullWidth: true } }}
                 />
-              </Grid>
-              <Grid size={{ xs: 12, md: 4 }}>
-                <TextField
+              </FormField>
+              <FormField xs={12} md={4}>
+                <DatePicker
                   label="Fecha Hasta"
-                  type="date"
-                  fullWidth
-                  size="small"
-                  InputLabelProps={{ shrink: true }}
-                  value={config.fechaHasta}
-                  onChange={(e) => setConfig((c) => ({ ...c, fechaHasta: e.target.value }))}
+                  value={config.fechaHasta ? dayjs(config.fechaHasta) : null}
+                  onChange={(v) => setConfig((c) => ({ ...c, fechaHasta: v ? v.format('YYYY-MM-DD') : '' }))}
+                  slotProps={{ textField: { size: 'small', fullWidth: true } }}
                 />
-              </Grid>
-              <Grid size={{ xs: 12, md: 4 }}>
+              </FormField>
+              <FormField xs={12} md={4}>
                 <TextField
                   label="Departamento (opcional)"
-                  fullWidth
-                  size="small"
+                 
                   value={config.departamento}
                   onChange={(e) => setConfig((c) => ({ ...c, departamento: e.target.value }))}
                   helperText="Dejar vacío para incluir todos"
                 />
-              </Grid>
-              <Grid size={{ xs: 12, md: 4 }}>
+              </FormField>
+              <FormField xs={12} md={4}>
                 <FormControlLabel
                   control={
                     <Switch
@@ -226,8 +217,8 @@ export default function NominaBatchWizard({ onBack }: Props) {
                   }
                   label="Solo empleados activos"
                 />
-              </Grid>
-            </Grid>
+              </FormField>
+            </FormGrid>
 
             <Divider sx={{ my: 3 }} />
 
@@ -269,32 +260,32 @@ export default function NominaBatchWizard({ onBack }: Props) {
             </Typography>
             {summaryData && (
               <Box sx={{ mb: 3 }}>
-                <Grid container spacing={2}>
-                  <Grid size={{ xs: 12, md: 3 }}>
+                <FormGrid spacing={2}>
+                  <FormField xs={12} md={3}>
                     <Paper sx={{ p: 2, textAlign: "center", bgcolor: brandColors.success, color: "#fff", borderRadius: 2 }}>
                       <Typography variant="h4" sx={{ fontWeight: 700 }}>{summaryData.totalEmployees ?? 0}</Typography>
                       <Typography variant="body2">Empleados</Typography>
                     </Paper>
-                  </Grid>
-                  <Grid size={{ xs: 12, md: 3 }}>
+                  </FormField>
+                  <FormField xs={12} md={3}>
                     <Paper sx={{ p: 2, textAlign: "center", bgcolor: brandColors.statBlue, color: "#fff", borderRadius: 2 }}>
                       <Typography variant="h5" sx={{ fontWeight: 700 }}>{formatCurrency(summaryData.totalGross ?? 0)}</Typography>
                       <Typography variant="body2">Total Bruto</Typography>
                     </Paper>
-                  </Grid>
-                  <Grid size={{ xs: 12, md: 3 }}>
+                  </FormField>
+                  <FormField xs={12} md={3}>
                     <Paper sx={{ p: 2, textAlign: "center", bgcolor: brandColors.statRed, color: "#fff", borderRadius: 2 }}>
                       <Typography variant="h5" sx={{ fontWeight: 700 }}>{formatCurrency(summaryData.totalDeductions ?? 0)}</Typography>
                       <Typography variant="body2">Deducciones</Typography>
                     </Paper>
-                  </Grid>
-                  <Grid size={{ xs: 12, md: 3 }}>
+                  </FormField>
+                  <FormField xs={12} md={3}>
                     <Paper sx={{ p: 2, textAlign: "center", bgcolor: brandColors.accent, color: brandColors.dark, borderRadius: 2 }}>
                       <Typography variant="h5" sx={{ fontWeight: 700 }}>{formatCurrency(summaryData.totalNet ?? 0)}</Typography>
                       <Typography variant="body2">Neto a Pagar</Typography>
                     </Paper>
-                  </Grid>
-                </Grid>
+                  </FormField>
+                </FormGrid>
               </Box>
             )}
 

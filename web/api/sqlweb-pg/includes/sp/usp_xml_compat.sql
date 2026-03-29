@@ -83,7 +83,7 @@ BEGIN
     )
     VALUES (
         v_num_doc,
-        COALESCE(p_header_json->>'SerialType', ''),
+        COALESCE(p_header_json->>'SerialType',''::VARCHAR),
         p_tipo_operacion,
         p_header_json->>'SupplierCode',
         p_header_json->>'SupplierName',
@@ -288,6 +288,7 @@ $$;
 -- SP 2: usp_Doc_PurchaseDocument_ConvertOrder (PostgreSQL - JSONB)
 -- Convierte una orden de compra en un documento de compra.
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_doc_purchasedocument_convertorder(VARCHAR(60), VARCHAR(60), JSONB, JSONB, VARCHAR(60)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_doc_purchasedocument_convertorder(
     p_num_doc_orden       VARCHAR(60),
     p_num_doc_compra      VARCHAR(60),
@@ -477,7 +478,7 @@ BEGIN
     -- 4. Mark order as received
     UPDATE doc."PurchaseDocument"
     SET "IsReceived" = 'S',
-        "Notes" = COALESCE("Notes", '') || ' | Convertida a compra ' || p_num_doc_compra
+        "Notes" = COALESCE("Notes",''::VARCHAR) || ' | Convertida a compra ' || p_num_doc_compra
                   || ' el ' || TO_CHAR(NOW() AT TIME ZONE 'UTC', 'YYYY-MM-DD HH24:MI') || ' por ' || p_cod_usuario,
         "UpdatedAt" = NOW() AT TIME ZONE 'UTC'
     WHERE "DocumentNumber" = p_num_doc_orden AND "DocumentType" = 'ORDEN' AND "IsDeleted" = FALSE;
@@ -557,6 +558,8 @@ $$;
 -- SP 3: usp_AR_Receivable_ApplyPayment (PostgreSQL - JSONB)
 -- Aplica un cobro transaccional a documentos CxC de un cliente.
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_ar_receivable_applypayment(VARCHAR(24), DATE, VARCHAR(120), VARCHAR(120), TEXT) CASCADE;
+DROP FUNCTION IF EXISTS usp_ar_receivable_applypayment(VARCHAR(24), DATE, VARCHAR(120), VARCHAR(120), JSONB) CASCADE;
 CREATE OR REPLACE FUNCTION usp_ar_receivable_applypayment(
     p_cod_cliente     VARCHAR(24),
     p_fecha           DATE DEFAULT NULL,
@@ -653,6 +656,8 @@ $$;
 -- SP 4: usp_AP_Payable_ApplyPayment (PostgreSQL - JSONB)
 -- Aplica un pago transaccional a documentos CxP de un proveedor.
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_ap_payable_applypayment(VARCHAR(24), DATE, VARCHAR(120), VARCHAR(120), TEXT) CASCADE;
+DROP FUNCTION IF EXISTS usp_ap_payable_applypayment(VARCHAR(24), DATE, VARCHAR(120), VARCHAR(120), JSONB) CASCADE;
 CREATE OR REPLACE FUNCTION usp_ap_payable_applypayment(
     p_cod_proveedor   VARCHAR(24),
     p_fecha           DATE DEFAULT NULL,
@@ -749,6 +754,8 @@ $$;
 -- SP 5: usp_HR_Payroll_UpsertRun (PostgreSQL - JSONB)
 -- Inserta o actualiza un PayrollRun con sus lineas.
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_hr_payroll_upsertrun(INT, INT, VARCHAR(15), BIGINT, VARCHAR(24), VARCHAR(200), DATE, DATE, NUMERIC(18,2), NUMERIC(18,2), NUMERIC(18,2), VARCHAR(50), INT, TEXT) CASCADE;
+DROP FUNCTION IF EXISTS usp_hr_payroll_upsertrun(INT, INT, VARCHAR(15), BIGINT, VARCHAR(24), VARCHAR(200), DATE, DATE, NUMERIC(18,2), NUMERIC(18,2), NUMERIC(18,2), VARCHAR(50), INT, JSONB) CASCADE;
 CREATE OR REPLACE FUNCTION usp_hr_payroll_upsertrun(
     p_company_id         INT,
     p_branch_id          INT,
@@ -843,6 +850,7 @@ $$;
 -- SP 6: usp_Sys_HeaderDetailTx (PostgreSQL - JSONB)
 -- Generic header+detail transaction insert.
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_sys_headerdetailtx(VARCHAR(260), VARCHAR(260), JSONB, JSONB, VARCHAR(500)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_sys_headerdetailtx(
     p_header_table    VARCHAR(260),
     p_detail_table    VARCHAR(260),

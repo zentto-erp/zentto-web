@@ -59,17 +59,10 @@ export function useCrearConciliacion() {
 export function useImportarExtracto() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (payload: { conciliacionId: number; extracto: Array<Record<string, unknown>> }) => {
-      try {
-        return await apiPost(`${API_BASE}/conciliaciones/${payload.conciliacionId}/extracto`, {
-          extracto: payload.extracto
-        });
-      } catch {
-        return apiPost(`${API_BASE}/conciliaciones/${payload.conciliacionId}/importar-extracto`, {
-          extracto: payload.extracto
-        });
-      }
-    },
+    mutationFn: (payload: { conciliacionId: number; extracto: Array<Record<string, unknown>> }) =>
+      apiPost(`${API_BASE}/conciliaciones/${payload.conciliacionId}/importar-extracto`, {
+        extracto: payload.extracto
+      }),
     onSuccess: () => qc.invalidateQueries({ queryKey: [QUERY_KEY] })
   });
 }
@@ -86,18 +79,12 @@ export function useConciliarMovimiento() {
 export function useGenerarAjuste() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (payload: {
+    mutationFn: (payload: {
       Conciliacion_ID: number;
       Tipo_Ajuste: "NOTA_CREDITO" | "NOTA_DEBITO";
       Monto: number;
       Descripcion: string;
-    }) => {
-      try {
-        return await apiPost(`${API_BASE}/conciliaciones/ajustar`, payload);
-      } catch {
-        return apiPost(`${API_BASE}/conciliaciones/ajuste`, payload);
-      }
-    },
+    }) => apiPost(`${API_BASE}/conciliaciones/ajuste`, payload),
     onSuccess: () => qc.invalidateQueries({ queryKey: [QUERY_KEY] })
   });
 }
@@ -108,6 +95,14 @@ export function useCerrarConciliacion() {
     mutationFn: (payload: { Conciliacion_ID: number; Saldo_Final_Banco: number; Observaciones?: string }) =>
       apiPost(`${API_BASE}/conciliaciones/cerrar`, payload),
     onSuccess: () => qc.invalidateQueries({ queryKey: [QUERY_KEY] })
+  });
+}
+
+export function useAsientosVinculados(conciliacionId?: number) {
+  return useQuery<any>({
+    queryKey: [QUERY_KEY, "asientos-vinculados", conciliacionId],
+    queryFn: () => apiGet(`${API_BASE}/conciliaciones/${conciliacionId}/asientos`),
+    enabled: !!conciliacionId,
   });
 }
 

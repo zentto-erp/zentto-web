@@ -1,0 +1,173 @@
+{
+  "type": "FRAME",
+  "name": "Slide 1 — Cover",
+  "width": 1920,
+  "height": 1080,
+  "fills": [
+    {
+      "type": "SOLID",
+      "color": {
+        "r": 0.11372549019607843,
+        "g": 0.15294117647058825,
+        "b": 0.21176470588235294
+      }
+    }
+  ],
+  "children": [
+    {
+      "type": "ELLIPSE",
+      "name": "decorative-circle",
+      "x": 1300,
+      "y": 700,
+      "width": 600,
+      "height": 600,
+      "fills": [
+        {
+          "type": "SOLID",
+          "color": {
+            "r": 1,
+            "g": 0.6,
+            "b": 0
+          },
+          "opacity": 0.08
+        }
+      ]
+    },
+    {
+      "type": "ELLIPSE",
+      "name": "logo-circle",
+      "x": 920,
+      "y": 280,
+      "width": 80,
+      "height": 80,
+      "fills": [
+        {
+          "type": "SOLID",
+          "color": {
+            "r": 1,
+            "g": 0.6,
+            "b": 0
+          }
+        }
+      ]
+    },
+    {
+      "type": "TEXT",
+      "name": "logo-letter",
+      "x": 940,
+      "y": 285,
+      "width": 40,
+      "height": 40,
+      "characters": "Z",
+      "style": {
+        "fontFamily": "Inter",
+        "fontWeight": 800,
+        "fontSize": 36,
+        "textAlignHorizontal": "CENTER"
+      },
+      "fills": [
+        {
+          "type": "SOLID",
+          "color": {
+            "r": 1,
+            "g": 1,
+            "b": 1
+          }
+        }
+      ]
+    },
+    {
+      "type": "TEXT",
+      "name": "title",
+      "x": 560,
+      "y": 400,
+      "width": 800,
+      "height": 80,
+      "characters": "Zentto",
+      "style": {
+        "fontFamily": "Inter",
+        "fontWeight": 800,
+        "fontSize": 72,
+        "textAlignHorizontal": "CENTER"
+      },
+      "fills": [
+        {
+          "type": "SOLID",
+          "color": {
+            "r": 1,
+            "g": 1,
+            "b": 1
+          }
+        }
+      ]
+    },
+    {
+      "type": "TEXT",
+      "name": "tagline",
+      "x": 460,
+      "y": 490,
+      "width": 1000,
+      "height": 70,
+      "characters": "Plataforma empresarial modular para Latinoamérica y España",
+      "style": {
+        "fontFamily": "Inter",
+        "fontWeight": 400,
+        "fontSize": 24,
+        "textAlignHorizontal": "CENTER"
+      },
+      "fills": [
+        {
+          "type": "SOLID",
+          "color": {
+            "r": 1,
+            "g": 0.6,
+            "b": 0
+          }
+        }
+      ]
+    },
+    {
+      "type": "RECTANGLE",
+      "name": "divider",
+      "x": 900,
+      "y": 570,
+      "width": 120,
+      "height": 3,
+      "fills": [
+        {
+          "type": "SOLID",
+          "color": {
+            "r": 1,
+            "g": 0.6,
+            "b": 0
+          }
+        }
+      ]
+    },
+    {
+      "type": "TEXT",
+      "name": "subtitle",
+      "x": 660,
+      "y": 600,
+      "width": 600,
+      "height": 30,
+      "characters": "Ronda de Inversión — 2026",
+      "style": {
+        "fontFamily": "Inter",
+        "fontWeight": 500,
+        "fontSize": 18,
+        "textAlignHorizontal": "CENTER"
+      },
+      "fills": [
+        {
+          "type": "SOLID",
+          "color": {
+            "r": 0.611764705882353,
+            "g": 0.6392156862745098,
+            "b": 0.6862745098039216
+          }
+        }
+      ]
+    }
+  ]
+}

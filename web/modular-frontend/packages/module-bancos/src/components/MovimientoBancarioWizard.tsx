@@ -434,15 +434,9 @@ export default function MovimientoBancarioWizard() {
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
       {/* Header */}
-      <Stack direction="row" alignItems="center" spacing={2}>
-        <Button startIcon={<ArrowBackIcon />} onClick={() => router.back()}>
-          Volver
-        </Button>
-        <Typography variant="h5" fontWeight={700}>
-          <ReceiptIcon sx={{ mr: 1, verticalAlign: "middle" }} />
-          Generar Movimiento Bancario
-        </Typography>
-      </Stack>
+      <Typography variant="h5" fontWeight={600}>
+        Generar movimiento bancario
+      </Typography>
 
       {/* Error */}
       {error && (

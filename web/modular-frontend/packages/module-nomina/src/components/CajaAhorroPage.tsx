@@ -1,9 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Box,
-  Paper,
   Typography,
   Button,
   TextField,
@@ -12,15 +11,13 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  Chip,
   Tab,
   Tabs,
 } from "@mui/material";
-import { DataGrid, type GridColDef } from "@mui/x-data-grid";
+
+import type { ColumnDef } from "@zentto/datagrid-core";
 import AddIcon from "@mui/icons-material/Add";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import IconButton from "@mui/material/IconButton";
-import { formatCurrency } from "@zentto/shared-api";
+import { formatCurrency, useGridLayoutSync } from "@zentto/shared-api";
 import {
   useSavingsList,
   useEnrollSavings,
@@ -31,12 +28,50 @@ import {
   type LoanFilter,
 } from "../hooks/useRRHH";
 import EmployeeSelector from "./EmployeeSelector";
+import { buildNominaGridId, useNominaGridId, useNominaGridRegistration } from "./zenttoGridPersistence";
 
 function TabPanel({ children, value, index }: { children: React.ReactNode; value: number; index: number }) {
   return value === index ? <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>{children}</Box> : null;
 }
 
+const SAVINGS_COLUMNS: ColumnDef[] = [
+  { field: "EmployeeCode", header: "Código", width: 100, sortable: true },
+  { field: "EmployeeName", header: "Empleado", flex: 1, minWidth: 200, sortable: true },
+  { field: "EmployeeContribution", header: "% Aporte", width: 110 },
+  { field: "EmployerMatch", header: "% Patronal", width: 110 },
+  { field: "CurrentBalance", header: "Saldo", width: 140, type: "number", aggregation: "sum" },
+  {
+    field: "Status", header: "Estado", width: 110,
+    statusColors: { ACTIVO: "success" },
+  },
+];
+
+const SVG_APPROVE = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>';
+
+const LOAN_COLUMNS: ColumnDef[] = [
+  { field: "employeeCode", header: "Código", width: 100, sortable: true },
+  { field: "employeeName", header: "Empleado", flex: 1, minWidth: 200, sortable: true },
+  { field: "amount", header: "Monto", width: 130, type: "number", aggregation: "sum" },
+  { field: "installments", header: "Cuotas", width: 90, type: "number" },
+  { field: "outstanding", header: "Saldo Pendiente", width: 140, type: "number", aggregation: "sum" },
+  {
+    field: "status", header: "Estado", width: 120,
+    statusColors: { APROBADO: "success", RECHAZADO: "error", PAGADO: "info", PENDIENTE: "warning" },
+  },
+  {
+    field: "actions", header: "Acciones", type: "actions", width: 80, pin: "right",
+    actions: [
+      { icon: SVG_APPROVE, label: "Aprobar préstamo", action: "approve", color: "#2e7d32" },
+    ],
+  },
+];
+
+const SAVINGS_GRID_ID = buildNominaGridId("caja-ahorro", "members");
+const LOANS_GRID_ID = buildNominaGridId("caja-ahorro", "loans");
+
 export default function CajaAhorroPage() {
+  const savingsGridRef = useRef<any>(null);
+  const loansGridRef = useRef<any>(null);
   const [tab, setTab] = useState(0);
   const [savingsFilter, setSavingsFilter] = useState<SavingsFilter>({ page: 1, limit: 25 });
   const [loanFilter, setLoanFilter] = useState<LoanFilter>({ page: 1, limit: 25 });
@@ -50,69 +85,47 @@ export default function CajaAhorroPage() {
   const enrollMutation = useEnrollSavings();
   const loanRequestMutation = useRequestLoan();
   const approveLoanMutation = useApproveLoan();
+  const { ready: savingsLayoutReady } = useGridLayoutSync(SAVINGS_GRID_ID);
+  const { ready: loansLayoutReady } = useGridLayoutSync(LOANS_GRID_ID);
+  const { registered } = useNominaGridRegistration(savingsLayoutReady && loansLayoutReady);
 
   const savingsRows = savingsData?.data ?? savingsData?.rows ?? [];
   const loanRows = loanData?.data ?? loanData?.rows ?? [];
+  useNominaGridId(savingsGridRef, SAVINGS_GRID_ID);
+  useNominaGridId(loansGridRef, LOANS_GRID_ID);
 
-  const savingsColumns: GridColDef[] = [
-    { field: "employeeCode", headerName: "Código", width: 100 },
-    { field: "employeeName", headerName: "Empleado", flex: 1, minWidth: 200 },
-    { field: "contributionPct", headerName: "% Aporte", width: 110, renderCell: (p) => `${p.value ?? 0}%` },
-    { field: "employerMatchPct", headerName: "% Patronal", width: 110, renderCell: (p) => `${p.value ?? 0}%` },
-    { field: "balance", headerName: "Saldo", width: 140, renderCell: (p) => formatCurrency(p.value ?? 0) },
-    {
-      field: "status",
-      headerName: "Estado",
-      width: 110,
-      renderCell: (p) => (
-        <Chip
-          label={p.value || "ACTIVO"}
-          size="small"
-          color={p.value === "ACTIVO" ? "success" : "default"}
-        />
-      ),
-    },
-  ];
+  // Savings grid
+  useEffect(() => {
+    const el = savingsGridRef.current;
+    if (!el || !registered) return;
+    el.columns = SAVINGS_COLUMNS;
+    el.rows = savingsRows;
+    el.loading = savingsLoading;
+    el.getRowId = (r: any) => r.SavingsFundId ?? r.EmployeeCode;
+  }, [savingsRows, savingsLoading, registered]);
 
-  const loanColumns: GridColDef[] = [
-    { field: "employeeCode", headerName: "Código", width: 100 },
-    { field: "employeeName", headerName: "Empleado", flex: 1, minWidth: 200 },
-    { field: "amount", headerName: "Monto", width: 130, renderCell: (p) => formatCurrency(p.value ?? 0) },
-    { field: "installments", headerName: "Cuotas", width: 90 },
-    { field: "outstanding", headerName: "Saldo Pendiente", width: 140, renderCell: (p) => formatCurrency(p.value ?? 0) },
-    {
-      field: "status",
-      headerName: "Estado",
-      width: 120,
-      renderCell: (p) => (
-        <Chip
-          label={p.value || "PENDIENTE"}
-          size="small"
-          color={
-            p.value === "APROBADO" ? "success" :
-            p.value === "RECHAZADO" ? "error" :
-            p.value === "PAGADO" ? "info" : "warning"
-          }
-        />
-      ),
-    },
-    {
-      field: "actions",
-      headerName: "",
-      width: 80,
-      sortable: false,
-      renderCell: (p) =>
-        p.row.status === "PENDIENTE" ? (
-          <IconButton
-            size="small"
-            color="success"
-            onClick={() => approveLoanMutation.mutate({ loanId: p.row.id, approved: true })}
-          >
-            <CheckCircleIcon fontSize="small" />
-          </IconButton>
-        ) : null,
-    },
-  ];
+  // Loans grid
+  useEffect(() => {
+    const el = loansGridRef.current;
+    if (!el || !registered) return;
+    el.columns = LOAN_COLUMNS;
+    el.rows = loanRows;
+    el.loading = loansLoading;
+    el.getRowId = (r: any) => r.id ?? `${r.employeeCode}-${r.amount}`;
+  }, [loanRows, loansLoading, registered]);
+
+  useEffect(() => {
+    const el = loansGridRef.current;
+    if (!el || !registered) return;
+    const handler = (e: CustomEvent) => {
+      const { action, row } = e.detail;
+      if (action === "approve" && row.status === "PENDIENTE") {
+        approveLoanMutation.mutate({ loanId: row.id, approved: true });
+      }
+    };
+    el.addEventListener("action-click", handler);
+    return () => el.removeEventListener("action-click", handler);
+  }, [registered, loanRows]);
 
   const handleEnroll = async () => {
     await enrollMutation.mutateAsync(enrollForm);
@@ -150,45 +163,43 @@ export default function CajaAhorroPage() {
       </Tabs>
 
       <TabPanel value={tab} index={0}>
-        <Stack direction="row" spacing={2} mb={2}>
-          <TextField
-            label="Buscar"
-            size="small"
-            value={savingsFilter.search || ""}
-            onChange={(e) => setSavingsFilter((f) => ({ ...f, search: e.target.value }))}
+        <Box sx={{ flex: 1, minHeight: 0 }}>
+          <zentto-grid
+            ref={savingsGridRef}
+            height="calc(100vh - 200px)"
+            show-totals
+            enable-toolbar
+            enable-header-menu
+            enable-header-filters
+            enable-clipboard
+            enable-quick-search
+            enable-context-menu
+            enable-status-bar
+            enable-configurator
+            enable-grouping
+            enable-pivot
           />
-        </Stack>
-        <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, width: "100%", border: "1px solid #E5E7EB" }}>
-          <DataGrid
-            rows={savingsRows}
-            columns={savingsColumns}
-            loading={savingsLoading}
-            pageSizeOptions={[25, 50]}
-            disableRowSelectionOnClick
-            getRowId={(r) => r.id ?? r.employeeCode}
-          />
-        </Paper>
+        </Box>
       </TabPanel>
 
       <TabPanel value={tab} index={1}>
-        <Stack direction="row" spacing={2} mb={2}>
-          <TextField
-            label="Buscar"
-            size="small"
-            value={loanFilter.search || ""}
-            onChange={(e) => setLoanFilter((f) => ({ ...f, search: e.target.value }))}
+        <Box sx={{ flex: 1, minHeight: 0 }}>
+          <zentto-grid
+            ref={loansGridRef}
+            height="calc(100vh - 200px)"
+            show-totals
+            enable-toolbar
+            enable-header-menu
+            enable-header-filters
+            enable-clipboard
+            enable-quick-search
+            enable-context-menu
+            enable-status-bar
+            enable-configurator
+            enable-grouping
+            enable-pivot
           />
-        </Stack>
-        <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, width: "100%", border: "1px solid #E5E7EB" }}>
-          <DataGrid
-            rows={loanRows}
-            columns={loanColumns}
-            loading={loansLoading}
-            pageSizeOptions={[25, 50]}
-            disableRowSelectionOnClick
-            getRowId={(r) => r.id ?? `${r.employeeCode}-${r.amount}`}
-          />
-        </Paper>
+        </Box>
       </TabPanel>
 
       {/* Enroll Dialog */}
@@ -196,31 +207,14 @@ export default function CajaAhorroPage() {
         <DialogTitle>Inscribir Empleado en Caja de Ahorro</DialogTitle>
         <DialogContent>
           <Stack spacing={2} mt={1}>
-            <EmployeeSelector
-              value={enrollForm.employeeCode}
-              onChange={(code) => setEnrollForm((f) => ({ ...f, employeeCode: code }))}
-            />
-            <TextField
-              label="% Aporte Empleado"
-              type="number"
-              fullWidth
-              value={enrollForm.contributionPct}
-              onChange={(e) => setEnrollForm((f) => ({ ...f, contributionPct: Number(e.target.value) }))}
-            />
-            <TextField
-              label="% Aporte Patronal"
-              type="number"
-              fullWidth
-              value={enrollForm.employerMatchPct}
-              onChange={(e) => setEnrollForm((f) => ({ ...f, employerMatchPct: Number(e.target.value) }))}
-            />
+            <EmployeeSelector value={enrollForm.employeeCode} onChange={(code) => setEnrollForm((f) => ({ ...f, employeeCode: code }))} />
+            <TextField label="% Aporte Empleado" type="number" fullWidth value={enrollForm.contributionPct} onChange={(e) => setEnrollForm((f) => ({ ...f, contributionPct: Number(e.target.value) }))} />
+            <TextField label="% Aporte Patronal" type="number" fullWidth value={enrollForm.employerMatchPct} onChange={(e) => setEnrollForm((f) => ({ ...f, employerMatchPct: Number(e.target.value) }))} />
           </Stack>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setEnrollOpen(false)}>Cancelar</Button>
-          <Button variant="contained" onClick={handleEnroll} disabled={enrollMutation.isPending}>
-            Inscribir
-          </Button>
+          <Button variant="contained" onClick={handleEnroll} disabled={enrollMutation.isPending}>Inscribir</Button>
         </DialogActions>
       </Dialog>
 
@@ -229,41 +223,25 @@ export default function CajaAhorroPage() {
         <DialogTitle>Solicitar Préstamo</DialogTitle>
         <DialogContent>
           <Stack spacing={2} mt={1}>
-            <EmployeeSelector
-              value={loanForm.employeeCode}
-              onChange={(code) => setLoanForm((f) => ({ ...f, employeeCode: code }))}
-            />
-            <TextField
-              label="Monto"
-              type="number"
-              fullWidth
-              value={loanForm.amount || ""}
-              onChange={(e) => setLoanForm((f) => ({ ...f, amount: Number(e.target.value) }))}
-            />
-            <TextField
-              label="Cuotas"
-              type="number"
-              fullWidth
-              value={loanForm.installments}
-              onChange={(e) => setLoanForm((f) => ({ ...f, installments: Number(e.target.value) }))}
-            />
-            <TextField
-              label="Motivo"
-              fullWidth
-              multiline
-              rows={2}
-              value={loanForm.reason}
-              onChange={(e) => setLoanForm((f) => ({ ...f, reason: e.target.value }))}
-            />
+            <EmployeeSelector value={loanForm.employeeCode} onChange={(code) => setLoanForm((f) => ({ ...f, employeeCode: code }))} />
+            <TextField label="Monto" type="number" fullWidth value={loanForm.amount || ""} onChange={(e) => setLoanForm((f) => ({ ...f, amount: Number(e.target.value) }))} />
+            <TextField label="Cuotas" type="number" fullWidth value={loanForm.installments} onChange={(e) => setLoanForm((f) => ({ ...f, installments: Number(e.target.value) }))} />
+            <TextField label="Motivo" fullWidth multiline rows={2} value={loanForm.reason} onChange={(e) => setLoanForm((f) => ({ ...f, reason: e.target.value }))} />
           </Stack>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setLoanRequestOpen(false)}>Cancelar</Button>
-          <Button variant="contained" onClick={handleRequestLoan} disabled={loanRequestMutation.isPending}>
-            Solicitar
-          </Button>
+          <Button variant="contained" onClick={handleRequestLoan} disabled={loanRequestMutation.isPending}>Solicitar</Button>
         </DialogActions>
       </Dialog>
     </Box>
   );
+}
+
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'zentto-grid': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & Record<string, any>, HTMLElement>;
+    }
+  }
 }

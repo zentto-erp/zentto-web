@@ -1,246 +1,257 @@
 // components/modules/facturas/FacturasTable.tsx
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   Box,
-  Button,
-  TextField,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TablePagination,
-  Paper,
-  CircularProgress,
-  IconButton,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Chip,
-  InputAdornment,
   Typography,
 } from "@mui/material";
-import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon, Visibility as ViewIcon, Search as SearchIcon } from "@mui/icons-material";
-import { useFacturasList, useDeleteFactura } from "../../../hooks/useFacturas";
-import { formatCurrency, formatDate } from "@zentto/shared-api";
+import {
+  ConfirmDialog,
+  ZenttoFilterPanel,
+  type FilterFieldDef,
+} from "@zentto/shared-ui";
+import {
+  useFacturasList,
+  useDeleteFactura,
+  useDetalleFactura,
+} from "../../../hooks/useFacturas";
 import { useTimezone } from "@zentto/shared-auth";
-import { debounce } from "lodash";
+import { toDateOnly, useGridLayoutSync } from "@zentto/shared-api";
+import type { ColumnDef, GridRow } from "@zentto/datagrid-core";
+import { useScopedGridId } from "../../../lib/zentto-grid";
+
+
+// ============ Master-detail: renglones de factura ============
+const DETAIL_COLUMNS: ColumnDef[] = [
+  { field: "lineNumber", header: "#", width: 50 },
+  { field: "codigo", header: "Codigo", width: 130 },
+  { field: "descripcion", header: "Descripcion", flex: 1, minWidth: 200 },
+  { field: "cantidad", header: "Cantidad", width: 100, type: "number" },
+  { field: "precio", header: "Precio", width: 120, type: "number", currency: "VES" },
+  { field: "descuento", header: "Descuento", width: 110, type: "number", currency: "VES" },
+  { field: "total", header: "Total", width: 120, type: "number", currency: "VES", aggregation: "sum" },
+];
+
+// ============ Definicion de filtros ============
+const FACTURA_FILTERS: FilterFieldDef[] = [
+  {
+    field: "cliente",
+    label: "Cliente",
+    type: "text",
+    placeholder: "Nombre o codigo...",
+  },
+  {
+    field: "estado",
+    label: "Estado",
+    type: "select",
+    options: [
+      { value: "Emitida", label: "Emitida" },
+      { value: "Pagada", label: "Pagada" },
+      { value: "Anulada", label: "Anulada" },
+    ],
+  },
+  { field: "from", label: "Fecha desde", type: "date" },
+  { field: "to", label: "Fecha hasta", type: "date" },
+];
+
+// ============ Columnas principales ============
+const COLUMNS: ColumnDef[] = [
+  { field: "numeroFactura", header: "Numero", width: 150, sortable: true },
+  { field: "nombreCliente", header: "Cliente", flex: 1, minWidth: 180, sortable: true },
+  { field: "fecha", header: "Fecha", width: 120, type: "date", sortable: true },
+  {
+    field: "tipoDoc", header: "Tipo", width: 110,
+    statusColors: { FACT: "primary", PRESUP: "info", PEDIDO: "warning" },
+    statusVariant: "outlined",
+  },
+  { field: "totalFactura", header: "Total", width: 140, type: "number", currency: "VES", aggregation: "sum" },
+  {
+    field: "estado", header: "Estado", width: 120,
+    statusColors: { Pagada: "success", Pendiente: "warning", Emitida: "info", Anulada: "error", Cancelada: "default" },
+    statusVariant: "outlined",
+  },
+  {
+    field: "actions", header: "Acciones", type: "actions" as any, width: 100, pin: "right",
+    actions: [
+      { icon: "view", label: "Ver", action: "view" },
+      { icon: "delete", label: "Anular", action: "delete", color: "#dc2626" },
+    ],
+  } as ColumnDef,
+];
 
 export default function FacturasTable() {
   const router = useRouter();
   const { timeZone } = useTimezone();
+  const gridRef = useRef<any>(null);
+  const [registered, setRegistered] = useState(false);
+  const gridId = useScopedGridId('facturas-main');
+  const { ready: layoutReady } = useGridLayoutSync(gridId);
   const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [search, setSearch] = useState("");
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [pageSize, setPageSize] = useState(10);
+  const [anularOpen, setAnularOpen] = useState(false);
   const [selectedFactura, setSelectedFactura] = useState<string | null>(null);
 
+  // Filtros (manejados por ZenttoFilterPanel)
+  const [search, setSearch] = useState("");
+  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    if (!layoutReady) return;
+    import("@zentto/datagrid").then(() => setRegistered(true));
+  }, [layoutReady]);
+
+  const handleFilterChange = (vals: Record<string, string>) => {
+    setFilterValues(vals);
+    setPage(0);
+  };
+
+  const handleSearchChange = (val: string) => {
+    setSearch(val);
+    setPage(0);
+  };
+
   const { data: facturas, isLoading } = useFacturasList({
-    search,
+    search: search || undefined,
     page: page + 1,
-    limit: rowsPerPage,
+    limit: pageSize,
+    estado: filterValues.estado || undefined,
+    cliente: filterValues.cliente || undefined,
+    from: filterValues.from || undefined,
+    to: filterValues.to || undefined,
   });
 
   const { mutate: deleteFactura, isPending: isDeleting } = useDeleteFactura();
 
-  // Debounced search
-  const debouncedSearch = useCallback(
-    debounce((value: string) => {
-      setSearch(value);
-      setPage(0);
-    }, 500),
-    []
-  );
-
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    debouncedSearch(e.target.value);
-  };
-
-  const handlePageChange = (_: unknown, newPage: number) => {
-    setPage(newPage);
-  };
-
-  const handleRowsPerPageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setRowsPerPage(parseInt(e.target.value, 10));
-    setPage(0);
-  };
-
-  const handleDeleteClick = (numero: string) => {
+  const handleAnularClick = (numero: string) => {
     setSelectedFactura(numero);
-    setDeleteDialogOpen(true);
+    setAnularOpen(true);
   };
 
-  const handleConfirmDelete = () => {
+  const handleConfirmAnular = () => {
     if (selectedFactura) {
       deleteFactura(selectedFactura, {
         onSuccess: () => {
-          setDeleteDialogOpen(false);
+          setAnularOpen(false);
           setSelectedFactura(null);
         },
         onError: (err) => {
-          console.error("Error deleting:", err);
-          alert("Error al eliminar la factura");
-        }
+          console.error("Error anulando:", err);
+        },
       });
     }
   };
 
-  const getStatusColor = (estado: string): "success" | "warning" | "error" | "info" | "default" => {
-    const colorMap: Record<string, "success" | "warning" | "error" | "info" | "default"> = {
-      "Pagada": "success",
-      "Pendiente": "warning",
-      "Cancelada": "error",
-      "Anulada": "error",
-      "Crédito": "info",
+  const rows = useMemo(
+    () =>
+      (facturas?.data || []).map((f: any, idx: number) => ({
+        id: f.numeroFactura || idx,
+        ...f,
+        fecha: f.fecha ? toDateOnly(f.fecha, timeZone) : "",
+      })),
+    [facturas?.data, timeZone]
+  );
+
+  // Bind data to web component
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+    el.columns = COLUMNS;
+    el.rows = rows;
+    el.loading = isLoading;
+    el.detailColumns = DETAIL_COLUMNS;
+    el.detailRowsAccessor = (row: GridRow) => {
+      // Detail rows will be populated via action-click -> view
+      // For now, return empty — master-detail requires items on the row
+      return (row._detailRows as GridRow[]) || [];
     };
-    return colorMap[estado] || "default";
-  };
+  }, [rows, isLoading, registered]);
+
+  // Listen for action-click and create-click events
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+
+    const actionHandler = (e: CustomEvent) => {
+      const { action, row } = e.detail || {};
+      if (!row) return;
+      if (action === "view") router.push(`/facturas/${row.numeroFactura}`);
+      if (action === "delete") handleAnularClick(row.numeroFactura);
+    };
+    const createHandler = () => router.push("/facturas/new");
+
+    el.addEventListener("action-click", actionHandler);
+    el.addEventListener("create-click", createHandler);
+    return () => {
+      el.removeEventListener("action-click", actionHandler);
+      el.removeEventListener("create-click", createHandler);
+    };
+  }, [registered, router]);
 
   return (
-    <Box sx={{ p: 2 }}>
-      {/* Header */}
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
-        <Typography variant="h5" fontWeight={600}>Facturas</Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => router.push("/facturas/new")}
-        >
-          Nueva Factura
-        </Button>
-      </Box>
+    <Box sx={{ p: 2, display: "flex", flexDirection: "column", height: "100%" }}>
+      <Typography variant="h5" fontWeight={600} sx={{ mb: 2 }}>
+        Facturas
+      </Typography>
 
-      {/* Search */}
-      <TextField
-        placeholder="Buscar por número, cliente o referencia..."
-        defaultValue=""
-        onChange={handleSearchChange}
-        fullWidth
-        size="small"
-        sx={{ mb: 2 }}
-        InputProps={{
-          startAdornment: (
-            <InputAdornment position="start">
-              <SearchIcon fontSize="small" />
-            </InputAdornment>
-          ),
-        }}
+      {/* Filtros reutilizables */}
+      <ZenttoFilterPanel
+        filters={FACTURA_FILTERS}
+        values={filterValues}
+        onChange={handleFilterChange}
+        searchPlaceholder="Buscar por numero, cliente o referencia..."
+        searchValue={search}
+        onSearchChange={handleSearchChange}
       />
 
-      {/* Table */}
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow sx={{ backgroundColor: "#f5f5f5" }}>
-              <TableCell sx={{ fontWeight: 600 }}>Número</TableCell>
-              <TableCell sx={{ fontWeight: 600 }}>Cliente</TableCell>
-              <TableCell sx={{ fontWeight: 600 }}>Fecha</TableCell>
-              <TableCell align="right" sx={{ fontWeight: 600 }}>
-                Monto
-              </TableCell>
-              <TableCell sx={{ fontWeight: 600 }}>Estado</TableCell>
-              <TableCell align="center" sx={{ fontWeight: 600 }}>
-                Acciones
-              </TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
-                  <CircularProgress size={40} />
-                </TableCell>
-              </TableRow>
-            ) : !facturas?.data || facturas.data.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={6} align="center" sx={{ py: 4, color: "text.secondary" }}>
-                  No hay facturas disponibles
-                </TableCell>
-              </TableRow>
-            ) : (
-              facturas.data.map((factura) => (
-                <TableRow key={factura.numeroFactura} hover>
-                  <TableCell sx={{ fontWeight: 500 }}>{factura.numeroFactura}</TableCell>
-                  <TableCell>{factura.nombreCliente}</TableCell>
-                  <TableCell>{formatDate(factura.fecha, { timeZone })}</TableCell>
-                  <TableCell align="right">{formatCurrency(factura.totalFactura)}</TableCell>
-                  <TableCell>
-                    <Chip
-                      label={factura.estado}
-                      size="small"
-                      color={getStatusColor(factura.estado)}
-                      variant="outlined"
-                    />
-                  </TableCell>
-                  <TableCell align="center">
-                    <IconButton
-                      size="small"
-                      onClick={() => router.push(`/facturas/${factura.numeroFactura}`)}
-                      title="Ver"
-                    >
-                      <ViewIcon fontSize="small" />
-                    </IconButton>
-                    <IconButton
-                      size="small"
-                      onClick={() => router.push(`/facturas/${factura.numeroFactura}/edit`)}
-                      title="Editar"
-                    >
-                      <EditIcon fontSize="small" />
-                    </IconButton>
-                    <IconButton
-                      size="small"
-                      color="error"
-                      onClick={() => handleDeleteClick(factura.numeroFactura)}
-                      title="Eliminar"
-                    >
-                      <DeleteIcon fontSize="small" />
-                    </IconButton>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
+      {/* zentto-grid con master-detail */}
+      <Box sx={{ flex: 1, minHeight: 400 }}>
+        {registered && (
+          <zentto-grid
+            ref={gridRef}
+            grid-id={gridId}
+            default-currency="VES"
+            export-filename="facturas"
+            height="100%"
+            show-totals
+            enable-toolbar
+            enable-header-menu
+            enable-header-filters
+            enable-clipboard
+            enable-quick-search
+            enable-context-menu
+            enable-status-bar
+            enable-master-detail
+            enable-configurator
+            enable-create
+            create-label="Nueva Factura"
+          ></zentto-grid>
+        )}
+      </Box>
 
-      {/* Pagination */}
-      {facturas && facturas.total > 0 && (
-        <TablePagination
-          rowsPerPageOptions={[5, 10, 25, 50]}
-          component="div"
-          count={facturas.total}
-          rowsPerPage={rowsPerPage}
-          page={page}
-          onPageChange={handlePageChange}
-          onRowsPerPageChange={handleRowsPerPageChange}
-          labelRowsPerPage="Filas por página:"
-          labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count}`}
-        />
-      )}
-
-      {/* Delete Confirmation Dialog */}
-      <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
-        <DialogTitle>Eliminar Factura</DialogTitle>
-        <DialogContent>
-          ¿Estás seguro de que deseas eliminar esta factura? Esta acción no puede deshacerse.
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeleteDialogOpen(false)}>Cancelar</Button>
-          <Button
-            onClick={handleConfirmDelete}
-            color="error"
-            variant="contained"
-            disabled={isDeleting}
-          >
-            {isDeleting ? "Eliminando..." : "Eliminar"}
-          </Button>
-        </DialogActions>
-      </Dialog>
+      {/* Anular Confirmation Dialog */}
+      <ConfirmDialog
+        open={anularOpen}
+        title="Anular Factura"
+        message={`Esta seguro de que desea anular la factura ${selectedFactura || ""}? Esta accion no puede deshacerse.`}
+        confirmLabel={isDeleting ? "Anulando..." : "Anular"}
+        variant="danger"
+        onConfirm={handleConfirmAnular}
+        onClose={() => {
+          setAnularOpen(false);
+          setSelectedFactura(null);
+        }}
+        loading={isDeleting}
+      />
     </Box>
   );
+}
+
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'zentto-grid': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & Record<string, any>, HTMLElement>;
+    }
+  }
 }

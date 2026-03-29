@@ -1,12 +1,12 @@
 -- =============================================================================
 -- sp_cfg_country.sql  (PostgreSQL / PL/pgSQL)
 -- Convertido desde T-SQL: web/api/sqlweb/includes/sp/sp_cfg_country.sql
--- Fecha conversión: 2026-03-16
+-- Fecha conversiÃ³n: 2026-03-16
 --
 -- Funciones:
---   1. usp_CFG_Country_List  - Lista países activos ordenados por SortOrder, CountryName
---   2. usp_CFG_Country_Save  - Insert o Update país (OUT params)
---   3. usp_CFG_Country_Get   - Obtener un país por código
+--   1. usp_CFG_Country_List  - Lista paÃ­ses activos ordenados por SortOrder, CountryName
+--   2. usp_CFG_Country_Save  - Insert o Update paÃ­s (OUT params)
+--   3. usp_CFG_Country_Get   - Obtener un paÃ­s por cÃ³digo
 --
 -- Seed data: VE, ES, CO, MX, US
 --
@@ -58,19 +58,41 @@ $$;
 
 -- =============================================================================
 -- 2. usp_CFG_Country_Save
+-- Full-parameter version: API sends TimeZoneIana -> p_time_zone_iana (with underscore)
+-- Drop ALL overloads before recreating
 -- =============================================================================
+DO $$
+DECLARE r record;
+BEGIN
+    FOR r IN SELECT oid, pg_get_function_identity_arguments(oid) as args
+             FROM pg_proc WHERE proname = 'usp_cfg_country_save'
+    LOOP
+        EXECUTE 'DROP FUNCTION IF EXISTS public.usp_cfg_country_save(' || r.args || ') CASCADE';
+    END LOOP;
+END;
+$$;
+
 CREATE OR REPLACE FUNCTION public.usp_CFG_Country_Save(
-    p_country_code      CHAR(2),
-    p_country_name      VARCHAR(80),
-    p_currency_code     CHAR(3),
-    p_tax_authority_code VARCHAR(20),
-    p_fiscal_id_name    VARCHAR(20),
-    p_is_active         BOOLEAN,
-    OUT p_resultado     INTEGER,
-    OUT p_mensaje       VARCHAR(500)
+    p_country_code              VARCHAR(3),
+    p_country_name              VARCHAR(80),
+    p_currency_code             VARCHAR(5),
+    p_currency_symbol           VARCHAR(10) DEFAULT '$',
+    p_reference_currency        VARCHAR(5) DEFAULT 'USD',
+    p_reference_currency_symbol VARCHAR(10) DEFAULT '$',
+    p_default_exchange_rate     NUMERIC(18,6) DEFAULT 1.0,
+    p_prices_include_tax        BOOLEAN DEFAULT FALSE,
+    p_special_tax_rate          NUMERIC(10,4) DEFAULT 0,
+    p_special_tax_enabled       BOOLEAN DEFAULT FALSE,
+    p_tax_authority_code        VARCHAR(20) DEFAULT NULL,
+    p_fiscal_id_name            VARCHAR(20) DEFAULT NULL,
+    p_time_zone_iana            VARCHAR(60) DEFAULT NULL,
+    p_phone_prefix              VARCHAR(10) DEFAULT NULL,
+    p_sort_order                INT DEFAULT 100,
+    p_is_active                 BOOLEAN DEFAULT TRUE,
+    OUT p_resultado             INTEGER,
+    OUT p_mensaje               VARCHAR(500)
 )
-LANGUAGE plpgsql
-AS $$
+LANGUAGE plpgsql AS $$
 BEGIN
     p_resultado := 0;
     p_mensaje   := '';
@@ -87,14 +109,13 @@ BEGIN
             WHERE "CountryCode" = p_country_code;
 
             p_resultado := 0;
-            p_mensaje   := 'País actualizado correctamente.';
+            p_mensaje   := 'Pais actualizado correctamente.';
         ELSE
             INSERT INTO cfg."Country" (
                 "CountryCode", "CountryName", "CurrencyCode",
                 "TaxAuthorityCode", "FiscalIdName",
                 "IsActive", "CreatedAt", "UpdatedAt"
-            )
-            VALUES (
+            ) VALUES (
                 p_country_code, p_country_name, p_currency_code,
                 p_tax_authority_code, p_fiscal_id_name,
                 p_is_active,
@@ -102,7 +123,7 @@ BEGIN
             );
 
             p_resultado := 0;
-            p_mensaje   := 'País creado correctamente.';
+            p_mensaje   := 'Pais creado correctamente.';
         END IF;
 
     EXCEPTION WHEN OTHERS THEN
@@ -115,6 +136,7 @@ $$;
 -- =============================================================================
 -- 3. usp_CFG_Country_Get
 -- =============================================================================
+DROP FUNCTION IF EXISTS public.usp_CFG_Country_Get(CHAR(2)) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_CFG_Country_Get(
     p_country_code CHAR(2)
 )
@@ -169,19 +191,19 @@ SET "CountryName"       = 'Venezuela',
     "IsActive"          = TRUE,
     "UpdatedAt"         = (NOW() AT TIME ZONE 'UTC');
 
--- España
+-- EspaÃ±a
 INSERT INTO cfg."Country" (
     "CountryCode", "CountryName", "CurrencyCode",
     "TaxAuthorityCode", "FiscalIdName",
     "IsActive", "CreatedAt", "UpdatedAt"
 )
 VALUES (
-    'ES', 'España', 'EUR',
+    'ES', 'EspaÃ±a', 'EUR',
     'AEAT', 'NIF',
     TRUE, (NOW() AT TIME ZONE 'UTC'), (NOW() AT TIME ZONE 'UTC')
 )
 ON CONFLICT ("CountryCode") DO UPDATE
-SET "CountryName"       = 'España',
+SET "CountryName"       = 'EspaÃ±a',
     "CurrencyCode"      = 'EUR',
     "TaxAuthorityCode"  = 'AEAT',
     "FiscalIdName"      = 'NIF',
@@ -201,14 +223,14 @@ VALUES (
 )
 ON CONFLICT ("CountryCode") DO NOTHING;
 
--- México
+-- MÃ©xico
 INSERT INTO cfg."Country" (
     "CountryCode", "CountryName", "CurrencyCode",
     "TaxAuthorityCode", "FiscalIdName",
     "IsActive", "CreatedAt", "UpdatedAt"
 )
 VALUES (
-    'MX', 'México', 'MXN',
+    'MX', 'MÃ©xico', 'MXN',
     'SAT', 'RFC',
     TRUE, (NOW() AT TIME ZONE 'UTC'), (NOW() AT TIME ZONE 'UTC')
 )

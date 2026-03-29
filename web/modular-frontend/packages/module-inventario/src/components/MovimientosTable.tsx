@@ -1,328 +1,193 @@
 // components/MovimientosTable.tsx
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import {
-  Box,
-  TextField,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TablePagination,
-  Paper,
-  CircularProgress,
-  Chip,
-  InputAdornment,
-  Typography,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  IconButton,
-  Alert,
+  Box, TextField, Paper, Chip, InputAdornment, Typography, IconButton, Alert, Stack, Tooltip,
 } from "@mui/material";
 import Grid from "@mui/material/Grid2";
 import SearchIcon from "@mui/icons-material/Search";
 import ClearIcon from "@mui/icons-material/Clear";
 import { useMovimientosList, useInventarioList } from "../hooks/useInventario";
-import { formatCurrency, toDateOnly } from "@zentto/shared-api";
+import { ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
+import type { ColumnDef } from "@zentto/datagrid-core";
+import { formatCurrency, toDateOnly, useGridLayoutSync } from "@zentto/shared-api";
 import { useTimezone } from "@zentto/shared-auth";
 import { debounce } from "lodash";
 
+const MOVIMIENTOS_FILTERS: FilterFieldDef[] = [
+  { field: "tipo", label: "Tipo", type: "select", options: [
+    { value: "ENTRADA", label: "Entrada" }, { value: "SALIDA", label: "Salida" },
+    { value: "AJUSTE", label: "Ajuste" }, { value: "TRASLADO", label: "Traslado" },
+  ]},
+  { field: "from", label: "Fecha desde", type: "date" }, { field: "to", label: "Fecha hasta", type: "date" },
+];
+
+const ART_COLUMNS: ColumnDef[] = [
+  { field: "codigo", header: "Código", width: 110, sortable: true },
+  { field: "descripcion", header: "Artículo", flex: 1, sortable: true },
+  { field: "stock", header: "Stock", width: 80, type: "number" },
+];
+
+const MOV_COLUMNS: ColumnDef[] = [
+  { field: "fecha", header: "Fecha", width: 100 },
+  { field: "codigo", header: "Código", width: 110, sortable: true },
+  { field: "articulo", header: "Artículo", flex: 1, minWidth: 140, sortable: true },
+  { field: "tipo", header: "Tipo", width: 100, statusColors: { ENTRADA: "success", SALIDA: "error", AJUSTE: "info", TRASLADO: "warning" }, statusVariant: "outlined" },
+  { field: "cantidad", header: "Cantidad", width: 90, type: "number", aggregation: "sum" },
+  { field: "costoUnit", header: "Costo Unit.", width: 120, type: "number", currency: "VES", aggregation: "avg" },
+  { field: "total", header: "Total", width: 120, type: "number", currency: "VES", aggregation: "sum" },
+  { field: "almacen", header: "Almacén", width: 130 },
+  { field: "referencia", header: "Referencia", width: 130 },
+  { field: "notas", header: "Notas", flex: 1, minWidth: 150 },
+  {
+    field: "actions",
+    header: "Acciones",
+    type: "actions",
+    width: 80,
+    pin: "right",
+    actions: [
+      { icon: "view", label: "Ver detalle", action: "view", color: "#6b7280" },
+    ],
+  },
+];
+
+const DETAIL_RENDERER = (row: any) => `
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr;gap:12px;padding:8px 16px;background:#fafafa">
+    ${row._lote ? `<div><strong>Lote / Serie</strong><br/>${row._lote}</div>` : ''}
+    ${row._usuario ? `<div><strong>Registrado por</strong><br/>${row._usuario}</div>` : ''}
+    ${row._fechaCreacion ? `<div><strong>Fecha registro</strong><br/>${row._fechaCreacion}</div>` : ''}
+    <div><strong>Almacén</strong><br/>${row.almacen || '—'}</div>
+    <div><strong>Notas</strong><br/>${row.notas || '—'}</div>
+  </div>
+`;
+
+const ARTICULOS_GRID_ID = "module-inventario:movimientos:articulos";
+const MOVIMIENTOS_GRID_ID = "module-inventario:movimientos:list";
+
 export default function MovimientosTable() {
+  const artGridRef = useRef<any>(null);
+  const movGridRef = useRef<any>(null);
+  const [registered, setRegistered] = useState(false);
   const { timeZone } = useTimezone();
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(25);
   const [search, setSearch] = useState("");
   const [movementType, setMovementType] = useState("");
-  const [fechaDesde, setFechaDesde] = useState(() => {
-    const d = new Date();
-    d.setDate(1);
-    return toDateOnly(d, timeZone);
-  });
+  const [movFilterValues, setMovFilterValues] = useState<Record<string, string>>({});
+  const [fechaDesde, setFechaDesde] = useState(() => { const d = new Date(); d.setDate(1); return toDateOnly(d, timeZone); });
   const [fechaHasta, setFechaHasta] = useState(() => toDateOnly(new Date(), timeZone));
 
-  // Article browser
   const [artSearch, setArtSearch] = useState("");
   const [selectedProductCode, setSelectedProductCode] = useState("");
-  const { data: inventario, isLoading: artLoading } = useInventarioList({ search: artSearch, limit: 20 });
+  const { data: inventario, isLoading: artLoading } = useInventarioList({ search: artSearch, limit: 100 });
   const artRows = (inventario?.rows ?? []) as Record<string, unknown>[];
 
-  const debouncedArtSearch = useCallback(
-    debounce((value: string) => setArtSearch(value), 400),
-    []
-  );
+  const debouncedArtSearch = useCallback(debounce((value: string) => setArtSearch(value), 400), []);
+  const { ready: articulosLayoutReady } = useGridLayoutSync(ARTICULOS_GRID_ID);
+  const { ready: movimientosLayoutReady } = useGridLayoutSync(MOVIMIENTOS_GRID_ID);
+  const layoutReady = articulosLayoutReady && movimientosLayoutReady;
 
-  // Movements query
   const { data: movimientos, isLoading } = useMovimientosList({
-    search: search || undefined,
-    productCode: selectedProductCode || undefined,
-    movementType: movementType || undefined,
-    fechaDesde,
-    fechaHasta,
-    page: page + 1,
-    limit: rowsPerPage,
+    search: search || undefined, productCode: selectedProductCode || undefined,
+    movementType: movementType || undefined, fechaDesde, fechaHasta, page: page + 1, limit: rowsPerPage,
   });
 
   const rows = (movimientos?.rows ?? []) as Record<string, unknown>[];
   const total = movimientos?.total ?? 0;
 
-  const debouncedSearch = useCallback(
-    debounce((value: string) => { setSearch(value); setPage(0); }, 500),
-    []
-  );
+  const artGridRows = artRows.map((item, i) => ({
+    id: i, codigo: String(item.CODIGO ?? item.ProductCode ?? ""),
+    descripcion: String(item.DescripcionCompleta ?? item.DESCRIPCION ?? ""),
+    stock: Number(item.EXISTENCIA ?? item.Stock ?? 0),
+  }));
 
-  const getTypeColor = (type: string) => {
-    switch (type) {
-      case "ENTRADA": return "success";
-      case "SALIDA": return "error";
-      case "AJUSTE": return "info";
-      case "TRASLADO": return "warning";
-      default: return "default";
-    }
-  };
+  const movGridRows = rows.map((m, i) => {
+    const whFrom = String(m.WarehouseFrom ?? ""); const whTo = String(m.WarehouseTo ?? "");
+    return {
+      id: i, fecha: String(m.MovementDate ?? "").slice(0, 10), codigo: String(m.ProductCode ?? ""),
+      articulo: String(m.ProductName ?? ""), tipo: String(m.MovementType ?? ""),
+      cantidad: Number(m.Quantity ?? 0), costoUnit: Number(m.UnitCost ?? 0), total: Number(m.TotalCost ?? 0),
+      almacen: whFrom && whTo ? `${whFrom} → ${whTo}` : whFrom || whTo || "",
+      referencia: String(m.DocumentRef ?? ""), notas: String(m.Notes ?? ""),
+      _lote: String(m.BatchNumber ?? ""), _usuario: String(m.CreatedBy ?? ""),
+      _fechaCreacion: String(m.CreatedAt ?? "").slice(0, 19).replace("T", " "),
+    };
+  });
 
-  const selectArticle = (codigo: string) => {
-    setSelectedProductCode(codigo);
-    setPage(0);
-  };
+  useEffect(() => {
+    if (!layoutReady) return;
+    import("@zentto/datagrid").then(() => setRegistered(true));
+  }, [layoutReady]);
 
-  const clearArticleFilter = () => {
-    setSelectedProductCode("");
-    setPage(0);
-  };
+  useEffect(() => {
+    const el = artGridRef.current; if (!el || !registered) return;
+    el.columns = ART_COLUMNS; el.rows = artGridRows; el.loading = artLoading;
+    el.getRowId = (r: any) => r.id;
+  }, [artGridRows, artLoading, registered]);
+
+  useEffect(() => {
+    const el = artGridRef.current; if (!el || !registered) return;
+    const handler = (e: CustomEvent) => { if (e.detail?.row?.codigo) { setSelectedProductCode(String(e.detail.row.codigo)); setPage(0); } };
+    el.addEventListener("row-click", handler);
+    return () => el.removeEventListener("row-click", handler);
+  }, [registered]);
+
+  useEffect(() => {
+    const el = movGridRef.current; if (!el || !registered) return;
+    el.columns = MOV_COLUMNS; el.rows = movGridRows; el.loading = isLoading;
+    el.getRowId = (r: any) => r.id;
+    el.detailRenderer = DETAIL_RENDERER;
+  }, [movGridRows, isLoading, registered]);
+
+  useEffect(() => {
+    const el = movGridRef.current; if (!el || !registered) return;
+    const handler = (e: CustomEvent) => {
+      const { action, row } = e.detail;
+      if (action === "view") { /* TODO: ver detalle movimiento */ }
+    };
+    el.addEventListener("action-click", handler);
+    return () => el.removeEventListener("action-click", handler);
+  }, [registered, movGridRows]);
 
   return (
     <Box sx={{ p: 2 }}>
-      <Typography variant="h5" fontWeight={600} sx={{ mb: 3 }}>
-        Movimientos de Inventario
-      </Typography>
+      <Typography variant="h5" fontWeight={600} sx={{ mb: 3 }}>Movimientos de Inventario</Typography>
 
       <Grid container spacing={3}>
-        {/* Left: Article browser */}
         <Grid size={{ xs: 12, md: 4 }}>
           <Paper sx={{ p: 2 }}>
-            <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
-              Artículos
-            </Typography>
-            <TextField
-              placeholder="Buscar artículos..."
-              onChange={(e) => debouncedArtSearch(e.target.value)}
-              fullWidth
-              size="small"
-              sx={{ mb: 2 }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon fontSize="small" />
-                  </InputAdornment>
-                ),
-              }}
+            <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>Artículos</Typography>
+            <TextField placeholder="Buscar artículos..." onChange={(e) => debouncedArtSearch(e.target.value)} fullWidth sx={{ mb: 2 }}
+              InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon fontSize="small" /></InputAdornment> }}
             />
-
-            {artLoading && (
-              <Box sx={{ textAlign: "center", py: 2 }}>
-                <CircularProgress size={24} />
-              </Box>
-            )}
-
-            {!artLoading && artRows.length > 0 && (
-              <TableContainer sx={{ maxHeight: 500 }}>
-                <Table size="small" stickyHeader>
-                  <TableHead>
-                    <TableRow>
-                      <TableCell sx={{ fontWeight: 600 }}>Código</TableCell>
-                      <TableCell sx={{ fontWeight: 600 }}>Artículo</TableCell>
-                      <TableCell align="right" sx={{ fontWeight: 600 }}>Stock</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {artRows.map((item, i) => {
-                      const codigo = String(item.CODIGO ?? item.ProductCode ?? "");
-                      const isActive = selectedProductCode === codigo;
-                      return (
-                        <TableRow
-                          key={i}
-                          hover
-                          selected={isActive}
-                          onClick={() => selectArticle(codigo)}
-                          sx={{ cursor: "pointer" }}
-                        >
-                          <TableCell sx={{ fontWeight: 500 }}>{codigo}</TableCell>
-                          <TableCell sx={{ maxWidth: 180, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                            {String(item.DescripcionCompleta ?? item.DESCRIPCION ?? "")}
-                          </TableCell>
-                          <TableCell align="right">
-                            <Chip
-                              label={Number(item.EXISTENCIA ?? item.Stock ?? 0)}
-                              size="small"
-                              color={Number(item.EXISTENCIA ?? item.Stock ?? 0) > 0 ? "success" : "error"}
-                              variant="outlined"
-                            />
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            )}
-
-            {!artLoading && !artSearch && artRows.length === 0 && (
-              <Typography variant="body2" color="text.secondary" sx={{ py: 2, textAlign: "center" }}>
-                Escriba para buscar artículos...
-              </Typography>
-            )}
+            <zentto-grid ref={artGridRef} grid-id={ARTICULOS_GRID_ID} height="350px" enable-toolbar enable-header-menu enable-header-filters enable-clipboard enable-quick-search enable-context-menu enable-status-bar enable-configurator />
           </Paper>
         </Grid>
 
-        {/* Right: Movements */}
         <Grid size={{ xs: 12, md: 8 }}>
-          {/* Active article filter chip */}
           {selectedProductCode && (
-            <Alert
-              severity="info"
-              sx={{ mb: 2 }}
-              action={
-                <IconButton size="small" onClick={clearArticleFilter}>
-                  <ClearIcon fontSize="small" />
-                </IconButton>
-              }
+            <Alert severity="info" sx={{ mb: 2 }}
+              action={<Tooltip title="Limpiar filtro"><IconButton size="small" onClick={() => { setSelectedProductCode(""); setPage(0); }}><ClearIcon fontSize="small" /></IconButton></Tooltip>}
             >
               Filtrando movimientos de: <strong>{selectedProductCode}</strong>
             </Alert>
           )}
 
-          {/* Filtros */}
-          <Paper sx={{ p: 2, mb: 2 }}>
-            <Grid container spacing={2} alignItems="center">
-              <Grid size={{ xs: 12, sm: 4 }}>
-                <TextField
-                  placeholder="Buscar por referencia, notas..."
-                  onChange={(e) => debouncedSearch(e.target.value)}
-                  fullWidth
-                  size="small"
-                  InputProps={{
-                    startAdornment: <InputAdornment position="start"><SearchIcon fontSize="small" /></InputAdornment>,
-                  }}
-                />
-              </Grid>
-              <Grid size={{ xs: 6, sm: 2 }}>
-                <FormControl fullWidth size="small">
-                  <InputLabel>Tipo</InputLabel>
-                  <Select value={movementType} label="Tipo" onChange={(e) => { setMovementType(e.target.value); setPage(0); }}>
-                    <MenuItem value="">Todos</MenuItem>
-                    <MenuItem value="ENTRADA">Entrada</MenuItem>
-                    <MenuItem value="SALIDA">Salida</MenuItem>
-                    <MenuItem value="AJUSTE">Ajuste</MenuItem>
-                    <MenuItem value="TRASLADO">Traslado</MenuItem>
-                  </Select>
-                </FormControl>
-              </Grid>
-              <Grid size={{ xs: 6, sm: 3 }}>
-                <TextField
-                  label="Desde"
-                  type="date"
-                  value={fechaDesde}
-                  onChange={(e) => { setFechaDesde(e.target.value); setPage(0); }}
-                  fullWidth
-                  size="small"
-                  InputLabelProps={{ shrink: true }}
-                />
-              </Grid>
-              <Grid size={{ xs: 6, sm: 3 }}>
-                <TextField
-                  label="Hasta"
-                  type="date"
-                  value={fechaHasta}
-                  onChange={(e) => { setFechaHasta(e.target.value); setPage(0); }}
-                  fullWidth
-                  size="small"
-                  InputLabelProps={{ shrink: true }}
-                />
-              </Grid>
-            </Grid>
-          </Paper>
+          <ZenttoFilterPanel filters={MOVIMIENTOS_FILTERS} values={movFilterValues}
+            onChange={(vals) => { setMovFilterValues(vals); setMovementType(vals.tipo || ""); if (vals.from !== undefined) setFechaDesde(vals.from); if (vals.to !== undefined) setFechaHasta(vals.to); setPage(0); }}
+            searchPlaceholder="Buscar por referencia, notas..." searchValue={search}
+            onSearchChange={(v) => { setSearch(v); setPage(0); }}
+            defaultOpen
+          />
 
-          {/* Tabla de movimientos */}
-          <TableContainer component={Paper}>
-            <Table size="small">
-              <TableHead>
-                <TableRow sx={{ backgroundColor: "#f5f5f5" }}>
-                  <TableCell sx={{ fontWeight: 600 }}>Fecha</TableCell>
-                  <TableCell sx={{ fontWeight: 600 }}>Código</TableCell>
-                  <TableCell sx={{ fontWeight: 600 }}>Artículo</TableCell>
-                  <TableCell sx={{ fontWeight: 600 }}>Tipo</TableCell>
-                  <TableCell align="right" sx={{ fontWeight: 600 }}>Cantidad</TableCell>
-                  <TableCell align="right" sx={{ fontWeight: 600 }}>Costo Unit.</TableCell>
-                  <TableCell align="right" sx={{ fontWeight: 600 }}>Total</TableCell>
-                  <TableCell sx={{ fontWeight: 600 }}>Almacén</TableCell>
-                  <TableCell sx={{ fontWeight: 600 }}>Referencia</TableCell>
-                  <TableCell sx={{ fontWeight: 600 }}>Notas</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {isLoading ? (
-                  <TableRow>
-                    <TableCell colSpan={10} align="center" sx={{ py: 4 }}>
-                      <CircularProgress size={40} />
-                    </TableCell>
-                  </TableRow>
-                ) : rows.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={10} align="center" sx={{ py: 4, color: "text.secondary" }}>
-                      No hay movimientos en el rango seleccionado
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  rows.map((m, i) => {
-                    const type = String(m.MovementType ?? "");
-                    const whFrom = String(m.WarehouseFrom ?? "");
-                    const whTo = String(m.WarehouseTo ?? "");
-                    const warehouse = whFrom && whTo ? `${whFrom} → ${whTo}` : whFrom || whTo || "";
-
-                    return (
-                      <TableRow key={i} hover>
-                        <TableCell>{String(m.MovementDate ?? "").slice(0, 10)}</TableCell>
-                        <TableCell sx={{ fontWeight: 500 }}>{String(m.ProductCode ?? "")}</TableCell>
-                        <TableCell>{String(m.ProductName ?? "")}</TableCell>
-                        <TableCell>
-                          <Chip label={type} size="small" color={getTypeColor(type) as "success" | "error" | "info" | "warning" | "default"} variant="outlined" />
-                        </TableCell>
-                        <TableCell align="right" sx={{ fontWeight: 500 }}>{Number(m.Quantity ?? 0)}</TableCell>
-                        <TableCell align="right">{formatCurrency(Number(m.UnitCost ?? 0))}</TableCell>
-                        <TableCell align="right">{formatCurrency(Number(m.TotalCost ?? 0))}</TableCell>
-                        <TableCell>{warehouse}</TableCell>
-                        <TableCell>{String(m.DocumentRef ?? "")}</TableCell>
-                        <TableCell sx={{ maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                          {String(m.Notes ?? "")}
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
-
-          {total > 0 && (
-            <TablePagination
-              rowsPerPageOptions={[10, 25, 50, 100]}
-              component="div"
-              count={total}
-              rowsPerPage={rowsPerPage}
-              page={page}
-              onPageChange={(_, p) => setPage(p)}
-              onRowsPerPageChange={(e) => { setRowsPerPage(parseInt(e.target.value, 10)); setPage(0); }}
-              labelRowsPerPage="Filas por página:"
-              labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count}`}
-            />
-          )}
+          <zentto-grid ref={movGridRef} grid-id={MOVIMIENTOS_GRID_ID} height="500px" default-currency="VES" export-filename="movimientos-inventario" show-totals
+            enable-toolbar enable-header-menu enable-header-filters enable-clipboard enable-quick-search enable-context-menu enable-status-bar enable-master-detail enable-configurator
+          />
         </Grid>
       </Grid>
     </Box>
   );
 }
+
+declare global { namespace JSX { interface IntrinsicElements { 'zentto-grid': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & Record<string, any>, HTMLElement>; } } }

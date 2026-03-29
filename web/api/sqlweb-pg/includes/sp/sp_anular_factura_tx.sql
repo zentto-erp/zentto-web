@@ -7,6 +7,7 @@
 -- Traducido de SQL Server a PostgreSQL
 -- =============================================
 
+DROP FUNCTION IF EXISTS sp_anular_factura_tx(VARCHAR(60), VARCHAR(60), VARCHAR(500)) CASCADE;
 CREATE OR REPLACE FUNCTION sp_anular_factura_tx(
     p_num_fact    VARCHAR(60),
     p_cod_usuario VARCHAR(60) DEFAULT 'API',
@@ -57,7 +58,7 @@ BEGIN
     -- 2. Marcar anulada -> ar.SalesDocument
     UPDATE ar."SalesDocument"
     SET "IsVoided" = TRUE,
-        "Notes" = COALESCE("Notes", '') || ' [ANULADA: ' || TO_CHAR(v_fecha_anulacion, 'YYYY-MM-DD HH24:MI:SS') || ']',
+        "Notes" = COALESCE("Notes",''::VARCHAR) || ' [ANULADA: ' || TO_CHAR(v_fecha_anulacion, 'YYYY-MM-DD HH24:MI:SS') || ']',
         "UpdatedAt" = NOW() AT TIME ZONE 'UTC'
     WHERE "DocumentNumber" = p_num_fact AND "OperationType" = 'FACT';
 

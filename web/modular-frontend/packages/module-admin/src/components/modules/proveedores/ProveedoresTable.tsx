@@ -23,6 +23,7 @@ import {
   Paper,
   Toolbar,
   Typography,
+  Tooltip,
 } from "@mui/material";
 import { Edit as EditIcon, Delete as DeleteIcon, Visibility as ViewIcon, Add as AddIcon } from "@mui/icons-material";
 import { useProveedoresList, useDeleteProveedor } from "../../../hooks/useProveedores";
@@ -87,7 +88,7 @@ export default function ProveedoresTable() {
           value={searchTerm}
           onChange={handleSearch}
           fullWidth
-          size="small"
+         
           variant="outlined"
         />
       </Paper>
@@ -156,34 +157,37 @@ export default function ProveedoresTable() {
                       </Box>
                     </TableCell>
                     <TableCell align="center">
-                      <IconButton
-                        size="small"
-                        color="primary"
-                        onClick={() =>
-                          router.push(`/proveedores/${proveedor.codigo}`)
-                        }
-                        title="Ver"
-                      >
-                        <ViewIcon fontSize="small" />
-                      </IconButton>
-                      <IconButton
-                        size="small"
-                        color="primary"
-                        onClick={() =>
-                          router.push(`/proveedores/${proveedor.codigo}/edit`)
-                        }
-                        title="Editar"
-                      >
-                        <EditIcon fontSize="small" />
-                      </IconButton>
-                      <IconButton
-                        size="small"
-                        color="error"
-                        onClick={() => handleDeleteClick(proveedor)}
-                        title="Eliminar"
-                      >
-                        <DeleteIcon fontSize="small" />
-                      </IconButton>
+                      <Tooltip title="Ver proveedor">
+                        <IconButton
+                          size="small"
+                          color="primary"
+                          onClick={() =>
+                            router.push(`/proveedores/${proveedor.codigo}`)
+                          }
+                        >
+                          <ViewIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title="Editar proveedor">
+                        <IconButton
+                          size="small"
+                          color="primary"
+                          onClick={() =>
+                            router.push(`/proveedores/${proveedor.codigo}/edit`)
+                          }
+                        >
+                          <EditIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title="Eliminar proveedor">
+                        <IconButton
+                          size="small"
+                          color="error"
+                          onClick={() => handleDeleteClick(proveedor)}
+                        >
+                          <DeleteIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
                     </TableCell>
                   </TableRow>
                 ))

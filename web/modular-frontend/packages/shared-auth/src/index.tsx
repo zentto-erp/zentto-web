@@ -1,6 +1,6 @@
 "use client";
 
-export { AuthProvider, useAuth } from './AuthContext';
+export { AuthProvider, useAuth, useAuthOptional } from './AuthContext';
 export type { AuthContextType } from './AuthContext';
 export {
   ROLES, isAdminRole, getRoleName, canAccessDebug,
@@ -11,3 +11,4 @@ export { AUTH_ROUTES, PUBLIC_ROUTES, isPublicRoute, getRedirectRoute } from './c
 export { useTimezone } from './useTimezone';
 export { default as AuthLogin } from './auth/AuthLogin';
 export { default as TurnstileCaptcha } from './auth/TurnstileCaptcha';
+export { appAwareSignOut, buildLoginCallbackUrl, resolveAppBasePath, resolveAuthBasePath } from './auth-client';

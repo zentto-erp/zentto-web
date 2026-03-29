@@ -2,7 +2,7 @@
 FROM node:20-alpine AS builder
 WORKDIR /app
 
-COPY web/api/package*.json ./
+COPY web/api/package.json web/api/package-lock.json web/api/.npmrc ./
 RUN npm ci
 
 COPY web/api/ .
@@ -13,15 +13,25 @@ FROM node:20-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 
+# postgresql-client: provee pg_dump y pg_restore para el sistema de respaldos
+RUN apk add --no-cache postgresql-client
+
 # Copiar solo lo necesario para producción
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/package.json ./
+COPY --from=builder /app/package-lock.json ./
+COPY --from=builder /app/.npmrc ./
+
+# Contrato OpenAPI para Swagger UI
+COPY web/contracts/openapi.yaml ./contracts/openapi.yaml
+COPY web/api/migrations/postgres ./migrations/postgres
+COPY web/api/sqlweb-pg ./sqlweb-pg
 
 # Reinstalar solo dependencias de producción
 RUN npm ci --omit=dev
 
-# Carpeta de media persistente
-RUN mkdir -p /app/storage/media
+# Carpeta de media persistente + directorio de backups locales
+RUN mkdir -p /app/storage/media /backups/zentto
 
 EXPOSE 4000
 CMD ["node", "dist/index.js"]

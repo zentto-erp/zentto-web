@@ -7,6 +7,7 @@ import {
   updateClienteSP,
   deleteClienteSP,
 } from "./clientes-sp.service.js";
+import { obs } from "../integrations/observability.js";
 
 export const clientesRouter = Router();
 
@@ -41,6 +42,13 @@ clientesRouter.post("/", async (req, res) => {
     const result = await insertClienteSP(req.body ?? {});
     if (result.success) {
       res.status(201).json({ ok: true, message: result.message });
+      try { obs.event('crm.cliente.created', {
+        codigo: req.body?.codigo,
+        userId: (req as any).user?.userId,
+        userName: (req as any).user?.userName,
+        companyId: (req as any).user?.companyId,
+        module: 'clientes'
+      }); } catch { /* never blocks */ }
     } else {
       res.status(400).json({ ok: false, message: result.message });
     }
@@ -54,6 +62,13 @@ clientesRouter.put("/:codigo", async (req, res) => {
     const result = await updateClienteSP(req.params.codigo, req.body ?? {});
     if (result.success) {
       res.json({ ok: true, message: result.message });
+      try { obs.event('crm.cliente.updated', {
+        codigo: req.params.codigo,
+        userId: (req as any).user?.userId,
+        userName: (req as any).user?.userName,
+        companyId: (req as any).user?.companyId,
+        module: 'clientes'
+      }); } catch { /* never blocks */ }
     } else {
       res.status(400).json({ ok: false, message: result.message });
     }

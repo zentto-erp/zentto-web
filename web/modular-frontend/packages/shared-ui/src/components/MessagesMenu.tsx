@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import {
     IconButton, Badge, Menu, Typography, Box, Divider, Button,
-    List, ListItem, ListItemAvatar, ListItemText, Avatar
+    List, ListItem, ListItemAvatar, ListItemText, Avatar, Tooltip
 } from '@mui/material';
+import { useRouter } from 'next/navigation';
 import MailOutlineIcon from '@mui/icons-material/MailOutline';
 import { apiGet, apiPatch } from '@zentto/shared-api';
 
@@ -16,6 +17,7 @@ type Message = {
 };
 
 export default function MessagesMenu() {
+    const router = useRouter();
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
     const [messages, setMessages] = useState<Message[]>([]);
 
@@ -45,11 +47,13 @@ export default function MessagesMenu() {
 
     return (
         <React.Fragment>
-            <IconButton onClick={handleClick} size="small" sx={{ color: 'inherit' }}>
+            <Tooltip title="Mensajes">
+              <IconButton onClick={handleClick} size="small" sx={{ color: 'inherit' }}>
                 <Badge badgeContent={unreadCount} color="info" max={99}>
                     <MailOutlineIcon />
                 </Badge>
-            </IconButton>
+              </IconButton>
+            </Tooltip>
             <Menu
                 anchorEl={anchorEl}
                 open={open}
@@ -111,7 +115,12 @@ export default function MessagesMenu() {
                 </List>
                 <Divider />
                 <Box sx={{ p: 1, textAlign: 'center' }}>
-                    <Button fullWidth size="small" sx={{ textTransform: 'none' }}>
+                    <Button
+                        fullWidth
+                        size="small"
+                        sx={{ textTransform: 'none' }}
+                        onClick={() => { handleClose(); router.push('/notificaciones?tab=mensajes'); }}
+                    >
                         Ver todos los mensajes
                     </Button>
                 </Box>

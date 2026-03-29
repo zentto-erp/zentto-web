@@ -1,112 +1,91 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
-  Box,
-  Paper,
-  Typography,
-  Button,
-  TextField,
-  Chip,
-  IconButton,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Stack,
-  MenuItem,
-  Select,
-  InputLabel,
-  FormControl,
-  Tooltip,
+  Box, Paper, Tab, Tabs, Typography, Button, TextField, Dialog, DialogTitle,
+  DialogContent, DialogActions, Stack, MenuItem, Select, InputLabel, FormControl,
   CircularProgress,
 } from "@mui/material";
-import { DataGrid, type GridColDef } from "@mui/x-data-grid";
+import type { ColumnDef } from "@zentto/datagrid-core";
 import AddIcon from "@mui/icons-material/Add";
-import { formatCurrency } from "@zentto/shared-api";
-import { ContextActionHeader } from "@zentto/shared-ui";
-import {
-  useRetencionesList,
-  useGenerarRetencion,
-  type WithholdingFilter,
-} from "../hooks/useFiscalTributaria";
+import { useGridLayoutSync, useCountries, useLookup } from "@zentto/shared-api";
+import { ContextActionHeader, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
+import { useRetencionesList, useGenerarRetencion, type WithholdingFilter } from "../hooks/useFiscalTributaria";
+import { buildContabilidadGridId, useContabilidadGridId, useContabilidadGridRegistration } from "./zenttoGridPersistence";
+import ConceptosRetencionPage from "./ConceptosRetencionPage";
+import UnidadTributariaPage from "./UnidadTributariaPage";
 
-const WITHHOLDING_TYPES = [
-  { value: "", label: "Todos" },
-  { value: "IVA", label: "IVA" },
-  { value: "ISLR", label: "ISLR" },
-  { value: "IRPF", label: "IRPF" },
+
+interface GenForm { documentId: number; withholdingType: string; countryCode: string; }
+
+const COLUMNS: ColumnDef[] = [
+  { field: "VoucherNumber", header: "N. Comprobante", width: 150, sortable: true },
+  { field: "VoucherDate", header: "Fecha", width: 110, type: "date", sortable: true },
+  { field: "WithholdingType", header: "Tipo", width: 100, sortable: true, groupable: true },
+  { field: "ThirdPartyName", header: "Tercero", flex: 1, minWidth: 180, sortable: true },
+  { field: "DocumentNumber", header: "N. Documento", width: 140 },
+  { field: "TaxableBase", header: "Base imponible", width: 130, type: "number", currency: "VES", aggregation: "sum" },
+  { field: "WithholdingRate", header: "% Ret.", width: 80, type: "number" },
+  { field: "WithholdingAmount", header: "Monto retenido", width: 140, type: "number", currency: "VES", aggregation: "sum" },
+  {
+    field: "Status", header: "Estado", width: 120, sortable: true, groupable: true,
+    statusColors: { APPLIED: "success", VOIDED: "error", PENDING: "default" },
+    statusVariant: "outlined",
+  },
+  {
+    field: "actions",
+    header: "Acciones",
+    type: "actions",
+    width: 100,
+    pin: "right",
+    actions: [
+      { icon: "view", label: "Ver", action: "view" },
+      { icon: "edit", label: "Editar", action: "edit", color: "#e67e22" },
+    ],
+  },
 ];
 
-const COUNTRY_CODES = [
-  { value: "", label: "Todos" },
-  { value: "VE", label: "Venezuela" },
-  { value: "ES", label: "Espana" },
-  { value: "CO", label: "Colombia" },
-];
-
-interface GenForm {
-  documentId: number;
-  withholdingType: string;
-  countryCode: string;
-}
-
-export default function RetencionesPage() {
+function ComprobantesTab() {
+  const gridRef = useRef<any>(null);
+    const { ready: gridLayoutReady } = useGridLayoutSync(GRID_IDS.gridRef);
+  useContabilidadGridId(gridRef, GRID_IDS.gridRef);
+  const layoutReady = gridLayoutReady;
+  const { registered } = useContabilidadGridRegistration(layoutReady);
+  const { data: countries = [] } = useCountries();
+  const { data: withholdingTypes = [] } = useLookup('RETENTION_TYPE');
   const [filter, setFilter] = useState<WithholdingFilter>({ page: 1, limit: 25 });
+  const [search, setSearch] = useState("");
+  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
   const [openGen, setOpenGen] = useState(false);
-  const [genForm, setGenForm] = useState<GenForm>({
-    documentId: 0,
-    withholdingType: "IVA",
-    countryCode: "VE",
-  });
+  const [genForm, setGenForm] = useState<GenForm>({ documentId: 0, withholdingType: "IVA", countryCode: "VE" });
 
   const { data, isLoading } = useRetencionesList(filter);
   const generarMutation = useGenerarRetencion();
-
   const rows = data?.rows ?? [];
 
-  const columns: GridColDef[] = [
-    { field: "VoucherNumber", headerName: "N. Comprobante", width: 150 },
-    { field: "VoucherDate", headerName: "Fecha", width: 110 },
-    {
-      field: "WithholdingType",
-      headerName: "Tipo",
-      width: 100,
-      renderCell: (p) => <Chip label={p.value} size="small" color="primary" variant="outlined" />,
-    },
-    { field: "ThirdPartyName", headerName: "Tercero", flex: 1, minWidth: 180 },
-    { field: "DocumentNumber", headerName: "N. Documento", width: 140 },
-    {
-      field: "TaxableBase",
-      headerName: "Base Imponible",
-      width: 130,
-      renderCell: (p) => formatCurrency(p.value),
-    },
-    {
-      field: "WithholdingRate",
-      headerName: "% Ret.",
-      width: 80,
-      renderCell: (p) => `${p.value}%`,
-    },
-    {
-      field: "WithholdingAmount",
-      headerName: "Monto Retenido",
-      width: 140,
-      renderCell: (p) => formatCurrency(p.value),
-    },
-    {
-      field: "Status",
-      headerName: "Estado",
-      width: 120,
-      renderCell: (p) => (
-        <Chip
-          label={p.value}
-          size="small"
-          color={p.value === "APPLIED" ? "success" : p.value === "VOIDED" ? "error" : "default"}
-        />
-      ),
-    },
-  ];
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+    el.columns = COLUMNS;
+    el.rows = rows.map((r: any) => ({ ...r, id: r.VoucherId }));
+    el.loading = isLoading;
+  }, [rows, isLoading, registered]);
+
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+    const handler = (e: any) => {
+      const { action, row } = e.detail;
+      if (action === 'view') {
+        // View withholding voucher detail
+      }
+      if (action === 'edit') {
+        // Edit withholding voucher
+      }
+    };
+    el.addEventListener('action-click', handler);
+    return () => el.removeEventListener('action-click', handler);
+  }, [registered]);
 
   const handleGenerar = async () => {
     await generarMutation.mutateAsync(genForm);
@@ -114,123 +93,82 @@ export default function RetencionesPage() {
     setGenForm({ documentId: 0, withholdingType: "IVA", countryCode: "VE" });
   };
 
+  if (!registered) return <Box sx={{ display: "flex", justifyContent: "center", mt: 10 }}><CircularProgress /></Box>;
+
   return (
     <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-      <ContextActionHeader
-        title="Comprobantes de Retencion"
-        primaryAction={{
-          label: "Generar Retencion",
-          onClick: () => setOpenGen(true),
-        }}
-      />
-
+      <ContextActionHeader title="Comprobantes de Retencion" primaryAction={{ label: "Generar retencion", onClick: () => setOpenGen(true) }} />
       <Box sx={{ p: { xs: 2, md: 3 }, flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-        {/* Filtros */}
-        <Stack direction="row" spacing={2} mb={2} flexWrap="wrap">
-          <FormControl size="small" sx={{ minWidth: 140 }}>
-            <InputLabel>Tipo</InputLabel>
-            <Select
-              label="Tipo"
-              value={filter.withholdingType || ""}
-              onChange={(e) => setFilter((f) => ({ ...f, withholdingType: e.target.value || undefined, page: 1 }))}
-            >
-              {WITHHOLDING_TYPES.map((t) => (
-                <MenuItem key={t.value} value={t.value}>{t.label}</MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-          <TextField
-            label="Periodo (YYYY-MM)"
-            size="small"
-            value={filter.periodCode || ""}
-            onChange={(e) => setFilter((f) => ({ ...f, periodCode: e.target.value || undefined, page: 1 }))}
-            sx={{ minWidth: 160 }}
-          />
-          <FormControl size="small" sx={{ minWidth: 140 }}>
-            <InputLabel>Pais</InputLabel>
-            <Select
-              label="Pais"
-              value={filter.countryCode || ""}
-              onChange={(e) => setFilter((f) => ({ ...f, countryCode: e.target.value || undefined, page: 1 }))}
-            >
-              {COUNTRY_CODES.map((c) => (
-                <MenuItem key={c.value} value={c.value}>{c.label}</MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        </Stack>
-
-        {/* DataGrid */}
+        <ZenttoFilterPanel
+          filters={[
+            { field: "withholdingType", label: "Tipo", type: "select", options: withholdingTypes.map((t) => ({ value: t.Code, label: t.Label })) },
+            { field: "periodCode", label: "Fecha (YYYY-MM)", type: "text", placeholder: "2026-03", minWidth: 160 },
+            { field: "countryCode", label: "Pais", type: "select", options: countries.map((c) => ({ value: c.CountryCode, label: c.CountryName })) },
+          ] as FilterFieldDef[]}
+          values={filterValues}
+          onChange={(vals) => {
+            setFilterValues(vals);
+            setFilter((f) => ({ ...f, withholdingType: vals.withholdingType || undefined, periodCode: vals.periodCode || undefined, countryCode: vals.countryCode || undefined, page: 1 }));
+          }}
+          searchPlaceholder="Buscar retencion..."
+          searchValue={search}
+          onSearchChange={setSearch}
+        />
         <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, width: "100%", elevation: 0, border: "1px solid #E5E7EB" }}>
-          <DataGrid
-            rows={rows}
-            columns={columns}
-            loading={isLoading}
-            pageSizeOptions={[25, 50]}
-            paginationModel={{ page: (filter.page ?? 1) - 1, pageSize: filter.limit ?? 25 }}
-            onPaginationModelChange={(m) =>
-              setFilter((f) => ({ ...f, page: m.page + 1, limit: m.pageSize }))
-            }
-            rowCount={data?.total ?? 0}
-            paginationMode="server"
-            disableRowSelectionOnClick
-            getRowId={(row) => row.VoucherId}
-            sx={{ border: "none" }}
-          />
+          <zentto-grid ref={gridRef} default-currency="VES" export-filename="retenciones" height="100%" show-totals
+            enable-toolbar enable-header-menu enable-header-filters enable-clipboard enable-quick-search enable-context-menu enable-status-bar enable-configurator></zentto-grid>
         </Paper>
       </Box>
 
-      {/* Dialog Generar Retencion */}
       <Dialog open={openGen} onClose={() => setOpenGen(false)} maxWidth="xs" fullWidth>
-        <DialogTitle>Generar Retencion</DialogTitle>
+        <DialogTitle>Generar retencion</DialogTitle>
         <DialogContent>
           <Stack spacing={2} sx={{ mt: 1 }}>
-            <TextField
-              label="ID Documento"
-              type="number"
-              size="small"
-              fullWidth
-              value={genForm.documentId || ""}
-              onChange={(e) => setGenForm((f) => ({ ...f, documentId: Number(e.target.value) }))}
-            />
-            <FormControl size="small" fullWidth>
-              <InputLabel>Tipo Retencion</InputLabel>
-              <Select
-                label="Tipo Retencion"
-                value={genForm.withholdingType}
-                onChange={(e) => setGenForm((f) => ({ ...f, withholdingType: e.target.value }))}
-              >
-                {WITHHOLDING_TYPES.filter((t) => t.value).map((t) => (
-                  <MenuItem key={t.value} value={t.value}>{t.label}</MenuItem>
-                ))}
+            <TextField label="ID Documento" type="number" fullWidth value={genForm.documentId || ""} onChange={(e) => setGenForm((f) => ({ ...f, documentId: Number(e.target.value) }))} />
+            <FormControl fullWidth><InputLabel>Tipo retencion</InputLabel>
+              <Select label="Tipo retencion" value={genForm.withholdingType} onChange={(e) => setGenForm((f) => ({ ...f, withholdingType: e.target.value }))}>
+                {withholdingTypes.map((t) => (<MenuItem key={t.Code} value={t.Code}>{t.Label}</MenuItem>))}
               </Select>
             </FormControl>
-            <FormControl size="small" fullWidth>
-              <InputLabel>Pais</InputLabel>
-              <Select
-                label="Pais"
-                value={genForm.countryCode}
-                onChange={(e) => setGenForm((f) => ({ ...f, countryCode: e.target.value }))}
-              >
-                <MenuItem value="VE">Venezuela</MenuItem>
-                <MenuItem value="ES">Espana</MenuItem>
-                <MenuItem value="CO">Colombia</MenuItem>
+            <FormControl fullWidth><InputLabel>Pais</InputLabel>
+              <Select label="Pais" value={genForm.countryCode} onChange={(e) => setGenForm((f) => ({ ...f, countryCode: e.target.value }))}>
+                {countries.map((c) => (<MenuItem key={c.CountryCode} value={c.CountryCode}>{c.CountryName}</MenuItem>))}
               </Select>
             </FormControl>
           </Stack>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpenGen(false)}>Cancelar</Button>
-          <Button
-            variant="contained"
-            onClick={handleGenerar}
-            disabled={generarMutation.isPending || !genForm.documentId}
-            startIcon={generarMutation.isPending ? <CircularProgress size={16} /> : <AddIcon />}
-          >
-            Generar
-          </Button>
+          <Button variant="contained" onClick={handleGenerar} disabled={generarMutation.isPending || !genForm.documentId}
+            startIcon={generarMutation.isPending ? <CircularProgress size={16} /> : <AddIcon />}>Generar</Button>
         </DialogActions>
       </Dialog>
     </Box>
   );
+}
+
+const GRID_IDS = {
+  gridRef: buildContabilidadGridId("retenciones", "main"),
+} as const;
+
+export default function RetencionesPage() {
+  const [tab, setTab] = useState(0);
+  return (
+    <Box>
+      <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ mb: 3, borderBottom: 1, borderColor: "divider" }}>
+        <Tab label="Comprobantes" /><Tab label="Conceptos" /><Tab label="Unidad Tributaria" />
+      </Tabs>
+      {tab === 0 && <ComprobantesTab />}
+      {tab === 1 && <ConceptosRetencionPage />}
+      {tab === 2 && <UnidadTributariaPage />}
+    </Box>
+  );
+}
+
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'zentto-grid': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & Record<string, any>, HTMLElement>;
+    }
+  }
 }

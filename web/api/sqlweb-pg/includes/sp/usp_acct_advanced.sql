@@ -165,6 +165,7 @@ ALTER TABLE acct."JournalEntryLine"
 -- =============================================================================
 --  SP 1: usp_Acct_Period_List
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_Acct_Period_List(INTEGER, SMALLINT, VARCHAR(10), INTEGER, INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Acct_Period_List(
     p_company_id  INTEGER,
     p_year        SMALLINT     DEFAULT NULL,
@@ -197,29 +198,29 @@ BEGIN
 
     SELECT COUNT(*)
     INTO v_total_count
-    FROM acct."FiscalPeriod"
-    WHERE "CompanyId" = p_company_id
-      AND (p_year   IS NULL OR "YearCode" = p_year)
-      AND (p_status IS NULL OR "Status"   = p_status);
+    FROM acct."FiscalPeriod" fp
+    WHERE fp."CompanyId" = p_company_id
+      AND (p_year   IS NULL OR fp."YearCode" = p_year)
+      AND (p_status IS NULL OR fp."Status"   = p_status);
 
     RETURN QUERY
     SELECT v_total_count,
-           "FiscalPeriodId",
-           "PeriodCode",
-           "PeriodName",
-           "YearCode",
-           "MonthCode",
-           "StartDate",
-           "EndDate",
-           "Status",
-           "ClosedAt",
-           "ClosedByUserId",
-           "Notes"
-    FROM acct."FiscalPeriod"
-    WHERE "CompanyId" = p_company_id
-      AND (p_year   IS NULL OR "YearCode" = p_year)
-      AND (p_status IS NULL OR "Status"   = p_status)
-    ORDER BY "PeriodCode"
+           fp."FiscalPeriodId",
+           fp."PeriodCode",
+           fp."PeriodName",
+           fp."YearCode",
+           fp."MonthCode",
+           fp."StartDate",
+           fp."EndDate",
+           fp."Status",
+           fp."ClosedAt",
+           fp."ClosedByUserId",
+           fp."Notes"
+    FROM acct."FiscalPeriod" fp
+    WHERE fp."CompanyId" = p_company_id
+      AND (p_year   IS NULL OR fp."YearCode" = p_year)
+      AND (p_status IS NULL OR fp."Status"   = p_status)
+    ORDER BY fp."PeriodCode"
     LIMIT p_limit OFFSET (p_page - 1) * p_limit;
 END;
 $$;
@@ -227,6 +228,7 @@ $$;
 -- =============================================================================
 --  SP 2: usp_Acct_Period_EnsureYear
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_Acct_Period_EnsureYear(INTEGER, SMALLINT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Acct_Period_EnsureYear(
     p_company_id  INTEGER,
     p_year        SMALLINT,
@@ -293,6 +295,7 @@ $$;
 -- =============================================================================
 --  SP 3: usp_Acct_Period_Close
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_Acct_Period_Close(INTEGER, CHAR(6), INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Acct_Period_Close(
     p_company_id  INTEGER,
     p_period_code CHAR(6),
@@ -355,6 +358,7 @@ $$;
 -- =============================================================================
 --  SP 4: usp_Acct_Period_Reopen
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_Acct_Period_Reopen(INTEGER, CHAR(6), INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Acct_Period_Reopen(
     p_company_id  INTEGER,
     p_period_code CHAR(6),
@@ -408,6 +412,7 @@ $$;
 -- =============================================================================
 --  SP 5: usp_Acct_Period_GenerateClosingEntries
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_Acct_Period_GenerateClosingEntries(INTEGER, CHAR(6), INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Acct_Period_GenerateClosingEntries(
     p_company_id  INTEGER,
     p_period_code CHAR(6),
@@ -576,6 +581,7 @@ $$;
 -- =============================================================================
 --  SP 6: usp_Acct_Period_Checklist
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_Acct_Period_Checklist(INTEGER, CHAR(6)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Acct_Period_Checklist(
     p_company_id  INTEGER,
     p_period_code CHAR(6)
@@ -652,6 +658,7 @@ $$;
 -- =============================================================================
 --  SP 7: usp_Acct_CostCenter_List
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_Acct_CostCenter_List(INTEGER, VARCHAR(100), INTEGER, INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Acct_CostCenter_List(
     p_company_id INTEGER,
     p_search     VARCHAR(100) DEFAULT NULL,
@@ -678,28 +685,28 @@ BEGIN
 
     SELECT COUNT(*)
     INTO v_total_count
-    FROM acct."CostCenter"
-    WHERE "CompanyId" = p_company_id
-      AND "IsDeleted" = FALSE
+    FROM acct."CostCenter" cc
+    WHERE cc."CompanyId" = p_company_id
+      AND cc."IsDeleted" = FALSE
       AND (p_search IS NULL
-           OR "CostCenterCode" ILIKE '%' || p_search || '%'
-           OR "CostCenterName" ILIKE '%' || p_search || '%');
+           OR cc."CostCenterCode" ILIKE '%' || p_search || '%'
+           OR cc."CostCenterName" ILIKE '%' || p_search || '%');
 
     RETURN QUERY
     SELECT v_total_count,
-           "CostCenterId",
-           "CostCenterCode",
-           "CostCenterName",
-           "ParentCostCenterId",
-           "Level",
-           "IsActive"
-    FROM acct."CostCenter"
-    WHERE "CompanyId" = p_company_id
-      AND "IsDeleted" = FALSE
+           cc."CostCenterId",
+           cc."CostCenterCode",
+           cc."CostCenterName",
+           cc."ParentCostCenterId",
+           cc."Level",
+           cc."IsActive"
+    FROM acct."CostCenter" cc
+    WHERE cc."CompanyId" = p_company_id
+      AND cc."IsDeleted" = FALSE
       AND (p_search IS NULL
-           OR "CostCenterCode" ILIKE '%' || p_search || '%'
-           OR "CostCenterName" ILIKE '%' || p_search || '%')
-    ORDER BY "CostCenterCode"
+           OR cc."CostCenterCode" ILIKE '%' || p_search || '%'
+           OR cc."CostCenterName" ILIKE '%' || p_search || '%')
+    ORDER BY cc."CostCenterCode"
     LIMIT p_limit OFFSET (p_page - 1) * p_limit;
 END;
 $$;
@@ -707,6 +714,7 @@ $$;
 -- =============================================================================
 --  SP 8: usp_Acct_CostCenter_Get
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_Acct_CostCenter_Get(INTEGER, VARCHAR(20)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Acct_CostCenter_Get(
     p_company_id      INTEGER,
     p_cost_center_code VARCHAR(20)
@@ -748,6 +756,7 @@ $$;
 -- =============================================================================
 --  SP 9: usp_Acct_CostCenter_Insert
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_Acct_CostCenter_Insert(INTEGER, VARCHAR(20), VARCHAR(200), VARCHAR(20)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Acct_CostCenter_Insert(
     p_company_id  INTEGER,
     p_code        VARCHAR(20),
@@ -805,6 +814,7 @@ $$;
 -- =============================================================================
 --  SP 10: usp_Acct_CostCenter_Update
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_Acct_CostCenter_Update(INTEGER, VARCHAR(20), VARCHAR(200), VARCHAR(20)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Acct_CostCenter_Update(
     p_company_id  INTEGER,
     p_code        VARCHAR(20),
@@ -868,6 +878,7 @@ $$;
 -- =============================================================================
 --  SP 11: usp_Acct_CostCenter_Delete
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_Acct_CostCenter_Delete(INTEGER, VARCHAR(20)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Acct_CostCenter_Delete(
     p_company_id INTEGER,
     p_code       VARCHAR(20),
@@ -920,6 +931,7 @@ $$;
 -- =============================================================================
 --  SP 12: usp_Acct_Report_PnLByCostCenter
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_Acct_Report_PnLByCostCenter(INTEGER, DATE, DATE) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Acct_Report_PnLByCostCenter(
     p_company_id INTEGER,
     p_fecha_desde DATE,
@@ -977,6 +989,7 @@ $$;
 -- =============================================================================
 --  SP 13: usp_Acct_Budget_List
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_Acct_Budget_List(INTEGER, SMALLINT, VARCHAR(10), INTEGER, INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Acct_Budget_List(
     p_company_id INTEGER,
     p_fiscal_year SMALLINT    DEFAULT NULL,
@@ -1006,28 +1019,28 @@ BEGIN
 
     SELECT COUNT(*)
     INTO v_total_count
-    FROM acct."Budget"
-    WHERE "CompanyId" = p_company_id
-      AND "IsDeleted" = FALSE
-      AND (p_fiscal_year IS NULL OR "FiscalYear" = p_fiscal_year)
-      AND (p_status      IS NULL OR "Status"     = p_status);
+    FROM acct."Budget" b
+    WHERE b."CompanyId" = p_company_id
+      AND b."IsDeleted" = FALSE
+      AND (p_fiscal_year IS NULL OR b."FiscalYear" = p_fiscal_year)
+      AND (p_status      IS NULL OR b."Status"     = p_status);
 
     RETURN QUERY
     SELECT v_total_count,
-           "BudgetId",
-           "BudgetName",
-           "FiscalYear",
-           "CostCenterCode",
-           "Status",
-           "Notes",
-           "CreatedAt",
-           "UpdatedAt"
-    FROM acct."Budget"
-    WHERE "CompanyId" = p_company_id
-      AND "IsDeleted" = FALSE
-      AND (p_fiscal_year IS NULL OR "FiscalYear" = p_fiscal_year)
-      AND (p_status      IS NULL OR "Status"     = p_status)
-    ORDER BY "FiscalYear" DESC, "BudgetName"
+           b."BudgetId",
+           b."BudgetName",
+           b."FiscalYear",
+           b."CostCenterCode",
+           b."Status",
+           b."Notes",
+           b."CreatedAt",
+           b."UpdatedAt"
+    FROM acct."Budget" b
+    WHERE b."CompanyId" = p_company_id
+      AND b."IsDeleted" = FALSE
+      AND (p_fiscal_year IS NULL OR b."FiscalYear" = p_fiscal_year)
+      AND (p_status      IS NULL OR b."Status"     = p_status)
+    ORDER BY b."FiscalYear" DESC, b."BudgetName"
     LIMIT p_limit OFFSET (p_page - 1) * p_limit;
 END;
 $$;
@@ -1035,6 +1048,7 @@ $$;
 -- =============================================================================
 --  SP 14: usp_Acct_Budget_Get
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_Acct_Budget_Get(INTEGER, INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Acct_Budget_Get(
     p_company_id INTEGER,
     p_budget_id  INTEGER
@@ -1071,6 +1085,7 @@ $$;
 -- =============================================================================
 --  SP 15: usp_Acct_Budget_GetLines
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_Acct_Budget_GetLines(INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Acct_Budget_GetLines(
     p_budget_id INTEGER
 )
@@ -1116,6 +1131,7 @@ $$;
 --  SP 16: usp_Acct_Budget_Insert
 --  LinesJson: [{"accountCode":"5.1.01","month01":100,...,"month12":100,"notes":""}]
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_Acct_Budget_Insert(INTEGER, VARCHAR(200), SMALLINT, VARCHAR(20), TEXT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Acct_Budget_Insert(
     p_company_id      INTEGER,
     p_name            VARCHAR(200),
@@ -1178,6 +1194,7 @@ $$;
 -- =============================================================================
 --  SP 17: usp_Acct_Budget_Update
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_Acct_Budget_Update(INTEGER, INTEGER, VARCHAR(200), TEXT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Acct_Budget_Update(
     p_company_id INTEGER,
     p_budget_id  INTEGER,
@@ -1243,6 +1260,7 @@ $$;
 -- =============================================================================
 --  SP 18: usp_Acct_Budget_Delete
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_Acct_Budget_Delete(INTEGER, INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Acct_Budget_Delete(
     p_company_id INTEGER,
     p_budget_id  INTEGER,
@@ -1277,6 +1295,7 @@ $$;
 -- =============================================================================
 --  SP 19: usp_Acct_Budget_Variance
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_Acct_Budget_Variance(INTEGER, INTEGER, DATE, DATE) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Acct_Budget_Variance(
     p_company_id  INTEGER,
     p_budget_id   INTEGER,
@@ -1332,6 +1351,7 @@ $$;
 -- =============================================================================
 --  SP 20: usp_Acct_RecurringEntry_List
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_Acct_RecurringEntry_List(INTEGER, BOOLEAN, INTEGER, INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Acct_RecurringEntry_List(
     p_company_id INTEGER,
     p_is_active  BOOLEAN  DEFAULT NULL,
@@ -1362,28 +1382,28 @@ BEGIN
 
     SELECT COUNT(*)
     INTO v_total_count
-    FROM acct."RecurringEntry"
-    WHERE "CompanyId" = p_company_id
-      AND "IsDeleted" = FALSE
-      AND (p_is_active IS NULL OR "IsActive" = p_is_active);
+    FROM acct."RecurringEntry" re
+    WHERE re."CompanyId" = p_company_id
+      AND re."IsDeleted" = FALSE
+      AND (p_is_active IS NULL OR re."IsActive" = p_is_active);
 
     RETURN QUERY
     SELECT v_total_count,
-           "RecurringEntryId",
-           "TemplateName",
-           "Frequency",
-           "NextExecutionDate",
-           "LastExecutedDate",
-           "TimesExecuted",
-           "MaxExecutions",
-           "TipoAsiento",
-           "Concepto",
-           "IsActive"
-    FROM acct."RecurringEntry"
-    WHERE "CompanyId" = p_company_id
-      AND "IsDeleted" = FALSE
-      AND (p_is_active IS NULL OR "IsActive" = p_is_active)
-    ORDER BY "NextExecutionDate"
+           re."RecurringEntryId",
+           re."TemplateName",
+           re."Frequency",
+           re."NextExecutionDate",
+           re."LastExecutedDate",
+           re."TimesExecuted",
+           re."MaxExecutions",
+           re."TipoAsiento",
+           re."Concepto",
+           re."IsActive"
+    FROM acct."RecurringEntry" re
+    WHERE re."CompanyId" = p_company_id
+      AND re."IsDeleted" = FALSE
+      AND (p_is_active IS NULL OR re."IsActive" = p_is_active)
+    ORDER BY re."NextExecutionDate"
     LIMIT p_limit OFFSET (p_page - 1) * p_limit;
 END;
 $$;
@@ -1391,6 +1411,7 @@ $$;
 -- =============================================================================
 --  SP 21: usp_Acct_RecurringEntry_Get
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_Acct_RecurringEntry_Get(INTEGER, INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Acct_RecurringEntry_Get(
     p_company_id        INTEGER,
     p_recurring_entry_id INTEGER
@@ -1433,6 +1454,7 @@ $$;
 -- =============================================================================
 --  SP 22: usp_Acct_RecurringEntry_GetLines
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_Acct_RecurringEntry_GetLines(INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Acct_RecurringEntry_GetLines(
     p_recurring_entry_id INTEGER
 )
@@ -1467,6 +1489,7 @@ $$;
 --  SP 23: usp_Acct_RecurringEntry_Insert
 --  LinesJson: [{"accountCode":"5.1.01","description":"...","costCenterCode":null,"debit":100,"credit":0}]
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_Acct_RecurringEntry_Insert(INTEGER, VARCHAR(200), VARCHAR(10), DATE, VARCHAR(20), VARCHAR(300), INTEGER, TEXT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Acct_RecurringEntry_Insert(
     p_company_id          INTEGER,
     p_template_name       VARCHAR(200),
@@ -1541,6 +1564,7 @@ $$;
 -- =============================================================================
 --  SP 24: usp_Acct_RecurringEntry_Update
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_Acct_RecurringEntry_Update(INTEGER, INTEGER, VARCHAR(200), VARCHAR(10), DATE, VARCHAR(300), INTEGER, TEXT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Acct_RecurringEntry_Update(
     p_company_id          INTEGER,
     p_recurring_entry_id  INTEGER,
@@ -1602,6 +1626,7 @@ $$;
 -- =============================================================================
 --  SP 25: usp_Acct_RecurringEntry_Delete
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_Acct_RecurringEntry_Delete(INTEGER, INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Acct_RecurringEntry_Delete(
     p_company_id         INTEGER,
     p_recurring_entry_id INTEGER,
@@ -1636,6 +1661,7 @@ $$;
 -- =============================================================================
 --  SP 26: usp_Acct_RecurringEntry_Execute
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_Acct_RecurringEntry_Execute(INTEGER, INTEGER, DATE, INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Acct_RecurringEntry_Execute(
     p_company_id         INTEGER,
     p_recurring_entry_id INTEGER,
@@ -1707,7 +1733,7 @@ BEGIN
         WHERE "CompanyId" = p_company_id AND "EntryType" = v_tipo_asiento AND "PeriodCode" = v_period_fmt;
 
         v_entry_number := v_tipo_asiento || '-'
-            || REPLACE(v_period_fmt, '-', '') || '-'
+            || REPLACE(v_period_fmt, '-',''::VARCHAR) || '-'
             || LPAD(v_seq_num::TEXT, 6, '0');
 
         INSERT INTO acct."JournalEntry" (
@@ -1780,6 +1806,7 @@ $$;
 -- =============================================================================
 --  SP 27: usp_Acct_RecurringEntry_GetDue
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_Acct_RecurringEntry_GetDue(INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Acct_RecurringEntry_GetDue(
     p_company_id INTEGER
 )
@@ -1798,22 +1825,22 @@ LANGUAGE plpgsql
 AS $$
 BEGIN
     RETURN QUERY
-    SELECT "RecurringEntryId",
-           "TemplateName",
-           "Frequency",
-           "NextExecutionDate",
-           "LastExecutedDate",
-           "TimesExecuted",
-           "MaxExecutions",
-           "TipoAsiento",
-           "Concepto"
-    FROM acct."RecurringEntry"
-    WHERE "CompanyId"          = p_company_id
-      AND "IsActive"           = TRUE
-      AND "IsDeleted"          = FALSE
-      AND "NextExecutionDate" <= (NOW() AT TIME ZONE 'UTC')::DATE
-      AND ("MaxExecutions" IS NULL OR "TimesExecuted" < "MaxExecutions")
-    ORDER BY "NextExecutionDate";
+    SELECT re."RecurringEntryId",
+           re."TemplateName",
+           re."Frequency",
+           re."NextExecutionDate",
+           re."LastExecutedDate",
+           re."TimesExecuted",
+           re."MaxExecutions",
+           re."TipoAsiento",
+           re."Concepto"
+    FROM acct."RecurringEntry" re
+    WHERE re."CompanyId"          = p_company_id
+      AND re."IsActive"           = TRUE
+      AND re."IsDeleted"          = FALSE
+      AND re."NextExecutionDate" <= (NOW() AT TIME ZONE 'UTC')::DATE
+      AND (re."MaxExecutions" IS NULL OR re."TimesExecuted" < re."MaxExecutions")
+    ORDER BY re."NextExecutionDate";
 END;
 $$;
 
@@ -1824,6 +1851,7 @@ $$;
 -- =============================================================================
 --  SP 28: usp_Acct_Entry_Reverse
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_Acct_Entry_Reverse(INTEGER, INTEGER, DATE, INTEGER, VARCHAR(300)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Acct_Entry_Reverse(
     p_company_id INTEGER,
     p_entry_id   INTEGER,
@@ -1879,7 +1907,7 @@ BEGIN
         VALUES (
             p_company_id, v_branch_id, v_rev_number, p_fecha, v_period_fmt,
             'REV', v_orig_number,
-            'REVERSION de ' || v_orig_number || ': ' || COALESCE(p_motivo, ''),
+            'REVERSION de ' || v_orig_number || ': ' || COALESCE(p_motivo,''::VARCHAR),
             v_orig_currency, v_orig_rate, 0, 0, 'APPROVED', 'CONTABILIDAD', p_user_id
         )
         RETURNING "JournalEntryId" INTO v_new_entry_id;
@@ -1893,7 +1921,7 @@ BEGIN
                "LineNumber",
                "AccountId",
                "AccountCodeSnapshot",
-               'REV: ' || COALESCE("Description", ''),
+               'REV: ' || COALESCE("Description",''::VARCHAR),
                "CreditAmount",   -- invertido
                "DebitAmount",    -- invertido
                "CostCenterCode"
@@ -1924,6 +1952,7 @@ $$;
 -- =============================================================================
 --  SP 29: usp_Acct_Report_CashFlow
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_Acct_Report_CashFlow(INTEGER, DATE, DATE) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Acct_Report_CashFlow(
     p_company_id  INTEGER,
     p_fecha_desde DATE,
@@ -1980,6 +2009,7 @@ $$;
 --           periodos como claves. Para cada periodo se usa unnest/crosstab.
 --  Input: p_periodos = periodos separados por coma, e.g. '202601,202602,202603'
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_Acct_Report_BalanceCompMultiPeriod(INTEGER, VARCHAR(200)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Acct_Report_BalanceCompMultiPeriod(
     p_company_id INTEGER,
     p_periodos   VARCHAR(200)
@@ -2038,6 +2068,7 @@ $$;
 --           (AccountCode, AccountType, PeriodCode, Saldo). El pivot lo
 --           realiza la capa de presentacion.
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_Acct_Report_PnLMultiPeriod(INTEGER, VARCHAR(200)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Acct_Report_PnLMultiPeriod(
     p_company_id INTEGER,
     p_periodos   VARCHAR(200)
@@ -2096,6 +2127,7 @@ $$;
 -- =============================================================================
 --  SP 32: usp_Acct_Report_AgingCxC
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_Acct_Report_AgingCxC(INTEGER, DATE) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Acct_Report_AgingCxC(
     p_company_id INTEGER,
     p_fecha_corte DATE
@@ -2138,6 +2170,7 @@ $$;
 -- =============================================================================
 --  SP 33: usp_Acct_Report_AgingCxP
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_Acct_Report_AgingCxP(INTEGER, DATE) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Acct_Report_AgingCxP(
     p_company_id  INTEGER,
     p_fecha_corte DATE
@@ -2180,6 +2213,7 @@ $$;
 -- =============================================================================
 --  SP 34: usp_Acct_Report_FinancialRatios
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_Acct_Report_FinancialRatios(INTEGER, DATE) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Acct_Report_FinancialRatios(
     p_company_id  INTEGER,
     p_fecha_corte DATE
@@ -2271,6 +2305,7 @@ $$;
 -- =============================================================================
 --  SP 35: usp_Acct_Report_TaxSummary
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_Acct_Report_TaxSummary(INTEGER, DATE, DATE) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Acct_Report_TaxSummary(
     p_company_id  INTEGER,
     p_fecha_desde DATE,
@@ -2336,6 +2371,7 @@ $$;
 -- =============================================================================
 --  SP 36: usp_Acct_Report_DrillDown
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_Acct_Report_DrillDown(INTEGER, VARCHAR(20), DATE, DATE, INTEGER, INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Acct_Report_DrillDown(
     p_company_id  INTEGER,
     p_account_code VARCHAR(20),

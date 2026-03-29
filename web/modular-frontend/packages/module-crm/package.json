@@ -1,0 +1,25 @@
+{
+  "name": "@zentto/module-crm",
+  "version": "0.1.0",
+  "private": true,
+  "main": "src/index.tsx",
+  "types": "src/index.tsx",
+  "exports": {
+    ".": "./src/index.tsx",
+    "./hooks/*": "./src/hooks/*",
+    "./components/*": "./src/components/*",
+    "./pages/*": "./src/pages/*"
+  },
+  "dependencies": {
+    "@mui/icons-material": "^6.5.0",
+    "@mui/material": "^6.5.0",
+    "@tanstack/react-query": "^5.64.2",
+    "@zentto/datagrid": "^1.2.8",
+    "@zentto/datagrid-core": "^1.2.8",
+    "@zentto/shared-api": "0.1.0",
+    "@zentto/shared-auth": "0.1.0",
+    "@zentto/shared-ui": "0.1.0",
+    "qrcode-generator": "^2.0.4",
+    "react": "^19.2.4"
+  }
+}

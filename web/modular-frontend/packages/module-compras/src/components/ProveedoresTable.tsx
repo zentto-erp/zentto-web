@@ -1,57 +1,75 @@
 // components/ProveedoresTable.tsx
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   Box,
-  Button,
-  TextField,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
   CircularProgress,
-  IconButton,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogContentText,
-  DialogActions,
-  Pagination,
-  Paper,
-  Toolbar,
-  Typography,
 } from "@mui/material";
-import { Edit as EditIcon, Delete as DeleteIcon, Visibility as ViewIcon, Add as AddIcon } from "@mui/icons-material";
+import { DeleteDialog } from "@zentto/shared-ui";
+import type { ColumnDef, GridRow } from "@zentto/datagrid-core";
+import { useGridLayoutSync } from "@zentto/shared-api";
 import { useProveedoresList, useDeleteProveedor } from "../hooks/useProveedores";
 import { Proveedor, ProveedorFilter } from "@zentto/shared-api/types";
 
+
+const COLUMNS: ColumnDef[] = [
+  { field: "codigo", header: "Codigo", width: 120, sortable: true },
+  { field: "nombre", header: "Nombre", flex: 1, minWidth: 180, sortable: true, groupable: true },
+  { field: "rif", header: "RIF", width: 140, sortable: true },
+  { field: "email", header: "Email", flex: 1, minWidth: 160, sortable: true },
+  { field: "telefono", header: "Telefono", width: 130, sortable: true },
+  { field: "saldo", header: "Saldo", width: 130, type: "number", currency: "VES", aggregation: "sum", sortable: true },
+  {
+    field: "estado",
+    header: "Estado",
+    width: 120,
+    sortable: true,
+    groupable: true,
+    statusColors: {
+      Activo: "success",
+      ACTIVE: "success",
+      Inactivo: "error",
+      INACTIVE: "error",
+    },
+    statusVariant: "outlined",
+  },
+  {
+    field: "actions",
+    header: "Acciones",
+    type: "actions",
+    width: 130,
+    pin: "right",
+    actions: [
+      { icon: "view", label: "Ver", action: "view" },
+      { icon: "edit", label: "Editar", action: "edit", color: "#e67e22" },
+      { icon: "delete", label: "Eliminar", action: "delete", color: "#dc2626" },
+    ],
+  },
+];
+
+const GRID_ID = "module-compras:proveedores:list";
+
 export default function ProveedoresTable() {
   const router = useRouter();
-  const [filter, setFilter] = useState<ProveedorFilter>({ page: 1, limit: 10 });
-  const [searchTerm, setSearchTerm] = useState("");
+  const gridRef = useRef<any>(null);
+  const [registered, setRegistered] = useState(false);
+  const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 50 });
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [selectedProveedor, setSelectedProveedor] = useState<Proveedor | null>(null);
 
-  // Queries
-  const { data, isLoading } = useProveedoresList({ ...filter, search: searchTerm });
+  const { data, isLoading } = useProveedoresList({
+    page: paginationModel.page + 1,
+    limit: paginationModel.pageSize,
+  } as ProveedorFilter);
   const { mutate: deleteProveedor, isPending: isDeleting } = useDeleteProveedor();
+  const { ready: layoutReady } = useGridLayoutSync(GRID_ID);
 
-  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(e.target.value);
-    setFilter({ ...filter, page: 1 });
-  };
-
-  const handlePageChange = (_: unknown, page: number) => {
-    setFilter({ ...filter, page });
-  };
-
-  const handleDeleteClick = (proveedor: Proveedor) => {
-    setSelectedProveedor(proveedor);
-    setDeleteOpen(true);
-  };
+  const rows: GridRow[] = ((data?.items ?? []) as unknown as Record<string, unknown>[]).map((r) => ({
+    id: r.codigo ?? r.id ?? Math.random(),
+    ...r,
+  }));
 
   const handleDeleteConfirm = () => {
     if (selectedProveedor) {
@@ -59,178 +77,99 @@ export default function ProveedoresTable() {
         onSuccess: () => {
           setDeleteOpen(false);
           setSelectedProveedor(null);
-        }
+        },
       });
     }
   };
 
+  useEffect(() => {
+    if (!layoutReady) return;
+    import("@zentto/datagrid").then(() => setRegistered(true));
+  }, [layoutReady]);
+
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+    el.columns = COLUMNS;
+    el.rows = rows;
+    el.loading = isLoading;
+  }, [rows, isLoading, registered]);
+
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+    const actionHandler = (e: CustomEvent) => {
+      const { action, row } = e.detail;
+      if (action === "view") {
+        router.push(`/proveedores/${row.codigo}`);
+      } else if (action === "edit") {
+        router.push(`/proveedores/${row.codigo}/edit`);
+      } else if (action === "delete") {
+        setSelectedProveedor(row as unknown as Proveedor);
+        setDeleteOpen(true);
+      }
+    };
+    const createHandler = () => router.push("/proveedores/new");
+    el.addEventListener("action-click", actionHandler);
+    el.addEventListener("create-click", createHandler);
+    return () => {
+      el.removeEventListener("action-click", actionHandler);
+      el.removeEventListener("create-click", createHandler);
+    };
+  }, [registered, router]);
+
   return (
-    <Box sx={{ p: 2 }}>
-      {/* Header */}
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
-        <Typography variant="h5" sx={{ fontWeight: 600 }}>
-          Gestion de Proveedores
-        </Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => router.push("/proveedores/new")}
-        >
-          Nuevo Proveedor
-        </Button>
-      </Box>
-
-      {/* Search */}
-      <Paper sx={{ p: 2, mb: 2 }}>
-        <TextField
-          placeholder="Buscar por nombre o RIF..."
-          value={searchTerm}
-          onChange={handleSearch}
-          fullWidth
-          size="small"
-          variant="outlined"
-        />
-      </Paper>
-
-      {/* Table Loading */}
-      {isLoading ? (
-        <Box sx={{ display: "flex", justifyContent: "center", p: 4 }}>
+    <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
+      {!layoutReady || !registered ? (
+        <Box sx={{ display: "flex", justifyContent: "center", py: 6 }}>
           <CircularProgress />
         </Box>
       ) : (
-        <Paper>
-          <Toolbar sx={{ backgroundColor: "#f5f5f5" }}>
-            <Typography variant="body2" sx={{ flex: 1 }}>
-              {data?.total || 0} proveedores
-            </Typography>
-          </Toolbar>
-
-          <Table size="small">
-            <TableHead>
-              <TableRow sx={{ backgroundColor: "#f9f9f9" }}>
-                <TableCell sx={{ fontWeight: 600 }}>Codigo</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>Nombre</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>RIF</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>Email</TableCell>
-                <TableCell sx={{ fontWeight: 600 }} align="right">
-                  Saldo
-                </TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>Estado</TableCell>
-                <TableCell sx={{ fontWeight: 600 }} align="center">
-                  Acciones
-                </TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {(data?.items || []).length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={7} align="center" sx={{ py: 3 }}>
-                    No hay proveedores registrados
-                  </TableCell>
-                </TableRow>
-              ) : (
-                (data?.items || []).map((proveedor) => (
-                  <TableRow key={proveedor.codigo} hover>
-                    <TableCell>{proveedor.codigo}</TableCell>
-                    <TableCell>{proveedor.nombre}</TableCell>
-                    <TableCell>{proveedor.rif}</TableCell>
-                    <TableCell>{proveedor.email}</TableCell>
-                    <TableCell align="right">
-                      ${proveedor.saldo?.toFixed(2) || "0.00"}
-                    </TableCell>
-                    <TableCell>
-                      <Box
-                        sx={{
-                          display: "inline-block",
-                          px: 1.5,
-                          py: 0.5,
-                          borderRadius: 1,
-                          backgroundColor:
-                            proveedor.estado === "Activo" ? "#d4edda" : "#f8d7da",
-                          color:
-                            proveedor.estado === "Activo" ? "#155724" : "#721c24",
-                          fontSize: "0.85rem"
-                        }}
-                      >
-                        {proveedor.estado}
-                      </Box>
-                    </TableCell>
-                    <TableCell align="center">
-                      <IconButton
-                        size="small"
-                        color="primary"
-                        onClick={() =>
-                          router.push(`/proveedores/${proveedor.codigo}`)
-                        }
-                        title="Ver"
-                      >
-                        <ViewIcon fontSize="small" />
-                      </IconButton>
-                      <IconButton
-                        size="small"
-                        color="primary"
-                        onClick={() =>
-                          router.push(`/proveedores/${proveedor.codigo}/edit`)
-                        }
-                        title="Editar"
-                      >
-                        <EditIcon fontSize="small" />
-                      </IconButton>
-                      <IconButton
-                        size="small"
-                        color="error"
-                        onClick={() => handleDeleteClick(proveedor)}
-                        title="Eliminar"
-                      >
-                        <DeleteIcon fontSize="small" />
-                      </IconButton>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-
-          {/* Pagination */}
-          {data?.totalPages && data.totalPages > 1 && (
-            <Box sx={{ display: "flex", justifyContent: "center", p: 2 }}>
-              <Pagination
-                count={data.totalPages}
-                page={filter.page || 1}
-                onChange={handlePageChange}
-                color="primary"
-              />
-            </Box>
-          )}
-        </Paper>
+        <Box sx={{ flex: 1, minHeight: 0 }}>
+          <zentto-grid
+            ref={gridRef}
+            grid-id={GRID_ID}
+            default-currency="VES"
+            export-filename="proveedores"
+            height="calc(100vh - 200px)"
+            show-totals
+            enable-toolbar
+            enable-header-menu
+            enable-header-filters
+            enable-clipboard
+            enable-quick-search
+            enable-context-menu
+            enable-status-bar
+            enable-configurator
+            enable-grouping
+            enable-pivot
+            enable-create
+            create-label="Nuevo Proveedor"
+          />
+        </Box>
       )}
 
-      {/* Delete Dialog */}
-      <Dialog open={deleteOpen} onClose={() => setDeleteOpen(false)}>
-        <DialogTitle>Eliminar Proveedor</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            Estas seguro que deseas eliminar a <strong>{selectedProveedor?.nombre}</strong>?
-            Esta accion no se puede deshacer.
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button
-            onClick={() => setDeleteOpen(false)}
-            disabled={isDeleting}
-          >
-            Cancelar
-          </Button>
-          <Button
-            onClick={handleDeleteConfirm}
-            color="error"
-            variant="contained"
-            disabled={isDeleting}
-          >
-            Eliminar
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <DeleteDialog
+        open={deleteOpen}
+        onClose={() => {
+          setDeleteOpen(false);
+          setSelectedProveedor(null);
+        }}
+        onConfirm={handleDeleteConfirm}
+        itemName={selectedProveedor ? `el proveedor ${selectedProveedor.nombre}` : "este proveedor"}
+        loading={isDeleting}
+      />
     </Box>
   );
+}
+
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      "zentto-grid": React.DetailedHTMLProps<
+        React.HTMLAttributes<HTMLElement> & Record<string, any>,
+        HTMLElement
+      >;
+    }
+  }
 }

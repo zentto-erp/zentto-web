@@ -34,10 +34,14 @@ crudRouter.get("/:table/describe", async (req, res) => {
   const q = qpSchema.safeParse(req.query);
   if (!q.success) return res.status(400).json({ error: "invalid_query" });
 
-  const meta = await describeTable(q.data.schema, req.params.table);
-  if (!meta) return res.status(404).json({ error: "table_not_found" });
-
-  res.json(meta);
+  try {
+    const meta = await describeTable(q.data.schema, req.params.table);
+    if (!meta) return res.status(404).json({ error: "table_not_found" });
+    res.json(meta);
+  } catch (err) {
+    console.error("[crud] describeTable error:", err);
+    res.status(404).json({ error: "table_not_found" });
+  }
 });
 
 crudRouter.post("/:table/query", async (req, res) => {

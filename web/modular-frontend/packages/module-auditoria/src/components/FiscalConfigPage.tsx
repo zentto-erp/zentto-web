@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Box,
   Paper,
@@ -17,7 +17,30 @@ import {
 } from "@mui/material";
 import SaveIcon from "@mui/icons-material/Save";
 import { ContextActionHeader } from "@zentto/shared-ui";
+import { useGridLayoutSync } from "@zentto/shared-api";
 import { useFiscalConfig, useSaveFiscalConfig, useFiscalCountries, useFiscalTaxRates } from "../hooks/useAuditoria";
+import type { ColumnDef } from "@zentto/datagrid-core";
+import { buildAuditoriaGridId, useAuditoriaGridRegistration } from "./zenttoGridPersistence";
+
+
+const taxRateColumns: ColumnDef[] = [
+  { field: "code", header: "Código", flex: 1 },
+  { field: "name", header: "Nombre", flex: 2 },
+  { field: "rate", header: "Tasa %", flex: 1, type: "number", renderCell: (value: unknown) => `${value}%` },
+  { field: "surchargeRate", header: "Recargo %", flex: 1, type: "number", renderCell: (value: unknown) => `${value ?? 0}%` },
+  {
+    field: "actions",
+    header: "Acciones",
+    type: "actions",
+    width: 80,
+    pin: "right",
+    actions: [
+      { icon: "edit", label: "Editar", action: "edit", color: "#1976d2" },
+    ],
+  },
+];
+
+const TAX_RATES_GRID_ID = buildAuditoriaGridId("fiscal-config", "tax-rates");
 
 export default function FiscalConfigPage() {
   const [countryCode, setCountryCode] = useState<string>("");
@@ -26,8 +49,15 @@ export default function FiscalConfigPage() {
   const taxRates = useFiscalTaxRates(countryCode || null);
   const saveMutation = useSaveFiscalConfig();
 
+  const countryOptions = Array.isArray(countries.data) ? countries.data : [];
+  const taxRateOptions = Array.isArray(taxRates.data) ? taxRates.data : [];
+
   const [form, setForm] = useState<Record<string, any>>({});
   const [dirty, setDirty] = useState(false);
+  const gridRef = useRef<any>(null);
+  const { ready: layoutReady } = useGridLayoutSync(TAX_RATES_GRID_ID);
+  const { registered } = useAuditoriaGridRegistration(layoutReady);
+
 
   useEffect(() => {
     if (config.data) {
@@ -47,6 +77,26 @@ export default function FiscalConfigPage() {
   const handleSave = async () => {
     await saveMutation.mutateAsync({ ...form, countryCode });
   };
+
+  // Bind data to zentto-grid web component
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+    el.columns = taxRateColumns;
+    el.rows = taxRateOptions;
+    el.loading = taxRates.isLoading;
+  }, [taxRateOptions, taxRates.isLoading, registered, taxRateColumns]);
+
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+    const handler = (e: CustomEvent) => {
+      const { action, row } = e.detail;
+      if (action === "edit") { /* TODO: editar tasa fiscal */ }
+    };
+    el.addEventListener("action-click", handler);
+    return () => el.removeEventListener("action-click", handler);
+  }, [registered, taxRateOptions]);
 
   return (
     <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
@@ -73,13 +123,13 @@ export default function FiscalConfigPage() {
           <TextField
             select
             label="País"
-            size="small"
+           
             sx={{ minWidth: 250 }}
             value={countryCode}
             onChange={(e) => setCountryCode(e.target.value)}
           >
             <MenuItem value="">Seleccionar...</MenuItem>
-            {(countries.data ?? []).map((c: any) => (
+            {countryOptions.map((c: any) => (
               <MenuItem key={c.code} value={c.code}>
                 {c.name} ({c.code})
               </MenuItem>
@@ -97,28 +147,28 @@ export default function FiscalConfigPage() {
               <Stack direction="row" spacing={2} flexWrap="wrap" useFlexGap>
                 <TextField
                   label="Moneda"
-                  size="small"
+                 
                   value={form.currency ?? ""}
                   onChange={(e) => update("currency", e.target.value)}
                   sx={{ width: 120 }}
                 />
                 <TextField
                   label="Régimen Fiscal"
-                  size="small"
+                 
                   value={form.taxRegime ?? ""}
                   onChange={(e) => update("taxRegime", e.target.value)}
                   sx={{ width: 200 }}
                 />
                 <TextField
                   label="Código Impuesto por Defecto"
-                  size="small"
+                 
                   value={form.defaultTaxCode ?? ""}
                   onChange={(e) => update("defaultTaxCode", e.target.value)}
                   sx={{ width: 200 }}
                 />
                 <TextField
                   label="Tasa Impuesto (%)"
-                  size="small"
+                 
                   type="number"
                   value={form.defaultTaxRate ?? ""}
                   onChange={(e) => update("defaultTaxRate", Number(e.target.value))}
@@ -128,24 +178,20 @@ export default function FiscalConfigPage() {
             </Paper>
 
             {/* Tax Rates */}
-            {taxRates.data && (taxRates.data as any[]).length > 0 && (
+            {taxRateOptions.length > 0 && (
               <Paper variant="outlined" sx={{ p: 3 }}>
                 <Typography variant="subtitle1" fontWeight={600} mb={2}>Tasas de Impuesto ({countryCode})</Typography>
-                <Box component="table" sx={{ width: "100%", borderCollapse: "collapse", "& td, & th": { px: 1.5, py: 0.8, fontSize: "0.85rem", borderBottom: "1px solid", borderColor: "divider", textAlign: "left" } }}>
-                  <thead>
-                    <tr><th>Código</th><th>Nombre</th><th>Tasa %</th><th>Recargo %</th></tr>
-                  </thead>
-                  <tbody>
-                    {(taxRates.data as any[]).map((t: any) => (
-                      <tr key={t.code}>
-                        <td>{t.code}</td>
-                        <td>{t.name}</td>
-                        <td>{t.rate}%</td>
-                        <td>{t.surchargeRate ?? 0}%</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </Box>
+                <zentto-grid
+        grid-id={TAX_RATES_GRID_ID}
+        ref={gridRef}
+        height="400px"
+        enable-header-menu
+        enable-clipboard
+        enable-quick-search
+        enable-context-menu
+        enable-status-bar
+        enable-configurator
+      ></zentto-grid>
               </Paper>
             )}
 
@@ -162,19 +208,19 @@ export default function FiscalConfigPage() {
                     <Stack direction="row" spacing={2}>
                       <TextField
                         label="Marca"
-                        size="small"
+                       
                         value={form.printerBrand ?? ""}
                         onChange={(e) => update("printerBrand", e.target.value)}
                       />
                       <TextField
                         label="Puerto"
-                        size="small"
+                       
                         value={form.printerPort ?? ""}
                         onChange={(e) => update("printerPort", e.target.value)}
                       />
                       <TextField
                         label="RIF Emisor"
-                        size="small"
+                       
                         value={form.senderRIF ?? ""}
                         onChange={(e) => update("senderRIF", e.target.value)}
                       />
@@ -199,7 +245,7 @@ export default function FiscalConfigPage() {
                         <TextField
                           label="Modo"
                           select
-                          size="small"
+                         
                           sx={{ width: 150 }}
                           value={form.verifactuMode ?? "manual"}
                           onChange={(e) => update("verifactuMode", e.target.value)}
@@ -209,13 +255,13 @@ export default function FiscalConfigPage() {
                         </TextField>
                         <TextField
                           label="NIF Emisor"
-                          size="small"
+                         
                           value={form.senderNIF ?? ""}
                           onChange={(e) => update("senderNIF", e.target.value)}
                         />
                         <TextField
                           label="Endpoint AEAT"
-                          size="small"
+                         
                           sx={{ flex: 1 }}
                           value={form.aeatEndpoint ?? ""}
                           onChange={(e) => update("aeatEndpoint", e.target.value)}
@@ -224,14 +270,14 @@ export default function FiscalConfigPage() {
                       <Stack direction="row" spacing={2}>
                         <TextField
                           label="Ruta Certificado"
-                          size="small"
+                         
                           sx={{ flex: 1 }}
                           value={form.certificatePath ?? ""}
                           onChange={(e) => update("certificatePath", e.target.value)}
                         />
                         <TextField
                           label="Password Certificado"
-                          size="small"
+                         
                           type="password"
                           value={form.certificatePassword ?? ""}
                           onChange={(e) => update("certificatePassword", e.target.value)}
@@ -247,9 +293,9 @@ export default function FiscalConfigPage() {
             <Paper variant="outlined" sx={{ p: 3 }}>
               <Typography variant="subtitle1" fontWeight={600} mb={2}>Información del Software</Typography>
               <Stack direction="row" spacing={2}>
-                <TextField label="ID Software" size="small" value={form.softwareId ?? ""} onChange={(e) => update("softwareId", e.target.value)} />
-                <TextField label="Nombre Software" size="small" value={form.softwareName ?? ""} onChange={(e) => update("softwareName", e.target.value)} />
-                <TextField label="Versión" size="small" value={form.softwareVersion ?? ""} onChange={(e) => update("softwareVersion", e.target.value)} />
+                <TextField label="ID Software" value={form.softwareId ?? ""} onChange={(e) => update("softwareId", e.target.value)} />
+                <TextField label="Nombre Software" value={form.softwareName ?? ""} onChange={(e) => update("softwareName", e.target.value)} />
+                <TextField label="Versión" value={form.softwareVersion ?? ""} onChange={(e) => update("softwareVersion", e.target.value)} />
               </Stack>
             </Paper>
           </Stack>
@@ -257,4 +303,12 @@ export default function FiscalConfigPage() {
       </Box>
     </Box>
   );
+}
+
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'zentto-grid': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & Record<string, any>, HTMLElement>;
+    }
+  }
 }

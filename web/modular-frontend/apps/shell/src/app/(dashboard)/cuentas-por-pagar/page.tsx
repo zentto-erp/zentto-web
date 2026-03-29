@@ -1,7 +1,7 @@
 "use client";
 
-import { CxpMasterPage } from "@zentto/module-admin";
+import { CuentasPorPagarTable } from "@zentto/module-compras";
 
 export default function CuentasPorPagarPage() {
-  return <CxpMasterPage />;
+  return <CuentasPorPagarTable />;
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   Box,
   Paper,
@@ -15,8 +16,10 @@ import {
   TableCell,
   TableHead,
   TableRow,
+  Divider,
 } from "@mui/material";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import ListAltIcon from "@mui/icons-material/ListAlt";
 import { CustomStepper, type StepDef } from "@zentto/shared-ui";
 import { formatCurrency } from "@zentto/shared-api";
 import {
@@ -25,12 +28,13 @@ import {
 } from "../hooks/useActivosFijos";
 
 const steps: StepDef[] = [
-  { label: "Seleccionar Periodo" },
-  { label: "Vista Previa" },
+  { label: "Seleccionar periodo" },
+  { label: "Vista previa" },
   { label: "Confirmar" },
 ];
 
 export default function DepreciacionWizard() {
+  const router = useRouter();
   const [activeStep, setActiveStep] = useState(0);
   const [periodo, setPeriodo] = useState("");
   const [costCenterCode, setCostCenterCode] = useState("");
@@ -82,7 +86,7 @@ export default function DepreciacionWizard() {
             <Typography variant="h6">Seleccione el periodo a depreciar</Typography>
             <TextField
               label="Periodo (YYYY-MM)"
-              size="small"
+             
               placeholder="2026-03"
               value={periodo}
               onChange={(e) => setPeriodo(e.target.value)}
@@ -90,7 +94,7 @@ export default function DepreciacionWizard() {
             />
             <TextField
               label="Centro de Costo (opcional)"
-              size="small"
+             
               value={costCenterCode}
               onChange={(e) => setCostCenterCode(e.target.value)}
             />
@@ -101,7 +105,7 @@ export default function DepreciacionWizard() {
                 disabled={!periodo || previewMutation.isPending}
                 startIcon={previewMutation.isPending ? <CircularProgress size={16} /> : undefined}
               >
-                Vista Previa
+                Vista previa
               </Button>
             </Box>
           </Stack>
@@ -111,7 +115,7 @@ export default function DepreciacionWizard() {
         {activeStep === 1 && (
           <Box>
             <Typography variant="h6" mb={2}>
-              Vista Previa - {previewRows.length} activo(s) a depreciar
+              Vista previa - {previewRows.length} activo(s) a depreciar
             </Typography>
 
             {previewRows.length === 0 ? (
@@ -153,7 +157,7 @@ export default function DepreciacionWizard() {
                     disabled={calcularMutation.isPending}
                     startIcon={calcularMutation.isPending ? <CircularProgress size={16} /> : undefined}
                   >
-                    Generar Depreciacion
+                    Generar depreciación
                   </Button>
                 </Stack>
               </>
@@ -163,22 +167,66 @@ export default function DepreciacionWizard() {
 
         {/* Paso 3: Confirmacion */}
         {activeStep === 2 && (
-          <Box textAlign="center" py={4}>
-            <CheckCircleIcon sx={{ fontSize: 64, color: "success.main", mb: 2 }} />
-            <Typography variant="h6" gutterBottom>
-              Depreciacion generada exitosamente
-            </Typography>
-            <Typography variant="body1" color="text.secondary" mb={1}>
-              Periodo: <strong>{periodo}</strong>
-            </Typography>
-            {result?.entriesGenerated != null && (
-              <Typography variant="body1" color="text.secondary" mb={3}>
-                Asientos generados: <strong>{result.entriesGenerated}</strong>
+          <Box py={4}>
+            <Box textAlign="center" mb={3}>
+              <CheckCircleIcon sx={{ fontSize: 64, color: "success.main", mb: 2 }} />
+              <Typography variant="h6" gutterBottom>
+                Depreciacion generada exitosamente
               </Typography>
+              <Typography variant="body1" color="text.secondary" mb={1}>
+                Periodo: <strong>{periodo}</strong>
+              </Typography>
+              {result?.entriesGenerated != null && (
+                <Typography variant="body1" color="text.secondary">
+                  Asientos generados: <strong>{result.entriesGenerated}</strong>
+                </Typography>
+              )}
+            </Box>
+
+            {previewRows.length > 0 && (
+              <>
+                <Divider sx={{ mb: 2 }} />
+                <Typography variant="subtitle2" color="text.secondary" mb={1}>
+                  Detalle procesado
+                </Typography>
+                <Table size="small">
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Codigo</TableCell>
+                      <TableCell>Descripcion</TableCell>
+                      <TableCell align="right">Dep. Periodo</TableCell>
+                      <TableCell align="right">Dep. Acumulada</TableCell>
+                      <TableCell align="right">Valor en Libros</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {previewRows.map((row: any, idx: number) => (
+                      <TableRow key={row.AssetId ?? idx}>
+                        <TableCell>{row.AssetCode ?? row.AssetId}</TableCell>
+                        <TableCell>{row.Description ?? "-"}</TableCell>
+                        <TableCell align="right">{formatCurrency(row.Amount)}</TableCell>
+                        <TableCell align="right">{formatCurrency(row.AccumulatedDepreciation)}</TableCell>
+                        <TableCell align="right">{formatCurrency(row.BookValue)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+                <Divider sx={{ mt: 2 }} />
+              </>
             )}
-            <Button variant="contained" onClick={handleReset}>
-              Nuevo Calculo
-            </Button>
+
+            <Stack direction="row" spacing={2} justifyContent="center" mt={3}>
+              <Button variant="outlined" onClick={handleReset}>
+                Nuevo cálculo
+              </Button>
+              <Button
+                variant="contained"
+                startIcon={<ListAltIcon />}
+                onClick={() => router.push("/contabilidad/activos-fijos")}
+              >
+                Ver activos fijos
+              </Button>
+            </Stack>
           </Box>
         )}
       </Paper>

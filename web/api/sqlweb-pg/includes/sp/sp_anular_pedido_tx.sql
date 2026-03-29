@@ -4,6 +4,7 @@
 -- Traducido de SQL Server a PostgreSQL
 -- =============================================
 
+DROP FUNCTION IF EXISTS sp_anular_pedido_tx(VARCHAR(60), VARCHAR(60), VARCHAR(500)) CASCADE;
 CREATE OR REPLACE FUNCTION sp_anular_pedido_tx(
     p_num_pedido  VARCHAR(60),
     p_cod_usuario VARCHAR(60) DEFAULT 'API',
@@ -32,7 +33,7 @@ BEGIN
 
     UPDATE "Pedidos" SET
         "ANULADA" = TRUE,
-        "OBSERV" = COALESCE("OBSERV", '') || ' [ANULADO: ' || TO_CHAR(v_fecha_anulacion, 'YYYY-MM-DD HH24:MI:SS') || ']'
+        "OBSERV" = COALESCE("OBSERV",''::VARCHAR) || ' [ANULADO: ' || TO_CHAR(v_fecha_anulacion, 'YYYY-MM-DD HH24:MI:SS') || ']'
     WHERE "NUM_FACT" = p_num_pedido;
 
     UPDATE "Detalle_Pedidos" SET "ANULADA" = TRUE WHERE "NUM_FACT" = p_num_pedido;

@@ -5,6 +5,7 @@ import { useSession, signIn, signOut } from "next-auth/react";
 import type { UserPermisos } from "./roles";
 import { getDefaultPermisos, hasModuleAccess, getEffectiveModules } from "./roles";
 import type { SystemModule } from "./roles";
+import { appAwareSignOut, buildLoginCallbackUrl } from "./auth-client";
 
 export type AuthContextType = {
   isAdmin: boolean;
@@ -59,12 +60,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const msRemaining = expiresAt - Date.now();
     if (msRemaining <= 0) {
-      void signOut({ callbackUrl: "/authentication/login" });
+      void appAwareSignOut({ callbackUrl: buildLoginCallbackUrl() });
       return;
     }
 
     const timeout = window.setTimeout(() => {
-      void signOut({ callbackUrl: "/authentication/login" });
+      void appAwareSignOut({ callbackUrl: buildLoginCallbackUrl() });
     }, msRemaining);
 
     return () => window.clearTimeout(timeout);
@@ -112,6 +113,11 @@ export function useAuth() {
   const ctx = useContext(AuthContext);
   if (!ctx) throw new Error("useAuth must be used within AuthProvider");
   return ctx;
+}
+
+/** Like useAuth but returns null instead of throwing when outside AuthProvider */
+export function useAuthOptional(): AuthContextType | null {
+  return useContext(AuthContext) ?? null;
 }
 
 export default AuthContext;

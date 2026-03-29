@@ -6,6 +6,23 @@ import { signOut } from 'next-auth/react';
 const RAW_API_BASE = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE || "http://localhost:4000";
 export const API_BASE = RAW_API_BASE.replace(/\/+$/, '');
 
+// La auth siempre la gestiona el shell en /api/auth.
+// No usar prefijo de app: compras/bancos van al shell (puerto 3000) vía nginx,
+// el shell no tiene /compras/api/auth. Sub-apps con nginx propio proxean al shell.
+async function fetchSessionFromCurrentApp() {
+  if (typeof window === 'undefined') {
+    return getSession();
+  }
+  // Siempre llamar al shell directamente en /api/auth/session
+  const response = await fetch(`${window.location.origin}/api/auth/session`, {
+    credentials: 'include',
+    headers: { Accept: 'application/json' },
+    cache: 'no-store',
+  });
+  if (!response.ok) return null;
+  return response.json();
+}
+
 export function resolveAssetUrl(url?: unknown): string | undefined {
   if (typeof url !== 'string') return undefined;
   const value = url.trim();
@@ -19,7 +36,7 @@ export function resolveAssetUrl(url?: unknown): string | undefined {
 
 async function getAuthToken(): Promise<string | null> {
   try {
-    const session = await getSession();
+    const session = await fetchSessionFromCurrentApp();
     // @ts-ignore
     return session?.accessToken || null;
   } catch { return null; }
@@ -27,7 +44,7 @@ async function getAuthToken(): Promise<string | null> {
 
 async function authHeader(): Promise<Record<string, string>> {
   try {
-    const session = await getSession();
+    const session = await fetchSessionFromCurrentApp();
     const headers: Record<string, string> = {};
     // @ts-ignore
     const token = session?.accessToken as string | undefined;
@@ -61,6 +78,12 @@ async function authHeader(): Promise<Record<string, string>> {
       headers['x-country-code'] = countryCode;
     }
 
+    // Demo mode header
+    const dbMode = typeof window !== 'undefined' ? localStorage.getItem('zentto-db-mode') : null;
+    if (dbMode === 'demo') {
+      headers['x-db-mode'] = 'demo';
+    }
+
     return headers;
   } catch {
     const token = await getAuthToken();
@@ -69,11 +92,29 @@ async function authHeader(): Promise<Record<string, string>> {
 }
 
 async function handleUnauthorized(res: Response) {
-  if (res.status !== 401) return;
-  try {
-    await signOut({ callbackUrl: '/authentication/login' });
-  } catch {
-    // noop
+  if (res.status === 401) {
+    try {
+      const loginUrl = typeof window !== 'undefined'
+        ? `${window.location.origin}/authentication/login`
+        : '/authentication/login';
+      await signOut({ callbackUrl: loginUrl });
+    } catch {
+      // noop
+    }
+    return;
+  }
+  // Suscripción vencida → redirigir a página de renovación
+  if (res.status === 403) {
+    try {
+      const data = await res.clone().json();
+      if (data?.error === 'subscription_required') {
+        if (typeof window !== 'undefined' && !window.location.pathname.includes('subscription-expired')) {
+          window.location.href = '/subscription-expired';
+        }
+      }
+    } catch {
+      // noop
+    }
   }
 }
 

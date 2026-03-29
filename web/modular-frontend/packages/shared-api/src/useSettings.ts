@@ -14,7 +14,11 @@ export type SettingsModule =
   | 'pos'
   | 'restaurante'
   | 'facturacion'
-  | 'pagos';
+  | 'pagos'
+  | 'branding'
+  | 'flota'
+  | 'manufactura'
+  | 'logistica';
 
 /** All settings grouped by module */
 export type AllSettings = Record<string, Record<string, unknown>>;
@@ -52,11 +56,12 @@ export function useAllSettings(companyId = 1) {
 /**
  * Get settings for a single module.
  */
-export function useModuleSettings(mod: SettingsModule, companyId = 1) {
+export function useModuleSettings(mod: SettingsModule, companyId = 1, enabled = true) {
   return useQuery<Record<string, unknown>>({
     queryKey: [QK, mod, companyId],
     queryFn: () => apiGet(`${BASE}/${mod}?companyId=${companyId}`),
     staleTime: 60_000,
+    enabled,
   });
 }
 

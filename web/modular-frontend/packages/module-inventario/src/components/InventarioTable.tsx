@@ -20,6 +20,7 @@ import {
   Chip,
   InputAdornment,
   Typography,
+  Tooltip,
 } from "@mui/material";
 import { Add as AddIcon, Visibility as ViewIcon, Search as SearchIcon } from "@mui/icons-material";
 import { useInventarioList } from "../hooks/useInventario";
@@ -73,13 +74,21 @@ export default function InventarioTable() {
       {/* Header */}
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
         <Typography variant="h5" fontWeight={600}>Inventario</Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => router.push("/ajuste")}
-        >
-          Ajuste de Inventario
-        </Button>
+        <Box sx={{ display: "flex", gap: 1 }}>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => router.push("/inventario/articulos/new")}
+          >
+            Nuevo Artículo
+          </Button>
+          <Button
+            variant="outlined"
+            onClick={() => router.push("/ajuste")}
+          >
+            Ajuste de Inventario
+          </Button>
+        </Box>
       </Box>
 
       {/* Search */}
@@ -88,7 +97,7 @@ export default function InventarioTable() {
         defaultValue=""
         onChange={handleSearchChange}
         fullWidth
-        size="small"
+       
         sx={{ mb: 2 }}
         InputProps={{
           startAdornment: (
@@ -156,13 +165,14 @@ export default function InventarioTable() {
                       />
                     </TableCell>
                     <TableCell align="center">
-                      <IconButton
-                        size="small"
-                        onClick={() => router.push(`/articulos/${codigo}`)}
-                        title="Ver detalle"
-                      >
-                        <ViewIcon fontSize="small" />
-                      </IconButton>
+                      <Tooltip title="Ver detalle">
+                        <IconButton
+                          size="small"
+                          onClick={() => router.push(`/articulos/${codigo}`)}
+                        >
+                          <ViewIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
                     </TableCell>
                   </TableRow>
                 );

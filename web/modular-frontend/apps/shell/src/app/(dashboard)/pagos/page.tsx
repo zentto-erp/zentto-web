@@ -1,11 +1,7 @@
-// app/(dashboard)/pagos/page.tsx
-import { PagosTable } from "@zentto/module-admin";
+"use client";
 
-export const metadata = {
-  title: "Pagos | Zentto",
-  description: "Registro de pagos",
-};
+import { PagoTxForm } from "@zentto/module-compras";
 
 export default function PagosPage() {
-  return <PagosTable />;
+  return <PagoTxForm />;
 }

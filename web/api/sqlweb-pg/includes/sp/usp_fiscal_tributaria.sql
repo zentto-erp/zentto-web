@@ -29,6 +29,7 @@
 --    Genera (o regenera) las entradas del libro fiscal para un periodo dado,
 --    a partir de los documentos de venta o compra segun p_book_type.
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_Fiscal_TaxBook_Populate(INTEGER, VARCHAR(10), VARCHAR(7), VARCHAR(2), VARCHAR(40), INTEGER, TEXT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Fiscal_TaxBook_Populate(
     p_company_id   INTEGER,
     p_book_type    VARCHAR(10),
@@ -67,7 +68,7 @@ BEGIN
           AND "CountryCode" = p_country_code;
 
         IF p_book_type = 'SALES' THEN
-            -- Fuente: dbo.DocumentosVenta
+            -- Fuente canonical: ar."SalesDocument"
             INSERT INTO fiscal."TaxBookEntry" (
                 "CompanyId", "BookType", "PeriodCode", "EntryDate",
                 "DocumentNumber", "DocumentType", "ControlNumber",
@@ -80,36 +81,38 @@ BEGIN
                 p_company_id,
                 'SALES',
                 p_period_code,
-                v."FECHA",
-                v."NUM_DOC",
-                CASE v."SERIALTIPO"
-                    WHEN 'FAC' THEN 'FACTURA'
-                    WHEN 'NC'  THEN 'NOTA_CREDITO'
-                    WHEN 'ND'  THEN 'NOTA_DEBITO'
-                    ELSE v."SERIALTIPO"
+                v."DocumentDate"::DATE,
+                v."DocumentNumber",
+                CASE v."SerialType"
+                    WHEN 'FAC'   THEN 'FACTURA'
+                    WHEN 'NC'    THEN 'NOTA_CREDITO'
+                    WHEN 'ND'    THEN 'NOTA_DEBITO'
+                    WHEN 'FACT'  THEN 'FACTURA'
+                    ELSE COALESCE(v."SerialType", 'FACTURA')
                 END,
-                v."NUM_CONTROL",
-                v."RIF",
-                v."NOMBRE",
-                COALESCE(v."MONTO_GRA", 0),
-                COALESCE(v."MONTO_EXE", 0),
-                COALESCE(v."ALICUOTA", 0),
-                COALESCE(v."IVA", 0),
+                v."ControlNumber",
+                v."FiscalId",
+                v."CustomerName",
+                COALESCE(v."TaxableAmount", 0),
+                COALESCE(v."ExemptAmount",  0),
+                COALESCE(v."TaxRate",       0),
+                COALESCE(v."TaxAmount",     0),
                 0,
                 0,
-                COALESCE(v."TOTAL", 0),
-                v."ID",
+                COALESCE(v."TotalAmount",   0),
+                v."DocumentId",
                 'AR',
                 p_country_code,
                 (NOW() AT TIME ZONE 'UTC')
-            FROM dbo."DocumentosVenta" v
-            WHERE v."FECHA" BETWEEN v_period_start AND v_period_end
-              AND v."ANULADA" = 0;
+            FROM ar."SalesDocument" v
+            WHERE v."DocumentDate"::DATE BETWEEN v_period_start AND v_period_end
+              AND v."IsVoided"  = FALSE
+              AND v."IsDeleted" = FALSE;
 
             GET DIAGNOSTICS v_rows_inserted = ROW_COUNT;
 
         ELSIF p_book_type = 'PURCHASE' THEN
-            -- Fuente: dbo.DocumentosCompra
+            -- Fuente canonical: ap."PurchaseDocument"
             INSERT INTO fiscal."TaxBookEntry" (
                 "CompanyId", "BookType", "PeriodCode", "EntryDate",
                 "DocumentNumber", "DocumentType", "ControlNumber",
@@ -122,31 +125,33 @@ BEGIN
                 p_company_id,
                 'PURCHASE',
                 p_period_code,
-                c."FECHA",
-                c."NUM_DOC",
-                CASE c."SERIALTIPO"
-                    WHEN 'FAC' THEN 'FACTURA'
-                    WHEN 'NC'  THEN 'NOTA_CREDITO'
-                    WHEN 'ND'  THEN 'NOTA_DEBITO'
-                    ELSE c."SERIALTIPO"
+                c."DocumentDate"::DATE,
+                c."DocumentNumber",
+                CASE c."SerialType"
+                    WHEN 'FAC'    THEN 'FACTURA'
+                    WHEN 'NC'     THEN 'NOTA_CREDITO'
+                    WHEN 'ND'     THEN 'NOTA_DEBITO'
+                    WHEN 'COMPRA' THEN 'FACTURA'
+                    ELSE COALESCE(c."SerialType", 'FACTURA')
                 END,
-                c."NUM_CONTROL",
-                c."RIF",
-                c."NOMBRE",
-                COALESCE(c."MONTO_GRA", 0),
-                COALESCE(c."MONTO_EXE", 0),
-                COALESCE(c."ALICUOTA", 0),
-                COALESCE(c."IVA", 0),
-                0,
-                0,
-                COALESCE(c."TOTAL", 0),
-                c."ID",
+                c."ControlNumber",
+                c."FiscalId",
+                c."SupplierName",
+                COALESCE(c."TaxableAmount",  0),
+                COALESCE(c."ExemptAmount",   0),
+                COALESCE(c."TaxRate",        0),
+                COALESCE(c."TaxAmount",      0),
+                COALESCE(c."RetentionRate",  0),
+                COALESCE(c."RetainedTax",    0),
+                COALESCE(c."TotalAmount",    0),
+                c."DocumentId",
                 'AP',
                 p_country_code,
                 (NOW() AT TIME ZONE 'UTC')
-            FROM dbo."DocumentosCompra" c
-            WHERE c."FECHA" BETWEEN v_period_start AND v_period_end
-              AND c."ANULADA" = 0;
+            FROM ap."PurchaseDocument" c
+            WHERE c."DocumentDate"::DATE BETWEEN v_period_start AND v_period_end
+              AND c."IsVoided"  = FALSE
+              AND c."IsDeleted" = FALSE;
 
             GET DIAGNOSTICS v_rows_inserted = ROW_COUNT;
         END IF;
@@ -164,6 +169,7 @@ $$;
 -- 2. usp_Fiscal_TaxBook_List
 --    Listado paginado de entradas del libro fiscal.
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_Fiscal_TaxBook_List(INTEGER, VARCHAR(10), VARCHAR(7), VARCHAR(2), INTEGER, INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Fiscal_TaxBook_List(
     p_company_id   INTEGER,
     p_book_type    VARCHAR(10),
@@ -227,6 +233,7 @@ $$;
 -- 3. usp_Fiscal_TaxBook_Summary
 --    Resumen del libro fiscal agrupado por tasa impositiva.
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_Fiscal_TaxBook_Summary(INTEGER, VARCHAR(10), VARCHAR(7), VARCHAR(2)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Fiscal_TaxBook_Summary(
     p_company_id   INTEGER,
     p_book_type    VARCHAR(10),
@@ -267,6 +274,7 @@ $$;
 -- 4. usp_Fiscal_Declaration_Calculate
 --    Calcula una declaracion de impuestos (IVA/MODELO_303 o ISLR/IRPF).
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_Fiscal_Declaration_Calculate(INTEGER, VARCHAR(30), VARCHAR(7), VARCHAR(2), VARCHAR(40), BIGINT, INTEGER, TEXT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Fiscal_Declaration_Calculate(
     p_company_id       INTEGER,
     p_declaration_type VARCHAR(30),
@@ -404,6 +412,7 @@ $$;
 -- 5. usp_Fiscal_Declaration_List
 --    Listado paginado de declaraciones fiscales.
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_Fiscal_Declaration_List(INTEGER, VARCHAR(30), INTEGER, VARCHAR(20), INTEGER, INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Fiscal_Declaration_List(
     p_company_id       INTEGER,
     p_declaration_type VARCHAR(30) DEFAULT NULL,
@@ -475,6 +484,7 @@ $$;
 -- 6. usp_Fiscal_Declaration_Get
 --    Obtiene el detalle completo de una declaracion fiscal por su ID.
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_Fiscal_Declaration_Get(INTEGER, BIGINT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Fiscal_Declaration_Get(
     p_company_id     INTEGER,
     p_declaration_id BIGINT
@@ -533,6 +543,7 @@ $$;
 -- 7. usp_Fiscal_Declaration_Submit
 --    Marca una declaracion como presentada (SUBMITTED).
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_Fiscal_Declaration_Submit(INTEGER, BIGINT, VARCHAR(40), TEXT, INTEGER, TEXT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Fiscal_Declaration_Submit(
     p_company_id     INTEGER,
     p_declaration_id BIGINT,
@@ -582,6 +593,7 @@ $$;
 -- 8. usp_Fiscal_Declaration_Amend
 --    Marca una declaracion como enmendada (AMENDED).
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_Fiscal_Declaration_Amend(INTEGER, BIGINT, VARCHAR(40), INTEGER, TEXT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Fiscal_Declaration_Amend(
     p_company_id     INTEGER,
     p_declaration_id BIGINT,
@@ -629,6 +641,7 @@ $$;
 -- 9. usp_Fiscal_Withholding_Generate
 --    Genera un comprobante de retencion a partir de un documento de compra.
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_Fiscal_Withholding_Generate(INTEGER, BIGINT, VARCHAR(20), VARCHAR(2), VARCHAR(40), BIGINT, INTEGER, TEXT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Fiscal_Withholding_Generate(
     p_company_id       INTEGER,
     p_document_id      BIGINT,
@@ -696,7 +709,7 @@ BEGIN
           AND "CountryCode"    = p_country_code;
 
         v_voucher_number := p_withholding_type || '-'
-                          || REPLACE(v_period_code, '-', '') || '-'
+                          || REPLACE(v_period_code, '-',''::VARCHAR) || '-'
                           || LPAD(v_next_seq::TEXT, 4, '0');
 
         INSERT INTO fiscal."WithholdingVoucher" (
@@ -730,6 +743,7 @@ $$;
 -- 10. usp_Fiscal_Withholding_List
 --     Listado paginado de comprobantes de retencion.
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_Fiscal_Withholding_List(INTEGER, VARCHAR(20), VARCHAR(7), VARCHAR(2), INTEGER, INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Fiscal_Withholding_List(
     p_company_id       INTEGER,
     p_withholding_type VARCHAR(20) DEFAULT NULL,
@@ -788,6 +802,7 @@ $$;
 -- 11. usp_Fiscal_Withholding_Get
 --     Obtiene el detalle completo de un comprobante de retencion por su ID.
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_Fiscal_Withholding_Get(INTEGER, BIGINT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Fiscal_Withholding_Get(
     p_company_id INTEGER,
     p_voucher_id BIGINT
@@ -833,6 +848,7 @@ $$;
 -- 12. usp_Fiscal_Export_TaxBook
 --     Exporta todas las entradas del libro fiscal para un periodo dado.
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_Fiscal_Export_TaxBook(INTEGER, VARCHAR(10), VARCHAR(7), VARCHAR(2)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Fiscal_Export_TaxBook(
     p_company_id   INTEGER,
     p_book_type    VARCHAR(10),
@@ -887,6 +903,7 @@ $$;
 -- 13. usp_Fiscal_Export_Declaration
 --     Exporta el detalle completo de una declaracion para presentacion o archivo.
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_Fiscal_Export_Declaration(INTEGER, BIGINT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Fiscal_Export_Declaration(
     p_company_id     INTEGER,
     p_declaration_id BIGINT

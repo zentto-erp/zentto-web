@@ -1,240 +1,188 @@
 // components/CuentasPorPagarTable.tsx
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   Box,
-  Button,
-  TextField,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TablePagination,
-  Paper,
   CircularProgress,
-  IconButton,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Chip,
-  InputAdornment,
-  Typography,
 } from "@mui/material";
-import { Add as AddIcon, Delete as DeleteIcon, Visibility as ViewIcon, Search as SearchIcon } from "@mui/icons-material";
+import { DeleteDialog } from "@zentto/shared-ui";
+import type { ColumnDef, GridRow } from "@zentto/datagrid-core";
+import { useGridLayoutSync } from "@zentto/shared-api";
 import { useCuentasPorPagarList, useDeleteCuentaPorPagar } from "../hooks/useCuentasPorPagar";
-import { formatCurrency, formatDate } from "@zentto/shared-api";
-import { useTimezone } from "@zentto/shared-auth";
-import { debounce } from "lodash";
+
+
+const COLUMNS: ColumnDef[] = [
+  { field: "nombreProveedor", header: "Proveedor", flex: 1, minWidth: 180, sortable: true, groupable: true },
+  { field: "numeroReferencia", header: "Num Ref", width: 130, sortable: true },
+  { field: "fechaCreacion", header: "Fecha", width: 130, type: "date", sortable: true },
+  { field: "fechaVencimiento", header: "Vencimiento", width: 130, type: "date", sortable: true },
+  { field: "montoTotal", header: "Monto", width: 130, type: "number", currency: "VES", sortable: true },
+  { field: "saldo", header: "Saldo", width: 130, type: "number", currency: "VES", aggregation: "sum", sortable: true },
+  { field: "diasVencidos", header: "Dias Vencidos", width: 130, type: "number", sortable: true },
+  {
+    field: "estado",
+    header: "Estado",
+    width: 130,
+    sortable: true,
+    groupable: true,
+    statusColors: {
+      Pagada: "success",
+      Pendiente: "warning",
+      Vencida: "error",
+      Parcial: "info",
+    },
+    statusVariant: "outlined",
+  },
+  {
+    field: "actions",
+    header: "Acciones",
+    type: "actions",
+    width: 130,
+    pin: "right",
+    actions: [
+      { icon: "view", label: "Ver", action: "view" },
+      { icon: "edit", label: "Editar", action: "edit", color: "#e67e22" },
+      { icon: "delete", label: "Eliminar", action: "delete", color: "#dc2626" },
+    ],
+  },
+];
+
+const GRID_ID = "module-compras:cuentas-por-pagar:list";
 
 export default function CuentasPorPagarTable() {
   const router = useRouter();
-  const { timeZone } = useTimezone();
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [search, setSearch] = useState("");
+  const gridRef = useRef<any>(null);
+  const [registered, setRegistered] = useState(false);
+  const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 50 });
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [selectedCuenta, setSelectedCuenta] = useState<string | null>(null);
+  const [selectedCuenta, setSelectedCuenta] = useState<Record<string, unknown> | null>(null);
 
   const { data: cuentas, isLoading } = useCuentasPorPagarList({
-    search,
-    page: page + 1,
-    limit: rowsPerPage,
+    page: paginationModel.page + 1,
+    limit: paginationModel.pageSize,
   });
 
   const { mutate: deleteCuenta, isPending: isDeleting } = useDeleteCuentaPorPagar();
-
-  const debouncedSearch = useCallback(
-    debounce((value: string) => {
-      setSearch(value);
-      setPage(0);
-    }, 500),
-    []
-  );
-
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    debouncedSearch(e.target.value);
-  };
-
-  const handlePageChange = (_: unknown, newPage: number) => {
-    setPage(newPage);
-  };
-
-  const handleRowsPerPageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setRowsPerPage(parseInt(e.target.value, 10));
-    setPage(0);
-  };
-
-  const handleDeleteClick = (id: string) => {
-    setSelectedCuenta(id);
-    setDeleteDialogOpen(true);
-  };
+  const { ready: layoutReady } = useGridLayoutSync(GRID_ID);
 
   const handleConfirmDelete = () => {
     if (selectedCuenta) {
-      deleteCuenta(selectedCuenta, {
+      deleteCuenta(String(selectedCuenta.id), {
         onSuccess: () => {
           setDeleteDialogOpen(false);
           setSelectedCuenta(null);
         },
-        onError: (err) => {
-          console.error("Error deleting:", err);
-          alert("Error al eliminar la cuenta");
-        }
       });
     }
   };
 
-  const getStatusColor = (estado: string): "success" | "warning" | "error" | "default" => {
-    const colorMap: Record<string, "success" | "warning" | "error" | "default"> = {
-      "Pagada": "success",
-      "Pendiente": "warning",
-      "Vencida": "error",
-      "Parcial": "warning",
+  const rawRows = (cuentas?.data ?? []) as Record<string, unknown>[];
+
+  const rows: GridRow[] = rawRows.map((r) => {
+    const vencimiento = r.fechaVencimiento ? new Date(String(r.fechaVencimiento)) : null;
+    const estado = String(r.estado ?? "");
+    let diasVencidos = 0;
+    if (vencimiento && estado !== "Pagada") {
+      const diff = Math.floor((Date.now() - vencimiento.getTime()) / (1000 * 60 * 60 * 24));
+      if (diff > 0) diasVencidos = diff;
+    }
+    return {
+      id: r.id ?? r.numeroReferencia ?? Math.random(),
+      ...r,
+      diasVencidos,
     };
-    return colorMap[estado] || "default";
-  };
+  });
+
+  useEffect(() => {
+    if (!layoutReady) return;
+    import("@zentto/datagrid").then(() => setRegistered(true));
+  }, [layoutReady]);
+
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+    el.columns = COLUMNS;
+    el.rows = rows;
+    el.loading = isLoading;
+  }, [rows, isLoading, registered]);
+
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+    const actionHandler = (e: CustomEvent) => {
+      const { action, row } = e.detail;
+      if (action === "view") {
+        router.push(`/cuentas-por-pagar/${row.id}`);
+      } else if (action === "edit") {
+        router.push(`/cuentas-por-pagar/${row.id}/edit`);
+      } else if (action === "delete") {
+        setSelectedCuenta(row);
+        setDeleteDialogOpen(true);
+      }
+    };
+    const createHandler = () => router.push("/cuentas-por-pagar/new");
+    el.addEventListener("action-click", actionHandler);
+    el.addEventListener("create-click", createHandler);
+    return () => {
+      el.removeEventListener("action-click", actionHandler);
+      el.removeEventListener("create-click", createHandler);
+    };
+  }, [registered, router]);
 
   return (
-    <Box sx={{ p: 2 }}>
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
-        <Typography variant="h5" fontWeight={600}>Cuentas por Pagar</Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => router.push("/cuentas-por-pagar/new")}
-        >
-          Nueva Cuenta
-        </Button>
-      </Box>
-
-      <TextField
-        placeholder="Buscar por proveedor, numero o referencia..."
-        defaultValue=""
-        onChange={handleSearchChange}
-        fullWidth
-        size="small"
-        sx={{ mb: 2 }}
-        InputProps={{
-          startAdornment: (
-            <InputAdornment position="start">
-              <SearchIcon fontSize="small" />
-            </InputAdornment>
-          ),
-        }}
-      />
-
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow sx={{ backgroundColor: "#f5f5f5" }}>
-              <TableCell sx={{ fontWeight: 600 }}>Proveedor</TableCell>
-              <TableCell sx={{ fontWeight: 600 }}>Numero Ref.</TableCell>
-              <TableCell sx={{ fontWeight: 600 }}>Fecha</TableCell>
-              <TableCell sx={{ fontWeight: 600 }}>Vencimiento</TableCell>
-              <TableCell align="right" sx={{ fontWeight: 600 }}>
-                Monto
-              </TableCell>
-              <TableCell align="right" sx={{ fontWeight: 600 }}>
-                Saldo
-              </TableCell>
-              <TableCell sx={{ fontWeight: 600 }}>Estado</TableCell>
-              <TableCell align="center" sx={{ fontWeight: 600 }}>
-                Acciones
-              </TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={8} align="center" sx={{ py: 4 }}>
-                  <CircularProgress size={40} />
-                </TableCell>
-              </TableRow>
-            ) : !cuentas?.data || cuentas.data.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={8} align="center" sx={{ py: 4, color: "text.secondary" }}>
-                  No hay cuentas por pagar
-                </TableCell>
-              </TableRow>
-            ) : (
-              cuentas.data.map((cuenta) => (
-                <TableRow key={cuenta.id} hover>
-                  <TableCell sx={{ fontWeight: 500 }}>{cuenta.nombreProveedor}</TableCell>
-                  <TableCell>{cuenta.numeroReferencia}</TableCell>
-                  <TableCell>{formatDate(cuenta.fechaCreacion, { timeZone })}</TableCell>
-                  <TableCell>{formatDate(cuenta.fechaVencimiento, { timeZone })}</TableCell>
-                  <TableCell align="right">{formatCurrency(cuenta.montoTotal)}</TableCell>
-                  <TableCell align="right" sx={{ color: cuenta.saldo > 0 ? "error.main" : "success.main" }}>
-                    {formatCurrency(cuenta.saldo)}
-                  </TableCell>
-                  <TableCell>
-                    <Chip
-                      label={cuenta.estado}
-                      size="small"
-                      color={getStatusColor(cuenta.estado)}
-                      variant="outlined"
-                    />
-                  </TableCell>
-                  <TableCell align="center">
-                    <IconButton
-                      size="small"
-                      onClick={() => router.push(`/cuentas-por-pagar/${cuenta.id}`)}
-                      title="Ver"
-                    >
-                      <ViewIcon fontSize="small" />
-                    </IconButton>
-                    <IconButton
-                      size="small"
-                      color="error"
-                      onClick={() => handleDeleteClick(cuenta.id)}
-                      title="Eliminar"
-                    >
-                      <DeleteIcon fontSize="small" />
-                    </IconButton>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
-
-      {cuentas && cuentas.total > 0 && (
-        <TablePagination
-          rowsPerPageOptions={[5, 10, 25, 50]}
-          component="div"
-          count={cuentas.total}
-          rowsPerPage={rowsPerPage}
-          page={page}
-          onPageChange={handlePageChange}
-          onRowsPerPageChange={handleRowsPerPageChange}
-          labelRowsPerPage="Filas por pagina:"
-          labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count}`}
-        />
+    <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
+      {!layoutReady || !registered ? (
+        <Box sx={{ display: "flex", justifyContent: "center", py: 6 }}>
+          <CircularProgress />
+        </Box>
+      ) : (
+        <Box sx={{ flex: 1, minHeight: 0 }}>
+          <zentto-grid
+            ref={gridRef}
+            grid-id={GRID_ID}
+            default-currency="VES"
+            export-filename="cuentas-por-pagar"
+            height="calc(100vh - 200px)"
+            show-totals
+            enable-toolbar
+            enable-header-menu
+            enable-header-filters
+            enable-clipboard
+            enable-quick-search
+            enable-context-menu
+            enable-status-bar
+            enable-configurator
+            enable-grouping
+            enable-pivot
+            enable-create
+            create-label="Nueva Cuenta"
+          />
+        </Box>
       )}
 
-      <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
-        <DialogTitle>Eliminar Cuenta</DialogTitle>
-        <DialogContent>
-          Estas seguro de que deseas eliminar esta cuenta por pagar?
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeleteDialogOpen(false)}>Cancelar</Button>
-          <Button
-            onClick={handleConfirmDelete}
-            color="error"
-            variant="contained"
-            disabled={isDeleting}
-          >
-            {isDeleting ? "Eliminando..." : "Eliminar"}
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <DeleteDialog
+        open={deleteDialogOpen}
+        onClose={() => {
+          setDeleteDialogOpen(false);
+          setSelectedCuenta(null);
+        }}
+        onConfirm={handleConfirmDelete}
+        itemName={selectedCuenta ? `la cuenta ${selectedCuenta.numeroReferencia ?? ""}` : "esta cuenta por pagar"}
+        loading={isDeleting}
+      />
     </Box>
   );
+}
+
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      "zentto-grid": React.DetailedHTMLProps<
+        React.HTMLAttributes<HTMLElement> & Record<string, any>,
+        HTMLElement
+      >;
+    }
+  }
 }

@@ -1,15 +1,38 @@
 -- ============================================================
 -- DatqBoxWeb PostgreSQL - usp_doc_purchase.sql
--- Funciones de documentos de compra (doc.PurchaseDocument,
--- doc.PurchaseDocumentLine, doc.PurchaseDocumentPayment)
+-- Funciones de documentos de compra (ap.PurchaseDocument,
+-- ap.PurchaseDocumentLine, ap.PurchaseDocumentPayment)
 -- ============================================================
+
+-- =============================================================================
+-- 0. Nuclear cleanup de sobrecargas (DROP por OID â€” elimina TODAS las firmas)
+-- =============================================================================
+DO $$
+DECLARE r RECORD;
+BEGIN
+  FOR r IN
+    SELECT oid::regprocedure AS sig FROM pg_proc
+    WHERE proname IN (
+      'usp_doc_purchasedocument_list',
+      'usp_doc_purchasedocument_get',
+      'usp_doc_purchasedocument_getdetail',
+      'usp_doc_purchasedocument_getpayments',
+      'usp_doc_purchasedocument_getindicadores',
+      'usp_doc_purchasedocument_void',
+      'usp_doc_purchasedocument_receiveorder',
+      'usp_doc_purchasedocument_upsert',
+      'usp_doc_purchasedocument_convertorder'
+    )
+  LOOP
+    EXECUTE 'DROP FUNCTION IF EXISTS ' || r.sig || ' CASCADE';
+  END LOOP;
+END $$;
 
 -- =============================================================================
 -- 1. usp_Doc_PurchaseDocument_List
 -- Lista paginada de documentos de compra con filtros por tipo, busqueda,
 -- codigo de proveedor, y rango de fechas.
 -- =============================================================================
-DROP FUNCTION IF EXISTS usp_Doc_PurchaseDocument_List;
 CREATE OR REPLACE FUNCTION usp_Doc_PurchaseDocument_List(
     p_tipo_operacion  VARCHAR(20)  DEFAULT 'COMPRA',
     p_search          VARCHAR(100) DEFAULT NULL,
@@ -20,25 +43,25 @@ CREATE OR REPLACE FUNCTION usp_Doc_PurchaseDocument_List(
     p_limit           INT          DEFAULT 50
 )
 RETURNS TABLE (
-    "PurchaseDocumentId" BIGINT,
+    "DocumentId" INT,
     "DocumentNumber"     VARCHAR(60),
     "SerialType"         VARCHAR(60),
-    "DocumentType"       VARCHAR(20),
+    "OperationType"       VARCHAR(20),
     "SupplierCode"       VARCHAR(60),
     "SupplierName"       VARCHAR(255),
     "FiscalId"           VARCHAR(15),
-    "IssueDate"          TIMESTAMP,
+    "DocumentDate"          TIMESTAMP,
     "DueDate"            TIMESTAMP,
     "ReceiptDate"        TIMESTAMP,
     "PaymentDate"        TIMESTAMP,
     "DocumentTime"       VARCHAR(20),
-    "SubTotal"           DOUBLE PRECISION,
-    "TaxableAmount"      DOUBLE PRECISION,
-    "ExemptAmount"       DOUBLE PRECISION,
-    "TaxAmount"          DOUBLE PRECISION,
-    "TaxRate"            DOUBLE PRECISION,
-    "TotalAmount"        DOUBLE PRECISION,
-    "DiscountAmount"     DOUBLE PRECISION,
+    "SubTotal"           NUMERIC,
+    "TaxableAmount"      NUMERIC,
+    "ExemptAmount"       NUMERIC,
+    "TaxAmount"          NUMERIC,
+    "TaxRate"            NUMERIC,
+    "TotalAmount"        NUMERIC,
+    "DiscountAmount"     NUMERIC,
     "IsVoided"           BOOLEAN,
     "IsPaid"             VARCHAR(1),
     "IsReceived"         VARCHAR(1),
@@ -47,24 +70,24 @@ RETURNS TABLE (
     "ControlNumber"      VARCHAR(60),
     "VoucherNumber"      VARCHAR(50),
     "VoucherDate"        TIMESTAMP,
-    "RetainedTax"        DOUBLE PRECISION,
+    "RetainedTax"        NUMERIC,
     "IsrCode"            VARCHAR(50),
-    "IsrAmount"          DOUBLE PRECISION,
+    "IsrAmount"          NUMERIC,
     "IsrSubjectCode"     VARCHAR(50),
-    "IsrSubjectAmount"   DOUBLE PRECISION,
-    "RetentionRate"      DOUBLE PRECISION,
-    "ImportAmount"       DOUBLE PRECISION,
-    "ImportTax"          DOUBLE PRECISION,
-    "ImportBase"         DOUBLE PRECISION,
-    "FreightAmount"      DOUBLE PRECISION,
+    "IsrSubjectAmount"   NUMERIC,
+    "RetentionRate"      NUMERIC,
+    "ImportAmount"       NUMERIC,
+    "ImportTax"          NUMERIC,
+    "ImportBase"         NUMERIC,
+    "FreightAmount"      NUMERIC,
     "Notes"              VARCHAR(500),
     "Concept"            VARCHAR(255),
     "OrderNumber"        VARCHAR(20),
     "ReceivedBy"         VARCHAR(20),
     "WarehouseCode"      VARCHAR(50),
     "CurrencyCode"       VARCHAR(20),
-    "ExchangeRate"       DOUBLE PRECISION,
-    "UsdAmount"          DOUBLE PRECISION,
+    "ExchangeRate"       NUMERIC,
+    "UsdAmount"          NUMERIC,
     "UserCode"           VARCHAR(60),
     "ShortUserCode"      VARCHAR(10),
     "ReportDate"         TIMESTAMP,
@@ -83,29 +106,29 @@ DECLARE
 BEGIN
     -- Contar total de registros que coinciden con los filtros
     SELECT COUNT(*) INTO v_total
-    FROM doc."PurchaseDocument"
-    WHERE "DocumentType" = p_tipo_operacion
-      AND "IsDeleted" = FALSE
+    FROM ap."PurchaseDocument" pd_cnt
+    WHERE pd_cnt."OperationType" = p_tipo_operacion
+      AND pd_cnt."IsDeleted" = FALSE
       AND (p_search IS NULL OR (
-            "DocumentNumber" ILIKE '%' || p_search || '%'
-            OR "SupplierName" ILIKE '%' || p_search || '%'
-            OR "FiscalId" ILIKE '%' || p_search || '%'
+            pd_cnt."DocumentNumber" ILIKE '%' || p_search || '%'
+            OR pd_cnt."SupplierName" ILIKE '%' || p_search || '%'
+            OR pd_cnt."FiscalId" ILIKE '%' || p_search || '%'
           ))
-      AND (p_codigo IS NULL OR "SupplierCode" = p_codigo)
-      AND (p_from_date IS NULL OR "IssueDate" >= p_from_date)
-      AND (p_to_date IS NULL OR "IssueDate" < (p_to_date + INTERVAL '1 day'));
+      AND (p_codigo IS NULL OR pd_cnt."SupplierCode" = p_codigo)
+      AND (p_from_date IS NULL OR pd_cnt."DocumentDate" >= p_from_date)
+      AND (p_to_date IS NULL OR pd_cnt."DocumentDate" < (p_to_date + INTERVAL '1 day'));
 
     -- Retornar pagina de resultados
     RETURN QUERY
     SELECT
-        d."PurchaseDocumentId",
+        d."DocumentId",
         d."DocumentNumber",
         d."SerialType",
-        d."DocumentType",
+        d."OperationType",
         d."SupplierCode",
         d."SupplierName",
         d."FiscalId",
-        d."IssueDate",
+        d."DocumentDate",
         d."DueDate",
         d."ReceiptDate",
         d."PaymentDate",
@@ -128,7 +151,7 @@ BEGIN
         d."RetainedTax",
         d."IsrCode",
         d."IsrAmount",
-        d."IsrSubjectCode",
+        NULL::VARCHAR,
         d."IsrSubjectAmount",
         d."RetentionRate",
         d."ImportAmount",
@@ -151,8 +174,8 @@ BEGIN
         d."CreatedAt",
         d."UpdatedAt",
         v_total
-    FROM doc."PurchaseDocument" d
-    WHERE d."DocumentType" = p_tipo_operacion
+    FROM ap."PurchaseDocument" d
+    WHERE d."OperationType" = p_tipo_operacion
       AND d."IsDeleted" = FALSE
       AND (p_search IS NULL OR (
             d."DocumentNumber" ILIKE '%' || p_search || '%'
@@ -160,9 +183,9 @@ BEGIN
             OR d."FiscalId" ILIKE '%' || p_search || '%'
           ))
       AND (p_codigo IS NULL OR d."SupplierCode" = p_codigo)
-      AND (p_from_date IS NULL OR d."IssueDate" >= p_from_date)
-      AND (p_to_date IS NULL OR d."IssueDate" < (p_to_date + INTERVAL '1 day'))
-    ORDER BY d."IssueDate" DESC, d."DocumentNumber" DESC
+      AND (p_from_date IS NULL OR d."DocumentDate" >= p_from_date)
+      AND (p_to_date IS NULL OR d."DocumentDate" < (p_to_date + INTERVAL '1 day'))
+    ORDER BY d."DocumentDate" DESC, d."DocumentNumber" DESC
     LIMIT v_limit OFFSET v_offset;
 END;
 $$;
@@ -172,30 +195,31 @@ $$;
 -- Obtener un documento de compra individual por numero y tipo de operacion.
 -- =============================================================================
 DROP FUNCTION IF EXISTS usp_Doc_PurchaseDocument_Get;
+DROP FUNCTION IF EXISTS usp_Doc_PurchaseDocument_Get(VARCHAR(20), VARCHAR(60)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Doc_PurchaseDocument_Get(
     p_tipo_operacion  VARCHAR(20),
     p_num_doc         VARCHAR(60)
 )
 RETURNS TABLE (
-    "PurchaseDocumentId" BIGINT,
+    "DocumentId" INT,
     "DocumentNumber"     VARCHAR(60),
     "SerialType"         VARCHAR(60),
-    "DocumentType"       VARCHAR(20),
+    "OperationType"       VARCHAR(20),
     "SupplierCode"       VARCHAR(60),
     "SupplierName"       VARCHAR(255),
     "FiscalId"           VARCHAR(15),
-    "IssueDate"          TIMESTAMP,
+    "DocumentDate"          TIMESTAMP,
     "DueDate"            TIMESTAMP,
     "ReceiptDate"        TIMESTAMP,
     "PaymentDate"        TIMESTAMP,
     "DocumentTime"       VARCHAR(20),
-    "SubTotal"           DOUBLE PRECISION,
-    "TaxableAmount"      DOUBLE PRECISION,
-    "ExemptAmount"       DOUBLE PRECISION,
-    "TaxAmount"          DOUBLE PRECISION,
-    "TaxRate"            DOUBLE PRECISION,
-    "TotalAmount"        DOUBLE PRECISION,
-    "DiscountAmount"     DOUBLE PRECISION,
+    "SubTotal"           NUMERIC,
+    "TaxableAmount"      NUMERIC,
+    "ExemptAmount"       NUMERIC,
+    "TaxAmount"          NUMERIC,
+    "TaxRate"            NUMERIC,
+    "TotalAmount"        NUMERIC,
+    "DiscountAmount"     NUMERIC,
     "IsVoided"           BOOLEAN,
     "IsPaid"             VARCHAR(1),
     "IsReceived"         VARCHAR(1),
@@ -204,24 +228,24 @@ RETURNS TABLE (
     "ControlNumber"      VARCHAR(60),
     "VoucherNumber"      VARCHAR(50),
     "VoucherDate"        TIMESTAMP,
-    "RetainedTax"        DOUBLE PRECISION,
+    "RetainedTax"        NUMERIC,
     "IsrCode"            VARCHAR(50),
-    "IsrAmount"          DOUBLE PRECISION,
+    "IsrAmount"          NUMERIC,
     "IsrSubjectCode"     VARCHAR(50),
-    "IsrSubjectAmount"   DOUBLE PRECISION,
-    "RetentionRate"      DOUBLE PRECISION,
-    "ImportAmount"       DOUBLE PRECISION,
-    "ImportTax"          DOUBLE PRECISION,
-    "ImportBase"         DOUBLE PRECISION,
-    "FreightAmount"      DOUBLE PRECISION,
+    "IsrSubjectAmount"   NUMERIC,
+    "RetentionRate"      NUMERIC,
+    "ImportAmount"       NUMERIC,
+    "ImportTax"          NUMERIC,
+    "ImportBase"         NUMERIC,
+    "FreightAmount"      NUMERIC,
     "Notes"              VARCHAR(500),
     "Concept"            VARCHAR(255),
     "OrderNumber"        VARCHAR(20),
     "ReceivedBy"         VARCHAR(20),
     "WarehouseCode"      VARCHAR(50),
     "CurrencyCode"       VARCHAR(20),
-    "ExchangeRate"       DOUBLE PRECISION,
-    "UsdAmount"          DOUBLE PRECISION,
+    "ExchangeRate"       NUMERIC,
+    "UsdAmount"          NUMERIC,
     "UserCode"           VARCHAR(60),
     "ShortUserCode"      VARCHAR(10),
     "ReportDate"         TIMESTAMP,
@@ -234,14 +258,14 @@ LANGUAGE plpgsql AS $$
 BEGIN
     RETURN QUERY
     SELECT
-        d."PurchaseDocumentId",
+        d."DocumentId",
         d."DocumentNumber",
         d."SerialType",
-        d."DocumentType",
+        d."OperationType",
         d."SupplierCode",
         d."SupplierName",
         d."FiscalId",
-        d."IssueDate",
+        d."DocumentDate",
         d."DueDate",
         d."ReceiptDate",
         d."PaymentDate",
@@ -264,7 +288,7 @@ BEGIN
         d."RetainedTax",
         d."IsrCode",
         d."IsrAmount",
-        d."IsrSubjectCode",
+        NULL::VARCHAR,
         d."IsrSubjectAmount",
         d."RetentionRate",
         d."ImportAmount",
@@ -286,9 +310,9 @@ BEGIN
         d."IsDeleted",
         d."CreatedAt",
         d."UpdatedAt"
-    FROM doc."PurchaseDocument" d
+    FROM ap."PurchaseDocument" d
     WHERE d."DocumentNumber" = p_num_doc
-      AND d."DocumentType" = p_tipo_operacion
+      AND d."OperationType" = p_tipo_operacion
       AND d."IsDeleted" = FALSE
     LIMIT 1;
 END;
@@ -299,25 +323,26 @@ $$;
 -- Obtener las lineas de detalle de un documento de compra.
 -- =============================================================================
 DROP FUNCTION IF EXISTS usp_Doc_PurchaseDocument_GetDetail;
+DROP FUNCTION IF EXISTS usp_Doc_PurchaseDocument_GetDetail(VARCHAR(20), VARCHAR(60)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Doc_PurchaseDocument_GetDetail(
     p_tipo_operacion  VARCHAR(20),
     p_num_doc         VARCHAR(60)
 )
 RETURNS TABLE (
-    "LineId"           BIGINT,
+    "LineId"           INT,
     "DocumentNumber"   VARCHAR(60),
-    "DocumentType"     VARCHAR(20),
+    "OperationType"     VARCHAR(20),
     "LineNumber"       INT,
     "ProductCode"      VARCHAR(60),
     "Description"      VARCHAR(255),
-    "Quantity"         DOUBLE PRECISION,
-    "UnitPrice"        DOUBLE PRECISION,
-    "UnitCost"         DOUBLE PRECISION,
-    "SubTotal"         DOUBLE PRECISION,
-    "DiscountAmount"   DOUBLE PRECISION,
-    "TotalAmount"      DOUBLE PRECISION,
-    "TaxRate"          DOUBLE PRECISION,
-    "TaxAmount"        DOUBLE PRECISION,
+    "Quantity"         NUMERIC,
+    "UnitPrice"        NUMERIC,
+    "UnitCost"         NUMERIC,
+    "SubTotal"         NUMERIC,
+    "DiscountAmount"   NUMERIC,
+    "TotalAmount"      NUMERIC,
+    "TaxRate"          NUMERIC,
+    "TaxAmount"        NUMERIC,
     "IsVoided"         BOOLEAN,
     "IsDeleted"        BOOLEAN,
     "UserCode"         VARCHAR(60),
@@ -331,7 +356,7 @@ BEGIN
     SELECT
         l."LineId",
         l."DocumentNumber",
-        l."DocumentType",
+        l."OperationType",
         l."LineNumber",
         l."ProductCode",
         l."Description",
@@ -349,9 +374,9 @@ BEGIN
         l."LineDate",
         l."CreatedAt",
         l."UpdatedAt"
-    FROM doc."PurchaseDocumentLine" l
+    FROM ap."PurchaseDocumentLine" l
     WHERE l."DocumentNumber" = p_num_doc
-      AND l."DocumentType" = p_tipo_operacion
+      AND l."OperationType" = p_tipo_operacion
       AND l."IsDeleted" = FALSE
     ORDER BY COALESCE(l."LineNumber", 0), l."LineId";
 END;
@@ -362,18 +387,19 @@ $$;
 -- Obtener las formas de pago de un documento de compra.
 -- =============================================================================
 DROP FUNCTION IF EXISTS usp_Doc_PurchaseDocument_GetPayments;
+DROP FUNCTION IF EXISTS usp_Doc_PurchaseDocument_GetPayments(VARCHAR(20), VARCHAR(60)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Doc_PurchaseDocument_GetPayments(
     p_tipo_operacion  VARCHAR(20),
     p_num_doc         VARCHAR(60)
 )
 RETURNS TABLE (
-    "PaymentId"        BIGINT,
+    "PaymentId"        INT,
     "DocumentNumber"   VARCHAR(60),
-    "DocumentType"     VARCHAR(20),
+    "OperationType"     VARCHAR(20),
     "PaymentMethod"    VARCHAR(30),
     "BankCode"         VARCHAR(60),
     "PaymentNumber"    VARCHAR(60),
-    "Amount"           DOUBLE PRECISION,
+    "Amount"           NUMERIC,
     "PaymentDate"      TIMESTAMP,
     "DueDate"          TIMESTAMP,
     "ReferenceNumber"  VARCHAR(100),
@@ -388,7 +414,7 @@ BEGIN
     SELECT
         p."PaymentId",
         p."DocumentNumber",
-        p."DocumentType",
+        p."OperationType",
         p."PaymentMethod",
         p."BankCode",
         p."PaymentNumber",
@@ -400,9 +426,9 @@ BEGIN
         p."IsDeleted",
         p."CreatedAt",
         p."UpdatedAt"
-    FROM doc."PurchaseDocumentPayment" p
+    FROM ap."PurchaseDocumentPayment" p
     WHERE p."DocumentNumber" = p_num_doc
-      AND p."DocumentType" = p_tipo_operacion
+      AND p."OperationType" = p_tipo_operacion
       AND p."IsDeleted" = FALSE;
 END;
 $$;
@@ -413,6 +439,7 @@ $$;
 -- IsVoided, IsPaid, IsReceived.
 -- =============================================================================
 DROP FUNCTION IF EXISTS usp_Doc_PurchaseDocument_GetIndicadores;
+DROP FUNCTION IF EXISTS usp_Doc_PurchaseDocument_GetIndicadores(VARCHAR(20), VARCHAR(60)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Doc_PurchaseDocument_GetIndicadores(
     p_tipo_operacion  VARCHAR(20),
     p_num_doc         VARCHAR(60)
@@ -429,9 +456,9 @@ BEGIN
         d."IsVoided",
         d."IsPaid",
         d."IsReceived"
-    FROM doc."PurchaseDocument" d
+    FROM ap."PurchaseDocument" d
     WHERE d."DocumentNumber" = p_num_doc
-      AND d."DocumentType" = p_tipo_operacion
+      AND d."OperationType" = p_tipo_operacion
       AND d."IsDeleted" = FALSE;
 END;
 $$;
@@ -443,6 +470,7 @@ $$;
 -- Operacion transaccional.
 -- =============================================================================
 DROP FUNCTION IF EXISTS usp_Doc_PurchaseDocument_Void;
+DROP FUNCTION IF EXISTS usp_Doc_PurchaseDocument_Void(VARCHAR(20), VARCHAR(60), VARCHAR(60), VARCHAR(500)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Doc_PurchaseDocument_Void(
     p_tipo_operacion  VARCHAR(20),
     p_num_doc         VARCHAR(60),
@@ -465,9 +493,9 @@ DECLARE
 BEGIN
     -- Validar que el documento existe y no esta eliminado
     IF NOT EXISTS (
-        SELECT 1 FROM doc."PurchaseDocument"
+        SELECT 1 FROM ap."PurchaseDocument"
         WHERE "DocumentNumber" = p_num_doc
-          AND "DocumentType" = p_tipo_operacion
+          AND "OperationType" = p_tipo_operacion
           AND "IsDeleted" = FALSE
     ) THEN
         RETURN QUERY SELECT FALSE, p_num_doc, v_cod_proveedor,
@@ -477,9 +505,9 @@ BEGIN
 
     -- Validar que no este ya anulado
     IF EXISTS (
-        SELECT 1 FROM doc."PurchaseDocument"
+        SELECT 1 FROM ap."PurchaseDocument"
         WHERE "DocumentNumber" = p_num_doc
-          AND "DocumentType" = p_tipo_operacion
+          AND "OperationType" = p_tipo_operacion
           AND "IsDeleted" = FALSE
           AND "IsVoided" = TRUE
     ) THEN
@@ -490,29 +518,29 @@ BEGIN
 
     -- Obtener codigo de proveedor
     SELECT d."SupplierCode" INTO v_cod_proveedor
-    FROM doc."PurchaseDocument" d
+    FROM ap."PurchaseDocument" d
     WHERE d."DocumentNumber" = p_num_doc
-      AND d."DocumentType" = p_tipo_operacion
+      AND d."OperationType" = p_tipo_operacion
       AND d."IsDeleted" = FALSE;
 
     -- Anular cabecera del documento
-    UPDATE doc."PurchaseDocument"
+    UPDATE ap."PurchaseDocument"
     SET "IsVoided"  = TRUE,
-        "Notes"     = COALESCE("Notes", '') || ' | ANULADO '
+        "Notes"     = COALESCE("Notes",''::VARCHAR) || ' | ANULADO '
                       || TO_CHAR(NOW() AT TIME ZONE 'UTC', 'YYYY-MM-DD HH24:MI')
                       || ' por ' || p_cod_usuario
                       || CASE WHEN p_motivo <> '' THEN ' - Motivo: ' || p_motivo ELSE '' END,
         "UpdatedAt" = NOW() AT TIME ZONE 'UTC'
     WHERE "DocumentNumber" = p_num_doc
-      AND "DocumentType" = p_tipo_operacion
+      AND "OperationType" = p_tipo_operacion
       AND "IsDeleted" = FALSE;
 
     -- Anular lineas del documento
-    UPDATE doc."PurchaseDocumentLine"
+    UPDATE ap."PurchaseDocumentLine"
     SET "IsVoided"  = TRUE,
         "UpdatedAt" = NOW() AT TIME ZONE 'UTC'
     WHERE "DocumentNumber" = p_num_doc
-      AND "DocumentType" = p_tipo_operacion
+      AND "OperationType" = p_tipo_operacion
       AND "IsDeleted" = FALSE;
 
     -- Resolver contexto: CompanyId y BranchId
@@ -571,6 +599,7 @@ $$;
 -- Marcar una orden de compra como recibida.
 -- =============================================================================
 DROP FUNCTION IF EXISTS usp_Doc_PurchaseDocument_ReceiveOrder;
+DROP FUNCTION IF EXISTS usp_Doc_PurchaseDocument_ReceiveOrder(VARCHAR(60), VARCHAR(60)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Doc_PurchaseDocument_ReceiveOrder(
     p_num_doc      VARCHAR(60),
     p_cod_usuario  VARCHAR(60) DEFAULT 'API'
@@ -584,9 +613,9 @@ LANGUAGE plpgsql AS $$
 BEGIN
     -- Validar que la orden existe
     IF NOT EXISTS (
-        SELECT 1 FROM doc."PurchaseDocument"
+        SELECT 1 FROM ap."PurchaseDocument"
         WHERE "DocumentNumber" = p_num_doc
-          AND "DocumentType" = 'ORDEN'
+          AND "OperationType" = 'ORDEN'
           AND "IsDeleted" = FALSE
     ) THEN
         RETURN QUERY SELECT FALSE, p_num_doc,
@@ -596,9 +625,9 @@ BEGIN
 
     -- Validar que la orden no esta anulada
     IF EXISTS (
-        SELECT 1 FROM doc."PurchaseDocument"
+        SELECT 1 FROM ap."PurchaseDocument"
         WHERE "DocumentNumber" = p_num_doc
-          AND "DocumentType" = 'ORDEN'
+          AND "OperationType" = 'ORDEN'
           AND "IsDeleted" = FALSE
           AND "IsVoided" = TRUE
     ) THEN
@@ -608,14 +637,14 @@ BEGIN
     END IF;
 
     -- Marcar como recibida
-    UPDATE doc."PurchaseDocument"
+    UPDATE ap."PurchaseDocument"
     SET "IsReceived" = 'S',
-        "Notes"      = COALESCE("Notes", '') || ' | Recibido '
+        "Notes"      = COALESCE("Notes",''::VARCHAR) || ' | Recibido '
                        || TO_CHAR(NOW() AT TIME ZONE 'UTC', 'YYYY-MM-DD HH24:MI')
                        || ' por ' || p_cod_usuario,
         "UpdatedAt"  = NOW() AT TIME ZONE 'UTC'
     WHERE "DocumentNumber" = p_num_doc
-      AND "DocumentType" = 'ORDEN'
+      AND "OperationType" = 'ORDEN'
       AND "IsDeleted" = FALSE;
 
     RETURN QUERY SELECT TRUE, p_num_doc,
@@ -632,6 +661,7 @@ $$;
 -- Retorna: ok, numDoc, detalleRows, formasPagoRows, pendingAmount
 -- =============================================================================
 DROP FUNCTION IF EXISTS usp_Doc_PurchaseDocument_Upsert;
+DROP FUNCTION IF EXISTS usp_Doc_PurchaseDocument_Upsert(VARCHAR(20), JSONB, JSONB, JSONB, VARCHAR(60)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Doc_PurchaseDocument_Upsert(
     p_tipo_operacion  VARCHAR(20),
     p_header_json     JSONB,
@@ -644,7 +674,7 @@ RETURNS TABLE (
     "numDoc"          VARCHAR(60),
     "detalleRows"     INT,
     "formasPagoRows"  INT,
-    "pendingAmount"   DOUBLE PRECISION,
+    "pendingAmount"   NUMERIC,
     "mensaje"         TEXT
 )
 LANGUAGE plpgsql AS $$
@@ -652,8 +682,8 @@ DECLARE
     v_num_doc          VARCHAR(60);
     v_detalle_rows     INT := 0;
     v_formas_pago_rows INT := 0;
-    v_pending_amount   DOUBLE PRECISION := 0;
-    v_total_amount     DOUBLE PRECISION;
+    v_pending_amount   NUMERIC := 0;
+    v_total_amount     NUMERIC;
     v_supplier_code    VARCHAR(60);
     v_is_paid          VARCHAR(1);
     v_doc_date         TIMESTAMP;
@@ -663,7 +693,7 @@ DECLARE
     v_branch_id        INT;
     v_user_id          INT;
     v_supplier_id      BIGINT;
-    v_safe_pending     DOUBLE PRECISION;
+    v_safe_pending     NUMERIC;
     v_status           VARCHAR(20);
     v_existing_payable_id BIGINT;
     v_now              TIMESTAMP := NOW() AT TIME ZONE 'UTC';
@@ -673,32 +703,32 @@ BEGIN
 
     -- Validar numero de documento
     IF v_num_doc IS NULL OR v_num_doc = '' THEN
-        RETURN QUERY SELECT FALSE, v_num_doc, 0, 0, 0::DOUBLE PRECISION,
+        RETURN QUERY SELECT FALSE, v_num_doc, 0, 0, 0::NUMERIC,
             'Numero de documento requerido (DocumentNumber)'::TEXT;
         RETURN;
     END IF;
 
     -- 1. Eliminar datos existentes (detalle, pagos, cabecera)
-    DELETE FROM doc."PurchaseDocumentPayment"
-    WHERE "DocumentNumber" = v_num_doc AND "DocumentType" = p_tipo_operacion;
+    DELETE FROM ap."PurchaseDocumentPayment"
+    WHERE "DocumentNumber" = v_num_doc AND "OperationType" = p_tipo_operacion;
 
-    DELETE FROM doc."PurchaseDocumentLine"
-    WHERE "DocumentNumber" = v_num_doc AND "DocumentType" = p_tipo_operacion;
+    DELETE FROM ap."PurchaseDocumentLine"
+    WHERE "DocumentNumber" = v_num_doc AND "OperationType" = p_tipo_operacion;
 
-    DELETE FROM doc."PurchaseDocument"
-    WHERE "DocumentNumber" = v_num_doc AND "DocumentType" = p_tipo_operacion;
+    DELETE FROM ap."PurchaseDocument"
+    WHERE "DocumentNumber" = v_num_doc AND "OperationType" = p_tipo_operacion;
 
     -- 2. INSERT cabecera desde JSON
-    INSERT INTO doc."PurchaseDocument" (
-        "DocumentNumber", "SerialType", "DocumentType",
+    INSERT INTO ap."PurchaseDocument" (
+        "DocumentNumber", "SerialType", "OperationType",
         "SupplierCode", "SupplierName", "FiscalId",
-        "IssueDate", "DueDate", "ReceiptDate", "PaymentDate", "DocumentTime",
+        "DocumentDate", "DueDate", "ReceiptDate", "PaymentDate", "DocumentTime",
         "SubTotal", "TaxableAmount", "ExemptAmount", "TaxAmount", "TaxRate",
         "TotalAmount", "DiscountAmount",
         "IsVoided", "IsPaid", "IsReceived", "IsLegal",
         "OriginDocumentNumber", "ControlNumber",
         "VoucherNumber", "VoucherDate", "RetainedTax",
-        "IsrCode", "IsrAmount", "IsrSubjectCode", "IsrSubjectAmount", "RetentionRate",
+        "IsrCode", "IsrAmount", "IsrSubjectAmount", "RetentionRate",
         "ImportAmount", "ImportTax", "ImportBase", "FreightAmount",
         "Notes", "Concept", "OrderNumber", "ReceivedBy", "WarehouseCode",
         "CurrencyCode", "ExchangeRate", "UsdAmount",
@@ -707,7 +737,7 @@ BEGIN
     )
     VALUES (
         v_num_doc,
-        COALESCE(p_header_json->>'SerialType', ''),
+        COALESCE(p_header_json->>'SerialType',''::VARCHAR),
         p_tipo_operacion,
         p_header_json->>'SupplierCode',
         p_header_json->>'SupplierName',
@@ -717,13 +747,13 @@ BEGIN
         (p_header_json->>'ReceiptDate')::TIMESTAMP,
         (p_header_json->>'PaymentDate')::TIMESTAMP,
         COALESCE(p_header_json->>'DocumentTime', TO_CHAR(v_now, 'HH24:MI:SS')),
-        COALESCE((p_header_json->>'SubTotal')::DOUBLE PRECISION, 0),
-        COALESCE((p_header_json->>'TaxableAmount')::DOUBLE PRECISION, 0),
-        COALESCE((p_header_json->>'ExemptAmount')::DOUBLE PRECISION, 0),
-        COALESCE((p_header_json->>'TaxAmount')::DOUBLE PRECISION, 0),
-        COALESCE((p_header_json->>'TaxRate')::DOUBLE PRECISION, 0),
-        COALESCE((p_header_json->>'TotalAmount')::DOUBLE PRECISION, 0),
-        COALESCE((p_header_json->>'DiscountAmount')::DOUBLE PRECISION, 0),
+        COALESCE((p_header_json->>'SubTotal')::NUMERIC, 0),
+        COALESCE((p_header_json->>'TaxableAmount')::NUMERIC, 0),
+        COALESCE((p_header_json->>'ExemptAmount')::NUMERIC, 0),
+        COALESCE((p_header_json->>'TaxAmount')::NUMERIC, 0),
+        COALESCE((p_header_json->>'TaxRate')::NUMERIC, 0),
+        COALESCE((p_header_json->>'TotalAmount')::NUMERIC, 0),
+        COALESCE((p_header_json->>'DiscountAmount')::NUMERIC, 0),
         COALESCE((p_header_json->>'IsVoided')::BOOLEAN, FALSE),
         COALESCE(p_header_json->>'IsPaid', 'N'),
         COALESCE(p_header_json->>'IsReceived', 'N'),
@@ -732,24 +762,23 @@ BEGIN
         p_header_json->>'ControlNumber',
         p_header_json->>'WithholdingCertNumber',
         (p_header_json->>'WithholdingCertDate')::TIMESTAMP,
-        COALESCE((p_header_json->>'WithheldTaxAmount')::DOUBLE PRECISION, 0),
+        COALESCE((p_header_json->>'WithheldTaxAmount')::NUMERIC, 0),
         p_header_json->>'IncomeTaxCode',
-        COALESCE((p_header_json->>'IncomeTaxAmount')::DOUBLE PRECISION, 0),
-        p_header_json->>'IncomeTaxPercent',
-        COALESCE((p_header_json->>'IsSubjectToIncomeTax')::DOUBLE PRECISION, 0),
-        COALESCE((p_header_json->>'WithholdingRate')::DOUBLE PRECISION, 0),
-        COALESCE((p_header_json->>'IsImport')::DOUBLE PRECISION, 0),
-        COALESCE((p_header_json->>'ImportTaxAmount')::DOUBLE PRECISION, 0),
-        COALESCE((p_header_json->>'ImportTaxBase')::DOUBLE PRECISION, 0),
-        COALESCE((p_header_json->>'FreightAmount')::DOUBLE PRECISION, 0),
+        COALESCE((p_header_json->>'IncomeTaxAmount')::NUMERIC, 0),
+        COALESCE((p_header_json->>'IsSubjectToIncomeTax')::NUMERIC, 0),
+        COALESCE((p_header_json->>'WithholdingRate')::NUMERIC, 0),
+        COALESCE((p_header_json->>'IsImport')::NUMERIC, 0),
+        COALESCE((p_header_json->>'ImportTaxAmount')::NUMERIC, 0),
+        COALESCE((p_header_json->>'ImportTaxBase')::NUMERIC, 0),
+        COALESCE((p_header_json->>'FreightAmount')::NUMERIC, 0),
         p_header_json->>'Notes',
         p_header_json->>'Concept',
         p_header_json->>'OrderNumber',
         p_header_json->>'ReceivedBy',
         p_header_json->>'WarehouseCode',
         COALESCE(p_header_json->>'CurrencyCode', 'BS'),
-        COALESCE((p_header_json->>'ExchangeRate')::DOUBLE PRECISION, 1),
-        COALESCE((p_header_json->>'DollarPrice')::DOUBLE PRECISION, 0),
+        COALESCE((p_header_json->>'ExchangeRate')::NUMERIC, 1),
+        COALESCE((p_header_json->>'DollarPrice')::NUMERIC, 0),
         COALESCE(p_header_json->>'UserCode', 'API'),
         p_header_json->>'ShortUserCode',
         COALESCE((p_header_json->>'ReportDate')::TIMESTAMP, v_now),
@@ -759,8 +788,8 @@ BEGIN
     );
 
     -- 3. INSERT lineas de detalle desde JSON
-    INSERT INTO doc."PurchaseDocumentLine" (
-        "DocumentNumber", "DocumentType", "LineNumber",
+    INSERT INTO ap."PurchaseDocumentLine" (
+        "DocumentNumber", "OperationType", "LineNumber",
         "ProductCode", "Description",
         "Quantity", "UnitPrice", "UnitCost",
         "SubTotal", "DiscountAmount", "TotalAmount",
@@ -774,14 +803,14 @@ BEGIN
         (elem->>'LineNumber')::INT,
         elem->>'ProductCode',
         elem->>'Description',
-        COALESCE((elem->>'Quantity')::DOUBLE PRECISION, 0),
-        COALESCE((elem->>'UnitPrice')::DOUBLE PRECISION, 0),
-        COALESCE((elem->>'UnitCost')::DOUBLE PRECISION, 0),
-        COALESCE((elem->>'SubTotal')::DOUBLE PRECISION, 0),
-        COALESCE((elem->>'DiscountAmount')::DOUBLE PRECISION, 0),
-        COALESCE((elem->>'TotalAmount')::DOUBLE PRECISION, 0),
-        COALESCE((elem->>'TaxRate')::DOUBLE PRECISION, 0),
-        COALESCE((elem->>'TaxAmount')::DOUBLE PRECISION, 0),
+        COALESCE((elem->>'Quantity')::NUMERIC, 0),
+        COALESCE((elem->>'UnitPrice')::NUMERIC, 0),
+        COALESCE((elem->>'UnitCost')::NUMERIC, 0),
+        COALESCE((elem->>'SubTotal')::NUMERIC, 0),
+        COALESCE((elem->>'DiscountAmount')::NUMERIC, 0),
+        COALESCE((elem->>'TotalAmount')::NUMERIC, 0),
+        COALESCE((elem->>'TaxRate')::NUMERIC, 0),
+        COALESCE((elem->>'TaxAmount')::NUMERIC, 0),
         COALESCE((elem->>'IsVoided')::BOOLEAN, FALSE),
         elem->>'UserCode',
         COALESCE((elem->>'LineDate')::TIMESTAMP, v_now),
@@ -793,8 +822,8 @@ BEGIN
 
     -- 4. INSERT formas de pago desde JSON (si se proporcionaron)
     IF p_payments_json IS NOT NULL AND jsonb_array_length(p_payments_json) > 0 THEN
-        INSERT INTO doc."PurchaseDocumentPayment" (
-            "DocumentNumber", "DocumentType",
+        INSERT INTO ap."PurchaseDocumentPayment" (
+            "DocumentNumber", "OperationType",
             "PaymentMethod", "BankCode", "PaymentNumber",
             "Amount", "PaymentDate", "DueDate",
             "ReferenceNumber", "UserCode",
@@ -806,7 +835,7 @@ BEGIN
             elem->>'PaymentMethod',
             elem->>'BankCode',
             elem->>'PaymentNumber',
-            COALESCE((elem->>'Amount')::DOUBLE PRECISION, 0),
+            COALESCE((elem->>'Amount')::NUMERIC, 0),
             COALESCE((elem->>'PaymentDate')::TIMESTAMP, v_now),
             (elem->>'DueDate')::TIMESTAMP,
             elem->>'ReferenceNumber',
@@ -822,12 +851,12 @@ BEGIN
     IF p_tipo_operacion = 'COMPRA' THEN
         -- Leer valores de la cabecera recien insertada
         SELECT d."TotalAmount", d."SupplierCode", COALESCE(d."IsPaid", 'N'),
-               d."IssueDate", d."Notes", d."UserCode"
+               d."DocumentDate", d."Notes", d."UserCode"
         INTO v_total_amount, v_supplier_code, v_is_paid,
              v_doc_date, v_notes, v_user_code
-        FROM doc."PurchaseDocument" d
+        FROM ap."PurchaseDocument" d
         WHERE d."DocumentNumber" = v_num_doc
-          AND d."DocumentType" = p_tipo_operacion;
+          AND d."OperationType" = p_tipo_operacion;
 
         -- Calcular monto pendiente
         v_pending_amount := CASE WHEN UPPER(v_is_paid) = 'S' THEN 0 ELSE v_total_amount END;
@@ -877,7 +906,7 @@ BEGIN
                 FROM ap."PayableDocument" pd
                 WHERE pd."CompanyId"      = v_company_id
                   AND pd."BranchId"       = v_branch_id
-                  AND pd."DocumentType"   = p_tipo_operacion
+                  AND pd."OperationType"   = p_tipo_operacion
                   AND pd."DocumentNumber" = v_num_doc
                 LIMIT 1;
 
@@ -897,8 +926,8 @@ BEGIN
                 ELSE
                     INSERT INTO ap."PayableDocument" (
                         "CompanyId", "BranchId", "SupplierId",
-                        "DocumentType", "DocumentNumber",
-                        "IssueDate", "DueDate", "CurrencyCode",
+                        "OperationType", "DocumentNumber",
+                        "DocumentDate", "DueDate", "CurrencyCode",
                         "TotalAmount", "PendingAmount", "PaidFlag", "Status", "Notes",
                         "CreatedAt", "UpdatedAt", "CreatedByUserId", "UpdatedByUserId"
                     )
@@ -923,7 +952,7 @@ BEGIN
         v_pending_amount, NULL::TEXT;
 
 EXCEPTION WHEN OTHERS THEN
-    RETURN QUERY SELECT FALSE, v_num_doc, 0, 0, 0::DOUBLE PRECISION, SQLERRM::TEXT;
+    RETURN QUERY SELECT FALSE, v_num_doc, 0, 0, 0::NUMERIC, SQLERRM::TEXT;
 END;
 $$;
 
@@ -937,6 +966,7 @@ $$;
 -- Retorna: ok, orden, compra, detalleRows, formasPagoRows, pendingAmount, mensaje
 -- =============================================================================
 DROP FUNCTION IF EXISTS usp_Doc_PurchaseDocument_ConvertOrder;
+DROP FUNCTION IF EXISTS usp_Doc_PurchaseDocument_ConvertOrder(VARCHAR(60), VARCHAR(60), JSONB, JSONB, VARCHAR(60)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Doc_PurchaseDocument_ConvertOrder(
     p_num_doc_orden         VARCHAR(60),
     p_num_doc_compra        VARCHAR(60),
@@ -950,15 +980,15 @@ RETURNS TABLE (
     "compra"          VARCHAR(60),
     "detalleRows"     INT,
     "formasPagoRows"  INT,
-    "pendingAmount"   DOUBLE PRECISION,
+    "pendingAmount"   NUMERIC,
     "mensaje"         VARCHAR(500)
 )
 LANGUAGE plpgsql AS $$
 DECLARE
     v_detalle_rows      INT := 0;
     v_formas_pago_rows  INT := 0;
-    v_pending_amount    DOUBLE PRECISION := 0;
-    v_total_amount      DOUBLE PRECISION;
+    v_pending_amount    NUMERIC := 0;
+    v_total_amount      NUMERIC;
     v_supplier_code     VARCHAR(60);
     v_is_paid           VARCHAR(1);
     v_doc_date          TIMESTAMP;
@@ -967,7 +997,7 @@ DECLARE
     v_branch_id         INT;
     v_user_id           INT;
     v_supplier_id       BIGINT;
-    v_safe_pending      DOUBLE PRECISION;
+    v_safe_pending      NUMERIC;
     v_status            VARCHAR(20);
     v_existing_payable_id BIGINT;
     v_now               TIMESTAMP := NOW() AT TIME ZONE 'UTC';
@@ -976,64 +1006,64 @@ BEGIN
     -- Validar parametros
     IF p_num_doc_orden IS NULL OR TRIM(p_num_doc_orden) = '' THEN
         RETURN QUERY SELECT FALSE, p_num_doc_orden, p_num_doc_compra,
-            0, 0, 0::DOUBLE PRECISION, 'Numero de orden requerido (p_num_doc_orden)'::VARCHAR(500);
+            0, 0, 0::NUMERIC, 'Numero de orden requerido (p_num_doc_orden)'::VARCHAR(500);
         RETURN;
     END IF;
 
     IF p_num_doc_compra IS NULL OR TRIM(p_num_doc_compra) = '' THEN
         RETURN QUERY SELECT FALSE, p_num_doc_orden, p_num_doc_compra,
-            0, 0, 0::DOUBLE PRECISION, 'Numero de compra requerido (p_num_doc_compra)'::VARCHAR(500);
+            0, 0, 0::NUMERIC, 'Numero de compra requerido (p_num_doc_compra)'::VARCHAR(500);
         RETURN;
     END IF;
 
     -- Validar que la orden existe
     IF NOT EXISTS (
-        SELECT 1 FROM doc."PurchaseDocument"
+        SELECT 1 FROM ap."PurchaseDocument"
         WHERE "DocumentNumber" = p_num_doc_orden
-          AND "DocumentType" = 'ORDEN'
+          AND "OperationType" = 'ORDEN'
           AND "IsDeleted" = FALSE
     ) THEN
         RETURN QUERY SELECT FALSE, p_num_doc_orden, p_num_doc_compra,
-            0, 0, 0::DOUBLE PRECISION, ('Orden de compra no encontrada: ' || p_num_doc_orden)::VARCHAR(500);
+            0, 0, 0::NUMERIC, ('Orden de compra no encontrada: ' || p_num_doc_orden)::VARCHAR(500);
         RETURN;
     END IF;
 
     -- Validar que la orden no esta anulada
     IF EXISTS (
-        SELECT 1 FROM doc."PurchaseDocument"
+        SELECT 1 FROM ap."PurchaseDocument"
         WHERE "DocumentNumber" = p_num_doc_orden
-          AND "DocumentType" = 'ORDEN'
+          AND "OperationType" = 'ORDEN'
           AND "IsDeleted" = FALSE
           AND "IsVoided" = TRUE
     ) THEN
         RETURN QUERY SELECT FALSE, p_num_doc_orden, p_num_doc_compra,
-            0, 0, 0::DOUBLE PRECISION, ('La orden esta anulada y no puede convertirse: ' || p_num_doc_orden)::VARCHAR(500);
+            0, 0, 0::NUMERIC, ('La orden esta anulada y no puede convertirse: ' || p_num_doc_orden)::VARCHAR(500);
         RETURN;
     END IF;
 
     v_override := COALESCE(p_compra_override_json, '{}'::JSONB);
 
     -- 1. Eliminar compra existente si la hubiera (idempotente)
-    DELETE FROM doc."PurchaseDocumentPayment"
-    WHERE "DocumentNumber" = p_num_doc_compra AND "DocumentType" = 'COMPRA';
+    DELETE FROM ap."PurchaseDocumentPayment"
+    WHERE "DocumentNumber" = p_num_doc_compra AND "OperationType" = 'COMPRA';
 
-    DELETE FROM doc."PurchaseDocumentLine"
-    WHERE "DocumentNumber" = p_num_doc_compra AND "DocumentType" = 'COMPRA';
+    DELETE FROM ap."PurchaseDocumentLine"
+    WHERE "DocumentNumber" = p_num_doc_compra AND "OperationType" = 'COMPRA';
 
-    DELETE FROM doc."PurchaseDocument"
-    WHERE "DocumentNumber" = p_num_doc_compra AND "DocumentType" = 'COMPRA';
+    DELETE FROM ap."PurchaseDocument"
+    WHERE "DocumentNumber" = p_num_doc_compra AND "OperationType" = 'COMPRA';
 
     -- 2. Copiar cabecera de la orden como nueva compra con overrides
-    INSERT INTO doc."PurchaseDocument" (
-        "DocumentNumber", "SerialType", "DocumentType",
+    INSERT INTO ap."PurchaseDocument" (
+        "DocumentNumber", "SerialType", "OperationType",
         "SupplierCode", "SupplierName", "FiscalId",
-        "IssueDate", "DueDate", "ReceiptDate", "PaymentDate", "DocumentTime",
+        "DocumentDate", "DueDate", "ReceiptDate", "PaymentDate", "DocumentTime",
         "SubTotal", "TaxableAmount", "ExemptAmount", "TaxAmount", "TaxRate",
         "TotalAmount", "DiscountAmount",
         "IsVoided", "IsPaid", "IsReceived", "IsLegal",
         "OriginDocumentNumber", "ControlNumber",
         "VoucherNumber", "VoucherDate", "RetainedTax",
-        "IsrCode", "IsrAmount", "IsrSubjectCode", "IsrSubjectAmount", "RetentionRate",
+        "IsrCode", "IsrAmount", "IsrSubjectAmount", "RetentionRate",
         "ImportAmount", "ImportTax", "ImportBase", "FreightAmount",
         "Notes", "Concept", "OrderNumber", "ReceivedBy", "WarehouseCode",
         "CurrencyCode", "ExchangeRate", "UsdAmount",
@@ -1052,13 +1082,13 @@ BEGIN
         COALESCE((v_override->>'ReceiptDate')::TIMESTAMP, o."ReceiptDate"),
         COALESCE((v_override->>'PaymentDate')::TIMESTAMP, o."PaymentDate"),
         COALESCE(v_override->>'DocumentTime', TO_CHAR(v_now, 'HH24:MI:SS')),
-        COALESCE((v_override->>'SubTotal')::DOUBLE PRECISION, o."SubTotal"),
-        COALESCE((v_override->>'TaxableAmount')::DOUBLE PRECISION, o."TaxableAmount"),
-        COALESCE((v_override->>'ExemptAmount')::DOUBLE PRECISION, o."ExemptAmount"),
-        COALESCE((v_override->>'TaxAmount')::DOUBLE PRECISION, o."TaxAmount"),
-        COALESCE((v_override->>'TaxRate')::DOUBLE PRECISION, o."TaxRate"),
-        COALESCE((v_override->>'TotalAmount')::DOUBLE PRECISION, o."TotalAmount"),
-        COALESCE((v_override->>'DiscountAmount')::DOUBLE PRECISION, o."DiscountAmount"),
+        COALESCE((v_override->>'SubTotal')::NUMERIC, o."SubTotal"),
+        COALESCE((v_override->>'TaxableAmount')::NUMERIC, o."TaxableAmount"),
+        COALESCE((v_override->>'ExemptAmount')::NUMERIC, o."ExemptAmount"),
+        COALESCE((v_override->>'TaxAmount')::NUMERIC, o."TaxAmount"),
+        COALESCE((v_override->>'TaxRate')::NUMERIC, o."TaxRate"),
+        COALESCE((v_override->>'TotalAmount')::NUMERIC, o."TotalAmount"),
+        COALESCE((v_override->>'DiscountAmount')::NUMERIC, o."DiscountAmount"),
         FALSE,                                             -- IsVoided = No
         COALESCE(v_override->>'IsPaid', 'N'),
         'N',                                               -- IsReceived
@@ -1070,7 +1100,6 @@ BEGIN
         o."RetainedTax",
         o."IsrCode",
         o."IsrAmount",
-        o."IsrSubjectCode",
         o."IsrSubjectAmount",
         o."RetentionRate",
         o."ImportAmount",
@@ -1091,16 +1120,16 @@ BEGIN
         COALESCE(inet_client_addr()::TEXT, 'localhost'),
         v_now,
         v_now
-    FROM doc."PurchaseDocument" o
+    FROM ap."PurchaseDocument" o
     WHERE o."DocumentNumber" = p_num_doc_orden
-      AND o."DocumentType" = 'ORDEN'
+      AND o."OperationType" = 'ORDEN'
       AND o."IsDeleted" = FALSE;
 
     -- 3. Copiar lineas de detalle (desde JSON o desde la orden)
     IF p_detalle_json IS NOT NULL AND jsonb_array_length(p_detalle_json) > 0 THEN
         -- Usar detalle proporcionado
-        INSERT INTO doc."PurchaseDocumentLine" (
-            "DocumentNumber", "DocumentType", "LineNumber",
+        INSERT INTO ap."PurchaseDocumentLine" (
+            "DocumentNumber", "OperationType", "LineNumber",
             "ProductCode", "Description",
             "Quantity", "UnitPrice", "UnitCost",
             "SubTotal", "DiscountAmount", "TotalAmount",
@@ -1114,14 +1143,14 @@ BEGIN
             (elem->>'LineNumber')::INT,
             elem->>'ProductCode',
             elem->>'Description',
-            COALESCE((elem->>'Quantity')::DOUBLE PRECISION, 0),
-            COALESCE((elem->>'UnitPrice')::DOUBLE PRECISION, 0),
-            COALESCE((elem->>'UnitCost')::DOUBLE PRECISION, 0),
-            COALESCE((elem->>'SubTotal')::DOUBLE PRECISION, 0),
-            COALESCE((elem->>'DiscountAmount')::DOUBLE PRECISION, 0),
-            COALESCE((elem->>'TotalAmount')::DOUBLE PRECISION, 0),
-            COALESCE((elem->>'TaxRate')::DOUBLE PRECISION, 0),
-            COALESCE((elem->>'TaxAmount')::DOUBLE PRECISION, 0),
+            COALESCE((elem->>'Quantity')::NUMERIC, 0),
+            COALESCE((elem->>'UnitPrice')::NUMERIC, 0),
+            COALESCE((elem->>'UnitCost')::NUMERIC, 0),
+            COALESCE((elem->>'SubTotal')::NUMERIC, 0),
+            COALESCE((elem->>'DiscountAmount')::NUMERIC, 0),
+            COALESCE((elem->>'TotalAmount')::NUMERIC, 0),
+            COALESCE((elem->>'TaxRate')::NUMERIC, 0),
+            COALESCE((elem->>'TaxAmount')::NUMERIC, 0),
             COALESCE((elem->>'IsVoided')::BOOLEAN, FALSE),
             p_cod_usuario,
             v_now,
@@ -1132,8 +1161,8 @@ BEGIN
         GET DIAGNOSTICS v_detalle_rows = ROW_COUNT;
     ELSE
         -- Copiar lineas de la orden
-        INSERT INTO doc."PurchaseDocumentLine" (
-            "DocumentNumber", "DocumentType", "LineNumber",
+        INSERT INTO ap."PurchaseDocumentLine" (
+            "DocumentNumber", "OperationType", "LineNumber",
             "ProductCode", "Description",
             "Quantity", "UnitPrice", "UnitCost",
             "SubTotal", "DiscountAmount", "TotalAmount",
@@ -1160,9 +1189,9 @@ BEGIN
             v_now,
             v_now,
             v_now
-        FROM doc."PurchaseDocumentLine" ol
+        FROM ap."PurchaseDocumentLine" ol
         WHERE ol."DocumentNumber" = p_num_doc_orden
-          AND ol."DocumentType" = 'ORDEN'
+          AND ol."OperationType" = 'ORDEN'
           AND ol."IsDeleted" = FALSE;
 
         GET DIAGNOSTICS v_detalle_rows = ROW_COUNT;
@@ -1174,24 +1203,24 @@ BEGIN
     END IF;
 
     -- 4. Marcar la orden como recibida
-    UPDATE doc."PurchaseDocument"
+    UPDATE ap."PurchaseDocument"
     SET "IsReceived" = 'S',
-        "Notes"      = COALESCE("Notes", '') || ' | Convertida a compra ' || p_num_doc_compra
+        "Notes"      = COALESCE("Notes",''::VARCHAR) || ' | Convertida a compra ' || p_num_doc_compra
                        || ' el ' || TO_CHAR(v_now, 'YYYY-MM-DD HH24:MI')
                        || ' por ' || p_cod_usuario,
         "UpdatedAt"  = v_now
     WHERE "DocumentNumber" = p_num_doc_orden
-      AND "DocumentType" = 'ORDEN'
+      AND "OperationType" = 'ORDEN'
       AND "IsDeleted" = FALSE;
 
     -- 5. Sincronizar ap.PayableDocument para la compra creada
     SELECT d."TotalAmount", d."SupplierCode", COALESCE(d."IsPaid", 'N'),
-           d."IssueDate", d."Notes"
+           d."DocumentDate", d."Notes"
     INTO v_total_amount, v_supplier_code, v_is_paid,
          v_doc_date, v_notes
-    FROM doc."PurchaseDocument" d
+    FROM ap."PurchaseDocument" d
     WHERE d."DocumentNumber" = p_num_doc_compra
-      AND d."DocumentType" = 'COMPRA';
+      AND d."OperationType" = 'COMPRA';
 
     v_pending_amount := CASE WHEN UPPER(v_is_paid) = 'S' THEN 0 ELSE v_total_amount END;
 
@@ -1233,7 +1262,7 @@ BEGIN
             FROM ap."PayableDocument" pd
             WHERE pd."CompanyId"      = v_company_id
               AND pd."BranchId"       = v_branch_id
-              AND pd."DocumentType"   = 'COMPRA'
+              AND pd."OperationType"   = 'COMPRA'
               AND pd."DocumentNumber" = p_num_doc_compra
             LIMIT 1;
 
@@ -1253,8 +1282,8 @@ BEGIN
             ELSE
                 INSERT INTO ap."PayableDocument" (
                     "CompanyId", "BranchId", "SupplierId",
-                    "DocumentType", "DocumentNumber",
-                    "IssueDate", "DueDate", "CurrencyCode",
+                    "OperationType", "DocumentNumber",
+                    "DocumentDate", "DueDate", "CurrencyCode",
                     "TotalAmount", "PendingAmount", "PaidFlag", "Status", "Notes",
                     "CreatedAt", "UpdatedAt", "CreatedByUserId", "UpdatedByUserId"
                 )
@@ -1280,6 +1309,6 @@ BEGIN
 
 EXCEPTION WHEN OTHERS THEN
     RETURN QUERY SELECT FALSE, p_num_doc_orden, p_num_doc_compra,
-        0, 0, 0::DOUBLE PRECISION, SQLERRM::VARCHAR(500);
+        0, 0, 0::NUMERIC, SQLERRM::VARCHAR(500);
 END;
 $$;

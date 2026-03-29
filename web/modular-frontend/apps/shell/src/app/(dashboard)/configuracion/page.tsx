@@ -4,17 +4,20 @@ import React, { useEffect, useMemo, useState } from 'react';
 import {
   Alert,
   Box,
+  Button,
   CircularProgress,
   FormControl,
   FormControlLabel,
   InputLabel,
   MenuItem,
+  Paper,
   Select,
   Stack,
   Switch,
   TextField,
   Typography,
 } from '@mui/material';
+import { useRouter } from 'next/navigation';
 import BusinessIcon from '@mui/icons-material/Business';
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import BadgeIcon from '@mui/icons-material/Badge';
@@ -24,10 +27,14 @@ import PointOfSaleIcon from '@mui/icons-material/PointOfSale';
 import RestaurantIcon from '@mui/icons-material/Restaurant';
 import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
 import PaymentsIcon from '@mui/icons-material/Payments';
+import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium';
+import PaletteIcon from '@mui/icons-material/Palette';
 
 import { useAuth } from '@zentto/shared-auth';
-import { apiPut, useAllSettings } from '@zentto/shared-api';
+import { apiPut, useAllSettings, useCountries } from '@zentto/shared-api';
 import {
+  FormGrid,
+  FormField,
   PaymentSettingsPanel,
   SettingsInputGroup,
   SettingsItem,
@@ -42,12 +49,14 @@ function deepClone<T>(value: T): T {
 }
 
 export default function ConfiguracionPage() {
+  const router = useRouter();
   const { isAdmin, company, modulos } = useAuth();
   const companyId = company?.companyId ?? 1;
   const branchId = company?.branchId ?? 1;
   const countryCode = company?.countryCode ?? 'VE';
 
   const { data, isLoading, error, refetch } = useAllSettings(companyId);
+  const { data: countries = [] } = useCountries();
 
   const [original, setOriginal] = useState<LocalSettings>({});
   const [draft, setDraft] = useState<LocalSettings>({});
@@ -77,6 +86,8 @@ export default function ConfiguracionPage() {
       { id: 'inventario', label: 'Inventario', icon: <InventoryIcon /> },
       { id: 'facturacion', label: 'Facturación / Fiscal', icon: <ReceiptLongIcon /> },
       { id: 'pagos', label: 'Formas de Pago', icon: <PaymentsIcon /> },
+      { id: 'suscripcion', label: 'Plan y Suscripción', icon: <WorkspacePremiumIcon /> },
+      { id: 'branding', label: 'Marca / Personalización', icon: <PaletteIcon /> },
     ];
 
     if (hasModule('pos')) {
@@ -195,28 +206,33 @@ export default function ConfiguracionPage() {
                 value={getValue('general', 'pais', countryCode)}
                 onChange={(e) => setValue('general', 'pais', e.target.value)}
               >
-                <MenuItem value="VE">Venezuela (SENIAT)</MenuItem>
-                <MenuItem value="ES">España (AEAT)</MenuItem>
-                <MenuItem value="CO">Colombia (DIAN)</MenuItem>
-                <MenuItem value="MX">México (SAT)</MenuItem>
+                {countries.map(c => (
+                  <MenuItem key={c.CountryCode} value={c.CountryCode}>
+                    {c.CountryName}{c.TaxAuthorityCode ? ` (${c.TaxAuthorityCode})` : ''}
+                  </MenuItem>
+                ))}
               </Select>
             </FormControl>
-            <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-              <TextField
-                size="small"
-                label="Moneda base"
-                value={getValue('general', 'monedaBase', 'VES')}
-                onChange={(e) => setValue('general', 'monedaBase', e.target.value)}
-                fullWidth
-              />
-              <TextField
-                size="small"
-                label="Moneda referencia"
-                value={getValue('general', 'monedaReferencia', 'USD')}
-                onChange={(e) => setValue('general', 'monedaReferencia', e.target.value)}
-                fullWidth
-              />
-            </Stack>
+            <FormGrid spacing={2}>
+              <FormField xs={12} sm={6}>
+                <TextField
+                  size="small"
+                  label="Moneda base"
+                  value={getValue('general', 'monedaBase', 'VES')}
+                  onChange={(e) => setValue('general', 'monedaBase', e.target.value)}
+                  fullWidth
+                />
+              </FormField>
+              <FormField xs={12} sm={6}>
+                <TextField
+                  size="small"
+                  label="Moneda referencia"
+                  value={getValue('general', 'monedaReferencia', 'USD')}
+                  onChange={(e) => setValue('general', 'monedaReferencia', e.target.value)}
+                  fullWidth
+                />
+              </FormField>
+            </FormGrid>
           </SettingsInputGroup>
         </SettingsItem>
       </SettingsSection>
@@ -235,47 +251,55 @@ export default function ConfiguracionPage() {
               onChange={(e) => setValue('contabilidad', 'formatoPlanCuentas', e.target.value)}
               fullWidth
             />
-            <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-              <TextField
-                size="small"
-                label="Impuesto principal"
-                value={getValue('contabilidad', 'nombreImpuestoPrincipal', 'IVA')}
-                onChange={(e) => setValue('contabilidad', 'nombreImpuestoPrincipal', e.target.value)}
-                fullWidth
-              />
-              <TextField
-                size="small"
-                label="Identificación fiscal"
-                value={getValue('contabilidad', 'nombreIdentificacion', 'RIF')}
-                onChange={(e) => setValue('contabilidad', 'nombreIdentificacion', e.target.value)}
-                fullWidth
-              />
-            </Stack>
-            <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-              <FormControl size="small" fullWidth>
-                <InputLabel>Mes inicio fiscal</InputLabel>
-                <Select
-                  label="Mes inicio fiscal"
-                  value={Number(getValue('contabilidad', 'periodoFiscalStartMonth', 1))}
-                  onChange={(e) => setValue('contabilidad', 'periodoFiscalStartMonth', Number(e.target.value))}
-                >
-                  {Array.from({ length: 12 }).map((_, idx) => (
-                    <MenuItem key={idx + 1} value={idx + 1}>{idx + 1}</MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-              <FormControl size="small" fullWidth>
-                <InputLabel>Cierre anual</InputLabel>
-                <Select
-                  label="Cierre anual"
-                  value={getValue('contabilidad', 'periodoFiscalCloseYearBehavior', 'soft')}
-                  onChange={(e) => setValue('contabilidad', 'periodoFiscalCloseYearBehavior', e.target.value)}
-                >
-                  <MenuItem value="soft">Soft</MenuItem>
-                  <MenuItem value="hard">Hard</MenuItem>
-                </Select>
-              </FormControl>
-            </Stack>
+            <FormGrid spacing={2}>
+              <FormField xs={12} sm={6}>
+                <TextField
+                  size="small"
+                  label="Impuesto principal"
+                  value={getValue('contabilidad', 'nombreImpuestoPrincipal', 'IVA')}
+                  onChange={(e) => setValue('contabilidad', 'nombreImpuestoPrincipal', e.target.value)}
+                  fullWidth
+                />
+              </FormField>
+              <FormField xs={12} sm={6}>
+                <TextField
+                  size="small"
+                  label="Identificación fiscal"
+                  value={getValue('contabilidad', 'nombreIdentificacion', 'RIF')}
+                  onChange={(e) => setValue('contabilidad', 'nombreIdentificacion', e.target.value)}
+                  fullWidth
+                />
+              </FormField>
+            </FormGrid>
+            <FormGrid spacing={2}>
+              <FormField xs={12} sm={6}>
+                <FormControl size="small" fullWidth>
+                  <InputLabel>Mes inicio fiscal</InputLabel>
+                  <Select
+                    label="Mes inicio fiscal"
+                    value={Number(getValue('contabilidad', 'periodoFiscalStartMonth', 1))}
+                    onChange={(e) => setValue('contabilidad', 'periodoFiscalStartMonth', Number(e.target.value))}
+                  >
+                    {Array.from({ length: 12 }).map((_, idx) => (
+                      <MenuItem key={idx + 1} value={idx + 1}>{idx + 1}</MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </FormField>
+              <FormField xs={12} sm={6}>
+                <FormControl size="small" fullWidth>
+                  <InputLabel>Cierre anual</InputLabel>
+                  <Select
+                    label="Cierre anual"
+                    value={getValue('contabilidad', 'periodoFiscalCloseYearBehavior', 'soft')}
+                    onChange={(e) => setValue('contabilidad', 'periodoFiscalCloseYearBehavior', e.target.value)}
+                  >
+                    <MenuItem value="soft">Soft</MenuItem>
+                    <MenuItem value="hard">Hard</MenuItem>
+                  </Select>
+                </FormControl>
+              </FormField>
+            </FormGrid>
             <FormControlLabel
               control={
                 <Switch
@@ -452,23 +476,27 @@ export default function ConfiguracionPage() {
               }
               label="Correlativos automáticos"
             />
-            <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-              <TextField
-                size="small"
-                label="Formato impresión"
-                value={getValue('facturacion', 'formatoImpresion', 'carta')}
-                onChange={(e) => setValue('facturacion', 'formatoImpresion', e.target.value)}
-                fullWidth
-              />
-              <TextField
-                size="small"
-                label="Copias por defecto"
-                type="number"
-                value={Number(getValue('facturacion', 'copiasPorDefecto', 1))}
-                onChange={(e) => setValue('facturacion', 'copiasPorDefecto', Number(e.target.value))}
-                fullWidth
-              />
-            </Stack>
+            <FormGrid spacing={2}>
+              <FormField xs={12} sm={6}>
+                <TextField
+                  size="small"
+                  label="Formato impresión"
+                  value={getValue('facturacion', 'formatoImpresion', 'carta')}
+                  onChange={(e) => setValue('facturacion', 'formatoImpresion', e.target.value)}
+                  fullWidth
+                />
+              </FormField>
+              <FormField xs={12} sm={6}>
+                <TextField
+                  size="small"
+                  label="Copias por defecto"
+                  type="number"
+                  value={Number(getValue('facturacion', 'copiasPorDefecto', 1))}
+                  onChange={(e) => setValue('facturacion', 'copiasPorDefecto', Number(e.target.value))}
+                  fullWidth
+                />
+              </FormField>
+            </FormGrid>
             <FormControlLabel
               control={
                 <Switch
@@ -498,61 +526,71 @@ export default function ConfiguracionPage() {
             hasCheckbox={false}
           >
             <SettingsInputGroup>
-              <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-                <TextField
-                  size="small"
-                  label="Caja ID"
-                  value={getValue('pos', 'caja.id', '1')}
-                  onChange={(e) => setValue('pos', 'caja.id', e.target.value)}
-                  fullWidth
-                />
-                <TextField
-                  size="small"
-                  label="Nombre caja"
-                  value={getValue('pos', 'caja.nombre', 'Caja Principal')}
-                  onChange={(e) => setValue('pos', 'caja.nombre', e.target.value)}
-                  fullWidth
-                />
-              </Stack>
-              <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-                <TextField
-                  size="small"
-                  label="Serie factura"
-                  value={getValue('pos', 'caja.serieFactura', 'A')}
-                  onChange={(e) => setValue('pos', 'caja.serieFactura', e.target.value)}
-                  fullWidth
-                />
-                <TextField
-                  size="small"
-                  label="Almacén ID"
-                  value={getValue('pos', 'caja.almacenId', '1')}
-                  onChange={(e) => setValue('pos', 'caja.almacenId', e.target.value)}
-                  fullWidth
-                />
-              </Stack>
-              <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-                <TextField
-                  size="small"
-                  label="Marca impresora"
-                  value={getValue('pos', 'impresora.marca', 'PNP')}
-                  onChange={(e) => setValue('pos', 'impresora.marca', e.target.value)}
-                  fullWidth
-                />
-                <TextField
-                  size="small"
-                  label="Conexión"
-                  value={getValue('pos', 'impresora.conexion', 'emulador')}
-                  onChange={(e) => setValue('pos', 'impresora.conexion', e.target.value)}
-                  fullWidth
-                />
-              </Stack>
-              <TextField
-                size="small"
-                label="Agent URL"
-                value={getValue('pos', 'impresora.agentUrl', 'http://localhost:5059')}
-                onChange={(e) => setValue('pos', 'impresora.agentUrl', e.target.value)}
-                fullWidth
-              />
+              <FormGrid spacing={2}>
+                <FormField xs={12} sm={6}>
+                  <TextField
+                    size="small"
+                    label="Caja ID"
+                    value={getValue('pos', 'caja.id', '1')}
+                    onChange={(e) => setValue('pos', 'caja.id', e.target.value)}
+                    fullWidth
+                  />
+                </FormField>
+                <FormField xs={12} sm={6}>
+                  <TextField
+                    size="small"
+                    label="Nombre caja"
+                    value={getValue('pos', 'caja.nombre', 'Caja Principal')}
+                    onChange={(e) => setValue('pos', 'caja.nombre', e.target.value)}
+                    fullWidth
+                  />
+                </FormField>
+                <FormField xs={12} sm={6}>
+                  <TextField
+                    size="small"
+                    label="Serie factura"
+                    value={getValue('pos', 'caja.serieFactura', 'A')}
+                    onChange={(e) => setValue('pos', 'caja.serieFactura', e.target.value)}
+                    fullWidth
+                  />
+                </FormField>
+                <FormField xs={12} sm={6}>
+                  <TextField
+                    size="small"
+                    label="Almacén ID"
+                    value={getValue('pos', 'caja.almacenId', '1')}
+                    onChange={(e) => setValue('pos', 'caja.almacenId', e.target.value)}
+                    fullWidth
+                  />
+                </FormField>
+                <FormField xs={12} sm={6}>
+                  <TextField
+                    size="small"
+                    label="Marca impresora"
+                    value={getValue('pos', 'impresora.marca', 'PNP')}
+                    onChange={(e) => setValue('pos', 'impresora.marca', e.target.value)}
+                    fullWidth
+                  />
+                </FormField>
+                <FormField xs={12} sm={6}>
+                  <TextField
+                    size="small"
+                    label="Conexión"
+                    value={getValue('pos', 'impresora.conexion', 'emulador')}
+                    onChange={(e) => setValue('pos', 'impresora.conexion', e.target.value)}
+                    fullWidth
+                  />
+                </FormField>
+                <FormField xs={12}>
+                  <TextField
+                    size="small"
+                    label="Agent URL"
+                    value={getValue('pos', 'impresora.agentUrl', 'http://localhost:7654')}
+                    onChange={(e) => setValue('pos', 'impresora.agentUrl', e.target.value)}
+                    fullWidth
+                  />
+                </FormField>
+              </FormGrid>
             </SettingsInputGroup>
           </SettingsItem>
         </SettingsSection>
@@ -593,24 +631,28 @@ export default function ConfiguracionPage() {
                 }
                 label="Permitir pedido sin mesa"
               />
-              <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-                <TextField
-                  size="small"
-                  type="number"
-                  label="Alerta preparación (min)"
-                  value={Number(getValue('restaurante', 'tiempoAlertaPreparacion', 15))}
-                  onChange={(e) => setValue('restaurante', 'tiempoAlertaPreparacion', Number(e.target.value))}
-                  fullWidth
-                />
-                <TextField
-                  size="small"
-                  type="number"
-                  label="Propina sugerida (%)"
-                  value={Number(getValue('restaurante', 'propinaSugeridaPct', 10))}
-                  onChange={(e) => setValue('restaurante', 'propinaSugeridaPct', Number(e.target.value))}
-                  fullWidth
-                />
-              </Stack>
+              <FormGrid spacing={2}>
+                <FormField xs={12} sm={6}>
+                  <TextField
+                    size="small"
+                    type="number"
+                    label="Alerta preparación (min)"
+                    value={Number(getValue('restaurante', 'tiempoAlertaPreparacion', 15))}
+                    onChange={(e) => setValue('restaurante', 'tiempoAlertaPreparacion', Number(e.target.value))}
+                    fullWidth
+                  />
+                </FormField>
+                <FormField xs={12} sm={6}>
+                  <TextField
+                    size="small"
+                    type="number"
+                    label="Propina sugerida (%)"
+                    value={Number(getValue('restaurante', 'propinaSugeridaPct', 10))}
+                    onChange={(e) => setValue('restaurante', 'propinaSugeridaPct', Number(e.target.value))}
+                    fullWidth
+                  />
+                </FormField>
+              </FormGrid>
             </SettingsInputGroup>
           </SettingsItem>
         </SettingsSection>
@@ -624,6 +666,242 @@ export default function ConfiguracionPage() {
             countryCode={countryCode}
             channels={['POS', 'WEB', 'RESTAURANT']}
           />
+        </Box>
+      </SettingsSection>
+
+      <SettingsSection id="suscripcion" title="Plan y Suscripción">
+        <Box sx={{ gridColumn: '1 / -1' }}>
+          <Paper
+            variant="outlined"
+            sx={{
+              p: 3,
+              borderRadius: 2,
+              background: 'linear-gradient(135deg, #131921 0%, #232f3e 100%)',
+              color: '#fff',
+            }}
+          >
+            <Stack direction={{ xs: 'column', sm: 'row' }} alignItems={{ sm: 'center' }} spacing={3}>
+              <WorkspacePremiumIcon sx={{ fontSize: 48, color: '#ff9900', flexShrink: 0 }} />
+              <Box flex={1}>
+                <Typography variant="h6" fontWeight={700} gutterBottom>
+                  Gestiona tu suscripción Zentto
+                </Typography>
+                <Typography variant="body2" sx={{ opacity: 0.85 }}>
+                  Actualiza tu plan, cambia de Básico a Profesional o administra tu método de pago en cualquier momento.
+                </Typography>
+              </Box>
+              <Button
+                variant="contained"
+                size="large"
+                onClick={() => router.push('/pricing')}
+                sx={{
+                  bgcolor: '#ff9900',
+                  color: '#131921',
+                  fontWeight: 700,
+                  whiteSpace: 'nowrap',
+                  flexShrink: 0,
+                  '&:hover': { bgcolor: '#e68a00' },
+                }}
+              >
+                Ver planes
+              </Button>
+            </Stack>
+          </Paper>
+        </Box>
+      </SettingsSection>
+
+      {/* ── Branding / Personalización de marca ── */}
+      <SettingsSection id="branding" title="Marca / Personalización">
+        <SettingsItem
+          title="Colores de marca"
+          description="Personaliza los colores principales de la interfaz para tu empresa. Al guardar, todos los módulos reflejarán los cambios."
+          hasCheckbox={false}
+        >
+          <SettingsInputGroup>
+            <FormGrid spacing={2}>
+              <FormField xs={12} sm={4}>
+                <Stack spacing={1}>
+                  <Typography variant="caption" fontWeight={600}>Color primario</Typography>
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    <input
+                      type="color"
+                      value={String(getValue('branding', 'primaryColor', '#ff9900'))}
+                      onChange={(e) => setValue('branding', 'primaryColor', e.target.value)}
+                      style={{ width: 48, height: 36, border: 'none', cursor: 'pointer', borderRadius: 4 }}
+                    />
+                    <TextField
+                      size="small"
+                      value={getValue('branding', 'primaryColor', '#ff9900')}
+                      onChange={(e) => setValue('branding', 'primaryColor', e.target.value)}
+                      sx={{ maxWidth: 120 }}
+                    />
+                  </Stack>
+                </Stack>
+              </FormField>
+              <FormField xs={12} sm={4}>
+                <Stack spacing={1}>
+                  <Typography variant="caption" fontWeight={600}>Color secundario (sidebar)</Typography>
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    <input
+                      type="color"
+                      value={String(getValue('branding', 'secondaryColor', '#232f3e'))}
+                      onChange={(e) => setValue('branding', 'secondaryColor', e.target.value)}
+                      style={{ width: 48, height: 36, border: 'none', cursor: 'pointer', borderRadius: 4 }}
+                    />
+                    <TextField
+                      size="small"
+                      value={getValue('branding', 'secondaryColor', '#232f3e')}
+                      onChange={(e) => setValue('branding', 'secondaryColor', e.target.value)}
+                      sx={{ maxWidth: 120 }}
+                    />
+                  </Stack>
+                </Stack>
+              </FormField>
+              <FormField xs={12} sm={4}>
+                <Stack spacing={1}>
+                  <Typography variant="caption" fontWeight={600}>Color accent</Typography>
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    <input
+                      type="color"
+                      value={String(getValue('branding', 'accentColor', '#ff9900'))}
+                      onChange={(e) => setValue('branding', 'accentColor', e.target.value)}
+                      style={{ width: 48, height: 36, border: 'none', cursor: 'pointer', borderRadius: 4 }}
+                    />
+                    <TextField
+                      size="small"
+                      value={getValue('branding', 'accentColor', '#ff9900')}
+                      onChange={(e) => setValue('branding', 'accentColor', e.target.value)}
+                      sx={{ maxWidth: 120 }}
+                    />
+                  </Stack>
+                </Stack>
+              </FormField>
+            </FormGrid>
+          </SettingsInputGroup>
+        </SettingsItem>
+
+        <SettingsItem
+          title="Identidad visual"
+          description="Cambia el nombre, subtítulo y logo que se muestra en el sidebar y login."
+          hasCheckbox={false}
+        >
+          <SettingsInputGroup>
+            <TextField
+              size="small"
+              label="Nombre de la aplicación"
+              placeholder="ZENTTO"
+              value={getValue('branding', 'appName', '')}
+              onChange={(e) => setValue('branding', 'appName', e.target.value)}
+              helperText="Vacío = ZENTTO (predeterminado)"
+              fullWidth
+            />
+            <TextField
+              size="small"
+              label="Subtítulo"
+              placeholder="Sistema Administrador"
+              value={getValue('branding', 'appSubtitle', '')}
+              onChange={(e) => setValue('branding', 'appSubtitle', e.target.value)}
+              helperText="Vacío = Sistema Administrador (predeterminado)"
+              fullWidth
+            />
+            <TextField
+              size="small"
+              label="URL del logo"
+              placeholder="https://miempresa.com/logo.svg"
+              value={getValue('branding', 'logoUrl', '')}
+              onChange={(e) => setValue('branding', 'logoUrl', e.target.value)}
+              helperText="URL pública de tu logo (SVG o PNG). Vacío = logo Zentto."
+              fullWidth
+            />
+            {getValue('branding', 'logoUrl', '') && (
+              <Paper variant="outlined" sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
+                <Box
+                  component="img"
+                  src={String(getValue('branding', 'logoUrl', ''))}
+                  alt="Preview"
+                  sx={{ width: 48, height: 48, objectFit: 'contain', borderRadius: 1 }}
+                />
+                <Typography variant="caption" color="text.secondary">Vista previa del logo</Typography>
+              </Paper>
+            )}
+          </SettingsInputGroup>
+        </SettingsItem>
+
+        <SettingsItem
+          title="Vista previa"
+          description="Así se verá el sidebar con tu marca personalizada."
+          hasCheckbox={false}
+        >
+          <Paper
+            variant="outlined"
+            sx={{
+              p: 2,
+              background: String(getValue('branding', 'secondaryColor', '#232f3e')) || '#232f3e',
+              borderRadius: 2,
+              maxWidth: 280,
+            }}
+          >
+            <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 2 }}>
+              <Box sx={{
+                width: 36, height: 36, borderRadius: '50%',
+                background: `linear-gradient(135deg, ${getValue('branding', 'primaryColor', '#ff9900')}, ${getValue('branding', 'accentColor', '#ff9900')})`,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                {getValue('branding', 'logoUrl', '') ? (
+                  <Box component="img" src={String(getValue('branding', 'logoUrl', ''))} sx={{ width: 28, height: 28, objectFit: 'contain' }} />
+                ) : (
+                  <Typography sx={{ color: '#fff', fontWeight: 800, fontSize: 16 }}>Z</Typography>
+                )}
+              </Box>
+              <Box>
+                <Typography sx={{ color: '#fff', fontWeight: 800, fontSize: '0.85rem', letterSpacing: '0.1em' }}>
+                  {String(getValue('branding', 'appName', '')) || 'ZENTTO'}
+                </Typography>
+                <Typography sx={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.6rem', fontWeight: 600 }}>
+                  {String(getValue('branding', 'appSubtitle', '')) || 'Sistema Administrador'}
+                </Typography>
+              </Box>
+            </Stack>
+            {['Dashboard', 'Contabilidad', 'Ventas', 'Inventario'].map((item, i) => (
+              <Box
+                key={item}
+                sx={{
+                  py: 0.75, px: 1.5, mb: 0.5, borderRadius: 1,
+                  bgcolor: i === 0 ? `${getValue('branding', 'accentColor', '#ff9900')}25` : 'transparent',
+                  borderLeft: i === 0 ? `3px solid ${getValue('branding', 'accentColor', '#ff9900')}` : '3px solid transparent',
+                }}
+              >
+                <Typography sx={{ color: i === 0 ? '#fff' : 'rgba(255,255,255,0.6)', fontSize: '0.8rem', fontWeight: i === 0 ? 600 : 400 }}>
+                  {item}
+                </Typography>
+              </Box>
+            ))}
+            <Box sx={{ mt: 2, pt: 1, borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+              <Typography sx={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.65rem', textAlign: 'center' }}>
+                Powered by Zentto
+              </Typography>
+            </Box>
+          </Paper>
+        </SettingsItem>
+
+        <Box>
+          <Button
+            variant="outlined"
+            size="small"
+            color="warning"
+            onClick={() => {
+              setValue('branding', 'primaryColor', '#ff9900');
+              setValue('branding', 'primaryDark', '#e68a00');
+              setValue('branding', 'secondaryColor', '#232f3e');
+              setValue('branding', 'secondaryDark', '#131921');
+              setValue('branding', 'accentColor', '#ff9900');
+              setValue('branding', 'appName', '');
+              setValue('branding', 'appSubtitle', '');
+              setValue('branding', 'logoUrl', '');
+            }}
+          >
+            Restaurar colores predeterminados
+          </Button>
         </Box>
       </SettingsSection>
     </SettingsLayout>

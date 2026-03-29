@@ -19,7 +19,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
   React.useEffect(() => {
     if (status === 'unauthenticated') {
-      router.push('/authentication/login');
+      window.location.href = `${window.location.origin}/authentication/login`;
     }
   }, [status, router]);
 

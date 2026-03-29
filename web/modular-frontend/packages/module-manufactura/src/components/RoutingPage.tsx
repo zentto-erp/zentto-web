@@ -1,0 +1,385 @@
+"use client";
+
+import React, { useState, useEffect, useRef } from "react";
+import {
+  AppBar,
+  Box,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Grid,
+  IconButton,
+  MenuItem,
+  TextField,
+  Toolbar,
+  Typography,
+  Alert,
+  useMediaQuery,
+  useTheme,
+  CircularProgress,
+} from "@mui/material";
+import CloseIcon from "@mui/icons-material/Close";
+import {
+  useRoutingList,
+  useUpsertRouting,
+  useWorkCentersList,
+  type RoutingRow,
+} from "../hooks/useManufactura";
+import type { ColumnDef } from "@zentto/datagrid-core";
+import { useGridLayoutSync } from "@zentto/shared-api";
+
+
+/* ─── Types ──────────────────────────────────────────────── */
+
+interface RoutingFormData {
+  routingId: number | null;
+  operationNumber: string;
+  operationName: string;
+  workCenterId: string;
+  setupTime: string;
+  runTime: string;
+  costPerOperation: string;
+  description: string;
+}
+
+const emptyForm = (): RoutingFormData => ({
+  routingId: null,
+  operationNumber: "",
+  operationName: "",
+  workCenterId: "",
+  setupTime: "0",
+  runTime: "0",
+  costPerOperation: "0",
+  description: "",
+});
+
+/* ─── Props ──────────────────────────────────────────────── */
+
+interface RoutingPageProps {
+  bomId: number;
+}
+
+const GRID_ID = "module-manufactura:routing:list";
+
+/* ─── Component ──────────────────────────────────────────── */
+
+export default function RoutingPage({ bomId }: RoutingPageProps) {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [form, setForm] = useState<RoutingFormData>(emptyForm());
+  const gridRef = useRef<any>(null);
+  const [registered, setRegistered] = useState(false);
+  const { ready: layoutReady } = useGridLayoutSync(GRID_ID);
+
+  useEffect(() => {
+    if (!layoutReady) return;
+    import("@zentto/datagrid").then(() => setRegistered(true));
+  }, [layoutReady]);
+
+  const { data: routingRows, isLoading } = useRoutingList(bomId);
+  const { data: wcData } = useWorkCentersList({ limit: 500 });
+  const upsertRouting = useUpsertRouting(bomId);
+
+  const workCenters = (wcData?.rows ?? []) as Record<string, unknown>[];
+  const rows = (routingRows ?? []) as RoutingRow[];
+
+  /* ─── Columns ──────────────────────────────────────────── */
+
+  const columns: ColumnDef[] = [
+    {
+      field: "OperationNumber",
+      header: "Secuencia",
+      width: 100,
+      type: "number",
+    },
+    {
+      field: "OperationName",
+      header: "Operacion",
+      flex: 1.2,
+      minWidth: 160,
+    },
+    {
+      field: "WorkCenterName",
+      header: "Centro de Trabajo",
+      flex: 1,
+      minWidth: 150,
+    },
+    {
+      field: "SetupTime",
+      header: "Setup (min)",
+      width: 120,
+      type: "number",
+      aggregation: "sum",
+    },
+    {
+      field: "RunTime",
+      header: "Ejecucion (min)",
+      width: 130,
+      type: "number",
+      aggregation: "sum",
+    },
+    {
+      field: "CostPerOperation",
+      header: "Costo Operacion",
+      width: 140,
+      currency: true,
+    },
+    {
+      field: "actions",
+      header: "Acciones",
+      type: "actions",
+      width: 100,
+      pin: "right",
+      actions: [
+        { icon: "edit", label: "Editar", action: "edit", color: "#1976d2" },
+        { icon: "delete", label: "Eliminar", action: "delete", color: "#dc2626" },
+      ],
+    },
+  ];
+
+  /* ─── Handlers ─────────────────────────────────────────── */
+
+  const handleEdit = (row: RoutingRow) => {
+    setForm({
+      routingId: row.RoutingId,
+      operationNumber: String(row.OperationNumber),
+      operationName: row.OperationName,
+      workCenterId: String(row.WorkCenterId),
+      setupTime: String(row.SetupTime ?? 0),
+      runTime: String(row.RunTime ?? 0),
+      costPerOperation: String((row as unknown as Record<string, unknown>).CostPerOperation ?? 0),
+      description: row.Description ?? "",
+    });
+    setDialogOpen(true);
+  };
+
+  const handleNew = () => {
+    setForm(emptyForm());
+    setDialogOpen(true);
+  };
+
+  const handleSubmit = () => {
+    upsertRouting.mutate(
+      {
+        routingId: form.routingId,
+        operationNumber: Number(form.operationNumber),
+        operationName: form.operationName,
+        workCenterId: Number(form.workCenterId),
+        setupTime: Number(form.setupTime),
+        runTime: Number(form.runTime),
+        costPerOperation: Number(form.costPerOperation),
+        description: form.description || null,
+      },
+      {
+        onSuccess: (result: any) => {
+          if (result?.success !== false) {
+            setDialogOpen(false);
+            setForm(emptyForm());
+          }
+        },
+      },
+    );
+  };
+
+  const isFormValid =
+    form.operationNumber && form.operationName && form.workCenterId;
+
+  const dialogTitle = form.routingId ? "Editar Operacion" : "Nueva Operacion";
+
+  // Bind data to zentto-grid web component
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+    el.columns = columns;
+    el.rows = rows;
+    el.loading = isLoading;
+  }, [rows, isLoading, registered, columns]);
+
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+    const handler = (e: CustomEvent) => {
+      const { action, row } = e.detail;
+      if (action === "edit") handleEdit(row as RoutingRow);
+      if (action === "delete") { /* TODO: eliminar operacion */ }
+    };
+    el.addEventListener("action-click", handler);
+    const createHandler = () => { setDialogOpen(true); };
+    el.addEventListener("create-click", createHandler);
+    return () => { el.removeEventListener("action-click", handler); el.removeEventListener("create-click", createHandler); };
+  }, [registered, rows]);
+
+  return (
+    <Box sx={{ p: 1 }}>
+      {/* Header */}
+      <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
+        Operaciones / Ruta de Produccion
+      </Typography>
+
+      {/* Grid */}
+      <zentto-grid
+        ref={gridRef}
+        grid-id={GRID_ID}
+        export-filename="manufactura-routing-list"
+        height="400px"
+        enable-toolbar
+        enable-header-menu
+        enable-header-filters
+        enable-clipboard
+        enable-quick-search
+        enable-context-menu
+        enable-status-bar
+        enable-configurator
+        enable-create
+        create-label="Nueva Operacion"
+      ></zentto-grid>
+      {rows.length === 0 && !isLoading && (
+        <Typography variant="body2" color="text.secondary" sx={{ textAlign: "center", py: 3 }}>
+          No hay operaciones definidas para esta BOM.
+        </Typography>
+      )}
+
+      {/* Dialog: Crear/Editar Operacion */}
+      <Dialog
+        open={dialogOpen}
+        onClose={() => setDialogOpen(false)}
+        fullScreen={isMobile}
+        maxWidth={isMobile ? undefined : "sm"}
+        fullWidth
+      >
+        {isMobile ? (
+          <AppBar sx={{ position: "relative" }}>
+            <Toolbar>
+              <IconButton edge="start" color="inherit" onClick={() => setDialogOpen(false)}>
+                <CloseIcon />
+              </IconButton>
+              <Typography sx={{ ml: 2, flex: 1 }} variant="h6">
+                {dialogTitle}
+              </Typography>
+              <Button
+                color="inherit"
+                onClick={handleSubmit}
+                disabled={upsertRouting.isPending || !isFormValid}
+              >
+                {upsertRouting.isPending ? "Guardando..." : "Guardar"}
+              </Button>
+            </Toolbar>
+          </AppBar>
+        ) : (
+          <DialogTitle>{dialogTitle}</DialogTitle>
+        )}
+        <DialogContent>
+          <Grid container spacing={2} sx={{ mt: 1 }}>
+            {upsertRouting.isError && (
+              <Grid item xs={12}>
+                <Alert severity="error">
+                  Error al guardar la operacion. Intente nuevamente.
+                </Alert>
+              </Grid>
+            )}
+            <Grid item xs={12} sm={6}>
+              <TextField
+                label="Secuencia (N. Operacion)"
+                value={form.operationNumber}
+                onChange={(e) => setForm((f) => ({ ...f, operationNumber: e.target.value }))}
+                type="number"
+                fullWidth
+                required
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                label="Nombre de la Operacion"
+                value={form.operationName}
+                onChange={(e) => setForm((f) => ({ ...f, operationName: e.target.value }))}
+                fullWidth
+                required
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                select
+                label="Centro de Trabajo"
+                value={form.workCenterId}
+                onChange={(e) => setForm((f) => ({ ...f, workCenterId: e.target.value }))}
+                fullWidth
+                required
+              >
+                <MenuItem value="">-- Seleccionar --</MenuItem>
+                {workCenters.map((wc) => (
+                  <MenuItem
+                    key={String(wc.WorkCenterId ?? wc.Id)}
+                    value={String(wc.WorkCenterId ?? wc.Id)}
+                  >
+                    {String(wc.WorkCenterCode ?? "")} - {String(wc.WorkCenterName ?? "")}
+                  </MenuItem>
+                ))}
+              </TextField>
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <TextField
+                label="Tiempo Setup (min)"
+                value={form.setupTime}
+                onChange={(e) => setForm((f) => ({ ...f, setupTime: e.target.value }))}
+                type="number"
+                fullWidth
+              />
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <TextField
+                label="Tiempo Ejecucion (min)"
+                value={form.runTime}
+                onChange={(e) => setForm((f) => ({ ...f, runTime: e.target.value }))}
+                type="number"
+                fullWidth
+              />
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <TextField
+                label="Costo Operacion"
+                value={form.costPerOperation}
+                onChange={(e) => setForm((f) => ({ ...f, costPerOperation: e.target.value }))}
+                type="number"
+                fullWidth
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                label="Descripcion"
+                value={form.description}
+                onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+                multiline
+                rows={3}
+                fullWidth
+              />
+            </Grid>
+          </Grid>
+        </DialogContent>
+        {!isMobile && (
+          <DialogActions>
+            <Button onClick={() => setDialogOpen(false)}>Cancelar</Button>
+            <Button
+              variant="contained"
+              onClick={handleSubmit}
+              disabled={upsertRouting.isPending || !isFormValid}
+            >
+              {upsertRouting.isPending ? "Guardando..." : "Guardar"}
+            </Button>
+          </DialogActions>
+        )}
+      </Dialog>
+    </Box>
+  );
+}
+
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'zentto-grid': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & Record<string, any>, HTMLElement>;
+    }
+  }
+}

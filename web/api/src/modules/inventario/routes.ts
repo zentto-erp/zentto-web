@@ -13,6 +13,9 @@ import {
   getLibroInventarioSP,
 } from "./movimientos-sp.service.js";
 import { search, getByCode, getFilterOptions, invalidateAndReload, warmUp, getCacheStats } from "./inventario-cache.js";
+import { emitInventarioMovementEntry } from "./inventario-contabilidad.service.js";
+import { emitBusinessNotification } from "../_shared/notify.js";
+import { obs } from "../integrations/observability.js";
 
 export const inventarioRouter = Router();
 
@@ -141,7 +144,51 @@ inventarioRouter.post("/movimientos", async (req, res) => {
     });
     invalidateAndReload().catch(() => {});
     if (result.success) {
-      res.status(201).json({ ok: true, message: result.message });
+      // Best-effort: generate accounting entry
+      let contabilidad: { ok: boolean; asientoId?: number | null } = { ok: false };
+      try {
+        const qty = Math.abs(Number(b.quantity || b.cantidad || 0));
+        const cost = Number(b.unitCost || 0);
+        if (qty > 0 && cost > 0) {
+          contabilidad = await emitInventarioMovementEntry({
+            productCode: b.productCode || b.codigoArticulo || "",
+            movementType: b.movementType || (Number(b.cantidad) < 0 ? "SALIDA" : "ENTRADA"),
+            quantity: qty,
+            unitCost: cost,
+            totalCost: qty * cost,
+            documentRef: b.documentRef || b.motivo,
+            notes: b.notes || b.observaciones,
+          });
+        }
+      } catch { /* never block inventory operation */ }
+      // Notify: movimiento de inventario (best-effort)
+      emitBusinessNotification({
+        event: "LOW_STOCK_ALERT",
+        to: "almacen@empresa.com",
+        subject: `Movimiento inventario: ${b.movementType || "ENTRADA"} - ${b.productCode || b.codigoArticulo || ""}`,
+        data: { Producto: String(b.productCode || b.codigoArticulo || ""), Tipo: String(b.movementType || "ENTRADA"), Cantidad: String(b.quantity || b.cantidad || 0) },
+      }).catch(() => {});
+      res.status(201).json({ ok: true, message: result.message, contabilidad });
+      const movType = String(b.movementType || (Number(b.cantidad) < 0 ? "SALIDA" : "ENTRADA"));
+      try { obs.event('inventario.movimiento.created', {
+          productCode: b.productCode || b.codigoArticulo,
+          movementType: movType,
+          quantity: Math.abs(Number(b.quantity || b.cantidad || 0)),
+          userId: (req as any).user?.userId,
+          userName: (req as any).user?.userName,
+          companyId: (req as any).user?.companyId,
+          module: 'inventario',
+      }); } catch { /* never blocks */ }
+      if (movType === "AJUSTE") {
+          try { obs.audit('inventario.ajuste.aplicado', {
+              userId: (req as any).user?.userId,
+              userName: (req as any).user?.userName,
+              companyId: (req as any).user?.companyId,
+              module: 'inventario',
+              entity: 'MovimientoInventario',
+              entityId: b.productCode || b.codigoArticulo,
+          }); } catch { /* never blocks */ }
+      }
     } else {
       res.status(400).json({ ok: false, message: result.message });
     }
@@ -167,6 +214,17 @@ inventarioRouter.post("/traslados", async (req, res) => {
     invalidateAndReload().catch(() => {});
     if (result.success) {
       res.status(201).json({ ok: true, message: result.message });
+      try { obs.event('inventario.movimiento.created', {
+          productCode: b.productCode,
+          movementType: 'TRASLADO',
+          quantity: Math.abs(Number(b.quantity || 0)),
+          warehouseFrom: b.warehouseFrom,
+          warehouseTo: b.warehouseTo,
+          userId: (req as any).user?.userId,
+          userName: (req as any).user?.userName,
+          companyId: (req as any).user?.companyId,
+          module: 'inventario',
+      }); } catch { /* never blocks */ }
     } else {
       res.status(400).json({ ok: false, message: result.message });
     }

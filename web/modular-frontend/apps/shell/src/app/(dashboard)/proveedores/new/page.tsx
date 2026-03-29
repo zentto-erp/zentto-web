@@ -1,11 +1,6 @@
-// app/(dashboard)/proveedores/new/page.tsx
-import { ProveedorForm } from "@zentto/module-admin";
+'use client';
+import { ProveedorForm } from '@zentto/module-compras';
 
-export const metadata = {
-  title: "Nuevo Proveedor | Zentto",
-  description: "Crear nuevo proveedor",
-};
-
-export default function NewProveedorPage() {
-  return <ProveedorForm />;
+export default function Page() {
+    return <ProveedorForm />;
 }

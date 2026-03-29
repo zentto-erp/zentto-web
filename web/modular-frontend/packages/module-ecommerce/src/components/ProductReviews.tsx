@@ -138,7 +138,7 @@ export default function ProductReviews({ productCode }: Props) {
             {error && <Alert severity="error" sx={{ mb: 1 }}>{error}</Alert>}
             <Box sx={{ mb: 1 }}>
               <Typography variant="caption">Calificacion:</Typography>
-              <Select size="small" value={rating} onChange={(e) => setRating(Number(e.target.value))} sx={{ ml: 1, minWidth: 60 }}>
+              <Select value={rating} onChange={(e) => setRating(Number(e.target.value))} sx={{ ml: 1, minWidth: 60 }}>
                 {[5, 4, 3, 2, 1].map((v) => (
                   <MenuItem key={v} value={v}>{v} estrella{v > 1 ? "s" : ""}</MenuItem>
                 ))}
@@ -149,7 +149,6 @@ export default function ProductReviews({ productCode }: Props) {
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               fullWidth
-              size="small"
               sx={{ mb: 1 }}
             />
             <TextField
@@ -159,7 +158,6 @@ export default function ProductReviews({ productCode }: Props) {
               fullWidth
               multiline
               rows={3}
-              size="small"
               sx={{ mb: 1 }}
             />
             <Button

@@ -10,9 +10,10 @@ import {
   Paper,
   CircularProgress,
   Alert,
-  Grid,
   Typography,
 } from "@mui/material";
+import { FormGrid, FormField, DatePicker } from '@zentto/shared-ui';
+import dayjs from "dayjs";
 import { useAbonoById, useCreateAbono, useUpdateAbono } from "../../../hooks/useAbonos";
 import { CreateAbonoDTO, UpdateAbonoDTO } from "@zentto/shared-api/types";
 import { useTimezone } from "@zentto/shared-auth";
@@ -144,80 +145,67 @@ export default function AbonoForm({ numeroAbono }: AbonoFormProps) {
       )}
 
       <Paper component="form" onSubmit={handleSubmit} sx={{ p: 3 }}>
-        <Grid container spacing={2}>
-          <Grid item xs={12} sm={6}>
+        <FormGrid spacing={2}>
+          <FormField xs={12} sm={6}>
             <TextField
               label="Número de Factura"
               value={formData.numeroFactura}
               onChange={(e) => setFormData({ ...formData, numeroFactura: e.target.value })}
-              fullWidth
-              size="small"
               required
               error={!!errors.numeroFactura}
               helperText={errors.numeroFactura}
             />
-          </Grid>
+          </FormField>
 
-          <Grid item xs={12} sm={6}>
+          <FormField xs={12} sm={6}>
             <TextField
               label="Nombre Cliente"
               value={formData.nombreCliente}
               onChange={(e) => setFormData({ ...formData, nombreCliente: e.target.value })}
-              fullWidth
-              size="small"
             />
-          </Grid>
+          </FormField>
 
-          <Grid item xs={12} sm={6}>
+          <FormField xs={12} sm={6}>
             <TextField
               label="Monto (Bs.)"
               type="number"
               inputProps={{ min: 0, step: "0.01" }}
               value={formData.monto}
               onChange={(e) => setFormData({ ...formData, monto: parseFloat(e.target.value) })}
-              fullWidth
-              size="small"
               required
               error={!!errors.monto}
               helperText={errors.monto}
             />
-          </Grid>
+          </FormField>
 
-          <Grid item xs={12} sm={6}>
-            <TextField
+          <FormField xs={12} sm={6}>
+            <DatePicker
               label="Fecha"
-              type="date"
-              value={formData.fecha}
-              onChange={(e) => setFormData({ ...formData, fecha: e.target.value })}
-              fullWidth
-              size="small"
-              InputLabelProps={{ shrink: true }}
+              value={formData.fecha ? dayjs(formData.fecha) : null}
+              onChange={(v) => setFormData({ ...formData, fecha: v ? v.format('YYYY-MM-DD') : '' })}
+              slotProps={{ textField: { size: 'small', fullWidth: true } }}
             />
-          </Grid>
+          </FormField>
 
-          <Grid item xs={12}>
+          <FormField xs={12}>
             <TextField
               label="Referencia"
               placeholder="Cheque, referencia de banco, etc."
               value={formData.referencia}
               onChange={(e) => setFormData({ ...formData, referencia: e.target.value })}
-              fullWidth
-              size="small"
             />
-          </Grid>
+          </FormField>
 
-          <Grid item xs={12}>
+          <FormField xs={12}>
             <TextField
               label="Observaciones"
               value={formData.observaciones}
               onChange={(e) => setFormData({ ...formData, observaciones: e.target.value })}
-              fullWidth
               multiline
               rows={3}
-              size="small"
             />
-          </Grid>
-        </Grid>
+          </FormField>
+        </FormGrid>
 
         <Box sx={{ display: "flex", gap: 2, mt: 4, justifyContent: "flex-end" }}>
           <Button

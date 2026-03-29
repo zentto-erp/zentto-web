@@ -8,9 +8,7 @@
 -- =============================================================
 -- 1) usp_hr_vacation_request_create
 -- =============================================================
-DROP FUNCTION IF EXISTS usp_hr_vacation_request_create(
-    INT, INT, VARCHAR, DATE, DATE, INT, BOOLEAN, VARCHAR, JSONB
-);
+DROP FUNCTION IF EXISTS usp_hr_vacation_request_create(INT, INT, VARCHAR, DATE, DATE, INT, BOOLEAN, VARCHAR, JSONB) CASCADE;
 
 CREATE OR REPLACE FUNCTION usp_hr_vacation_request_create(
     p_company_id    INT,
@@ -59,7 +57,7 @@ BEGIN
         SELECT
             v_request_id,
             (elem->>'dt')::DATE,
-            COALESCE(NULLIF(elem->>'tp', ''), 'COMPLETO')
+            COALESCE(NULLIF(elem->>'tp', ''::VARCHAR), 'COMPLETO')
           FROM jsonb_array_elements(p_days) AS elem
          WHERE elem->>'dt' IS NOT NULL;
     END IF;
@@ -72,9 +70,7 @@ $fn$;
 -- =============================================================
 -- 2) usp_hr_vacation_request_list
 -- =============================================================
-DROP FUNCTION IF EXISTS usp_hr_vacation_request_list(
-    INT, VARCHAR, VARCHAR, INT, INT
-);
+DROP FUNCTION IF EXISTS usp_hr_vacation_request_list(INT, VARCHAR, VARCHAR, INT, INT) CASCADE;
 
 CREATE OR REPLACE FUNCTION usp_hr_vacation_request_list(
     p_company_id    INT,
@@ -461,3 +457,41 @@ BEGIN
         (v_dias_disponibles - COALESCE(v_dias_tomados, 0) - COALESCE(v_dias_pendientes, 0));
 END;
 $fn$;
+
+-- ================================================================
+-- ALIAS: usp_hr_vacationrequest_list
+-- Alias for usp_hr_vacation_request_list to match API calling convention
+-- (usp_HR_VacationRequest_List â†’ usp_hr_vacationrequest_list)
+-- ================================================================
+DROP FUNCTION IF EXISTS usp_hr_vacationrequest_list(INT, VARCHAR, VARCHAR, INT, INT) CASCADE;
+CREATE OR REPLACE FUNCTION usp_hr_vacationrequest_list(
+    p_company_id    INT,
+    p_employee_code VARCHAR(60) DEFAULT NULL,
+    p_status        VARCHAR(20) DEFAULT NULL,
+    p_offset        INT DEFAULT 0,
+    p_limit         INT DEFAULT 50
+)
+RETURNS TABLE (
+    "RequestId"       BIGINT,
+    "EmployeeCode"    VARCHAR,
+    "EmployeeName"    VARCHAR,
+    "RequestDate"     VARCHAR,
+    "StartDate"       VARCHAR,
+    "EndDate"         VARCHAR,
+    "TotalDays"       INT,
+    "IsPartial"       BOOLEAN,
+    "Status"          VARCHAR,
+    "ApprovedBy"      VARCHAR,
+    "Notes"           VARCHAR,
+    "RejectionReason" VARCHAR,
+    "CreatedAt"       TIMESTAMP,
+    "TotalCount"      INT
+)
+LANGUAGE plpgsql AS $$
+BEGIN
+    RETURN QUERY
+    SELECT * FROM usp_hr_vacation_request_list(
+        p_company_id, p_employee_code, p_status, p_offset, p_limit
+    );
+END;
+$$;

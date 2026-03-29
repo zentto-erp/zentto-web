@@ -6,7 +6,7 @@ import { CuentaPorPagar, CreateCuentaPorPagarDTO, UpdateCuentaPorPagarDTO, CrudF
 import { apiGet, apiPost, apiPut, apiDelete } from "@zentto/shared-api";
 
 const QUERY_KEY = "cuentas-por-pagar";
-const API_BASE = "/api/v1/cuentas-por-pagar";
+const API_BASE = "/v1/cuentas-por-pagar";
 
 export function useCuentasPorPagarList(filter?: CrudFilter) {
   return useQuery<PaginatedResponse<CuentaPorPagar>>({

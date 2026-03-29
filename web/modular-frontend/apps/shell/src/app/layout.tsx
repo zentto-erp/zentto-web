@@ -1,92 +1,60 @@
-'use client';
-
-import * as React from 'react';
-import { Suspense, useEffect, useMemo, useState } from 'react';
-import { usePathname } from 'next/navigation';
+import type { Metadata } from 'next';
 import InitColorSchemeScript from '@mui/material/InitColorSchemeScript';
-import { AppProvider } from '@toolpad/core/nextjs';
-import { AppRouterCacheProvider } from '@mui/material-nextjs/v15-appRouter';
-import { SessionProvider, signIn, signOut, useSession } from 'next-auth/react';
-import { AuthProvider, useAuth } from '@zentto/shared-auth';
-import { QueryProvider } from '@zentto/shared-api';
-import {
-  AppBarWrapper,
-  AppTitle,
-  LoadingFallback,
-  ToastProvider,
-  LocalizationProviderWrapper,
-  theme,
-} from '@zentto/shared-ui';
-import '@zentto/shared-ui/globals.css';
+import RootClient from './root-client';
 
-import { buildNavigation } from '../lib/navigation';
+export const metadata: Metadata = {
+  title: {
+    default: 'Zentto — ERP en la nube para empresas que crecen',
+    template: '%s | Zentto',
+  },
+  description:
+    'Sistema ERP SaaS todo-en-uno para PYMEs. Facturación fiscal, contabilidad, inventario, nómina, POS, restaurante y ecommerce. Multi-país, multi-moneda.',
+  metadataBase: new URL('https://zentto.net'),
+  alternates: {
+    canonical: 'https://zentto.net',
+  },
+  openGraph: {
+    title: 'Zentto — ERP en la nube para empresas que crecen',
+    description:
+      'Sistema ERP SaaS todo-en-uno para PYMEs. Facturación fiscal, contabilidad, inventario, nómina, POS, restaurante y ecommerce.',
+    url: 'https://zentto.net',
+    siteName: 'Zentto',
+    type: 'website',
+    locale: 'es_ES',
+    images: [
+      {
+        url: '/og-image.png',
+        width: 1200,
+        height: 630,
+        alt: 'Zentto ERP — Plataforma empresarial en la nube',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Zentto — ERP en la nube',
+    description: 'Sistema ERP SaaS todo-en-uno para PYMEs. Multi-país, multi-moneda.',
+    images: ['/og-image.png'],
+  },
+  robots: {
+    index: false,
+    follow: false,
+    nocache: true,
+  },
+  icons: {
+    icon: '/favicon.ico',
+    apple: '/apple-touch-icon.png',
+  },
+};
 
-const AUTHENTICATION = { signIn, signOut };
-
-// Inner App (has access to session + auth)
-function AppContent({ children }: { children: React.ReactNode }) {
-  const { data: session } = useSession();
-  const { isLoading, isAdmin, modulos } = useAuth();
-  const [showContent, setShowContent] = useState(false);
-  const pathname = usePathname() || '/';
-
-  useEffect(() => {
-    if (!isLoading) {
-      const t = setTimeout(() => setShowContent(true), 100);
-      return () => clearTimeout(t);
-    }
-  }, [isLoading]);
-
-  const navigation = useMemo(() => buildNavigation(isAdmin, modulos, pathname), [isAdmin, modulos, pathname]);
-
-  if (isLoading) {
-    return <LoadingFallback />;
-  }
-
-  return (
-    <AppProvider
-      theme={theme}
-      navigation={navigation}
-      session={session ?? undefined}
-      authentication={AUTHENTICATION}
-      branding={{
-        logo: <AppTitle />,
-        title: '',
-      }}
-    >
-      <AppBarWrapper>
-        {!showContent ? (
-          <LoadingFallback />
-        ) : (
-          <ToastProvider>
-            <Suspense fallback={<LoadingFallback />}>{children}</Suspense>
-          </ToastProvider>
-        )}
-      </AppBarWrapper>
-    </AppProvider>
-  );
-}
-
-// Root Layout
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="es" suppressHydrationWarning>
+    <html lang="es" data-scroll-behavior="smooth" suppressHydrationWarning>
       <head>
-        <title>Zentto</title>
         <InitColorSchemeScript attribute="data-toolpad-color-scheme" />
       </head>
       <body>
-        <SessionProvider>
-          <QueryProvider>
-            <AuthProvider>
-              <AppRouterCacheProvider options={{ enableCssLayer: true }}>
-                <LocalizationProviderWrapper>
-                  <AppContent>{children}</AppContent>
-                </LocalizationProviderWrapper>
-              </AppRouterCacheProvider>
-            </AuthProvider>
-          </QueryProvider>
-        </SessionProvider>
+        <RootClient>{children}</RootClient>
       </body>
     </html>
   );

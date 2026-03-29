@@ -8,141 +8,11 @@
 DO $body$
 BEGIN
 
-    -- PeriodoContable
-    CREATE TABLE IF NOT EXISTS public."PeriodoContable" (
-        "Id"            INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-        "Periodo"       VARCHAR(7) NOT NULL,
-        "FechaDesde"    DATE NOT NULL,
-        "FechaHasta"    DATE NOT NULL,
-        "Estado"        VARCHAR(20) NOT NULL DEFAULT 'ABIERTO',
-        "CerradoPor"    VARCHAR(40) NULL,
-        "CerradoEn"     TIMESTAMP NULL,
-        "FechaCreacion" TIMESTAMP NOT NULL DEFAULT (NOW() AT TIME ZONE 'UTC'),
-        CONSTRAINT "UQ_PeriodoContable_Periodo" UNIQUE ("Periodo")
-    );
-
-    -- AsientoContable
-    CREATE TABLE IF NOT EXISTS public."AsientoContable" (
-        "Id"                BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-        "NumeroAsiento"     VARCHAR(40) NOT NULL,
-        "Fecha"             DATE NOT NULL,
-        "Periodo"           VARCHAR(7) NOT NULL,
-        "TipoAsiento"       VARCHAR(20) NOT NULL,
-        "Referencia"        VARCHAR(120) NULL,
-        "Concepto"          VARCHAR(400) NOT NULL,
-        "Moneda"            VARCHAR(10) NOT NULL DEFAULT 'VES',
-        "Tasa"              NUMERIC(18,6) NOT NULL DEFAULT 1,
-        "TotalDebe"         NUMERIC(18,2) NOT NULL DEFAULT 0,
-        "TotalHaber"        NUMERIC(18,2) NOT NULL DEFAULT 0,
-        "Estado"            VARCHAR(20) NOT NULL DEFAULT 'BORRADOR',
-        "OrigenModulo"      VARCHAR(40) NULL,
-        "OrigenDocumento"   VARCHAR(120) NULL,
-        "CodUsuario"        VARCHAR(40) NULL,
-        "FechaCreacion"     TIMESTAMP NOT NULL DEFAULT (NOW() AT TIME ZONE 'UTC'),
-        "FechaAprobacion"   TIMESTAMP NULL,
-        "UsuarioAprobacion" VARCHAR(40) NULL,
-        "FechaAnulacion"    TIMESTAMP NULL,
-        "UsuarioAnulacion"  VARCHAR(40) NULL,
-        "MotivoAnulacion"   VARCHAR(400) NULL,
-        CONSTRAINT "UQ_AsientoContable_Numero" UNIQUE ("NumeroAsiento")
-    );
-
-    -- AsientoContableDetalle
-    CREATE TABLE IF NOT EXISTS public."AsientoContableDetalle" (
-        "Id"             BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-        "AsientoId"      BIGINT NOT NULL,
-        "Renglon"        INT NOT NULL,
-        "CodCuenta"      VARCHAR(40) NOT NULL,
-        "Descripcion"    VARCHAR(400) NULL,
-        "CentroCosto"    VARCHAR(20) NULL,
-        "AuxiliarTipo"   VARCHAR(30) NULL,
-        "AuxiliarCodigo" VARCHAR(120) NULL,
-        "Documento"      VARCHAR(120) NULL,
-        "Debe"           NUMERIC(18,2) NOT NULL DEFAULT 0,
-        "Haber"          NUMERIC(18,2) NOT NULL DEFAULT 0,
-        "FechaCreacion"  TIMESTAMP NOT NULL DEFAULT (NOW() AT TIME ZONE 'UTC'),
-        CONSTRAINT "FK_AsientoDet_Asiento" FOREIGN KEY ("AsientoId") REFERENCES public."AsientoContable"("Id")
-    );
-
-    -- AsientoOrigenAuxiliar
-    CREATE TABLE IF NOT EXISTS public."AsientoOrigenAuxiliar" (
-        "Id"              BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-        "OrigenModulo"    VARCHAR(40) NOT NULL,
-        "TipoDocumento"   VARCHAR(40) NOT NULL,
-        "NumeroDocumento" VARCHAR(120) NOT NULL,
-        "TablaOrigen"     VARCHAR(120) NULL,
-        "LlaveOrigen"     VARCHAR(400) NULL,
-        "AsientoId"       BIGINT NOT NULL,
-        "Estado"          VARCHAR(20) NOT NULL DEFAULT 'APLICADO',
-        "FechaCreacion"   TIMESTAMP NOT NULL DEFAULT (NOW() AT TIME ZONE 'UTC'),
-        CONSTRAINT "FK_AsientoOri_Asiento" FOREIGN KEY ("AsientoId") REFERENCES public."AsientoContable"("Id"),
-        CONSTRAINT "UQ_AsientoOri" UNIQUE ("OrigenModulo", "TipoDocumento", "NumeroDocumento", "AsientoId")
-    );
-
-    -- ConfiguracionContableAuxiliar
-    CREATE TABLE IF NOT EXISTS public."ConfiguracionContableAuxiliar" (
-        "Id"                 INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-        "Modulo"             VARCHAR(40) NOT NULL,
-        "Proceso"            VARCHAR(60) NOT NULL,
-        "Naturaleza"         VARCHAR(20) NOT NULL,
-        "CuentaContable"     VARCHAR(40) NOT NULL,
-        "CentroCostoDefault" VARCHAR(20) NULL,
-        "Descripcion"        VARCHAR(250) NULL,
-        "Activo"             BOOLEAN NOT NULL DEFAULT TRUE,
-        CONSTRAINT "UQ_ConfigCont" UNIQUE ("Modulo", "Proceso", "Naturaleza", "CuentaContable")
-    );
-
-    -- AjusteContable
-    CREATE TABLE IF NOT EXISTS public."AjusteContable" (
-        "Id"            BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-        "AsientoId"     BIGINT NOT NULL,
-        "TipoAjuste"   VARCHAR(40) NOT NULL,
-        "Motivo"        VARCHAR(500) NOT NULL,
-        "Fecha"         DATE NOT NULL,
-        "Estado"        VARCHAR(20) NOT NULL DEFAULT 'APROBADO',
-        "CodUsuario"    VARCHAR(40) NULL,
-        "FechaCreacion" TIMESTAMP NOT NULL DEFAULT (NOW() AT TIME ZONE 'UTC'),
-        CONSTRAINT "FK_AjusteCont_Asiento" FOREIGN KEY ("AsientoId") REFERENCES public."AsientoContable"("Id")
-    );
-
-    -- ActivoFijoContable
-    CREATE TABLE IF NOT EXISTS public."ActivoFijoContable" (
-        "Id"                      BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-        "CodigoActivo"            VARCHAR(40) NOT NULL,
-        "Descripcion"             VARCHAR(250) NOT NULL,
-        "FechaCompra"             DATE NOT NULL,
-        "CostoAdquisicion"        NUMERIC(18,2) NOT NULL,
-        "ValorResidual"           NUMERIC(18,2) NOT NULL DEFAULT 0,
-        "VidaUtilMeses"           INT NOT NULL,
-        "Metodo"                  VARCHAR(20) NOT NULL DEFAULT 'LINEAL',
-        "CuentaActivo"            VARCHAR(40) NOT NULL,
-        "CuentaDepreciacionAcum"  VARCHAR(40) NOT NULL,
-        "CuentaGastoDepreciacion" VARCHAR(40) NOT NULL,
-        "CentroCosto"             VARCHAR(20) NULL,
-        "Activo"                  BOOLEAN NOT NULL DEFAULT TRUE,
-        CONSTRAINT "UQ_ActivoFijo_Codigo" UNIQUE ("CodigoActivo")
-    );
-
-    -- DepreciacionContable
-    CREATE TABLE IF NOT EXISTS public."DepreciacionContable" (
-        "Id"            BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-        "ActivoId"      BIGINT NOT NULL,
-        "Periodo"       VARCHAR(7) NOT NULL,
-        "Fecha"         DATE NOT NULL,
-        "Monto"         NUMERIC(18,2) NOT NULL,
-        "AsientoId"     BIGINT NULL,
-        "Estado"        VARCHAR(20) NOT NULL DEFAULT 'GENERADO',
-        "FechaCreacion" TIMESTAMP NOT NULL DEFAULT (NOW() AT TIME ZONE 'UTC'),
-        CONSTRAINT "FK_DepCont_Activo" FOREIGN KEY ("ActivoId") REFERENCES public."ActivoFijoContable"("Id"),
-        CONSTRAINT "FK_DepCont_Asiento" FOREIGN KEY ("AsientoId") REFERENCES public."AsientoContable"("Id"),
-        CONSTRAINT "UQ_DepCont" UNIQUE ("ActivoId", "Periodo")
-    );
-
-    -- Indices
-    CREATE INDEX IF NOT EXISTS "IX_AsientoContable_Fecha"    ON public."AsientoContable" ("Fecha");
-    CREATE INDEX IF NOT EXISTS "IX_AsientoContable_Periodo"  ON public."AsientoContable" ("Periodo", "Estado");
-    CREATE INDEX IF NOT EXISTS "IX_AsientoDetalle_Cuenta"    ON public."AsientoContableDetalle" ("CodCuenta", "CentroCosto");
-    CREATE INDEX IF NOT EXISTS "IX_AsientoOri_Doc"           ON public."AsientoOrigenAuxiliar" ("OrigenModulo", "TipoDocumento", "NumeroDocumento");
+    -- NOTA: Tablas legacy public.* eliminadas (2026-03-16).
+    -- Usar acct.JournalEntry, acct.Account, acct.JournalEntryLine, etc.
+    -- Tablas eliminadas: PeriodoContable, AsientoContable, AsientoContableDetalle,
+    --   AsientoOrigenAuxiliar, ConfiguracionContableAuxiliar, AjusteContable,
+    --   ActivoFijoContable, DepreciacionContable (y sus indices asociados).
 
     -- Enlaces contables a auxiliares existentes (ADD COLUMN IF NOT EXISTS)
     IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'DocumentosVenta' AND table_schema = 'public' AND table_type = 'BASE TABLE') THEN
@@ -273,7 +143,7 @@ BEGIN
                (CASE s."grupo" WHEN '1' THEN 'A' WHEN '2' THEN 'P' WHEN '3' THEN 'C' WHEN '4' THEN 'I' WHEN '5' THEN 'G' WHEN '6' THEN 'G' WHEN '7' THEN 'C' ELSE 'A' END)::CHAR(1),
                s."Nivel",
                CASE WHEN s."Nivel" = 1 THEN NULL
-                    ELSE REGEXP_REPLACE(s."COD_CUENTA", '\.[^.]+$', '')
+                    ELSE REGEXP_REPLACE(s."COD_CUENTA", '\.[^.]+$',''::VARCHAR)
                END,
                TRUE,
                CASE WHEN s."USO" = 'MOV' THEN TRUE ELSE FALSE END

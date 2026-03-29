@@ -1,10 +1,10 @@
 -- =============================================================================
 -- sp_rrhh_obligaciones_legales.sql  (PostgreSQL / PL/pgSQL)
 -- Convertido desde T-SQL: web/api/sqlweb/includes/sp/sp_rrhh_obligaciones_legales.sql
--- Fecha conversión: 2026-03-16
+-- Fecha conversiÃ³n: 2026-03-16
 --
 -- Obligaciones Legales de RRHH (SSO, FAOV, INCE, TGSS, IMSS, EPS, FICA, etc.)
--- Modelo genérico, agnóstico de país, orientado a configuración.
+-- Modelo genÃ©rico, agnÃ³stico de paÃ­s, orientado a configuraciÃ³n.
 --
 -- Tablas:
 --   hr.LegalObligation, hr.ObligationRiskLevel,
@@ -12,24 +12,24 @@
 --
 -- Funciones:
 --   1.  usp_HR_Obligation_List            - Listado paginado de obligaciones
---   2.  usp_HR_Obligation_Save            - Insertar/actualizar obligación
---   3.  usp_HR_Obligation_GetByCountry    - Obligaciones activas por país
---   4.  usp_HR_EmployeeObligation_Enroll  - Inscribir empleado en obligación
+--   2.  usp_HR_Obligation_Save            - Insertar/actualizar obligaciÃ³n
+--   3.  usp_HR_Obligation_GetByCountry    - Obligaciones activas por paÃ­s
+--   4.  usp_HR_EmployeeObligation_Enroll  - Inscribir empleado en obligaciÃ³n
 --   5.  usp_HR_EmployeeObligation_Disenroll - Desinscribir empleado
 --   6.  usp_HR_EmployeeObligation_GetByEmployee - Obligaciones de un empleado
---   7.  usp_HR_Filing_Generate            - Generar declaración para un período
---   8.  usp_HR_Filing_GetSummary          - Cabecera + detalle de declaración
+--   7.  usp_HR_Filing_Generate            - Generar declaraciÃ³n para un perÃ­odo
+--   8.  usp_HR_Filing_GetSummary          - Cabecera + detalle de declaraciÃ³n
 --   9.  usp_HR_Filing_MarkFiled           - Marcar como presentada
 --   10. usp_HR_Filing_List                - Listado paginado de declaraciones
 -- =============================================================================
 
 -- =============================================================================
--- DDL: Tablas requeridas por este módulo
+-- DDL: Tablas requeridas por este mÃ³dulo
 -- =============================================================================
 
 CREATE SCHEMA IF NOT EXISTS hr;
 
--- hr."LegalObligation" - Catálogo maestro de obligaciones legales
+-- hr."LegalObligation" - CatÃ¡logo maestro de obligaciones legales
 CREATE TABLE IF NOT EXISTS hr."LegalObligation" (
     "LegalObligationId"  SERIAL          NOT NULL CONSTRAINT "PK_LegalObligation" PRIMARY KEY,
     "CountryCode"        CHAR(2)         NOT NULL,
@@ -67,7 +67,7 @@ CREATE TABLE IF NOT EXISTS hr."ObligationRiskLevel" (
     CONSTRAINT "UQ_ObligationRiskLevel" UNIQUE ("LegalObligationId", "RiskLevel")
 );
 
--- hr."EmployeeObligation" - Inscripción por empleado
+-- hr."EmployeeObligation" - InscripciÃ³n por empleado
 CREATE TABLE IF NOT EXISTS hr."EmployeeObligation" (
     "EmployeeObligationId" SERIAL          NOT NULL CONSTRAINT "PK_EmployeeObligation" PRIMARY KEY,
     "EmployeeId"           BIGINT          NOT NULL,
@@ -87,7 +87,7 @@ CREATE TABLE IF NOT EXISTS hr."EmployeeObligation" (
         REFERENCES hr."ObligationRiskLevel" ("ObligationRiskLevelId")
 );
 
--- hr."ObligationFiling" - Declaraciones por período
+-- hr."ObligationFiling" - Declaraciones por perÃ­odo
 CREATE TABLE IF NOT EXISTS hr."ObligationFiling" (
     "ObligationFilingId"   SERIAL          NOT NULL CONSTRAINT "PK_ObligationFiling" PRIMARY KEY,
     "CompanyId"            INTEGER         NOT NULL,
@@ -111,7 +111,7 @@ CREATE TABLE IF NOT EXISTS hr."ObligationFiling" (
         REFERENCES hr."LegalObligation" ("LegalObligationId")
 );
 
--- hr."ObligationFilingDetail" - Detalle por empleado en cada declaración
+-- hr."ObligationFilingDetail" - Detalle por empleado en cada declaraciÃ³n
 CREATE TABLE IF NOT EXISTS hr."ObligationFilingDetail" (
     "DetailId"             SERIAL          NOT NULL CONSTRAINT "PK_ObligationFilingDetail" PRIMARY KEY,
     "ObligationFilingId"   INTEGER         NOT NULL,
@@ -128,6 +128,7 @@ CREATE TABLE IF NOT EXISTS hr."ObligationFilingDetail" (
 -- =============================================================================
 -- 1. usp_HR_Obligation_List
 -- =============================================================================
+DROP FUNCTION IF EXISTS public.usp_HR_Obligation_List(CHAR(2), VARCHAR(20), BOOLEAN, VARCHAR(100), INTEGER, INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Obligation_List(
     p_country_code      CHAR(2)         DEFAULT NULL,
     p_obligation_type   VARCHAR(20)     DEFAULT NULL,
@@ -199,6 +200,7 @@ $$;
 -- =============================================================================
 -- 2. usp_HR_Obligation_Save
 -- =============================================================================
+DROP FUNCTION IF EXISTS public.usp_HR_Obligation_Save(INTEGER, CHAR(2), VARCHAR(30), VARCHAR(200), VARCHAR(200), VARCHAR(20), VARCHAR(30), NUMERIC(18,2), VARCHAR(20), NUMERIC(8,5), NUMERIC(8,5), BOOLEAN, VARCHAR(15), VARCHAR(200), DATE, DATE, BOOLEAN, VARCHAR(500), INTEGER, VARCHAR(500)) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Obligation_Save(
     p_legal_obligation_id   INTEGER         DEFAULT NULL,
     p_country_code          CHAR(2)         DEFAULT NULL,
@@ -230,31 +232,31 @@ BEGIN
     -- Validaciones
     IF p_country_code IS NULL OR LENGTH(TRIM(p_country_code)) = 0 THEN
         p_resultado := -1;
-        p_mensaje   := 'El código de país es obligatorio.';
+        p_mensaje   := 'El cÃ³digo de paÃ­s es obligatorio.';
         RETURN;
     END IF;
 
     IF p_code IS NULL OR LENGTH(TRIM(p_code)) = 0 THEN
         p_resultado := -1;
-        p_mensaje   := 'El código de obligación es obligatorio.';
+        p_mensaje   := 'El cÃ³digo de obligaciÃ³n es obligatorio.';
         RETURN;
     END IF;
 
     IF p_obligation_type NOT IN ('CONTRIBUTION','TAX_WITHHOLDING','REPORTING','REGISTRATION') THEN
         p_resultado := -1;
-        p_mensaje   := 'Tipo de obligación no válido. Use: CONTRIBUTION, TAX_WITHHOLDING, REPORTING, REGISTRATION.';
+        p_mensaje   := 'Tipo de obligaciÃ³n no vÃ¡lido. Use: CONTRIBUTION, TAX_WITHHOLDING, REPORTING, REGISTRATION.';
         RETURN;
     END IF;
 
     IF p_calculation_basis NOT IN ('NORMAL_SALARY','INTEGRAL_SALARY','GROSS_PAYROLL','TAXABLE_INCOME','FIXED_AMOUNT') THEN
         p_resultado := -1;
-        p_mensaje   := 'Base de cálculo no válida.';
+        p_mensaje   := 'Base de cÃ¡lculo no vÃ¡lida.';
         RETURN;
     END IF;
 
     IF p_filing_frequency NOT IN ('MONTHLY','QUARTERLY','ANNUAL','REALTIME') THEN
         p_resultado := -1;
-        p_mensaje   := 'Frecuencia de presentación no válida.';
+        p_mensaje   := 'Frecuencia de presentaciÃ³n no vÃ¡lida.';
         RETURN;
     END IF;
 
@@ -268,7 +270,7 @@ BEGIN
                   AND "EffectiveFrom" = p_effective_from
             ) THEN
                 p_resultado := -2;
-                p_mensaje   := 'Ya existe una obligación con ese código y fecha de vigencia para el país indicado.';
+                p_mensaje   := 'Ya existe una obligaciÃ³n con ese cÃ³digo y fecha de vigencia para el paÃ­s indicado.';
                 RETURN;
             END IF;
 
@@ -288,12 +290,12 @@ BEGIN
             )
             RETURNING "LegalObligationId" INTO p_resultado;
 
-            p_mensaje := 'Obligación legal creada exitosamente.';
+            p_mensaje := 'ObligaciÃ³n legal creada exitosamente.';
 
         ELSE
             IF NOT EXISTS (SELECT 1 FROM hr."LegalObligation" WHERE "LegalObligationId" = p_legal_obligation_id) THEN
                 p_resultado := -3;
-                p_mensaje   := 'No se encontró la obligación legal con el ID indicado.';
+                p_mensaje   := 'No se encontrÃ³ la obligaciÃ³n legal con el ID indicado.';
                 RETURN;
             END IF;
 
@@ -306,7 +308,7 @@ BEGIN
                   AND "LegalObligationId" <> p_legal_obligation_id
             ) THEN
                 p_resultado := -2;
-                p_mensaje   := 'Ya existe otra obligación con ese código y fecha de vigencia para el país indicado.';
+                p_mensaje   := 'Ya existe otra obligaciÃ³n con ese cÃ³digo y fecha de vigencia para el paÃ­s indicado.';
                 RETURN;
             END IF;
 
@@ -332,7 +334,7 @@ BEGIN
             WHERE "LegalObligationId" = p_legal_obligation_id;
 
             p_resultado := p_legal_obligation_id;
-            p_mensaje   := 'Obligación legal actualizada exitosamente.';
+            p_mensaje   := 'ObligaciÃ³n legal actualizada exitosamente.';
         END IF;
 
     EXCEPTION WHEN OTHERS THEN
@@ -345,6 +347,7 @@ $$;
 -- =============================================================================
 -- 3. usp_HR_Obligation_GetByCountry
 -- =============================================================================
+DROP FUNCTION IF EXISTS public.usp_HR_Obligation_GetByCountry(CHAR(2), DATE) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Obligation_GetByCountry(
     p_country_code  CHAR(2),
     p_as_of_date    DATE DEFAULT NULL
@@ -406,6 +409,7 @@ $$;
 -- =============================================================================
 -- 4. usp_HR_EmployeeObligation_Enroll
 -- =============================================================================
+DROP FUNCTION IF EXISTS public.usp_HR_EmployeeObligation_Enroll(BIGINT, INTEGER, VARCHAR(50), VARCHAR(50), INTEGER, DATE, NUMERIC(8,5), INTEGER, VARCHAR(500)) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_EmployeeObligation_Enroll(
     p_employee_id           BIGINT,
     p_legal_obligation_id   INTEGER,
@@ -428,7 +432,7 @@ BEGIN
         WHERE "LegalObligationId" = p_legal_obligation_id AND "IsActive" = TRUE
     ) THEN
         p_resultado := -1;
-        p_mensaje   := 'La obligación legal no existe o no está activa.';
+        p_mensaje   := 'La obligaciÃ³n legal no existe o no estÃ¡ activa.';
         RETURN;
     END IF;
 
@@ -439,7 +443,7 @@ BEGIN
           AND "Status"              = 'ACTIVE'
     ) THEN
         p_resultado := -2;
-        p_mensaje   := 'El empleado ya tiene una inscripción activa en esta obligación.';
+        p_mensaje   := 'El empleado ya tiene una inscripciÃ³n activa en esta obligaciÃ³n.';
         RETURN;
     END IF;
 
@@ -449,7 +453,7 @@ BEGIN
           AND "LegalObligationId"     = p_legal_obligation_id
     ) THEN
         p_resultado := -3;
-        p_mensaje   := 'El nivel de riesgo indicado no corresponde a esta obligación.';
+        p_mensaje   := 'El nivel de riesgo indicado no corresponde a esta obligaciÃ³n.';
         RETURN;
     END IF;
 
@@ -465,7 +469,7 @@ BEGIN
         )
         RETURNING "EmployeeObligationId" INTO p_resultado;
 
-        p_mensaje := 'Empleado inscrito exitosamente en la obligación.';
+        p_mensaje := 'Empleado inscrito exitosamente en la obligaciÃ³n.';
 
     EXCEPTION WHEN OTHERS THEN
         p_resultado := -99;
@@ -477,6 +481,7 @@ $$;
 -- =============================================================================
 -- 5. usp_HR_EmployeeObligation_Disenroll
 -- =============================================================================
+DROP FUNCTION IF EXISTS public.usp_HR_EmployeeObligation_Disenroll(INTEGER, DATE, INTEGER, VARCHAR(500)) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_EmployeeObligation_Disenroll(
     p_employee_obligation_id    INTEGER,
     p_disenrollment_date        DATE,
@@ -499,19 +504,19 @@ BEGIN
 
     IF v_current_status IS NULL THEN
         p_resultado := -1;
-        p_mensaje   := 'No se encontró la inscripción indicada.';
+        p_mensaje   := 'No se encontrÃ³ la inscripciÃ³n indicada.';
         RETURN;
     END IF;
 
     IF v_current_status <> 'ACTIVE' THEN
         p_resultado := -2;
-        p_mensaje   := 'La inscripción no está activa. Estado actual: ' || v_current_status;
+        p_mensaje   := 'La inscripciÃ³n no estÃ¡ activa. Estado actual: ' || v_current_status;
         RETURN;
     END IF;
 
     IF p_disenrollment_date < v_enroll_date THEN
         p_resultado := -3;
-        p_mensaje   := 'La fecha de retiro no puede ser anterior a la fecha de inscripción.';
+        p_mensaje   := 'La fecha de retiro no puede ser anterior a la fecha de inscripciÃ³n.';
         RETURN;
     END IF;
 
@@ -535,6 +540,7 @@ $$;
 -- =============================================================================
 -- 6. usp_HR_EmployeeObligation_GetByEmployee
 -- =============================================================================
+DROP FUNCTION IF EXISTS public.usp_HR_EmployeeObligation_GetByEmployee(BIGINT, VARCHAR(15)) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_EmployeeObligation_GetByEmployee(
     p_employee_id       BIGINT,
     p_status_filter     VARCHAR(15)     DEFAULT NULL
@@ -604,6 +610,7 @@ $$;
 -- =============================================================================
 -- 7. usp_HR_Filing_Generate
 -- =============================================================================
+DROP FUNCTION IF EXISTS public.usp_HR_Filing_Generate(INTEGER, INTEGER, DATE, DATE, DATE, INTEGER, VARCHAR(500)) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Filing_Generate(
     p_company_id            INTEGER,
     p_legal_obligation_id   INTEGER,
@@ -632,7 +639,7 @@ BEGIN
         WHERE "LegalObligationId" = p_legal_obligation_id AND "IsActive" = TRUE
     ) THEN
         p_resultado := -1;
-        p_mensaje   := 'La obligación legal no existe o no está activa.';
+        p_mensaje   := 'La obligaciÃ³n legal no existe o no estÃ¡ activa.';
         RETURN;
     END IF;
 
@@ -645,13 +652,13 @@ BEGIN
           AND "Status"             <> 'REJECTED'
     ) THEN
         p_resultado := -2;
-        p_mensaje   := 'Ya existe una declaración para este período y obligación.';
+        p_mensaje   := 'Ya existe una declaraciÃ³n para este perÃ­odo y obligaciÃ³n.';
         RETURN;
     END IF;
 
     IF p_filing_period_end < p_filing_period_start THEN
         p_resultado := -3;
-        p_mensaje   := 'La fecha fin del período no puede ser anterior a la fecha inicio.';
+        p_mensaje   := 'La fecha fin del perÃ­odo no puede ser anterior a la fecha inicio.';
         RETURN;
     END IF;
 
@@ -762,7 +769,7 @@ BEGIN
         WHERE "ObligationFilingId" = v_filing_id;
 
         p_resultado := v_filing_id;
-        p_mensaje   := 'Declaración generada exitosamente con ' || v_emp_count::TEXT || ' empleado(s).';
+        p_mensaje   := 'DeclaraciÃ³n generada exitosamente con ' || v_emp_count::TEXT || ' empleado(s).';
 
     EXCEPTION WHEN OTHERS THEN
         p_resultado := -99;
@@ -774,8 +781,9 @@ $$;
 -- =============================================================================
 -- 8. usp_HR_Filing_GetSummary
 -- =============================================================================
+DROP FUNCTION IF EXISTS public.usp_HR_Filing_GetSummary(INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Filing_GetSummary(
-    p_obligation_filing_id INTEGER
+    p_filing_id INTEGER
 )
 RETURNS TABLE (
     result_type     TEXT,
@@ -818,7 +826,7 @@ BEGIN
         )
     FROM hr."ObligationFiling" f
     INNER JOIN hr."LegalObligation" lo ON lo."LegalObligationId" = f."LegalObligationId"
-    WHERE f."ObligationFilingId" = p_obligation_filing_id;
+    WHERE f."ObligationFilingId" = p_filing_id;
 
     -- Detalle
     RETURN QUERY
@@ -839,7 +847,7 @@ BEGIN
         )
     FROM hr."ObligationFilingDetail" d
     INNER JOIN master."Employee" e ON e."EmployeeId" = d."EmployeeId"
-    WHERE d."ObligationFilingId" = p_obligation_filing_id
+    WHERE d."ObligationFilingId" = p_filing_id
     ORDER BY e."EmployeeName";
 END;
 $$;
@@ -847,6 +855,7 @@ $$;
 -- =============================================================================
 -- 9. usp_HR_Filing_MarkFiled
 -- =============================================================================
+DROP FUNCTION IF EXISTS public.usp_HR_Filing_MarkFiled(INTEGER, DATE, VARCHAR(100), INTEGER, VARCHAR(500), VARCHAR(500), INTEGER, VARCHAR(500)) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Filing_MarkFiled(
     p_obligation_filing_id  INTEGER,
     p_filed_date            DATE            DEFAULT NULL,
@@ -872,7 +881,7 @@ BEGIN
 
     IF v_current_status IS NULL THEN
         p_resultado := -1;
-        p_mensaje   := 'No se encontró la declaración indicada.';
+        p_mensaje   := 'No se encontrÃ³ la declaraciÃ³n indicada.';
         RETURN;
     END IF;
 
@@ -898,7 +907,7 @@ BEGIN
         WHERE "ObligationFilingId" = p_obligation_filing_id;
 
         p_resultado := p_obligation_filing_id;
-        p_mensaje   := 'Declaración marcada como presentada exitosamente.';
+        p_mensaje   := 'DeclaraciÃ³n marcada como presentada exitosamente.';
 
     EXCEPTION WHEN OTHERS THEN
         p_resultado := -99;
@@ -910,15 +919,16 @@ $$;
 -- =============================================================================
 -- 10. usp_HR_Filing_List
 -- =============================================================================
+-- usp_HR_Filing_List: service sends (p_company_id, p_obligation_id, p_status, p_offset, p_limit)
+-- Function accepts those exact param names and inlines the query.
+DROP FUNCTION IF EXISTS public.usp_HR_Filing_List(INTEGER, INTEGER, CHAR, VARCHAR, DATE, DATE, INTEGER, INTEGER) CASCADE;
+DROP FUNCTION IF EXISTS public.usp_HR_Filing_List(INTEGER, INTEGER, VARCHAR, INTEGER, INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Filing_List(
-    p_company_id            INTEGER         DEFAULT NULL,
-    p_legal_obligation_id   INTEGER         DEFAULT NULL,
-    p_country_code          CHAR(2)         DEFAULT NULL,
-    p_status                VARCHAR(15)     DEFAULT NULL,
-    p_from_date             DATE            DEFAULT NULL,
-    p_to_date               DATE            DEFAULT NULL,
-    p_page                  INTEGER         DEFAULT 1,
-    p_limit                 INTEGER         DEFAULT 50
+    p_company_id    INTEGER,
+    p_obligation_id INTEGER     DEFAULT NULL,
+    p_status        VARCHAR     DEFAULT NULL,
+    p_offset        INTEGER     DEFAULT 0,
+    p_limit         INTEGER     DEFAULT 50
 )
 RETURNS TABLE(
     p_total_count           BIGINT,
@@ -941,10 +951,8 @@ RETURNS TABLE(
     "Status"                VARCHAR(15),
     "CreatedAt"             TIMESTAMP
 )
-LANGUAGE plpgsql
-AS $$
+LANGUAGE plpgsql AS $$
 BEGIN
-    IF p_page  < 1   THEN p_page  := 1;   END IF;
     IF p_limit < 1   THEN p_limit := 50;  END IF;
     IF p_limit > 500 THEN p_limit := 500; END IF;
 
@@ -971,14 +979,11 @@ BEGIN
         f."CreatedAt"
     FROM hr."ObligationFiling" f
     INNER JOIN hr."LegalObligation" lo ON lo."LegalObligationId" = f."LegalObligationId"
-    WHERE (p_company_id          IS NULL OR f."CompanyId"          = p_company_id)
-      AND (p_legal_obligation_id IS NULL OR f."LegalObligationId"  = p_legal_obligation_id)
-      AND (p_country_code        IS NULL OR lo."CountryCode"       = p_country_code)
-      AND (p_status              IS NULL OR f."Status"             = p_status)
-      AND (p_from_date           IS NULL OR f."FilingPeriodStart" >= p_from_date)
-      AND (p_to_date             IS NULL OR f."FilingPeriodEnd"   <= p_to_date)
+    WHERE (p_company_id    IS NULL OR f."CompanyId"         = p_company_id)
+      AND (p_obligation_id IS NULL OR f."LegalObligationId" = p_obligation_id)
+      AND (p_status        IS NULL OR f."Status"            = p_status)
     ORDER BY f."FilingPeriodStart" DESC, lo."Code"
-    LIMIT p_limit OFFSET (p_page - 1) * p_limit;
+    LIMIT p_limit OFFSET p_offset;
 END;
 $$;
 
@@ -996,7 +1001,7 @@ INSERT INTO hr."LegalObligation" (
 SELECT
     'VE', 'VE_SSO', 'Seguro Social Obligatorio', 'IVSS', 'CONTRIBUTION',
     'NORMAL_SALARY', 5, 'MIN_WAGES', 9.00000, 4.00000,
-    TRUE, 'MONTHLY', 'Primeros 5 días hábiles del mes siguiente',
+    TRUE, 'MONTHLY', 'Primeros 5 dÃ­as hÃ¡biles del mes siguiente',
     '2000-01-01', TRUE, 'Tasa base clase I. Consultar tabla de riesgo para clases II-IV.',
     (NOW() AT TIME ZONE 'UTC'), (NOW() AT TIME ZONE 'UTC')
 WHERE NOT EXISTS (SELECT 1 FROM hr."LegalObligation" WHERE "CountryCode" = 'VE' AND "Code" = 'VE_SSO');
@@ -1011,12 +1016,12 @@ INSERT INTO hr."LegalObligation" (
 SELECT
     'VE', 'VE_FAOV', 'Fondo de Ahorro Obligatorio para la Vivienda', 'BANAVIH', 'CONTRIBUTION',
     'INTEGRAL_SALARY', 2.00000, 1.00000,
-    FALSE, 'MONTHLY', 'Primeros 5 días hábiles del mes siguiente',
-    '2000-01-01', TRUE, 'Base: salario integral (salario + alícuota utilidades + alícuota vacaciones).',
+    FALSE, 'MONTHLY', 'Primeros 5 dÃ­as hÃ¡biles del mes siguiente',
+    '2000-01-01', TRUE, 'Base: salario integral (salario + alÃ­cuota utilidades + alÃ­cuota vacaciones).',
     (NOW() AT TIME ZONE 'UTC'), (NOW() AT TIME ZONE 'UTC')
 WHERE NOT EXISTS (SELECT 1 FROM hr."LegalObligation" WHERE "CountryCode" = 'VE' AND "Code" = 'VE_FAOV');
 
--- VE_LRPE: Régimen Prestacional de Empleo (Paro Forzoso)
+-- VE_LRPE: RÃ©gimen Prestacional de Empleo (Paro Forzoso)
 INSERT INTO hr."LegalObligation" (
     "CountryCode", "Code", "Name", "InstitutionName", "ObligationType",
     "CalculationBasis", "EmployerRate", "EmployeeRate",
@@ -1026,12 +1031,12 @@ INSERT INTO hr."LegalObligation" (
 SELECT
     'VE', 'VE_LRPE', 'Regimen Prestacional de Empleo (Paro Forzoso)', 'IVSS', 'CONTRIBUTION',
     'NORMAL_SALARY', 2.00000, 0.50000,
-    FALSE, 'MONTHLY', 'Primeros 5 días hábiles del mes siguiente',
-    '2000-01-01', TRUE, 'Paro forzoso - Ley del Régimen Prestacional de Empleo.',
+    FALSE, 'MONTHLY', 'Primeros 5 dÃ­as hÃ¡biles del mes siguiente',
+    '2000-01-01', TRUE, 'Paro forzoso - Ley del RÃ©gimen Prestacional de Empleo.',
     (NOW() AT TIME ZONE 'UTC'), (NOW() AT TIME ZONE 'UTC')
 WHERE NOT EXISTS (SELECT 1 FROM hr."LegalObligation" WHERE "CountryCode" = 'VE' AND "Code" = 'VE_LRPE');
 
--- VE_INCE: Instituto Nacional de Capacitación y Educación Socialista
+-- VE_INCE: Instituto Nacional de CapacitaciÃ³n y EducaciÃ³n Socialista
 INSERT INTO hr."LegalObligation" (
     "CountryCode", "Code", "Name", "InstitutionName", "ObligationType",
     "CalculationBasis", "EmployerRate", "EmployeeRate",
@@ -1041,8 +1046,8 @@ INSERT INTO hr."LegalObligation" (
 SELECT
     'VE', 'VE_INCE', 'INCE - Aporte Patronal', 'INCE', 'CONTRIBUTION',
     'GROSS_PAYROLL', 2.00000, 0.00000,
-    FALSE, 'QUARTERLY', 'Dentro de los 5 días hábiles después del cierre del trimestre',
-    '2000-01-01', TRUE, 'Empleado aporta 0.5% sobre utilidades (manejado por separado en nómina).',
+    FALSE, 'QUARTERLY', 'Dentro de los 5 dÃ­as hÃ¡biles despuÃ©s del cierre del trimestre',
+    '2000-01-01', TRUE, 'Empleado aporta 0.5% sobre utilidades (manejado por separado en nÃ³mina).',
     (NOW() AT TIME ZONE 'UTC'), (NOW() AT TIME ZONE 'UTC')
 WHERE NOT EXISTS (SELECT 1 FROM hr."LegalObligation" WHERE "CountryCode" = 'VE' AND "Code" = 'VE_INCE');
 
@@ -1057,7 +1062,7 @@ BEGIN
 
     IF v_sso_id IS NOT NULL THEN
         INSERT INTO hr."ObligationRiskLevel" ("LegalObligationId", "RiskLevel", "RiskDescription", "EmployerRate", "EmployeeRate")
-        SELECT v_sso_id, 1, 'Riesgo mínimo',  9.00000, 4.00000
+        SELECT v_sso_id, 1, 'Riesgo mÃ­nimo',  9.00000, 4.00000
         WHERE NOT EXISTS (SELECT 1 FROM hr."ObligationRiskLevel" WHERE "LegalObligationId" = v_sso_id AND "RiskLevel" = 1);
 
         INSERT INTO hr."ObligationRiskLevel" ("LegalObligationId", "RiskLevel", "RiskDescription", "EmployerRate", "EmployeeRate")
@@ -1069,7 +1074,7 @@ BEGIN
         WHERE NOT EXISTS (SELECT 1 FROM hr."ObligationRiskLevel" WHERE "LegalObligationId" = v_sso_id AND "RiskLevel" = 3);
 
         INSERT INTO hr."ObligationRiskLevel" ("LegalObligationId", "RiskLevel", "RiskDescription", "EmployerRate", "EmployeeRate")
-        SELECT v_sso_id, 4, 'Riesgo máximo', 12.00000, 4.00000
+        SELECT v_sso_id, 4, 'Riesgo mÃ¡ximo', 12.00000, 4.00000
         WHERE NOT EXISTS (SELECT 1 FROM hr."ObligationRiskLevel" WHERE "LegalObligationId" = v_sso_id AND "RiskLevel" = 4);
     END IF;
 END;

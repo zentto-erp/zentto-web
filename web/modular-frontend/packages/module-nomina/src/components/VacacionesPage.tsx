@@ -1,12 +1,10 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Box,
-  Paper,
   Typography,
   Button,
-  TextField,
   Stack,
   Dialog,
   DialogTitle,
@@ -14,27 +12,50 @@ import {
   DialogActions,
   CircularProgress,
 } from "@mui/material";
-import { DataGrid, type GridColDef } from "@mui/x-data-grid";
+import type { ColumnDef } from "@zentto/datagrid-core";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
-import VisibilityIcon from "@mui/icons-material/Visibility";
-import IconButton from "@mui/material/IconButton";
 import { useRouter } from "next/navigation";
-import { formatCurrency } from "@zentto/shared-api";
+import { formatCurrency, useGridLayoutSync } from "@zentto/shared-api";
 import {
   useVacacionesList,
   useVacacionDetalle,
 } from "../hooks/useNomina";
+import { buildNominaGridId, useNominaGridId, useNominaGridRegistration } from "./zenttoGridPersistence";
+
+const COLUMNS: ColumnDef[] = [
+  { field: "vacacion", header: "ID", width: 160, sortable: true },
+  { field: "cedula", header: "Cédula", width: 120, sortable: true },
+  { field: "nombreEmpleado", header: "Empleado", flex: 1, sortable: true },
+  { field: "inicio", header: "Inicio", width: 110 },
+  { field: "hasta", header: "Hasta", width: 110 },
+  { field: "reintegro", header: "Reintegro", width: 110 },
+  { field: "dias", header: "Días", width: 80, type: "number", aggregation: "sum" },
+  { field: "total", header: "Monto", width: 130, type: "number", aggregation: "sum" },
+  {
+    field: "actions", header: "Acciones", type: "actions", width: 80, pin: "right",
+    actions: [
+      { icon: "view", label: "Ver detalle", action: "view" },
+    ],
+  },
+];
+
+const GRID_ID = buildNominaGridId("vacaciones");
+
+
 
 export default function VacacionesPage() {
+  const gridRef = useRef<any>(null);
   const router = useRouter();
   const [cedula, setCedula] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const { ready: layoutReady } = useGridLayoutSync(GRID_ID);
+  const { registered } = useNominaGridRegistration(layoutReady);
 
   const { data, isLoading } = useVacacionesList({ cedula: cedula || undefined });
   const detalle = useVacacionDetalle(selectedId);
 
   const rawRows: any[] = data?.data ?? data?.rows ?? [];
-  // Mapear campos del SP a los que espera el DataGrid
+  useNominaGridId(gridRef, GRID_ID);
   const rows = rawRows.map((r: any, i: number) => {
     const inicio = r.inicio ?? r.fechaInicio;
     const hasta = r.hasta ?? r.fechaHasta;
@@ -55,32 +76,25 @@ export default function VacacionesPage() {
     };
   });
 
-  const columns: GridColDef[] = [
-    { field: "vacacion", headerName: "ID", width: 160 },
-    { field: "cedula", headerName: "Cédula", width: 120 },
-    { field: "nombreEmpleado", headerName: "Empleado", flex: 1 },
-    { field: "inicio", headerName: "Inicio", width: 110 },
-    { field: "hasta", headerName: "Hasta", width: 110 },
-    { field: "reintegro", headerName: "Reintegro", width: 110 },
-    { field: "dias", headerName: "Días", width: 80, type: "number" },
-    {
-      field: "total",
-      headerName: "Monto",
-      width: 130,
-      renderCell: (p) => formatCurrency(p.value ?? 0),
-    },
-    {
-      field: "acciones",
-      headerName: "",
-      width: 60,
-      sortable: false,
-      renderCell: (p) => (
-        <IconButton size="small" onClick={() => setSelectedId(p.row.vacacion)}>
-          <VisibilityIcon fontSize="small" />
-        </IconButton>
-      ),
-    },
-  ];
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+    el.columns = COLUMNS;
+    el.rows = rows;
+    el.loading = isLoading;
+    el.getRowId = (r: any) => r._id;
+  }, [rows, isLoading, registered]);
+
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+    const handler = (e: CustomEvent) => {
+      const { action, row } = e.detail;
+      if (action === "view") setSelectedId(row.vacacion);
+    };
+    el.addEventListener("action-click", handler);
+    return () => el.removeEventListener("action-click", handler);
+  }, [registered, rows]);
 
   return (
     <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
@@ -97,25 +111,23 @@ export default function VacacionesPage() {
         </Button>
       </Stack>
 
-      <Stack direction="row" spacing={2} mb={2}>
-        <TextField
-          label="Buscar por Cédula"
-          size="small"
-          value={cedula}
-          onChange={(e) => setCedula(e.target.value)}
+      <Box sx={{ flex: 1, minHeight: 0 }}>
+        <zentto-grid
+          ref={gridRef}
+          height="calc(100vh - 200px)"
+          show-totals
+          enable-toolbar
+          enable-header-menu
+          enable-header-filters
+          enable-clipboard
+          enable-quick-search
+          enable-context-menu
+          enable-status-bar
+          enable-configurator
+          enable-grouping
+          enable-pivot
         />
-      </Stack>
-
-      <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, width: "100%" }}>
-        <DataGrid
-          rows={rows}
-          columns={columns}
-          loading={isLoading}
-          pageSizeOptions={[25, 50]}
-          disableRowSelectionOnClick
-          getRowId={(r) => r._id}
-        />
-      </Paper>
+      </Box>
 
       {/* Detalle */}
       <Dialog open={selectedId != null} onClose={() => setSelectedId(null)} maxWidth="sm" fullWidth>
@@ -139,4 +151,12 @@ export default function VacacionesPage() {
       </Dialog>
     </Box>
   );
+}
+
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'zentto-grid': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & Record<string, any>, HTMLElement>;
+    }
+  }
 }

@@ -26,10 +26,10 @@ DECLARE
     v_serial_tipo   VARCHAR(60);
     v_detalle_rows  INT;
 BEGIN
-    v_num_fact    := NULLIF(TRIM(p_cotizacion_json->>'NUM_FACT'), '');
-    v_codigo      := NULLIF(TRIM(p_cotizacion_json->>'CODIGO'), '');
-    v_nombre      := COALESCE(NULLIF(TRIM(p_cotizacion_json->>'NOMBRE'), ''), '');
-    v_serial_tipo := COALESCE(NULLIF(TRIM(p_cotizacion_json->>'SERIALTIPO'), ''), '');
+    v_num_fact    := NULLIF(TRIM(p_cotizacion_json->>'NUM_FACT'), ''::VARCHAR);
+    v_codigo      := NULLIF(TRIM(p_cotizacion_json->>'CODIGO'), ''::VARCHAR);
+    v_nombre      := COALESCE(NULLIF(TRIM(p_cotizacion_json->>'NOMBRE'), ''::VARCHAR),''::VARCHAR);
+    v_serial_tipo := COALESCE(NULLIF(TRIM(p_cotizacion_json->>'SERIALTIPO'), ''::VARCHAR),''::VARCHAR);
 
     BEGIN
         v_fecha := (p_cotizacion_json->>'FECHA')::TIMESTAMP;
@@ -66,9 +66,9 @@ BEGIN
     )
     SELECT
         v_num_fact,
-        COALESCE(NULLIF(TRIM(d->>'SERIALTIPO'), ''), v_serial_tipo),
-        NULLIF(TRIM(d->>'COD_SERV'), ''),
-        NULLIF(TRIM(d->>'DESCRIPCION'), ''),
+        COALESCE(NULLIF(TRIM(d->>'SERIALTIPO'), ''::VARCHAR), v_serial_tipo),
+        NULLIF(TRIM(d->>'COD_SERV'), ''::VARCHAR),
+        NULLIF(TRIM(d->>'DESCRIPCION'), ''::VARCHAR),
         v_fecha,
         COALESCE((d->>'CANTIDAD')::DOUBLE PRECISION, 0),
         COALESCE((d->>'PRECIO')::DOUBLE PRECISION, 0),
@@ -83,10 +83,10 @@ BEGIN
             (d->>'PRECIO_DESCUENTO')::DOUBLE PRECISION,
             COALESCE((d->>'PRECIO')::DOUBLE PRECISION, 0)
         ),
-        COALESCE(NULLIF(TRIM(d->>'Relacionada'), ''), '0'),
+        COALESCE(NULLIF(TRIM(d->>'Relacionada'), ''::VARCHAR), '0'),
         COALESCE((d->>'RENGLON')::DOUBLE PRECISION, 0),
-        NULLIF(TRIM(d->>'Vendedor'), ''),
-        NULLIF(TRIM(d->>'Cod_alterno'), '')
+        NULLIF(TRIM(d->>'Vendedor'), ''::VARCHAR),
+        NULLIF(TRIM(d->>'Cod_alterno'), ''::VARCHAR)
     FROM jsonb_array_elements(p_detalle_json) AS d;
 
     SELECT COUNT(*) INTO v_detalle_rows FROM jsonb_array_elements(p_detalle_json);

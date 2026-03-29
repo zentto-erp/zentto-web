@@ -45,6 +45,7 @@ END;
 $$;
 
 -- GET BY CODIGO
+DROP FUNCTION IF EXISTS usp_lineas_getbycodigo(INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_lineas_getbycodigo(
     p_codigo INT
 )
@@ -75,7 +76,7 @@ DECLARE
     v_descripcion VARCHAR(50);
     v_nuevo_codigo INT;
 BEGIN
-    v_descripcion := NULLIF(p_row_json->>'DESCRIPCION', '');
+    v_descripcion := NULLIF(p_row_json->>'DESCRIPCION', ''::VARCHAR);
 
     BEGIN
         INSERT INTO public."Lineas" ("DESCRIPCION")
@@ -107,7 +108,7 @@ BEGIN
         RETURN;
     END IF;
 
-    v_descripcion := NULLIF(p_row_json->>'DESCRIPCION', '');
+    v_descripcion := NULLIF(p_row_json->>'DESCRIPCION', ''::VARCHAR);
 
     BEGIN
         UPDATE public."Lineas"

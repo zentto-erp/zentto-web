@@ -12,7 +12,6 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
-  Grid,
   IconButton,
   Paper,
   Stack,
@@ -22,11 +21,14 @@ import {
   TableHead,
   TableRow,
   TextField,
-  Typography
+  Typography,
+  Tooltip,
 } from "@mui/material";
 import { Add, Delete } from "@mui/icons-material";
 import { apiGet, apiPost, toDateOnly } from "@zentto/shared-api";
 import { useTimezone } from "@zentto/shared-auth";
+import { FormGrid, FormField, DatePicker } from "@zentto/shared-ui";
+import dayjs from "dayjs";
 import { useEmitirCompraTx } from "../hooks/useCompras";
 
 type ProveedorRow = {
@@ -303,36 +305,33 @@ export default function CompraForm({ numeroCompra }: CompraFormProps) {
       {okMsg && <Alert severity="success" sx={{ mb: 2 }}>{okMsg}</Alert>}
 
       <Paper sx={{ p: 2, mb: 2 }}>
-        <Grid container spacing={2}>
-          <Grid item xs={12} md={3}>
-            <TextField fullWidth size="small" label="NUM_FACT" value={numFact} onChange={(e) => setNumFact(e.target.value)} />
-          </Grid>
-          <Grid item xs={12} md={3}>
-            <TextField
-              fullWidth
-              size="small"
+        <FormGrid spacing={2}>
+          <FormField xs={12} md={3}>
+            <TextField label="NUM_FACT" value={numFact} onChange={(e) => setNumFact(e.target.value)} />
+          </FormField>
+          <FormField xs={12} md={3}>
+            <DatePicker
               label="Fecha"
-              type="date"
-              InputLabelProps={{ shrink: true }}
-              value={fecha}
-              onChange={(e) => setFecha(e.target.value)}
+              value={fecha ? dayjs(fecha) : null}
+              onChange={(v) => setFecha(v ? v.format('YYYY-MM-DD') : '')}
+              slotProps={{ textField: { size: 'small', fullWidth: true } }}
             />
-          </Grid>
-          <Grid item xs={12} md={2}>
-            <TextField fullWidth size="small" label="Tipo" value={tipo} onChange={(e) => setTipo(e.target.value.toUpperCase())} />
-          </Grid>
-          <Grid item xs={12} md={2}>
-            <TextField fullWidth size="small" label="Cod Usuario" value={codUsuario} onChange={(e) => setCodUsuario(e.target.value)} />
-          </Grid>
-          <Grid item xs={12} md={2}>
+          </FormField>
+          <FormField xs={12} md={2}>
+            <TextField label="Tipo" value={tipo} onChange={(e) => setTipo(e.target.value.toUpperCase())} />
+          </FormField>
+          <FormField xs={12} md={2}>
+            <TextField label="Cod Usuario" value={codUsuario} onChange={(e) => setCodUsuario(e.target.value)} />
+          </FormField>
+          <FormField xs={12} md={2}>
             <Button fullWidth variant="contained" onClick={guardarCompraTx} disabled={emitirTx.isPending}>
               Guardar TX
             </Button>
-          </Grid>
-        </Grid>
+          </FormField>
+        </FormGrid>
 
-        <Grid container spacing={2} sx={{ mt: 0.5 }}>
-          <Grid item xs={12} md={8}>
+        <FormGrid spacing={2} sx={{ mt: 0.5 }}>
+          <FormField xs={12} md={8}>
             <Autocomplete<ProveedorRow>
               value={proveedorSelected}
               onChange={(_, value) => setProveedorSelected(value)}
@@ -358,7 +357,7 @@ export default function CompraForm({ numeroCompra }: CompraFormProps) {
                 <TextField
                   {...params}
                   label="Proveedor"
-                  size="small"
+                 
                   placeholder="Buscar por codigo o nombre..."
                   InputProps={{
                     ...params.InputProps,
@@ -372,14 +371,14 @@ export default function CompraForm({ numeroCompra }: CompraFormProps) {
                 />
               )}
             />
-          </Grid>
-          <Grid item xs={12} md={4}>
-            <TextField fullWidth size="small" label="RIF" value={rifProveedor} InputProps={{ readOnly: true }} />
-          </Grid>
-          <Grid item xs={12}>
-            <TextField fullWidth size="small" label="Concepto" value={concepto} onChange={(e) => setConcepto(e.target.value)} />
-          </Grid>
-        </Grid>
+          </FormField>
+          <FormField xs={12} md={4}>
+            <TextField label="RIF" value={rifProveedor} InputProps={{ readOnly: true }} />
+          </FormField>
+          <FormField xs={12}>
+            <TextField label="Concepto" value={concepto} onChange={(e) => setConcepto(e.target.value)} />
+          </FormField>
+        </FormGrid>
       </Paper>
 
       <Paper sx={{ p: 2, mb: 2 }}>
@@ -390,8 +389,8 @@ export default function CompraForm({ numeroCompra }: CompraFormProps) {
           </Button>
         </Stack>
 
-        <Grid container spacing={1} alignItems="center">
-          <Grid item xs={12} md={5}>
+        <FormGrid spacing={1} alignItems="center">
+          <FormField xs={12} md={5}>
             <Autocomplete<InventarioRow>
               value={articuloSelected}
               onChange={handleArticuloSelect}
@@ -418,7 +417,7 @@ export default function CompraForm({ numeroCompra }: CompraFormProps) {
                 <TextField
                   {...params}
                   label="Articulo"
-                  size="small"
+                 
                   placeholder="Buscar por codigo o descripcion..."
                   InputProps={{
                     ...params.InputProps,
@@ -432,49 +431,46 @@ export default function CompraForm({ numeroCompra }: CompraFormProps) {
                 />
               )}
             />
-          </Grid>
-          <Grid item xs={6} md={2}>
-            <TextField fullWidth size="small" label="Referencia" value={linea.REFERENCIA || ""} InputProps={{ readOnly: true }} />
-          </Grid>
-          <Grid item xs={6} md={1}>
+          </FormField>
+          <FormField xs={6} md={2}>
+            <TextField label="Referencia" value={linea.REFERENCIA || ""} InputProps={{ readOnly: true }} />
+          </FormField>
+          <FormField xs={6} md={1}>
             <TextField
-              fullWidth
-              size="small"
+             
               label="Cant"
               type="number"
               inputProps={{ min: 0, step: "0.01" }}
               value={linea.CANTIDAD}
               onChange={(e) => setLinea((p) => ({ ...p, CANTIDAD: Number(e.target.value) || 0 }))}
             />
-          </Grid>
-          <Grid item xs={6} md={2}>
+          </FormField>
+          <FormField xs={6} md={2}>
             <TextField
-              fullWidth
-              size="small"
+             
               label="P. Costo"
               type="number"
               inputProps={{ min: 0, step: "0.01" }}
               value={linea.PRECIO_COSTO}
               onChange={(e) => setLinea((p) => ({ ...p, PRECIO_COSTO: Number(e.target.value) || 0 }))}
             />
-          </Grid>
-          <Grid item xs={6} md={1}>
+          </FormField>
+          <FormField xs={6} md={1}>
             <TextField
-              fullWidth
-              size="small"
+             
               label="IVA %"
               type="number"
               inputProps={{ min: 0, step: "0.01" }}
               value={linea.ALICUOTA}
               onChange={(e) => setLinea((p) => ({ ...p, ALICUOTA: Number(e.target.value) || 0 }))}
             />
-          </Grid>
-          <Grid item xs={12} md={1}>
+          </FormField>
+          <FormField xs={12} md={1}>
             <Button fullWidth variant="contained" onClick={agregarLinea}>
               <Add />
             </Button>
-          </Grid>
-        </Grid>
+          </FormField>
+        </FormGrid>
 
         <Table size="small" sx={{ mt: 2 }}>
           <TableHead>
@@ -501,9 +497,11 @@ export default function CompraForm({ numeroCompra }: CompraFormProps) {
                 <TableCell align="right">{Number(d.PRECIO_COSTO).toFixed(2)}</TableCell>
                 <TableCell align="right">{(Number(d.CANTIDAD) * Number(d.PRECIO_COSTO)).toFixed(2)}</TableCell>
                 <TableCell align="center">
-                  <IconButton size="small" color="error" onClick={() => eliminarLinea(idx)}>
-                    <Delete fontSize="small" />
-                  </IconButton>
+                  <Tooltip title="Eliminar línea">
+                    <IconButton size="small" color="error" onClick={() => eliminarLinea(idx)}>
+                      <Delete fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
                 </TableCell>
               </TableRow>
             ))}
@@ -527,37 +525,35 @@ export default function CompraForm({ numeroCompra }: CompraFormProps) {
       <Dialog open={openNuevoArt} onClose={() => setOpenNuevoArt(false)} maxWidth="sm" fullWidth>
         <DialogTitle>Nuevo Articulo</DialogTitle>
         <DialogContent>
-          <Grid container spacing={1} sx={{ mt: 0.5 }}>
-            <Grid item xs={12} sm={4}>
-              <TextField fullWidth size="small" label="Codigo" value={newArt.CODIGO} onChange={(e) => setNewArt((p) => ({ ...p, CODIGO: e.target.value }))} />
-            </Grid>
-            <Grid item xs={12} sm={8}>
-              <TextField fullWidth size="small" label="Descripcion" value={newArt.DESCRIPCION} onChange={(e) => setNewArt((p) => ({ ...p, DESCRIPCION: e.target.value }))} />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField fullWidth size="small" label="Referencia" value={newArt.Referencia} onChange={(e) => setNewArt((p) => ({ ...p, Referencia: e.target.value }))} />
-            </Grid>
-            <Grid item xs={12} sm={3}>
+          <FormGrid spacing={1} sx={{ mt: 0.5 }}>
+            <FormField xs={12} sm={4}>
+              <TextField label="Codigo" value={newArt.CODIGO} onChange={(e) => setNewArt((p) => ({ ...p, CODIGO: e.target.value }))} />
+            </FormField>
+            <FormField xs={12} sm={8}>
+              <TextField label="Descripcion" value={newArt.DESCRIPCION} onChange={(e) => setNewArt((p) => ({ ...p, DESCRIPCION: e.target.value }))} />
+            </FormField>
+            <FormField xs={12} sm={6}>
+              <TextField label="Referencia" value={newArt.Referencia} onChange={(e) => setNewArt((p) => ({ ...p, Referencia: e.target.value }))} />
+            </FormField>
+            <FormField xs={12} sm={3}>
               <TextField
-                fullWidth
-                size="small"
+               
                 label="P. Costo"
                 type="number"
                 value={newArt.PRECIO_COMPRA}
                 onChange={(e) => setNewArt((p) => ({ ...p, PRECIO_COMPRA: Number(e.target.value) || 0 }))}
               />
-            </Grid>
-            <Grid item xs={12} sm={3}>
+            </FormField>
+            <FormField xs={12} sm={3}>
               <TextField
-                fullWidth
-                size="small"
+               
                 label="P. Venta"
                 type="number"
                 value={newArt.PRECIO_VENTA}
                 onChange={(e) => setNewArt((p) => ({ ...p, PRECIO_VENTA: Number(e.target.value) || 0 }))}
               />
-            </Grid>
-          </Grid>
+            </FormField>
+          </FormGrid>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpenNuevoArt(false)}>Cancelar</Button>

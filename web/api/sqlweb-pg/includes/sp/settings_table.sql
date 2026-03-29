@@ -78,7 +78,7 @@ SELECT v.* FROM (VALUES
     (1, 'pos', 'impresora.marca',                  'PNP',              'string',  'Marca impresora fiscal'),
     (1, 'pos', 'impresora.conexion',               'emulador',         'string',  'Tipo de conexion impresora'),
     (1, 'pos', 'impresora.puerto',                 'EMULADOR',         'string',  'Puerto impresora fiscal'),
-    (1, 'pos', 'impresora.agentUrl',               'http://localhost:5059', 'string', 'URL del agente fiscal local'),
+    (1, 'pos', 'impresora.agentUrl',               'http://localhost:7654', 'string', 'URL del agente fiscal local'),
     (1, 'pos', 'caja.id',                          '1',                'string',  'ID de caja por defecto'),
     (1, 'pos', 'caja.nombre',                      'Caja Principal',   'string',  'Nombre de caja'),
     (1, 'pos', 'caja.serieFactura',                'A',                'string',  'Serie de factura'),

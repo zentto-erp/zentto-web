@@ -1,93 +1,112 @@
 -- ============================================================
 -- DatqBoxWeb PostgreSQL - usp_doc_sales.sql
--- Funciones de documentos de venta (esquema doc)
--- Tablas: doc.SalesDocument, doc.SalesDocumentLine, doc.SalesDocumentPayment
+-- Funciones de documentos de venta (esquema ar)
+-- Tablas: ar.SalesDocument, ar.SalesDocumentLine, ar.SalesDocumentPayment
 -- 7 funciones: List, Get, GetDetail, GetPayments, Void, InvoiceFromOrder, Upsert
 -- ============================================================
 
 -- =============================================================================
 -- 1. usp_Doc_SalesDocument_List
 -- Lista paginada de documentos de venta con filtros.
+-- Tabla canonica: doc."SalesDocument"
+-- Mapeado de columnas legacy -> canonico:
+--   IssueDate      -> "DocumentDate"
+--   Subtotal       -> "SubTotal" (cast numeric)
+--   IsCanceled     -> "IsPaid"
+--   SourceDocumentNumber -> "OriginDocumentNumber"
+--   SourceDocumentType   -> "OriginDocumentType"
+--   LegacyUserCode -> "UserCode"
+--   Columnas inexistentes retornan NULL (IsLegal, IsPrinted, PaymentTerms, etc.)
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_doc_salesdocument_list(VARCHAR, INT, INT, VARCHAR, VARCHAR, TIMESTAMP, TIMESTAMP) CASCADE;
+DROP FUNCTION IF EXISTS usp_doc_salesdocument_list(VARCHAR(20), VARCHAR(100), VARCHAR(60), DATE, DATE, INT, INT) CASCADE;
+DROP FUNCTION IF EXISTS usp_doc_salesdocument_list(VARCHAR, INT, INT, VARCHAR, VARCHAR, TIMESTAMP, TIMESTAMP, VARCHAR) CASCADE;
 CREATE OR REPLACE FUNCTION usp_doc_salesdocument_list(
-    p_tipo_operacion VARCHAR(20),
-    p_search         VARCHAR(100)  DEFAULT NULL,
-    p_codigo         VARCHAR(60)   DEFAULT NULL,
-    p_from_date      DATE          DEFAULT NULL,
-    p_to_date        DATE          DEFAULT NULL,
-    p_page           INT           DEFAULT 1,
-    p_limit          INT           DEFAULT 50
+    p_tipo_operacion  VARCHAR    DEFAULT NULL,
+    p_page            INT        DEFAULT 1,
+    p_limit           INT        DEFAULT 50,
+    p_search          VARCHAR    DEFAULT NULL,
+    p_codigo          VARCHAR    DEFAULT NULL,
+    p_from_date       TIMESTAMP  DEFAULT NULL,
+    p_to_date         TIMESTAMP  DEFAULT NULL,
+    p_estado          VARCHAR    DEFAULT NULL
 )
 RETURNS TABLE(
-    "SalesDocumentId"       BIGINT,
-    "DocumentNumber"        VARCHAR,
-    "SerialType"            VARCHAR,
-    "FiscalMemoryNumber"    VARCHAR,
-    "OperationType"         VARCHAR,
-    "CustomerCode"          VARCHAR,
-    "CustomerName"          VARCHAR,
-    "FiscalId"              VARCHAR,
-    "DocumentDate"          TIMESTAMP,
-    "DueDate"               TIMESTAMP,
-    "DocumentTime"          VARCHAR,
-    "SubTotal"              NUMERIC,
-    "TaxableAmount"         NUMERIC,
-    "ExemptAmount"          NUMERIC,
-    "TaxAmount"             NUMERIC,
-    "TaxRate"               NUMERIC,
-    "TotalAmount"           NUMERIC,
-    "DiscountAmount"        NUMERIC,
-    "IsVoided"              BOOLEAN,
-    "IsPaid"                VARCHAR,
-    "IsInvoiced"            VARCHAR,
-    "IsDelivered"           VARCHAR,
-    "OriginDocumentNumber"  VARCHAR,
-    "OriginDocumentType"    VARCHAR,
-    "ControlNumber"         VARCHAR,
-    "IsLegal"               VARCHAR,
-    "IsPrinted"             BOOLEAN,
-    "Notes"                 TEXT,
-    "Concept"               VARCHAR,
-    "PaymentTerms"          VARCHAR,
-    "ShipToAddress"         VARCHAR,
-    "SellerCode"            VARCHAR,
-    "DepartmentCode"        VARCHAR,
-    "LocationCode"          VARCHAR,
-    "CurrencyCode"          VARCHAR,
-    "ExchangeRate"          NUMERIC,
-    "UserCode"              VARCHAR,
-    "ReportDate"            TIMESTAMP,
-    "HostName"              VARCHAR,
-    "VehiclePlate"          VARCHAR,
-    "Mileage"               NUMERIC,
-    "TollAmount"            NUMERIC,
-    "CreatedAt"             TIMESTAMP,
-    "UpdatedAt"             TIMESTAMP,
-    "IsDeleted"             BOOLEAN,
-    "TotalCount"            BIGINT
+    "SalesDocumentId"       bigint,
+    "DocumentNumber"        character varying,
+    "SerialType"            character varying,
+    "FiscalMemoryNumber"    character varying,
+    "OperationType"         character varying,
+    "CustomerCode"          character varying,
+    "CustomerName"          character varying,
+    "FiscalId"              character varying,
+    "DocumentDate"          timestamp without time zone,
+    "DueDate"               timestamp without time zone,
+    "DocumentTime"          character varying,
+    "SubTotal"              numeric,
+    "TaxableAmount"         numeric,
+    "ExemptAmount"          numeric,
+    "TaxAmount"             numeric,
+    "TaxRate"               numeric,
+    "TotalAmount"           numeric,
+    "DiscountAmount"        numeric,
+    "IsVoided"              boolean,
+    "IsPaid"                character varying,
+    "IsInvoiced"            character varying,
+    "IsDelivered"           character varying,
+    "OriginDocumentNumber"  character varying,
+    "OriginDocumentType"    character varying,
+    "ControlNumber"         character varying,
+    "IsLegal"               character varying,
+    "IsPrinted"             boolean,
+    "Notes"                 character varying,
+    "Concept"               character varying,
+    "PaymentTerms"          character varying,
+    "ShipToAddress"         character varying,
+    "SellerCode"            character varying,
+    "DepartmentCode"        character varying,
+    "LocationCode"          character varying,
+    "CurrencyCode"          character varying,
+    "ExchangeRate"          numeric,
+    "UserCode"              character varying,
+    "ReportDate"            timestamp without time zone,
+    "HostName"              character varying,
+    "VehiclePlate"          character varying,
+    "Mileage"               numeric,
+    "TollAmount"            numeric,
+    "CreatedAt"             timestamp without time zone,
+    "UpdatedAt"             timestamp without time zone,
+    "IsDeleted"             boolean,
+    "TotalCount"            bigint
 )
-LANGUAGE plpgsql AS $$
+LANGUAGE plpgsql AS $func$
 DECLARE
     v_total  BIGINT;
     v_page   INT := GREATEST(p_page, 1);
     v_limit  INT := LEAST(GREATEST(p_limit, 1), 500);
 BEGIN
     SELECT COUNT(*) INTO v_total
-    FROM doc."SalesDocument"
-    WHERE "OperationType" = p_tipo_operacion
-      AND "IsDeleted" = FALSE
+    FROM doc."SalesDocument" sd_c
+    WHERE COALESCE(sd_c."IsDeleted", FALSE) = FALSE
+      AND (p_tipo_operacion IS NULL OR sd_c."OperationType" = p_tipo_operacion)
       AND (p_search IS NULL OR (
-            "DocumentNumber" LIKE '%' || p_search || '%'
-            OR "CustomerName" LIKE '%' || p_search || '%'
-            OR "FiscalId" LIKE '%' || p_search || '%'
-          ))
-      AND (p_codigo IS NULL OR "CustomerCode" = p_codigo)
-      AND (p_from_date IS NULL OR "DocumentDate" >= p_from_date)
-      AND (p_to_date IS NULL OR "DocumentDate" < (p_to_date + INTERVAL '1 day'));
+            sd_c."DocumentNumber" LIKE '%' || p_search || '%'
+            OR sd_c."CustomerName" LIKE '%' || p_search || '%'
+            OR sd_c."FiscalId"     LIKE '%' || p_search || '%'
+           ))
+      AND (p_codigo    IS NULL OR sd_c."CustomerCode" = p_codigo)
+      AND (p_from_date IS NULL OR sd_c."IssueDate" >= p_from_date)
+      AND (p_to_date   IS NULL OR sd_c."IssueDate" <  (p_to_date + INTERVAL '1 day'))
+      AND (p_estado IS NULL OR
+        CASE
+          WHEN sd_c."IsVoided" = TRUE THEN 'Anulada'
+          WHEN sd_c."IsCanceled" = 'S' THEN 'Pagada'
+          ELSE 'Emitida'
+        END = p_estado);
 
     RETURN QUERY
     SELECT
-        sd."SalesDocumentId",
+        sd."DocumentId"::bigint,
         sd."DocumentNumber"::VARCHAR,
         sd."SerialType"::VARCHAR,
         sd."FiscalMemoryNumber"::VARCHAR,
@@ -95,74 +114,81 @@ BEGIN
         sd."CustomerCode"::VARCHAR,
         sd."CustomerName"::VARCHAR,
         sd."FiscalId"::VARCHAR,
-        sd."DocumentDate",
+        sd."IssueDate",
         sd."DueDate",
         sd."DocumentTime"::VARCHAR,
-        sd."SubTotal",
-        sd."TaxableAmount",
-        sd."ExemptAmount",
-        sd."TaxAmount",
-        sd."TaxRate",
-        sd."TotalAmount",
-        sd."DiscountAmount",
+        sd."Subtotal"::numeric,
+        sd."TaxableAmount"::numeric,
+        sd."ExemptAmount"::numeric,
+        sd."TaxAmount"::numeric,
+        sd."TaxRate"::numeric,
+        sd."TotalAmount"::numeric,
+        sd."DiscountAmount"::numeric,
         sd."IsVoided",
-        sd."IsPaid"::VARCHAR,
+        sd."IsCanceled"::VARCHAR,
         sd."IsInvoiced"::VARCHAR,
         sd."IsDelivered"::VARCHAR,
-        sd."OriginDocumentNumber"::VARCHAR,
-        sd."OriginDocumentType"::VARCHAR,
+        sd."SourceDocumentNumber"::VARCHAR,
+        sd."SourceDocumentType"::VARCHAR,
         sd."ControlNumber"::VARCHAR,
-        sd."IsLegal"::VARCHAR,
-        sd."IsPrinted",
-        sd."Notes"::TEXT,
+        NULL::VARCHAR,
+        NULL::boolean,
+        sd."Notes"::VARCHAR,
         sd."Concept"::VARCHAR,
-        sd."PaymentTerms"::VARCHAR,
-        sd."ShipToAddress"::VARCHAR,
-        sd."SellerCode"::VARCHAR,
-        sd."DepartmentCode"::VARCHAR,
-        sd."LocationCode"::VARCHAR,
+        NULL::VARCHAR,
+        NULL::VARCHAR,
+        NULL::VARCHAR,
+        NULL::VARCHAR,
+        NULL::VARCHAR,
         sd."CurrencyCode"::VARCHAR,
-        sd."ExchangeRate",
-        sd."UserCode"::VARCHAR,
-        sd."ReportDate",
-        sd."HostName"::VARCHAR,
-        sd."VehiclePlate"::VARCHAR,
-        sd."Mileage",
-        sd."TollAmount",
+        sd."ExchangeRate"::numeric,
+        sd."LegacyUserCode"::VARCHAR,
+        NULL::timestamp,
+        NULL::VARCHAR,
+        NULL::VARCHAR,
+        NULL::numeric,
+        NULL::numeric,
         sd."CreatedAt",
         sd."UpdatedAt",
-        sd."IsDeleted",
+        COALESCE(sd."IsDeleted", FALSE),
         v_total
     FROM doc."SalesDocument" sd
-    WHERE sd."OperationType" = p_tipo_operacion
-      AND sd."IsDeleted" = FALSE
+    WHERE COALESCE(sd."IsDeleted", FALSE) = FALSE
+      AND (p_tipo_operacion IS NULL OR sd."OperationType" = p_tipo_operacion)
       AND (p_search IS NULL OR (
             sd."DocumentNumber" LIKE '%' || p_search || '%'
             OR sd."CustomerName" LIKE '%' || p_search || '%'
-            OR sd."FiscalId" LIKE '%' || p_search || '%'
-          ))
-      AND (p_codigo IS NULL OR sd."CustomerCode" = p_codigo)
-      AND (p_from_date IS NULL OR sd."DocumentDate" >= p_from_date)
-      AND (p_to_date IS NULL OR sd."DocumentDate" < (p_to_date + INTERVAL '1 day'))
-    ORDER BY sd."DocumentDate" DESC, sd."DocumentNumber" DESC
+            OR sd."FiscalId"     LIKE '%' || p_search || '%'
+           ))
+      AND (p_codigo    IS NULL OR sd."CustomerCode" = p_codigo)
+      AND (p_from_date IS NULL OR sd."IssueDate" >= p_from_date)
+      AND (p_to_date   IS NULL OR sd."IssueDate" <  (p_to_date + INTERVAL '1 day'))
+      AND (p_estado IS NULL OR
+        CASE
+          WHEN sd."IsVoided" = TRUE THEN 'Anulada'
+          WHEN sd."IsCanceled" = 'S' THEN 'Pagada'
+          ELSE 'Emitida'
+        END = p_estado)
+    ORDER BY sd."IssueDate" DESC
     LIMIT v_limit OFFSET (v_page - 1) * v_limit;
 END;
-$$;
+$func$;
 
 -- =============================================================================
 -- 2. usp_Doc_SalesDocument_Get
 -- Obtener un documento de venta individual.
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_doc_salesdocument_get(VARCHAR(20), VARCHAR(60)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_doc_salesdocument_get(
     p_tipo_operacion VARCHAR(20),
     p_num_doc        VARCHAR(60)
 )
-RETURNS SETOF doc."SalesDocument"
+RETURNS SETOF ar."SalesDocument"
 LANGUAGE plpgsql AS $$
 BEGIN
     RETURN QUERY
     SELECT *
-    FROM doc."SalesDocument"
+    FROM ar."SalesDocument"
     WHERE "DocumentNumber" = p_num_doc
       AND "OperationType" = p_tipo_operacion
       AND "IsDeleted" = FALSE
@@ -174,16 +200,17 @@ $$;
 -- 3. usp_Doc_SalesDocument_GetDetail
 -- Obtener las lineas de detalle de un documento de venta.
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_doc_salesdocument_getdetail(VARCHAR(20), VARCHAR(60)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_doc_salesdocument_getdetail(
     p_tipo_operacion VARCHAR(20),
     p_num_doc        VARCHAR(60)
 )
-RETURNS SETOF doc."SalesDocumentLine"
+RETURNS SETOF ar."SalesDocumentLine"
 LANGUAGE plpgsql AS $$
 BEGIN
     RETURN QUERY
     SELECT *
-    FROM doc."SalesDocumentLine"
+    FROM ar."SalesDocumentLine"
     WHERE "DocumentNumber" = p_num_doc
       AND "OperationType" = p_tipo_operacion
       AND "IsDeleted" = FALSE
@@ -195,16 +222,17 @@ $$;
 -- 4. usp_Doc_SalesDocument_GetPayments
 -- Obtener las formas de pago de un documento de venta.
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_doc_salesdocument_getpayments(VARCHAR(20), VARCHAR(60)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_doc_salesdocument_getpayments(
     p_tipo_operacion VARCHAR(20),
     p_num_doc        VARCHAR(60)
 )
-RETURNS SETOF doc."SalesDocumentPayment"
+RETURNS SETOF ar."SalesDocumentPayment"
 LANGUAGE plpgsql AS $$
 BEGIN
     RETURN QUERY
     SELECT *
-    FROM doc."SalesDocumentPayment"
+    FROM ar."SalesDocumentPayment"
     WHERE "DocumentNumber" = p_num_doc
       AND "OperationType" = p_tipo_operacion
       AND "IsDeleted" = FALSE;
@@ -215,6 +243,7 @@ $$;
 -- 5. usp_Doc_SalesDocument_Void
 -- Anular un documento de venta. Transaccional.
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_doc_salesdocument_void(VARCHAR(20), VARCHAR(60), VARCHAR(60), VARCHAR(500)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_doc_salesdocument_void(
     p_tipo_operacion VARCHAR(20),
     p_num_doc        VARCHAR(60),
@@ -231,7 +260,7 @@ DECLARE
 BEGIN
     -- Validar que el documento existe
     IF NOT EXISTS (
-        SELECT 1 FROM doc."SalesDocument"
+        SELECT 1 FROM ar."SalesDocument"
         WHERE "DocumentNumber" = p_num_doc
           AND "OperationType" = p_tipo_operacion
           AND "IsDeleted" = FALSE
@@ -243,7 +272,7 @@ BEGIN
 
     -- Validar que no esta ya anulado
     IF EXISTS (
-        SELECT 1 FROM doc."SalesDocument"
+        SELECT 1 FROM ar."SalesDocument"
         WHERE "DocumentNumber" = p_num_doc
           AND "OperationType" = p_tipo_operacion
           AND "IsDeleted" = FALSE
@@ -256,15 +285,15 @@ BEGIN
 
     -- Obtener codigo de cliente
     SELECT "CustomerCode" INTO v_cod_cliente
-    FROM doc."SalesDocument"
+    FROM ar."SalesDocument"
     WHERE "DocumentNumber" = p_num_doc
       AND "OperationType" = p_tipo_operacion
       AND "IsDeleted" = FALSE;
 
     -- Anular cabecera
-    UPDATE doc."SalesDocument"
+    UPDATE ar."SalesDocument"
     SET "IsVoided"  = TRUE,
-        "Notes"     = CONCAT(COALESCE("Notes", ''), ' | ANULADO ',
+        "Notes"     = CONCAT(COALESCE("Notes",''::VARCHAR), ' | ANULADO ',
                        to_char(NOW() AT TIME ZONE 'UTC', 'YYYY-MM-DD HH24:MI'),
                        ' por ', p_cod_usuario,
                        CASE WHEN p_motivo <> '' THEN ' - Motivo: ' || p_motivo ELSE '' END),
@@ -274,7 +303,7 @@ BEGIN
       AND "IsDeleted" = FALSE;
 
     -- Anular lineas
-    UPDATE doc."SalesDocumentLine"
+    UPDATE ar."SalesDocumentLine"
     SET "IsVoided"  = TRUE,
         "UpdatedAt" = NOW() AT TIME ZONE 'UTC'
     WHERE "DocumentNumber" = p_num_doc
@@ -336,6 +365,7 @@ $$;
 -- 6. usp_Doc_SalesDocument_InvoiceFromOrder
 -- Convertir un PEDIDO en FACTURA. Transaccional.
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_doc_salesdocument_invoicefromorder(VARCHAR(60), VARCHAR(60), JSONB, VARCHAR(60)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_doc_salesdocument_invoicefromorder(
     p_num_doc_pedido  VARCHAR(60),
     p_num_doc_factura VARCHAR(60),
@@ -349,7 +379,7 @@ DECLARE
 BEGIN
     -- Validar que el pedido existe
     IF NOT EXISTS (
-        SELECT 1 FROM doc."SalesDocument"
+        SELECT 1 FROM ar."SalesDocument"
         WHERE "DocumentNumber" = p_num_doc_pedido
           AND "OperationType" = 'PEDIDO'
           AND "IsDeleted" = FALSE
@@ -361,7 +391,7 @@ BEGIN
 
     -- Validar que no esta anulado
     IF EXISTS (
-        SELECT 1 FROM doc."SalesDocument"
+        SELECT 1 FROM ar."SalesDocument"
         WHERE "DocumentNumber" = p_num_doc_pedido
           AND "OperationType" = 'PEDIDO'
           AND "IsDeleted" = FALSE
@@ -374,7 +404,7 @@ BEGIN
 
     -- Validar que no fue ya facturado
     IF EXISTS (
-        SELECT 1 FROM doc."SalesDocument"
+        SELECT 1 FROM ar."SalesDocument"
         WHERE "DocumentNumber" = p_num_doc_pedido
           AND "OperationType" = 'PEDIDO'
           AND "IsDeleted" = FALSE
@@ -386,7 +416,7 @@ BEGIN
     END IF;
 
     -- Copiar cabecera del pedido como nueva factura
-    INSERT INTO doc."SalesDocument" (
+    INSERT INTO ar."SalesDocument" (
         "DocumentNumber", "SerialType", "FiscalMemoryNumber", "OperationType",
         "CustomerCode", "CustomerName", "FiscalId",
         "DocumentDate", "DueDate", "DocumentTime",
@@ -426,13 +456,13 @@ BEGIN
         inet_client_addr()::TEXT,
         s."VehiclePlate", s."Mileage", s."TollAmount",
         NOW() AT TIME ZONE 'UTC', NOW() AT TIME ZONE 'UTC'
-    FROM doc."SalesDocument" s
+    FROM ar."SalesDocument" s
     WHERE s."DocumentNumber" = p_num_doc_pedido
       AND s."OperationType" = 'PEDIDO'
       AND s."IsDeleted" = FALSE;
 
     -- Copiar lineas del pedido a la factura
-    INSERT INTO doc."SalesDocumentLine" (
+    INSERT INTO ar."SalesDocumentLine" (
         "DocumentNumber", "SerialType", "FiscalMemoryNumber", "OperationType",
         "LineNumber", "ProductCode", "Description", "AlternateCode",
         "Quantity", "UnitPrice", "DiscountedPrice", "UnitCost",
@@ -456,14 +486,14 @@ BEGIN
         p_cod_usuario,
         NOW() AT TIME ZONE 'UTC',
         NOW() AT TIME ZONE 'UTC', NOW() AT TIME ZONE 'UTC'
-    FROM doc."SalesDocumentLine" sl
+    FROM ar."SalesDocumentLine" sl
     WHERE sl."DocumentNumber" = p_num_doc_pedido
       AND sl."OperationType" = 'PEDIDO'
       AND sl."IsDeleted" = FALSE;
 
     -- Insertar formas de pago desde JSONB si se proporcionaron
     IF p_formas_pago_json IS NOT NULL AND jsonb_array_length(p_formas_pago_json) > 0 THEN
-        INSERT INTO doc."SalesDocumentPayment" (
+        INSERT INTO ar."SalesDocumentPayment" (
             "DocumentNumber", "SerialType", "FiscalMemoryNumber", "OperationType",
             "PaymentMethod", "BankCode", "PaymentNumber",
             "Amount", "AmountBs", "ExchangeRate",
@@ -473,7 +503,7 @@ BEGIN
         )
         SELECT
             p_num_doc_factura,
-            COALESCE(elem->>'serialType', ''),
+            COALESCE(elem->>'serialType',''::VARCHAR),
             COALESCE(elem->>'fiscalMemoryNumber', '1'),
             'FACT',
             elem->>'paymentMethod',
@@ -491,9 +521,9 @@ BEGIN
     END IF;
 
     -- Marcar el pedido como facturado
-    UPDATE doc."SalesDocument"
+    UPDATE ar."SalesDocument"
     SET "IsInvoiced" = 'S',
-        "Notes"      = CONCAT(COALESCE("Notes", ''), ' | Facturado como ', p_num_doc_factura,
+        "Notes"      = CONCAT(COALESCE("Notes",''::VARCHAR), ' | Facturado como ', p_num_doc_factura,
                         ' el ', to_char(NOW() AT TIME ZONE 'UTC', 'YYYY-MM-DD HH24:MI'),
                         ' por ', p_cod_usuario),
         "UpdatedAt"  = NOW() AT TIME ZONE 'UTC'
@@ -512,6 +542,7 @@ $$;
 -- Sincroniza ar.ReceivableDocument para FACT/NOTADEB/NOTACRED.
 -- Transaccional.
 -- =============================================================================
+DROP FUNCTION IF EXISTS usp_doc_salesdocument_upsert(VARCHAR(20), JSONB, JSONB, JSONB, VARCHAR(60), VARCHAR(20)) CASCADE;
 CREATE OR REPLACE FUNCTION usp_doc_salesdocument_upsert(
     p_tipo_operacion  VARCHAR(20),
     p_header_json     JSONB,
@@ -550,7 +581,7 @@ DECLARE
     v_origin_doc_number VARCHAR(60);
     v_origin_doc_type   VARCHAR(20);
     v_control_number    VARCHAR(60);
-    v_is_legal          VARCHAR(10);
+    v_is_legal          BOOLEAN;
     v_is_printed        BOOLEAN;
     v_notes             TEXT;
     v_concept           VARCHAR(200);
@@ -579,7 +610,7 @@ DECLARE
 BEGIN
     -- Parsear cabecera
     v_num_doc           := TRIM(p_header_json->>'DocumentNumber');
-    v_serial_type       := COALESCE(p_header_json->>'SerialType', '');
+    v_serial_type       := COALESCE(p_header_json->>'SerialType',''::VARCHAR);
     v_fiscal_memory     := COALESCE(p_header_json->>'FiscalMemoryNumber', '1');
     v_customer_code     := p_header_json->>'CustomerCode';
     v_customer_name     := p_header_json->>'CustomerName';
@@ -601,7 +632,7 @@ BEGIN
     v_origin_doc_number := COALESCE(p_doc_origen, p_header_json->>'OriginDocumentNumber');
     v_origin_doc_type   := COALESCE(p_tipo_doc_origen, p_header_json->>'OriginDocumentType');
     v_control_number    := p_header_json->>'ControlNumber';
-    v_is_legal          := p_header_json->>'IsLegal';
+    v_is_legal          := COALESCE((p_header_json->>'IsLegal')::BOOLEAN, FALSE);
     v_is_printed        := (p_header_json->>'IsPrinted')::BOOLEAN;
     v_notes             := p_header_json->>'Notes';
     v_concept           := p_header_json->>'Concept';
@@ -626,17 +657,17 @@ BEGIN
     END IF;
 
     -- DELETE existente (detalle, pagos, cabecera)
-    DELETE FROM doc."SalesDocumentLine"
+    DELETE FROM ar."SalesDocumentLine"
     WHERE "DocumentNumber" = v_num_doc AND "OperationType" = p_tipo_operacion;
 
-    DELETE FROM doc."SalesDocumentPayment"
+    DELETE FROM ar."SalesDocumentPayment"
     WHERE "DocumentNumber" = v_num_doc AND "OperationType" = p_tipo_operacion;
 
-    DELETE FROM doc."SalesDocument"
+    DELETE FROM ar."SalesDocument"
     WHERE "DocumentNumber" = v_num_doc AND "OperationType" = p_tipo_operacion;
 
     -- INSERT cabecera
-    INSERT INTO doc."SalesDocument" (
+    INSERT INTO ar."SalesDocument" (
         "DocumentNumber", "SerialType", "FiscalMemoryNumber", "OperationType",
         "CustomerCode", "CustomerName", "FiscalId",
         "DocumentDate", "DueDate", "DocumentTime",
@@ -671,7 +702,7 @@ BEGIN
 
     -- INSERT lineas de detalle desde JSONB
     IF p_detail_json IS NOT NULL AND jsonb_array_length(p_detail_json) > 0 THEN
-        INSERT INTO doc."SalesDocumentLine" (
+        INSERT INTO ar."SalesDocumentLine" (
             "DocumentNumber", "SerialType", "FiscalMemoryNumber", "OperationType",
             "LineNumber", "ProductCode", "Description", "AlternateCode",
             "Quantity", "UnitPrice", "DiscountedPrice", "UnitCost",
@@ -711,7 +742,7 @@ BEGIN
 
     -- INSERT formas de pago desde JSONB
     IF p_payments_json IS NOT NULL AND jsonb_array_length(p_payments_json) > 0 THEN
-        INSERT INTO doc."SalesDocumentPayment" (
+        INSERT INTO ar."SalesDocumentPayment" (
             "DocumentNumber", "SerialType", "FiscalMemoryNumber", "OperationType",
             "PaymentMethod", "BankCode", "PaymentNumber",
             "Amount", "AmountBs", "ExchangeRate",
@@ -742,7 +773,7 @@ BEGIN
 
     -- Sincronizar cuenta por cobrar para FACT/NOTADEB/NOTACRED
     IF p_tipo_operacion IN ('FACT', 'NOTADEB', 'NOTACRED') THEN
-        v_cod_cliente := TRIM(COALESCE(v_customer_code, ''));
+        v_cod_cliente := TRIM(COALESCE(v_customer_code,''::VARCHAR));
 
         IF v_cod_cliente <> '' THEN
             -- Resolver contexto canonico
@@ -774,7 +805,7 @@ BEGIN
                         SELECT COALESCE(SUM(COALESCE((elem->>'Amount')::NUMERIC, 0)), 0)
                         INTO v_total_pagado
                         FROM jsonb_array_elements(p_payments_json) elem
-                        WHERE UPPER(COALESCE(elem->>'PaymentMethod', '')) NOT LIKE '%SALDO%';
+                        WHERE UPPER(COALESCE(elem->>'PaymentMethod',''::VARCHAR)) NOT LIKE '%SALDO%';
                     END IF;
 
                     v_pending_amount := CASE

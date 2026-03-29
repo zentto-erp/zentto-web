@@ -714,6 +714,35 @@ BEGIN
             SELECT productCode, SUM(quantity) AS qty FROM @Items GROUP BY productCode
         ) d ON d.productCode = p.ProductCode AND p.CompanyId = @CompanyId;
 
+        -- Registrar movimiento en inventario avanzado (inv.StockMovement)
+        -- Solo si la tabla existe (compatibilidad con instalaciones sin inv.*)
+        IF OBJECT_ID('inv.StockMovement', 'U') IS NOT NULL
+        BEGIN
+            INSERT INTO inv.StockMovement (
+                CompanyId, BranchId, ProductId,
+                MovementType, Quantity, UnitCost, TotalCost,
+                SourceDocumentType, SourceDocumentNumber,
+                Notes, MovementDate, CreatedAt
+            )
+            SELECT
+                @CompanyId,
+                @BranchId,
+                pr.ProductId,
+                N'SALE_OUT',
+                d.quantity,
+                COALESCE(pr.CostPrice, pr.SalesPrice, 0),
+                d.quantity * COALESCE(pr.CostPrice, pr.SalesPrice, 0),
+                N'ECOM_PEDIDO',
+                @OrderNumber,
+                N'Pedido ecommerce',
+                SYSUTCDATETIME(),
+                SYSUTCDATETIME()
+            FROM @Items d
+            INNER JOIN [master].Product pr
+                ON pr.ProductCode = d.productCode
+                AND pr.CompanyId = @CompanyId;
+        END;
+
         COMMIT TRANSACTION;
         SET @Resultado = 1;
         SET @Mensaje = N'Pedido creado exitosamente';

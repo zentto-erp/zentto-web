@@ -140,6 +140,7 @@ IF EXISTS (SELECT * FROM sys.objects WHERE type = 'P' AND name = 'usp_Inventario
     DROP PROCEDURE usp_Inventario_Insert
 GO
 CREATE PROCEDURE usp_Inventario_Insert
+    @CompanyId INT = NULL,
     @RowXml NVARCHAR(MAX),
     @Resultado INT OUTPUT,
     @Mensaje NVARCHAR(500) OUTPUT
@@ -151,11 +152,20 @@ BEGIN
     SET @Mensaje = N'';
 
     DECLARE @xml XML = CAST(@RowXml AS XML);
-    DECLARE @CompanyId INT = (SELECT TOP 1 CompanyId FROM cfg.Company WHERE ISNULL(IsDeleted, 0) = 0 ORDER BY CompanyId);
+    IF @CompanyId IS NULL
+        SET @CompanyId = (SELECT TOP 1 CompanyId FROM cfg.Company WHERE ISNULL(IsDeleted, 0) = 0 ORDER BY CompanyId);
     IF @CompanyId IS NULL SET @CompanyId = 1;
 
+    DECLARE @Codigo NVARCHAR(15) = @xml.value('(/row/@CODIGO)[1]', 'NVARCHAR(15)');
+    IF @Codigo IS NULL OR @Codigo = N''
+    BEGIN
+        SET @Resultado = -1;
+        SET @Mensaje = N'Codigo es requerido';
+        RETURN;
+    END
+
     BEGIN TRY
-        IF EXISTS (SELECT 1 FROM [master].[Product] WHERE ProductCode = @xml.value('(/row/@CODIGO)[1]', 'NVARCHAR(15)') AND CompanyId = @CompanyId)
+        IF EXISTS (SELECT 1 FROM [master].[Product] WHERE ProductCode = @Codigo AND CompanyId = @CompanyId)
         BEGIN
             SET @Resultado = -1;
             SET @Mensaje = N'Articulo ya existe';
@@ -166,10 +176,10 @@ BEGIN
             ProductCode, Referencia, Categoria, Marca, Tipo, Unidad, Clase, ProductName,
             StockQty, VENTA, MINIMO, MAXIMO, CostPrice, SalesPrice, PORCENTAJE,
             UBICACION, Co_Usuario, Linea, N_PARTE, Barra,
-            IsService, IsActive, IsDeleted, CompanyId
+            IsService, IsActive, IsDeleted, CompanyId, Descripcion
         )
         SELECT
-            NULLIF(r.value('@CODIGO', 'NVARCHAR(15)'), N''),
+            @Codigo,
             NULLIF(r.value('@Referencia', 'NVARCHAR(30)'), N''),
             NULLIF(r.value('@Categoria', 'NVARCHAR(50)'), N''),
             NULLIF(r.value('@Marca', 'NVARCHAR(50)'), N''),
@@ -177,26 +187,25 @@ BEGIN
             NULLIF(r.value('@Unidad', 'NVARCHAR(30)'), N''),
             NULLIF(r.value('@Clase', 'NVARCHAR(25)'), N''),
             NULLIF(r.value('@DESCRIPCION', 'NVARCHAR(255)'), N''),
-            CASE WHEN r.value('@EXISTENCIA', 'NVARCHAR(50)') IS NULL OR r.value('@EXISTENCIA', 'NVARCHAR(50)') = '' THEN NULL ELSE CAST(r.value('@EXISTENCIA', 'NVARCHAR(50)') AS FLOAT) END,
-            CASE WHEN r.value('@VENTA', 'NVARCHAR(50)') IS NULL OR r.value('@VENTA', 'NVARCHAR(50)') = '' THEN NULL ELSE CAST(r.value('@VENTA', 'NVARCHAR(50)') AS FLOAT) END,
-            CASE WHEN r.value('@MINIMO', 'NVARCHAR(50)') IS NULL OR r.value('@MINIMO', 'NVARCHAR(50)') = '' THEN NULL ELSE CAST(r.value('@MINIMO', 'NVARCHAR(50)') AS FLOAT) END,
-            CASE WHEN r.value('@MAXIMO', 'NVARCHAR(50)') IS NULL OR r.value('@MAXIMO', 'NVARCHAR(50)') = '' THEN NULL ELSE CAST(r.value('@MAXIMO', 'NVARCHAR(50)') AS FLOAT) END,
-            CASE WHEN r.value('@PRECIO_COMPRA', 'NVARCHAR(50)') IS NULL OR r.value('@PRECIO_COMPRA', 'NVARCHAR(50)') = '' THEN NULL ELSE CAST(r.value('@PRECIO_COMPRA', 'NVARCHAR(50)') AS FLOAT) END,
-            CASE WHEN r.value('@PRECIO_VENTA', 'NVARCHAR(50)') IS NULL OR r.value('@PRECIO_VENTA', 'NVARCHAR(50)') = '' THEN NULL ELSE CAST(r.value('@PRECIO_VENTA', 'NVARCHAR(50)') AS FLOAT) END,
-            CASE WHEN r.value('@PORCENTAJE', 'NVARCHAR(50)') IS NULL OR r.value('@PORCENTAJE', 'NVARCHAR(50)') = '' THEN NULL ELSE CAST(r.value('@PORCENTAJE', 'NVARCHAR(50)') AS FLOAT) END,
+            CASE WHEN r.value('@EXISTENCIA', 'NVARCHAR(50)') IS NULL OR r.value('@EXISTENCIA', 'NVARCHAR(50)') = '' THEN 0 ELSE CAST(r.value('@EXISTENCIA', 'NVARCHAR(50)') AS FLOAT) END,
+            CASE WHEN r.value('@VENTA', 'NVARCHAR(50)') IS NULL OR r.value('@VENTA', 'NVARCHAR(50)') = '' THEN 0 ELSE CAST(r.value('@VENTA', 'NVARCHAR(50)') AS FLOAT) END,
+            CASE WHEN r.value('@MINIMO', 'NVARCHAR(50)') IS NULL OR r.value('@MINIMO', 'NVARCHAR(50)') = '' THEN 0 ELSE CAST(r.value('@MINIMO', 'NVARCHAR(50)') AS FLOAT) END,
+            CASE WHEN r.value('@MAXIMO', 'NVARCHAR(50)') IS NULL OR r.value('@MAXIMO', 'NVARCHAR(50)') = '' THEN 0 ELSE CAST(r.value('@MAXIMO', 'NVARCHAR(50)') AS FLOAT) END,
+            CASE WHEN r.value('@PRECIO_COMPRA', 'NVARCHAR(50)') IS NULL OR r.value('@PRECIO_COMPRA', 'NVARCHAR(50)') = '' THEN 0 ELSE CAST(r.value('@PRECIO_COMPRA', 'NVARCHAR(50)') AS FLOAT) END,
+            CASE WHEN r.value('@PRECIO_VENTA', 'NVARCHAR(50)') IS NULL OR r.value('@PRECIO_VENTA', 'NVARCHAR(50)') = '' THEN 0 ELSE CAST(r.value('@PRECIO_VENTA', 'NVARCHAR(50)') AS FLOAT) END,
+            CASE WHEN r.value('@PORCENTAJE', 'NVARCHAR(50)') IS NULL OR r.value('@PORCENTAJE', 'NVARCHAR(50)') = '' THEN 0 ELSE CAST(r.value('@PORCENTAJE', 'NVARCHAR(50)') AS FLOAT) END,
             NULLIF(r.value('@UBICACION', 'NVARCHAR(40)'), N''),
             NULLIF(r.value('@Co_Usuario', 'NVARCHAR(10)'), N''),
             NULLIF(r.value('@Linea', 'NVARCHAR(30)'), N''),
             NULLIF(r.value('@N_PARTE', 'NVARCHAR(18)'), N''),
             NULLIF(r.value('@Barra', 'NVARCHAR(50)'), N''),
-            ISNULL(CAST(NULLIF(r.value('@Servicio', 'NVARCHAR(5)'), '') AS BIT), 0),  -- IsService
-            1,  -- IsActive
-            0,  -- IsDeleted
-            @CompanyId
+            ISNULL(CAST(NULLIF(r.value('@Servicio', 'NVARCHAR(5)'), '') AS BIT), 0),
+            1, 0, @CompanyId,
+            NULLIF(r.value('@Descripcion', 'NVARCHAR(MAX)'), N'')
         FROM @xml.nodes('/row') T(r);
 
         SET @Resultado = 1;
-        SET @Mensaje = N'OK';
+        SET @Mensaje = N'Articulo creado exitosamente';
     END TRY
     BEGIN CATCH
         SET @Resultado = -99;
@@ -210,6 +219,7 @@ IF EXISTS (SELECT * FROM sys.objects WHERE type = 'P' AND name = 'usp_Inventario
     DROP PROCEDURE usp_Inventario_Update
 GO
 CREATE PROCEDURE usp_Inventario_Update
+    @CompanyId INT = NULL,
     @Codigo NVARCHAR(15),
     @RowXml NVARCHAR(MAX),
     @Resultado INT OUTPUT,
@@ -223,6 +233,10 @@ BEGIN
     DECLARE @xml XML = CAST(@RowXml AS XML);
 
     BEGIN TRY
+        IF @CompanyId IS NULL
+            SET @CompanyId = (SELECT TOP 1 CompanyId FROM cfg.Company WHERE ISNULL(IsDeleted, 0) = 0 ORDER BY CompanyId);
+        IF @CompanyId IS NULL SET @CompanyId = 1;
+
         IF NOT EXISTS (SELECT 1 FROM [master].[Product] WHERE ProductCode = @Codigo AND ISNULL(IsDeleted, 0) = 0)
         BEGIN
             SET @Resultado = -1;
@@ -249,7 +263,8 @@ BEGIN
             Co_Usuario = COALESCE(NULLIF(r.value('@Co_Usuario', 'NVARCHAR(10)'), N''), c.Co_Usuario),
             Linea = COALESCE(NULLIF(r.value('@Linea', 'NVARCHAR(30)'), N''), c.Linea),
             N_PARTE = COALESCE(NULLIF(r.value('@N_PARTE', 'NVARCHAR(18)'), N''), c.N_PARTE),
-            Barra = COALESCE(NULLIF(r.value('@Barra', 'NVARCHAR(50)'), N''), c.Barra)
+            Barra = COALESCE(NULLIF(r.value('@Barra', 'NVARCHAR(50)'), N''), c.Barra),
+            Descripcion = COALESCE(NULLIF(r.value('@Descripcion', 'NVARCHAR(MAX)'), N''), c.Descripcion)
         FROM [master].[Product] c
         CROSS JOIN @xml.nodes('/row') T(r)
         WHERE c.ProductCode = @Codigo AND ISNULL(c.IsDeleted, 0) = 0;

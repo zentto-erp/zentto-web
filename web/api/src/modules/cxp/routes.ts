@@ -7,6 +7,8 @@ import {
   getSaldoProveedor,
   type AplicarPagoInput,
 } from "./cxp.service.js";
+import { emitPagoAccountingEntry } from "./cxp-contabilidad.service.js";
+import { emitBusinessNotification } from "../_shared/notify.js";
 
 const router = Router();
 
@@ -48,11 +50,42 @@ router.post("/aplicar-pago-tx", async (req, res, next) => {
       });
     }
 
+    // Generate accounting entry (best effort, never blocks)
+    let contabilidad: { ok: boolean; asientoId?: number | null; numeroAsiento?: string | null } = { ok: false };
+    try {
+      contabilidad = await emitPagoAccountingEntry(
+        {
+          numPago: result.numPago!,
+          codProveedor: input.codProveedor,
+          fecha: input.fecha,
+          montoTotal: input.montoTotal,
+          formasPago: input.formasPago,
+          retentionAmount: result.retentionAmount,
+          retentionType: input.retentionType,
+        },
+        input.codUsuario
+      );
+    } catch {
+      // Never block the CxP operation
+    }
+
+    // Notify: pago enviado a proveedor (best-effort)
+    emitBusinessNotification({
+      event: "PAYMENT_SENT",
+      to: input.codProveedor,
+      subject: `Pago ${result.numPago} procesado`,
+      data: { Pago: result.numPago ?? "", Proveedor: input.codProveedor, Monto: String(input.montoTotal) },
+    }).catch(() => {});
+
     return res.json({
       success: true,
       numPago: result.numPago,
       message: result.message,
       requestId: input.requestId,
+      contabilidad,
+      retencion: result.retentionAmount && result.retentionAmount > 0
+        ? { amount: result.retentionAmount, rate: result.retentionRate, voucherId: result.voucherId }
+        : null,
     });
   } catch (err) {
     return next(err);

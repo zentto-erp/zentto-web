@@ -110,9 +110,11 @@ export default function ProviderConfigCard({
                 </IconButton>
               </Tooltip>
             )}
-            <IconButton onClick={() => setExpanded(!expanded)} size="small">
-              <ExpandMoreIcon sx={{ transform: expanded ? 'rotate(180deg)' : 'none', transition: '0.3s' }} />
-            </IconButton>
+            <Tooltip title={expanded ? "Colapsar" : "Expandir"}>
+              <IconButton onClick={() => setExpanded(!expanded)} size="small">
+                <ExpandMoreIcon sx={{ transform: expanded ? 'rotate(180deg)' : 'none', transition: '0.3s' }} />
+              </IconButton>
+            </Tooltip>
           </Box>
         }
       />
@@ -120,7 +122,7 @@ export default function ProviderConfigCard({
         <CardContent>
           <Stack spacing={2}>
             {/* Environment selector */}
-            <FormControl fullWidth size="small">
+            <FormControl fullWidth>
               <InputLabel>Ambiente</InputLabel>
               <Select
                 value={values.environment || 'sandbox'}
@@ -148,7 +150,7 @@ export default function ProviderConfigCard({
               }
               if (field.type === 'select' && field.options) {
                 return (
-                  <FormControl key={field.key} fullWidth size="small">
+                  <FormControl key={field.key} fullWidth>
                     <InputLabel>{field.label}</InputLabel>
                     <Select
                       value={values[field.key] || ''}
@@ -164,7 +166,7 @@ export default function ProviderConfigCard({
               }
               return (
                 <TextField key={field.key}
-                  fullWidth size="small"
+                  fullWidth
                   label={field.label}
                   placeholder={field.placeholder}
                   helperText={field.helpText}
@@ -186,7 +188,7 @@ export default function ProviderConfigCard({
               label="Permitir reembolsos"
             />
             <TextField
-              fullWidth size="small" type="number"
+              fullWidth type="number"
               label="Máx. días para reembolso"
               value={values.maxRefundDays || 30}
               onChange={e => setValues({ ...values, maxRefundDays: Number(e.target.value) })}
@@ -204,9 +206,11 @@ export default function ProviderConfigCard({
             {isSaving ? 'Guardando...' : isConfigured ? 'Actualizar' : 'Configurar'}
           </Button>
           {isConfigured && onDelete && (
-            <IconButton color="error" onClick={() => onDelete(existingConfig!.id)}>
-              <DeleteIcon />
-            </IconButton>
+            <Tooltip title="Eliminar configuracion">
+              <IconButton color="error" onClick={() => onDelete(existingConfig!.id)}>
+                <DeleteIcon />
+              </IconButton>
+            </Tooltip>
           )}
         </CardActions>
       </Collapse>

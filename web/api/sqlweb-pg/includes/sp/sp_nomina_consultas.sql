@@ -1,6 +1,6 @@
 -- ============================================================
 -- DatqBoxWeb PostgreSQL - sp_nomina_consultas.sql
--- Consultas nómina (canónico): conceptos, nóminas, vacaciones,
+-- Consultas nÃ³mina (canÃ³nico): conceptos, nÃ³minas, vacaciones,
 -- liquidaciones, constantes.
 -- ============================================================
 
@@ -142,8 +142,8 @@ BEGIN
         WHERE "CompanyId" = v_company_id
           AND "PayrollCode" = p_co_nomina
           AND "ConceptCode" = p_co_concept
-          AND COALESCE("ConventionCode", '') = ''
-          AND COALESCE("CalculationType", '') = ''
+          AND COALESCE("ConventionCode",''::VARCHAR) = ''
+          AND COALESCE("CalculationType",''::VARCHAR) = ''
     ) THEN
         UPDATE hr."PayrollConcept"
         SET "ConceptName"           = p_nb_concepto,
@@ -162,8 +162,8 @@ BEGIN
         WHERE "CompanyId" = v_company_id
           AND "PayrollCode" = p_co_nomina
           AND "ConceptCode" = p_co_concept
-          AND COALESCE("ConventionCode", '') = ''
-          AND COALESCE("CalculationType", '') = '';
+          AND COALESCE("ConventionCode",''::VARCHAR) = ''
+          AND COALESCE("CalculationType",''::VARCHAR) = '';
 
         v_resultado := 1;
         v_mensaje   := 'Concepto actualizado';
@@ -277,7 +277,7 @@ $$;
 -- =============================================
 -- sp_Nomina_Get (devuelve cabecera + detalle como dos result sets)
 -- En PostgreSQL se usa SETOF RECORD o dos funciones separadas.
--- Aquí usamos la cabecera; el detalle se obtiene con sp_Nomina_Get_Lines.
+-- AquÃ­ usamos la cabecera; el detalle se obtiene con sp_Nomina_Get_Lines.
 -- =============================================
 DROP FUNCTION IF EXISTS public.sp_Nomina_Get(VARCHAR, VARCHAR);
 
@@ -333,7 +333,7 @@ $$;
 
 
 -- =============================================
--- sp_Nomina_Get_Lines (detalle de líneas de la nómina)
+-- sp_Nomina_Get_Lines (detalle de lÃ­neas de la nÃ³mina)
 -- =============================================
 DROP FUNCTION IF EXISTS public.sp_Nomina_Get_Lines(VARCHAR, VARCHAR);
 
@@ -544,7 +544,7 @@ $$;
 
 
 -- =============================================
--- sp_Nomina_Vacaciones_Get_Lines (detalle de líneas de vacaciones)
+-- sp_Nomina_Vacaciones_Get_Lines (detalle de lÃ­neas de vacaciones)
 -- =============================================
 DROP FUNCTION IF EXISTS public.sp_Nomina_Vacaciones_Get_Lines(VARCHAR);
 

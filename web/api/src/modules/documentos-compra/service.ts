@@ -162,6 +162,21 @@ function mapPagos(tipoOperacion: TipoOperacionCompra, numDoc: string, formasPago
 // Funciones de servicio exportadas
 // ---------------------------------------------------------------------------
 
+function mapCompraRow(r: any) {
+  return {
+    documentId:    r.DocumentId    ?? r.documentId    ?? r.PurchaseDocumentId ?? 0,
+    documentNumber:r.DocumentNumber?? r.documentNumber?? "",
+    supplierCode:  r.SupplierCode  ?? r.supplierCode  ?? null,
+    supplierName:  r.SupplierName  ?? r.supplierName  ?? null,
+    fiscalId:      r.FiscalId      ?? r.fiscalId      ?? null,
+    issueDate:     r.IssueDate     ?? r.issueDate     ?? null,
+    totalAmount:   r.TotalAmount   ?? r.totalAmount   ?? 0,
+    documentType:  r.DocumentType  ?? r.documentType  ?? null,
+    status:        r.Status        ?? r.status        ?? null,
+    isVoided:      r.IsVoided      ?? r.isVoided      ?? false,
+  };
+}
+
 export async function listDocumentosCompra(input: {
   tipoOperacion: TipoOperacionCompra;
   search?: string;
@@ -194,7 +209,7 @@ export async function listDocumentosCompra(input: {
     page,
     limit,
     total: (output.TotalCount as number) ?? 0,
-    rows,
+    rows: rows.map(mapCompraRow),
     executionMode: "unified" as const
   };
 }

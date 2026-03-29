@@ -36,14 +36,16 @@ export function formatDateTime(
 
 export function toDateOnly(
   date: string | Date | null | undefined,
-  timeZone?: string
+  timeZone?: string,
+  locale?: string
 ): string {
   if (!date) return "";
   const d = typeof date === "string" ? new Date(date) : date;
   if (isNaN(d.getTime())) return "";
   const opts: Intl.DateTimeFormatOptions = { year: "numeric", month: "2-digit", day: "2-digit" };
   if (timeZone) opts.timeZone = timeZone;
-  return d.toLocaleDateString("en-CA", opts);
+  // Use locale for country-specific format (DD/MM/YYYY for es-VE, MM/DD/YYYY for en-US, etc.)
+  return d.toLocaleDateString(locale || "es", opts);
 }
 
 export function formatName(name: string | null | undefined): string {

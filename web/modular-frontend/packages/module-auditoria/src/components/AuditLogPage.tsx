@@ -1,12 +1,10 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Box,
   Paper,
   Typography,
-  TextField,
-  MenuItem,
   Stack,
   Chip,
   Dialog,
@@ -14,17 +12,17 @@ import {
   DialogContent,
   DialogActions,
   Button,
-  IconButton,
   Alert,
+  CircularProgress,
 } from "@mui/material";
-import { DataGrid, type GridColDef } from "@mui/x-data-grid";
-import VisibilityIcon from "@mui/icons-material/Visibility";
-import { ContextActionHeader } from "@zentto/shared-ui";
-import { formatDateTime } from "@zentto/shared-api";
+import { ContextActionHeader, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
+import { formatDateTime, useGridLayoutSync } from "@zentto/shared-api";
 import { useTimezone } from "@zentto/shared-auth";
 import { useAuditLogs, useAuditLogDetail, type AuditLogFilter } from "../hooks/useAuditoria";
+import type { ColumnDef } from "@zentto/datagrid-core";
+import { buildAuditoriaGridId, useAuditoriaGridRegistration } from "./zenttoGridPersistence";
 
-const ACTION_TYPES = ["", "CREATE", "UPDATE", "DELETE", "VOID", "LOGIN"];
+
 const ACTION_COLORS: Record<string, "success" | "info" | "warning" | "error" | "default"> = {
   CREATE: "success",
   UPDATE: "info",
@@ -33,53 +31,74 @@ const ACTION_COLORS: Record<string, "success" | "info" | "warning" | "error" | "
   LOGIN: "default",
 };
 
+const AUDIT_FILTERS: FilterFieldDef[] = [
+  {
+    field: "actionType", label: "Accion", type: "select",
+    options: [
+      { value: "CREATE", label: "CREATE" },
+      { value: "UPDATE", label: "UPDATE" },
+      { value: "DELETE", label: "DELETE" },
+      { value: "VOID", label: "VOID" },
+      { value: "LOGIN", label: "LOGIN" },
+    ],
+  },
+  { field: "userName", label: "Usuario", type: "text" },
+  { field: "fechaDesde", label: "Fecha desde", type: "date" },
+  { field: "fechaHasta", label: "Fecha hasta", type: "date" },
+];
+
+const GRID_ID = buildAuditoriaGridId("audit-log", "list");
+
 export default function AuditLogPage() {
   const { timeZone } = useTimezone();
   const [filter, setFilter] = useState<AuditLogFilter>({ page: 1, limit: 25 });
   const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
+  const gridRef = useRef<any>(null);
+  const { ready: layoutReady } = useGridLayoutSync(GRID_ID);
+  const { registered } = useAuditoriaGridRegistration(layoutReady);
 
-  const { data, isLoading } = useAuditLogs(filter);
+const { data, isLoading } = useAuditLogs(filter);
   const detalle = useAuditLogDetail(selectedId);
 
   const rows = data?.data ?? [];
   const total = data?.total ?? 0;
 
-  const columns: GridColDef[] = [
-    { field: "AuditLogId", headerName: "ID", width: 70 },
+  const columns: ColumnDef[] = [
+    { field: "AuditLogId", header: "ID", width: 70 },
     {
       field: "CreatedAt",
-      headerName: "Fecha",
+      header: "Fecha",
       width: 160,
-      renderCell: (p) => (p.value ? formatDateTime(p.value as string, { timeZone }) : "-"),
+      renderCell: (value: unknown) => (value ? formatDateTime(value as string, { timeZone }) : "-"),
     },
-    { field: "UserName", headerName: "Usuario", width: 120 },
-    { field: "ModuleName", headerName: "Módulo", width: 120 },
+    { field: "UserName", header: "Usuario", width: 120 },
+    { field: "ModuleName", header: "Módulo", width: 120 },
     {
       field: "ActionType",
-      headerName: "Acción",
+      header: "Acción",
       width: 110,
-      renderCell: (p) => (
+      renderCell: ((value: unknown) => (
         <Chip
-          label={p.value}
+          label={value as string}
           size="small"
-          color={ACTION_COLORS[p.value] ?? "default"}
+          color={ACTION_COLORS[value as string] ?? "default"}
           variant="outlined"
         />
-      ),
+      )) as unknown as ColumnDef["renderCell"],
     },
-    { field: "EntityName", headerName: "Entidad", width: 130 },
-    { field: "EntityId", headerName: "ID Entidad", width: 90 },
-    { field: "Summary", headerName: "Descripción", flex: 1, minWidth: 200 },
+    { field: "EntityName", header: "Entidad", width: 130 },
+    { field: "EntityId", header: "ID Entidad", width: 90 },
+    { field: "Summary", header: "Descripción", flex: 1, minWidth: 200 },
     {
-      field: "acciones",
-      headerName: "",
-      width: 60,
-      sortable: false,
-      renderCell: (p) => (
-        <IconButton size="small" onClick={() => setSelectedId(p.row.AuditLogId)}>
-          <VisibilityIcon fontSize="small" />
-        </IconButton>
-      ),
+      field: "actions",
+      header: "Acciones",
+      type: "actions",
+      width: 80,
+      pin: "right",
+      actions: [
+        { icon: "view", label: "Ver detalle", action: "view", color: "#6b7280" },
+      ],
     },
   ];
 
@@ -87,82 +106,68 @@ export default function AuditLogPage() {
     setFilter((f) => ({ ...f, [key]: value || undefined, page: 1 }));
   };
 
+  // Bind data to zentto-grid web component
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+    el.columns = columns;
+    el.rows = rows;
+    el.loading = isLoading;
+  }, [rows, isLoading, registered, columns]);
+
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+    const handler = (e: CustomEvent) => {
+      const { action, row } = e.detail;
+      if (action === "view") setSelectedId(row.AuditLogId);
+    };
+    el.addEventListener("action-click", handler);
+    return () => el.removeEventListener("action-click", handler);
+  }, [registered, rows]);
+
   return (
     <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
       <ContextActionHeader title="Bitácora de Auditoría" />
 
       <Box sx={{ p: { xs: 2, md: 3 }, flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
         {/* Filters */}
-        <Stack direction="row" spacing={2} mb={2} flexWrap="wrap" useFlexGap>
-          <TextField
-            label="Desde"
-            type="date"
-            size="small"
-            InputLabelProps={{ shrink: true }}
-            value={filter.fechaDesde || ""}
-            onChange={(e) => updateFilter("fechaDesde", e.target.value)}
-          />
-          <TextField
-            label="Hasta"
-            type="date"
-            size="small"
-            InputLabelProps={{ shrink: true }}
-            value={filter.fechaHasta || ""}
-            onChange={(e) => updateFilter("fechaHasta", e.target.value)}
-          />
-          <TextField
-            label="Módulo"
-            size="small"
-            sx={{ minWidth: 130 }}
-            value={filter.moduleName || ""}
-            onChange={(e) => updateFilter("moduleName", e.target.value)}
-          />
-          <TextField
-            label="Usuario"
-            size="small"
-            sx={{ minWidth: 130 }}
-            value={filter.userName || ""}
-            onChange={(e) => updateFilter("userName", e.target.value)}
-          />
-          <TextField
-            label="Acción"
-            select
-            size="small"
-            sx={{ minWidth: 120 }}
-            value={filter.actionType || ""}
-            onChange={(e) => updateFilter("actionType", e.target.value)}
-          >
-            <MenuItem value="">Todas</MenuItem>
-            {ACTION_TYPES.filter(Boolean).map((a) => (
-              <MenuItem key={a} value={a}>{a}</MenuItem>
-            ))}
-          </TextField>
-          <TextField
-            label="Buscar"
-            size="small"
-            sx={{ minWidth: 180 }}
-            value={filter.search || ""}
-            onChange={(e) => updateFilter("search", e.target.value)}
-          />
-        </Stack>
+        <ZenttoFilterPanel
+          filters={AUDIT_FILTERS}
+          values={filterValues}
+          onChange={(vals) => {
+            setFilterValues(vals);
+            setFilter((f) => ({
+              ...f,
+              actionType: vals.actionType || undefined,
+              userName: vals.userName || undefined,
+              fechaDesde: vals.fechaDesde || undefined,
+              fechaHasta: vals.fechaHasta || undefined,
+              page: 1,
+            }));
+          }}
+          searchPlaceholder="Buscar por modulo, entidad..."
+          searchValue={filter.search || ""}
+          onSearchChange={(v) => updateFilter("search", v)}
+          defaultOpen
+        />
 
         {/* Grid */}
         <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, border: "1px solid #E5E7EB" }}>
-          <DataGrid
-            rows={rows}
-            columns={columns}
-            loading={isLoading}
-            rowCount={total}
-            pageSizeOptions={[25, 50, 100]}
-            paginationMode="server"
-            paginationModel={{ page: (filter.page ?? 1) - 1, pageSize: filter.limit ?? 25 }}
-            onPaginationModelChange={(m) =>
-              setFilter((f) => ({ ...f, page: m.page + 1, limit: m.pageSize }))
-            }
-            disableRowSelectionOnClick
-            getRowId={(row) => row.AuditLogId}
-            sx={{ border: "none" }}
-          />
+          <zentto-grid
+        grid-id={GRID_ID}
+        ref={gridRef}
+        export-filename="auditoria-audit-log-list"
+        height="calc(100vh - 280px)"
+        enable-toolbar
+        enable-header-menu
+        enable-header-filters
+        enable-clipboard
+        enable-quick-search
+        enable-context-menu
+        enable-status-bar
+        enable-configurator
+      ></zentto-grid>
         </Paper>
       </Box>
 
@@ -229,5 +234,13 @@ function tryFormatJson(str: string): string {
     return JSON.stringify(JSON.parse(str), null, 2);
   } catch {
     return str;
+  }
+}
+
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'zentto-grid': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & Record<string, any>, HTMLElement>;
+    }
   }
 }

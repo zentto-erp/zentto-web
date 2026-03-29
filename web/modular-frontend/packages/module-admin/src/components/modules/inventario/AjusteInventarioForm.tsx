@@ -10,13 +10,13 @@ import {
   Paper,
   CircularProgress,
   Alert,
-  Grid,
   Typography,
   FormControl,
   InputLabel,
   Select,
   MenuItem,
 } from "@mui/material";
+import { FormGrid, FormField } from '@zentto/shared-ui';
 import { useCreateMovimiento } from "../../../hooks/useInventario";
 import { CreateInventarioDTO } from "@zentto/shared-api/types";
 
@@ -108,25 +108,23 @@ export default function AjusteInventarioForm() {
       )}
 
       <Paper component="form" onSubmit={handleSubmit} sx={{ p: 3 }}>
-        <Grid container spacing={2}>
+        <FormGrid spacing={2}>
           {/* Código Artículo */}
-          <Grid item xs={12} sm={6}>
+          <FormField xs={12} sm={6}>
             <TextField
               label="Código del Artículo"
               placeholder="Ej: ART001"
               value={formData.codigoArticulo}
               onChange={(e) => setFormData({ ...formData, codigoArticulo: e.target.value })}
-              fullWidth
-              size="small"
               required
               error={!!errors.codigoArticulo}
               helperText={errors.codigoArticulo}
             />
-          </Grid>
+          </FormField>
 
           {/* Tipo Movimiento */}
-          <Grid item xs={12} sm={6}>
-            <FormControl fullWidth size="small">
+          <FormField xs={12} sm={6}>
+            <FormControl>
               <InputLabel>Tipo de Movimiento</InputLabel>
               <Select
                 value={formData.tipo}
@@ -137,27 +135,25 @@ export default function AjusteInventarioForm() {
                 <MenuItem value="salida">Salida (Resta)</MenuItem>
               </Select>
             </FormControl>
-          </Grid>
+          </FormField>
 
           {/* Cantidad */}
-          <Grid item xs={12} sm={6}>
+          <FormField xs={12} sm={6}>
             <TextField
               label="Cantidad"
               type="number"
               inputProps={{ min: 1 }}
               value={formData.cantidad}
               onChange={(e) => setFormData({ ...formData, cantidad: parseInt(e.target.value, 10) })}
-              fullWidth
-              size="small"
               required
               error={!!errors.cantidad}
               helperText={errors.cantidad}
             />
-          </Grid>
+          </FormField>
 
           {/* Motivo */}
-          <Grid item xs={12} sm={6}>
-            <FormControl fullWidth size="small">
+          <FormField xs={12} sm={6}>
+            <FormControl>
               <InputLabel>Motivo</InputLabel>
               <Select
                 value={formData.motivo}
@@ -173,22 +169,20 @@ export default function AjusteInventarioForm() {
                 <MenuItem value="Traslado">Traslado entre almacenes</MenuItem>
               </Select>
             </FormControl>
-          </Grid>
+          </FormField>
 
           {/* Observaciones */}
-          <Grid item xs={12}>
+          <FormField xs={12}>
             <TextField
               label="Observaciones"
               placeholder="Detalles adicionales del movimiento"
               value={formData.observaciones}
               onChange={(e) => setFormData({ ...formData, observaciones: e.target.value })}
-              fullWidth
               multiline
               rows={3}
-              size="small"
             />
-          </Grid>
-        </Grid>
+          </FormField>
+        </FormGrid>
 
         {/* Actions */}
         <Box sx={{ display: "flex", gap: 2, mt: 4, justifyContent: "flex-end" }}>

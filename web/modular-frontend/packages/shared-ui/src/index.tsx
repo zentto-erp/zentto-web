@@ -1,12 +1,22 @@
 "use client";
 
+// Web component type declarations (zentto-grid, report-viewer, report-designer)
+import './web-components';
+
 // Theme
 export { default as theme } from './theme';
-export { brandColors } from './theme';
+export { brandColors, createBrandedTheme, DEFAULT_BRANDING } from './theme';
+export type { BrandingColors } from './theme';
 
 // Providers
 export { default as ToastProvider, useToast } from './providers/ToastProvider';
 export { default as LocalizationProviderWrapper } from './providers/LocalizationProviderWrapper';
+export { default as BrandingProvider } from './providers/BrandingProvider';
+export type { BrandingConfig, BrandingContextValue } from './providers/BrandingProvider';
+
+// Branding
+export { default as BrandedThemeProvider } from './components/BrandedThemeProvider';
+export { useBranding } from './hooks/useBranding';
 
 // Components
 export { default as Copyright } from './components/Copyright';
@@ -34,3 +44,34 @@ export { default as AcceptedMethodsManager } from './components/AcceptedMethodsM
 
 // MUI X re-exports (single source to avoid duplicated contexts across apps)
 export { DatePicker } from '@mui/x-date-pickers/DatePicker';
+
+// ─── ZenttoDataGrid — MIGRADO a @zentto/datagrid (web component nativo) ───
+// El grid MUI legacy fue eliminado. Usar <zentto-grid> directamente.
+// Ver: https://www.npmjs.com/package/@zentto/datagrid
+
+// ─── Dialogs genéricos — CRUD, confirmación, formularios ───
+export { ConfirmDialog, DeleteDialog } from './components/dialogs';
+export type { ConfirmDialogProps, DeleteDialogProps } from './components/dialogs';
+export { FormDialog } from './components/dialogs';
+export type { FormDialogProps } from './components/dialogs';
+
+// Form layout — Grid wrapper para formularios consistentes
+export { FormGrid, FormField } from './components/FormGrid';
+export type { FormGridProps, FormFieldProps } from './components/FormGrid';
+
+// ─── ZenttoFilterPanel — panel de filtros reutilizable para tablas ───
+export { ZenttoFilterPanel } from './components/ZenttoFilterPanel';
+export type {
+  ZenttoFilterPanelProps,
+  FilterFieldDef,
+  FilterFieldType,
+  FilterSelectOption,
+} from './components/ZenttoFilterPanel';
+
+// Db Mode Toggle
+export { DbModeToggle } from './components/DbModeToggle';
+
+// Help
+export { default as HelpButton } from './components/HelpButton';
+export { HELP_MAP, getHelpForPath } from './lib/help-map';
+export type { HelpEntry } from './lib/help-map';

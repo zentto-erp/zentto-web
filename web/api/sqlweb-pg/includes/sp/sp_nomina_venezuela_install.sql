@@ -19,6 +19,7 @@ CREATE TABLE IF NOT EXISTS hr."PayrollCalcVariable" (
 -- Wrappers de compatibilidad por si aun no se ejecuto sp_nomina_sistema.sql
 -- En PG usamos CREATE OR REPLACE que es idempotente
 
+DROP FUNCTION IF EXISTS sp_nomina_limpiar_variables_compat(VARCHAR(80)) CASCADE;
 CREATE OR REPLACE FUNCTION sp_nomina_limpiar_variables_compat(
   p_session_id VARCHAR(80)
 )
@@ -29,6 +30,7 @@ BEGIN
 END;
 $$;
 
+DROP FUNCTION IF EXISTS sp_nomina_set_variable_compat(VARCHAR(80), VARCHAR(120), NUMERIC(18,6), VARCHAR(255)) CASCADE;
 CREATE OR REPLACE FUNCTION sp_nomina_set_variable_compat(
   p_session_id VARCHAR(80),
   p_variable VARCHAR(120),
@@ -47,6 +49,7 @@ BEGIN
 END;
 $$;
 
+DROP FUNCTION IF EXISTS sp_nomina_calcular_antiguedad_compat(VARCHAR(80), VARCHAR(32), DATE) CASCADE;
 CREATE OR REPLACE FUNCTION sp_nomina_calcular_antiguedad_compat(
   p_session_id VARCHAR(80),
   p_cedula VARCHAR(32),

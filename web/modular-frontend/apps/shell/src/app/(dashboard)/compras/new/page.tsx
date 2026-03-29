@@ -1,7 +1,6 @@
-"use client";
+'use client';
+import { CompraForm } from '@zentto/module-compras';
 
-import { CompraForm } from "@zentto/module-compras";
-
-export default function NewCompraPage() {
-  return <CompraForm />;
+export default function Page() {
+    return <CompraForm />;
 }

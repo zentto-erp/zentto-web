@@ -47,6 +47,17 @@ export default function AcceptedMethodsManager({
 }: AcceptedMethodsManagerProps) {
   const acceptedIds = new Set(acceptedMethods.map(a => a.paymentMethodId));
   const availableToAdd = allMethods.filter(m => !acceptedIds.has(m.id));
+  const getAcceptedMethodKey = (am: AcceptedPaymentMethod, index: number) => {
+    const identity = [
+      am.id || 'no-id',
+      am.paymentMethodId,
+      am.providerId ?? 'no-provider',
+      am.methodCode || 'no-code',
+      index,
+    ];
+
+    return identity.join(':');
+  };
 
   const [showAddMenu, setShowAddMenu] = React.useState(false);
 
@@ -112,8 +123,8 @@ export default function AcceptedMethodsManager({
                 </TableCell>
               </TableRow>
             )}
-            {acceptedMethods.map(am => (
-              <TableRow key={am.id}>
+            {acceptedMethods.map((am, index) => (
+              <TableRow key={getAcceptedMethodKey(am, index)}>
                 <TableCell>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     <span>{CATEGORY_ICONS[am.methodCategory] || '📋'}</span>

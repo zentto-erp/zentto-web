@@ -1,0 +1,1662 @@
+[
+  {
+    "method": "POST",
+    "path": "/v1/auth/login",
+    "tag": "Auth"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/auth/register",
+    "tag": "Auth"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/auth/verify-email",
+    "tag": "Auth"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/auth/verify-email",
+    "tag": "Auth"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/auth/resend-verification",
+    "tag": "Auth"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/auth/forgot-password",
+    "tag": "Auth"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/auth/reset-password/confirm",
+    "tag": "Auth"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/auth/me",
+    "tag": "Auth"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/auth/change-password",
+    "tag": "Auth"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/auth/reset-password",
+    "tag": "Auth"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/clientes",
+    "tag": "Clientes"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/clientes",
+    "tag": "Clientes"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/clientes/{codigo}",
+    "tag": "Clientes"
+  },
+  {
+    "method": "PUT",
+    "path": "/v1/clientes/{codigo}",
+    "tag": "Clientes"
+  },
+  {
+    "method": "DELETE",
+    "path": "/v1/clientes/{codigo}",
+    "tag": "Clientes"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/proveedores",
+    "tag": "Proveedores"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/proveedores",
+    "tag": "Proveedores"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/proveedores/{codigo}",
+    "tag": "Proveedores"
+  },
+  {
+    "method": "PUT",
+    "path": "/v1/proveedores/{codigo}",
+    "tag": "Proveedores"
+  },
+  {
+    "method": "DELETE",
+    "path": "/v1/proveedores/{codigo}",
+    "tag": "Proveedores"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/inventario",
+    "tag": "Inventario"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/inventario",
+    "tag": "Inventario"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/inventario/{codigo}",
+    "tag": "Inventario"
+  },
+  {
+    "method": "PUT",
+    "path": "/v1/inventario/{codigo}",
+    "tag": "Inventario"
+  },
+  {
+    "method": "DELETE",
+    "path": "/v1/inventario/{codigo}",
+    "tag": "Inventario"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/articulos",
+    "tag": "Inventario"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/articulos/{codigo}",
+    "tag": "Inventario"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/abonos",
+    "tag": "Abonos"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/abonos",
+    "tag": "Abonos"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/abonos/tx",
+    "tag": "Abonos"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/abonos/{id}",
+    "tag": "Abonos"
+  },
+  {
+    "method": "PUT",
+    "path": "/v1/abonos/{id}",
+    "tag": "Abonos"
+  },
+  {
+    "method": "DELETE",
+    "path": "/v1/abonos/{id}",
+    "tag": "Abonos"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/abonos/{id}/detalle",
+    "tag": "Abonos"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/pagos",
+    "tag": "Pagos"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/pagos",
+    "tag": "Pagos"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/pagos/tx",
+    "tag": "Pagos"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/pagos/{id}",
+    "tag": "Pagos"
+  },
+  {
+    "method": "PUT",
+    "path": "/v1/pagos/{id}",
+    "tag": "Pagos"
+  },
+  {
+    "method": "DELETE",
+    "path": "/v1/pagos/{id}",
+    "tag": "Pagos"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/pagos/{id}/detalle",
+    "tag": "Pagos"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/pagosc",
+    "tag": "PagosC"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/pagosc",
+    "tag": "PagosC"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/pagosc/tx",
+    "tag": "PagosC"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/pagosc/{id}",
+    "tag": "PagosC"
+  },
+  {
+    "method": "PUT",
+    "path": "/v1/pagosc/{id}",
+    "tag": "PagosC"
+  },
+  {
+    "method": "DELETE",
+    "path": "/v1/pagosc/{id}",
+    "tag": "PagosC"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/pagosc/{id}/detalle",
+    "tag": "PagosC"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/abonospagos",
+    "tag": "AbonosPagos"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/abonospagos",
+    "tag": "AbonosPagos"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/abonospagos/{id}",
+    "tag": "AbonosPagos"
+  },
+  {
+    "method": "PUT",
+    "path": "/v1/abonospagos/{id}",
+    "tag": "AbonosPagos"
+  },
+  {
+    "method": "DELETE",
+    "path": "/v1/abonospagos/{id}",
+    "tag": "AbonosPagos"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/cuentas-por-pagar",
+    "tag": "CuentasPorPagar"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/cuentas-por-pagar",
+    "tag": "CuentasPorPagar"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/cuentas-por-pagar/{id}",
+    "tag": "CuentasPorPagar"
+  },
+  {
+    "method": "PUT",
+    "path": "/v1/cuentas-por-pagar/{id}",
+    "tag": "CuentasPorPagar"
+  },
+  {
+    "method": "DELETE",
+    "path": "/v1/cuentas-por-pagar/{id}",
+    "tag": "CuentasPorPagar"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/p-cobrar",
+    "tag": "CuentasPorCobrar"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/p-cobrar",
+    "tag": "CuentasPorCobrar"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/p-cobrar/{id}",
+    "tag": "CuentasPorCobrar"
+  },
+  {
+    "method": "PUT",
+    "path": "/v1/p-cobrar/{id}",
+    "tag": "CuentasPorCobrar"
+  },
+  {
+    "method": "DELETE",
+    "path": "/v1/p-cobrar/{id}",
+    "tag": "CuentasPorCobrar"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/p-cobrar/c/list",
+    "tag": "CuentasPorCobrar"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/p-cobrar/c",
+    "tag": "CuentasPorCobrar"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/p-cobrar/c/{id}",
+    "tag": "CuentasPorCobrar"
+  },
+  {
+    "method": "PUT",
+    "path": "/v1/p-cobrar/c/{id}",
+    "tag": "CuentasPorCobrar"
+  },
+  {
+    "method": "DELETE",
+    "path": "/v1/p-cobrar/c/{id}",
+    "tag": "CuentasPorCobrar"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/retenciones",
+    "tag": "Retenciones"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/retenciones",
+    "tag": "Retenciones"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/retenciones/{codigo}",
+    "tag": "Retenciones"
+  },
+  {
+    "method": "PUT",
+    "path": "/v1/retenciones/{codigo}",
+    "tag": "Retenciones"
+  },
+  {
+    "method": "DELETE",
+    "path": "/v1/retenciones/{codigo}",
+    "tag": "Retenciones"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/movinvent",
+    "tag": "MovInvent"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/movinvent",
+    "tag": "MovInvent"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/movinvent/{id}",
+    "tag": "MovInvent"
+  },
+  {
+    "method": "PUT",
+    "path": "/v1/movinvent/{id}",
+    "tag": "MovInvent"
+  },
+  {
+    "method": "DELETE",
+    "path": "/v1/movinvent/{id}",
+    "tag": "MovInvent"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/movinvent/mes/list",
+    "tag": "MovInvent"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/addons",
+    "tag": "Addons"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/meta/schema",
+    "tag": "Meta"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/meta/relations",
+    "tag": "Meta"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/crud/tables",
+    "tag": "CRUD"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/crud/{table}/describe",
+    "tag": "CRUD"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/crud/{table}/query",
+    "tag": "CRUD"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/crud/{table}",
+    "tag": "CRUD"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/crud/{table}/{key}",
+    "tag": "CRUD"
+  },
+  {
+    "method": "PUT",
+    "path": "/v1/crud/{table}/{key}",
+    "tag": "CRUD"
+  },
+  {
+    "method": "DELETE",
+    "path": "/v1/crud/{table}/{key}",
+    "tag": "CRUD"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/crud/{table}/key",
+    "tag": "CRUD"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/cxc/aplicar-cobro-tx",
+    "tag": "CxC"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/nomina/conceptos-legales",
+    "tag": "Nomina"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/nomina/convenciones",
+    "tag": "Nomina"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/nomina/procesar-conceptolegal",
+    "tag": "Nomina"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/nomina/vacaciones/procesar-conceptolegal",
+    "tag": "Nomina"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/nomina/liquidacion/procesar-conceptolegal",
+    "tag": "Nomina"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/nomina/validar-formulas",
+    "tag": "Nomina"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/contabilidad/cuentas",
+    "tag": "Contabilidad"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/contabilidad/cuentas/{codCuenta}",
+    "tag": "Contabilidad"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/contabilidad/asientos",
+    "tag": "Contabilidad"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/contabilidad/asientos",
+    "tag": "Contabilidad"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/contabilidad/asientos/{id}",
+    "tag": "Contabilidad"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/contabilidad/asientos/{id}/anular",
+    "tag": "Contabilidad"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/contabilidad/ajustes",
+    "tag": "Contabilidad"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/contabilidad/depreciaciones/generar",
+    "tag": "Contabilidad"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/contabilidad/reportes/libro-mayor",
+    "tag": "Contabilidad"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/contabilidad/reportes/mayor-analitico",
+    "tag": "Contabilidad"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/contabilidad/reportes/balance-comprobacion",
+    "tag": "Contabilidad"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/contabilidad/reportes/estado-resultados",
+    "tag": "Contabilidad"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/contabilidad/reportes/balance-general",
+    "tag": "Contabilidad"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/contabilidad/setup/seed-plan-cuentas",
+    "tag": "Contabilidad"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/cxc/documentos",
+    "tag": "CxC"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/cxp/documentos",
+    "tag": "CxP"
+  },
+  {
+    "method": "GET",
+    "path": "/health/db",
+    "tag": "Health"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/vendedores",
+    "tag": "Vendedores"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/vendedores",
+    "tag": "Vendedores"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/vendedores/{codigo}",
+    "tag": "Vendedores"
+  },
+  {
+    "method": "PUT",
+    "path": "/v1/vendedores/{codigo}",
+    "tag": "Vendedores"
+  },
+  {
+    "method": "DELETE",
+    "path": "/v1/vendedores/{codigo}",
+    "tag": "Vendedores"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/empleados",
+    "tag": "Empleados"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/empleados",
+    "tag": "Empleados"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/empleados/{cedula}",
+    "tag": "Empleados"
+  },
+  {
+    "method": "PUT",
+    "path": "/v1/empleados/{cedula}",
+    "tag": "Empleados"
+  },
+  {
+    "method": "DELETE",
+    "path": "/v1/empleados/{cedula}",
+    "tag": "Empleados"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/centro-costo",
+    "tag": "CentroCosto"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/centro-costo",
+    "tag": "CentroCosto"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/centro-costo/{codigo}",
+    "tag": "CentroCosto"
+  },
+  {
+    "method": "PUT",
+    "path": "/v1/centro-costo/{codigo}",
+    "tag": "CentroCosto"
+  },
+  {
+    "method": "DELETE",
+    "path": "/v1/centro-costo/{codigo}",
+    "tag": "CentroCosto"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/unidades",
+    "tag": "Unidades"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/empresa",
+    "tag": "Empresa"
+  },
+  {
+    "method": "PUT",
+    "path": "/v1/empresa",
+    "tag": "Empresa"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/usuarios",
+    "tag": "Usuarios"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/usuarios",
+    "tag": "Usuarios"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/usuarios/modules",
+    "tag": "Usuarios"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/usuarios/{codigo}",
+    "tag": "Usuarios"
+  },
+  {
+    "method": "PUT",
+    "path": "/v1/usuarios/{codigo}",
+    "tag": "Usuarios"
+  },
+  {
+    "method": "DELETE",
+    "path": "/v1/usuarios/{codigo}",
+    "tag": "Usuarios"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/usuarios/{codigo}/modulos",
+    "tag": "Usuarios"
+  },
+  {
+    "method": "PUT",
+    "path": "/v1/usuarios/{codigo}/modulos",
+    "tag": "Usuarios"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/sistema/notificaciones",
+    "tag": "Sistema"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/sistema/notificaciones/leido",
+    "tag": "Sistema"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/sistema/tareas",
+    "tag": "Sistema"
+  },
+  {
+    "method": "PATCH",
+    "path": "/v1/sistema/tareas/{id}/progreso",
+    "tag": "Sistema"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/sistema/mensajes",
+    "tag": "Sistema"
+  },
+  {
+    "method": "PATCH",
+    "path": "/v1/sistema/mensajes/{id}/leido",
+    "tag": "Sistema"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/pos/ventas",
+    "tag": "POS"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/pos/ventas/{ventaId}/contabilizar",
+    "tag": "POS"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/restaurante/pedidos/{pedidoId}/cerrar",
+    "tag": "Restaurante"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/restaurante/pedidos/{pedidoId}/contabilizar",
+    "tag": "Restaurante"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/fiscal/plugins",
+    "tag": "Fiscal"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/fiscal/countries",
+    "tag": "Fiscal"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/fiscal/countries/{countryCode}",
+    "tag": "Fiscal"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/fiscal/countries/{countryCode}/default-config",
+    "tag": "Fiscal"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/fiscal/countries/{countryCode}/tax-rates",
+    "tag": "Fiscal"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/fiscal/countries/{countryCode}/invoice-types",
+    "tag": "Fiscal"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/fiscal/countries/{countryCode}/milestones",
+    "tag": "Fiscal"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/fiscal/countries/{countryCode}/sources",
+    "tag": "Fiscal"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/fiscal/config",
+    "tag": "Fiscal"
+  },
+  {
+    "method": "PUT",
+    "path": "/v1/fiscal/config",
+    "tag": "Fiscal"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/config/tasas",
+    "tag": "Config"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/config/tasas/sync",
+    "tag": "Config"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/config/countries",
+    "tag": "Config"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/config/countries",
+    "tag": "Config"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/config/countries/all",
+    "tag": "Config"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/config/countries/{code}",
+    "tag": "Config"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/config/states/{countryCode}",
+    "tag": "Config"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/config/states",
+    "tag": "Config"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/config/lookups/{typeCode}",
+    "tag": "Config"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/bancos/cuentas/list",
+    "tag": "Bancos"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/bancos/cuentas/{nroCta}/movimientos",
+    "tag": "Bancos"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/bancos/movimientos/{id}",
+    "tag": "Bancos"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/bancos/movimientos/generar",
+    "tag": "Bancos"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/bancos/conciliaciones",
+    "tag": "Bancos"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/bancos/conciliaciones/crear",
+    "tag": "Bancos"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/bancos/conciliaciones/{id}",
+    "tag": "Bancos"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/bancos/conciliaciones/{id}/importar-extracto",
+    "tag": "Bancos"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/bancos/conciliaciones/conciliar",
+    "tag": "Bancos"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/bancos/conciliaciones/ajuste",
+    "tag": "Bancos"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/bancos/conciliaciones/cerrar",
+    "tag": "Bancos"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/bancos/caja-chica",
+    "tag": "Bancos"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/bancos/caja-chica",
+    "tag": "Bancos"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/bancos/caja-chica/{boxId}/abrir",
+    "tag": "Bancos"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/bancos/caja-chica/{boxId}/cerrar",
+    "tag": "Bancos"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/bancos/caja-chica/{boxId}/sesion-activa",
+    "tag": "Bancos"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/bancos/caja-chica/{boxId}/gastos",
+    "tag": "Bancos"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/bancos/caja-chica/{boxId}/gastos",
+    "tag": "Bancos"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/bancos/caja-chica/{boxId}/resumen",
+    "tag": "Bancos"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/nomina/batch",
+    "tag": "Nomina"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/nomina/batch/draft",
+    "tag": "Nomina"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/nomina/batch/line",
+    "tag": "Nomina"
+  },
+  {
+    "method": "PUT",
+    "path": "/v1/nomina/batch/line",
+    "tag": "Nomina"
+  },
+  {
+    "method": "DELETE",
+    "path": "/v1/nomina/batch/line/{id}",
+    "tag": "Nomina"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/nomina/batch/bulk-update",
+    "tag": "Nomina"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/nomina/batch/{id}/summary",
+    "tag": "Nomina"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/nomina/batch/{id}/grid",
+    "tag": "Nomina"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/nomina/batch/{id}/employee/{code}",
+    "tag": "Nomina"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/nomina/batch/{id}/approve",
+    "tag": "Nomina"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/nomina/batch/{id}/process",
+    "tag": "Nomina"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/nomina/vacaciones/solicitar",
+    "tag": "Nomina"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/nomina/vacaciones/solicitudes",
+    "tag": "Nomina"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/nomina/vacaciones/solicitudes/{id}",
+    "tag": "Nomina"
+  },
+  {
+    "method": "PUT",
+    "path": "/v1/nomina/vacaciones/solicitudes/{id}/aprobar",
+    "tag": "Nomina"
+  },
+  {
+    "method": "PUT",
+    "path": "/v1/nomina/vacaciones/solicitudes/{id}/rechazar",
+    "tag": "Nomina"
+  },
+  {
+    "method": "PUT",
+    "path": "/v1/nomina/vacaciones/solicitudes/{id}/cancelar",
+    "tag": "Nomina"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/nomina/vacaciones/solicitudes/{id}/procesar-pago",
+    "tag": "Nomina"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/nomina/vacaciones/dias-disponibles/{cedula}",
+    "tag": "Nomina"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/nomina/vacaciones/list",
+    "tag": "Nomina"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/nomina/vacaciones/{id}",
+    "tag": "Nomina"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/nomina/vacaciones/procesar",
+    "tag": "Nomina"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/nomina/liquidacion/calcular",
+    "tag": "Nomina"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/nomina/liquidaciones/list",
+    "tag": "Nomina"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/nomina/liquidaciones/{id}",
+    "tag": "Nomina"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/nomina/constantes",
+    "tag": "Nomina"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/nomina/constantes",
+    "tag": "Nomina"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/payments/methods",
+    "tag": "Payments"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/payments/methods",
+    "tag": "Payments"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/payments/providers",
+    "tag": "Payments"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/payments/providers/{code}",
+    "tag": "Payments"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/payments/providers/{code}/fields",
+    "tag": "Payments"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/payments/plugins",
+    "tag": "Payments"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/payments/config",
+    "tag": "Payments"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/payments/config",
+    "tag": "Payments"
+  },
+  {
+    "method": "DELETE",
+    "path": "/v1/payments/config/{id}",
+    "tag": "Payments"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/payments/accepted",
+    "tag": "Payments"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/payments/accepted",
+    "tag": "Payments"
+  },
+  {
+    "method": "DELETE",
+    "path": "/v1/payments/accepted/{id}",
+    "tag": "Payments"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/payments/card-readers",
+    "tag": "Payments"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/payments/card-readers",
+    "tag": "Payments"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/payments/process",
+    "tag": "Payments"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/payments/transactions",
+    "tag": "Payments"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/auditoria/logs",
+    "tag": "Auditoria"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/auditoria/logs/{id}",
+    "tag": "Auditoria"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/auditoria/dashboard",
+    "tag": "Auditoria"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/auditoria/fiscal-records",
+    "tag": "Auditoria"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/settings",
+    "tag": "Settings"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/settings/modules",
+    "tag": "Settings"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/settings/{module}",
+    "tag": "Settings"
+  },
+  {
+    "method": "PUT",
+    "path": "/v1/settings/{module}",
+    "tag": "Settings"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/media/upload",
+    "tag": "Media"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/media/link-by-url",
+    "tag": "Media"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/media/entities/{entityType}/{entityId}/images",
+    "tag": "Media"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/media/entities/{entityType}/{entityId}/images",
+    "tag": "Media"
+  },
+  {
+    "method": "PUT",
+    "path": "/v1/media/entities/{entityType}/{entityId}/images/{entityImageId}/primary",
+    "tag": "Media"
+  },
+  {
+    "method": "DELETE",
+    "path": "/v1/media/entities/{entityType}/{entityId}/images/{entityImageId}",
+    "tag": "Media"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/documentos-venta",
+    "tag": "DocumentosVenta"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/documentos-venta/emitir-tx",
+    "tag": "DocumentosVenta"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/documentos-venta/anular-tx",
+    "tag": "DocumentosVenta"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/documentos-venta/facturar-desde-pedido-tx",
+    "tag": "DocumentosVenta"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/documentos-venta/{tipoOperacion}/{numFact}",
+    "tag": "DocumentosVenta"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/documentos-venta/{tipoOperacion}/{numFact}/detalle",
+    "tag": "DocumentosVenta"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/documentos-compra",
+    "tag": "DocumentosCompra"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/documentos-compra/emitir-tx",
+    "tag": "DocumentosCompra"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/documentos-compra/anular-tx",
+    "tag": "DocumentosCompra"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/documentos-compra/cerrar-orden-con-compra-tx",
+    "tag": "DocumentosCompra"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/documentos-compra/{tipoOperacion}/{numFact}",
+    "tag": "DocumentosCompra"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/documentos-compra/{tipoOperacion}/{numFact}/detalle",
+    "tag": "DocumentosCompra"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/documentos-compra/{tipoOperacion}/{numFact}/indicadores",
+    "tag": "DocumentosCompra"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/supervision/biometric/credentials",
+    "tag": "Supervision"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/supervision/biometric/enroll",
+    "tag": "Supervision"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/supervision/biometric/deactivate",
+    "tag": "Supervision"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/rrhh/utilidades",
+    "tag": "RRHH"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/rrhh/utilidades/generate",
+    "tag": "RRHH"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/rrhh/utilidades/{id}/summary",
+    "tag": "RRHH"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/rrhh/utilidades/{id}/approve",
+    "tag": "RRHH"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/rrhh/fideicomiso",
+    "tag": "RRHH"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/rrhh/fideicomiso/calculate",
+    "tag": "RRHH"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/rrhh/fideicomiso/balance/{employeeCode}",
+    "tag": "RRHH"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/rrhh/fideicomiso/summary",
+    "tag": "RRHH"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/rrhh/caja-ahorro",
+    "tag": "RRHH"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/rrhh/caja-ahorro/enroll",
+    "tag": "RRHH"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/rrhh/caja-ahorro/balance/{employeeCode}",
+    "tag": "RRHH"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/rrhh/caja-ahorro/loans",
+    "tag": "RRHH"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/rrhh/caja-ahorro/loans",
+    "tag": "RRHH"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/rrhh/caja-ahorro/loans/{loanId}/approve",
+    "tag": "RRHH"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/rrhh/caja-ahorro/loans/{loanId}/payment",
+    "tag": "RRHH"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/rrhh/caja-ahorro/process-monthly",
+    "tag": "RRHH"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/rrhh/obligaciones",
+    "tag": "RRHH"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/rrhh/obligaciones",
+    "tag": "RRHH"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/rrhh/obligaciones/country/{code}",
+    "tag": "RRHH"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/rrhh/obligaciones/enroll",
+    "tag": "RRHH"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/rrhh/obligaciones/employee/{employeeId}",
+    "tag": "RRHH"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/rrhh/obligaciones/filings",
+    "tag": "RRHH"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/rrhh/obligaciones/filings/generate",
+    "tag": "RRHH"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/rrhh/obligaciones/filings/{id}",
+    "tag": "RRHH"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/rrhh/obligaciones/filings/{filingId}/mark-filed",
+    "tag": "RRHH"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/rrhh/salud-ocupacional",
+    "tag": "RRHH"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/rrhh/salud-ocupacional",
+    "tag": "RRHH"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/rrhh/salud-ocupacional/{id}",
+    "tag": "RRHH"
+  },
+  {
+    "method": "PUT",
+    "path": "/v1/rrhh/salud-ocupacional/{id}",
+    "tag": "RRHH"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/rrhh/examenes-medicos",
+    "tag": "RRHH"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/rrhh/examenes-medicos",
+    "tag": "RRHH"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/rrhh/examenes-medicos/pending",
+    "tag": "RRHH"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/rrhh/ordenes-medicas",
+    "tag": "RRHH"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/rrhh/ordenes-medicas",
+    "tag": "RRHH"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/rrhh/ordenes-medicas/{orderId}/approve",
+    "tag": "RRHH"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/rrhh/capacitacion",
+    "tag": "RRHH"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/rrhh/capacitacion",
+    "tag": "RRHH"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/rrhh/capacitacion/certifications/{employeeCode}",
+    "tag": "RRHH"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/rrhh/comites",
+    "tag": "RRHH"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/rrhh/comites",
+    "tag": "RRHH"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/rrhh/comites/{committeeId}/members",
+    "tag": "RRHH"
+  },
+  {
+    "method": "DELETE",
+    "path": "/v1/rrhh/comites/{committeeId}/members/{memberId}",
+    "tag": "RRHH"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/rrhh/comites/{committeeId}/meetings",
+    "tag": "RRHH"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/rrhh/comites/{committeeId}/meetings",
+    "tag": "RRHH"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/cxc/documentos-pendientes/{codCliente}",
+    "tag": "UNDOCUMENTED"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/cxc/saldo/{codCliente}",
+    "tag": "UNDOCUMENTED"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/cxp/aplicar-pago-tx",
+    "tag": "UNDOCUMENTED"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/cxp/documentos-pendientes/{codProveedor}",
+    "tag": "UNDOCUMENTED"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/cxp/saldo/{codProveedor}",
+    "tag": "UNDOCUMENTED"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/devices/register",
+    "tag": "UNDOCUMENTED"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/devices/unregister",
+    "tag": "UNDOCUMENTED"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/devices/my",
+    "tag": "UNDOCUMENTED"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/analytics/debug",
+    "tag": "UNDOCUMENTED"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/analytics/dashboard",
+    "tag": "UNDOCUMENTED"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/analytics/activity",
+    "tag": "UNDOCUMENTED"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/analytics/business",
+    "tag": "UNDOCUMENTED"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/analytics/performance",
+    "tag": "UNDOCUMENTED"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/analytics/audit",
+    "tag": "UNDOCUMENTED"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/support/ticket",
+    "tag": "UNDOCUMENTED"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/support/tickets",
+    "tag": "UNDOCUMENTED"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/support/tickets/{number}",
+    "tag": "UNDOCUMENTED"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/support/tickets/{number}/comment",
+    "tag": "UNDOCUMENTED"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/integrations/zoho/connect",
+    "tag": "UNDOCUMENTED"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/integrations/zoho/callback",
+    "tag": "UNDOCUMENTED"
+  },
+  {
+    "method": "GET",
+    "path": "/v1/integrations/zoho/status",
+    "tag": "UNDOCUMENTED"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/integrations/zoho/mail/send",
+    "tag": "UNDOCUMENTED"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/integrations/zoho/sign/send",
+    "tag": "UNDOCUMENTED"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/integrations/zoho/desk/ticket",
+    "tag": "UNDOCUMENTED"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/integrations/zoho/cliq/message",
+    "tag": "UNDOCUMENTED"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/nomina/templates/{code}/render",
+    "tag": "UNDOCUMENTED"
+  },
+  {
+    "method": "POST",
+    "path": "/v1/sistema/alertas/procesar",
+    "tag": "UNDOCUMENTED"
+  }
+]

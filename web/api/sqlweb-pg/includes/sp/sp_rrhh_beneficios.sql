@@ -1,7 +1,7 @@
 -- =============================================================================
 -- sp_rrhh_beneficios.sql  (PostgreSQL / PL/pgSQL)
 -- Convertido desde T-SQL: web/api/sqlweb/includes/sp/sp_rrhh_beneficios.sql
--- Fecha conversión: 2026-03-16
+-- Fecha conversiÃ³n: 2026-03-16
 --
 -- Beneficios Laborales (LOTTT Venezuela):
 --   1. Utilidades (Profit Sharing) - Art. 131-140
@@ -9,7 +9,7 @@
 --   3. Caja de Ahorro (Savings Fund)
 --
 -- Funciones (16 en total):
---   1.  usp_HR_ProfitSharing_Generate        - Generar cálculo de utilidades
+--   1.  usp_HR_ProfitSharing_Generate        - Generar cÃ¡lculo de utilidades
 --   2.  usp_HR_ProfitSharing_GetSummary      - Resumen cabecera + detalle
 --   3.  usp_HR_ProfitSharing_Approve         - Aprobar utilidades
 --   4.  usp_HR_ProfitSharing_List            - Listado paginado de utilidades
@@ -20,16 +20,17 @@
 --   9.  usp_HR_Savings_Enroll                - Inscribir empleado
 --   10. usp_HR_Savings_ProcessMonthly        - Procesar aportes mensuales
 --   11. usp_HR_Savings_GetBalance            - Saldo y transacciones
---   12. usp_HR_Savings_RequestLoan           - Solicitar préstamo
---   13. usp_HR_Savings_ApproveLoan           - Aprobar/rechazar préstamo
---   14. usp_HR_Savings_ProcessLoanPayment    - Registrar pago de préstamo
+--   12. usp_HR_Savings_RequestLoan           - Solicitar prÃ©stamo
+--   13. usp_HR_Savings_ApproveLoan           - Aprobar/rechazar prÃ©stamo
+--   14. usp_HR_Savings_ProcessLoanPayment    - Registrar pago de prÃ©stamo
 --   15. usp_HR_Savings_List                  - Listado paginado de afiliados
---   16. usp_HR_Savings_LoanList              - Listado paginado de préstamos
+--   16. usp_HR_Savings_LoanList              - Listado paginado de prÃ©stamos
 -- =============================================================================
 
 -- =============================================================================
 -- 1. usp_HR_ProfitSharing_Generate
 -- =============================================================================
+DROP FUNCTION IF EXISTS public.usp_HR_ProfitSharing_Generate(INTEGER, INTEGER, INTEGER, INTEGER, NUMERIC(18,2), INTEGER, INTEGER, VARCHAR(500)) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_ProfitSharing_Generate(
     p_company_id            INTEGER,
     p_branch_id             INTEGER,
@@ -54,7 +55,7 @@ BEGIN
 
     IF p_days_granted < 30 OR p_days_granted > 120 THEN
         p_resultado := -1;
-        p_mensaje   := 'Los días otorgados deben estar entre 30 y 120 (LOTTT Art. 131).';
+        p_mensaje   := 'Los dÃ­as otorgados deben estar entre 30 y 120 (LOTTT Art. 131).';
         RETURN;
     END IF;
 
@@ -64,7 +65,7 @@ BEGIN
           AND "Status" IN ('CALCULADA','PROCESADA','CERRADA')
     ) THEN
         p_resultado := -2;
-        p_mensaje   := 'Ya existe un cálculo de utilidades procesado para este año fiscal.';
+        p_mensaje   := 'Ya existe un cÃ¡lculo de utilidades procesado para este aÃ±o fiscal.';
         RETURN;
     END IF;
 
@@ -207,6 +208,7 @@ $$;
 -- =============================================================================
 -- 2. usp_HR_ProfitSharing_GetSummary
 -- =============================================================================
+DROP FUNCTION IF EXISTS public.usp_HR_ProfitSharing_GetSummary(INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_ProfitSharing_GetSummary(
     p_profit_sharing_id INTEGER
 )
@@ -270,6 +272,7 @@ $$;
 -- =============================================================================
 -- 3. usp_HR_ProfitSharing_Approve
 -- =============================================================================
+DROP FUNCTION IF EXISTS public.usp_HR_ProfitSharing_Approve(INTEGER, INTEGER, INTEGER, VARCHAR(500)) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_ProfitSharing_Approve(
     p_profit_sharing_id INTEGER,
     p_approved_by       INTEGER,
@@ -315,10 +318,11 @@ $$;
 -- =============================================================================
 -- 4. usp_HR_ProfitSharing_List
 -- =============================================================================
+DROP FUNCTION IF EXISTS public.usp_HR_ProfitSharing_List(INTEGER, INTEGER, INTEGER, VARCHAR(20), INTEGER, INTEGER) CASCADE;
+DROP FUNCTION IF EXISTS public.usp_HR_ProfitSharing_List(INTEGER, INTEGER, VARCHAR(20), INTEGER, INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_ProfitSharing_List(
     p_company_id    INTEGER,
-    p_branch_id     INTEGER         DEFAULT NULL,
-    p_fiscal_year   INTEGER         DEFAULT NULL,
+    p_year          INTEGER         DEFAULT NULL,
     p_status        VARCHAR(20)     DEFAULT NULL,
     p_offset        INTEGER         DEFAULT 0,
     p_limit         INTEGER         DEFAULT 50
@@ -327,15 +331,11 @@ RETURNS TABLE(
     p_total_count       BIGINT,
     "ProfitSharingId"   INTEGER,
     "CompanyId"         INTEGER,
-    "BranchId"          INTEGER,
     "FiscalYear"        INTEGER,
     "DaysGranted"       INTEGER,
     "TotalCompanyProfits" NUMERIC(18,2),
     "Status"            VARCHAR(20),
-    "CreatedBy"         INTEGER,
     "CreatedAt"         TIMESTAMP,
-    "ApprovedBy"        INTEGER,
-    "ApprovedAt"        TIMESTAMP,
     "UpdatedAt"         TIMESTAMP,
     "TotalEmployees"    BIGINT,
     "TotalNet"          NUMERIC
@@ -348,23 +348,18 @@ BEGIN
         COUNT(*) OVER()                                                                                           AS p_total_count,
         ps."ProfitSharingId",
         ps."CompanyId",
-        ps."BranchId",
         ps."FiscalYear",
         ps."DaysGranted",
         ps."TotalCompanyProfits",
         ps."Status",
-        ps."CreatedBy",
         ps."CreatedAt",
-        ps."ApprovedBy",
-        ps."ApprovedAt",
         ps."UpdatedAt",
-        (SELECT COUNT(*) FROM hr."ProfitSharingLine" WHERE "ProfitSharingId" = ps."ProfitSharingId")::BIGINT     AS "TotalEmployees",
-        COALESCE((SELECT SUM("NetAmount") FROM hr."ProfitSharingLine" WHERE "ProfitSharingId" = ps."ProfitSharingId"), 0) AS "TotalNet"
+        (SELECT COUNT(*) FROM hr."ProfitSharingLine" psl WHERE psl."ProfitSharingId" = ps."ProfitSharingId")::BIGINT     AS "TotalEmployees",
+        COALESCE((SELECT SUM(psl2."NetAmount") FROM hr."ProfitSharingLine" psl2 WHERE psl2."ProfitSharingId" = ps."ProfitSharingId"), 0) AS "TotalNet"
     FROM hr."ProfitSharing" ps
     WHERE ps."CompanyId" = p_company_id
-      AND (p_branch_id   IS NULL OR ps."BranchId"   = p_branch_id)
-      AND (p_fiscal_year IS NULL OR ps."FiscalYear"  = p_fiscal_year)
-      AND (p_status      IS NULL OR ps."Status"      = p_status)
+      AND (p_year     IS NULL OR ps."FiscalYear"  = p_year)
+      AND (p_status   IS NULL OR ps."Status"      = p_status)
     ORDER BY ps."FiscalYear" DESC, ps."CreatedAt" DESC
     LIMIT p_limit OFFSET p_offset;
 END;
@@ -373,6 +368,7 @@ $$;
 -- =============================================================================
 -- 5. usp_HR_Trust_CalculateQuarter
 -- =============================================================================
+DROP FUNCTION IF EXISTS public.usp_HR_Trust_CalculateQuarter(INTEGER, INTEGER, SMALLINT, NUMERIC(8,5), INTEGER, VARCHAR(500)) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Trust_CalculateQuarter(
     p_company_id    INTEGER,
     p_fiscal_year   INTEGER,
@@ -401,7 +397,7 @@ BEGIN
         WHERE "CompanyId" = p_company_id AND "FiscalYear" = p_fiscal_year AND "Quarter" = p_quarter
     ) THEN
         p_resultado := -2;
-        p_mensaje   := 'Ya existe un cálculo para el trimestre ' || p_quarter::TEXT || ' del año ' || p_fiscal_year::TEXT || '.';
+        p_mensaje   := 'Ya existe un cÃ¡lculo para el trimestre ' || p_quarter::TEXT || ' del aÃ±o ' || p_fiscal_year::TEXT || '.';
         RETURN;
     END IF;
 
@@ -430,7 +426,7 @@ BEGIN
                 ORDER BY pr."CreatedAt" DESC LIMIT 1
             ), 0) / 30.0, 2) AS "DailySalary",
             15 AS "DaysDeposited",
-            -- BonusDays: 2 días por cada año después del primero, max 30, solo en Q4
+            -- BonusDays: 2 dÃ­as por cada aÃ±o despuÃ©s del primero, max 30, solo en Q4
             CASE
                 WHEN p_quarter = 4
                  AND DATE_PART('year', v_year_end_str::DATE) - DATE_PART('year', e."HireDate") > 1
@@ -539,6 +535,7 @@ $$;
 -- =============================================================================
 -- 6. usp_HR_Trust_GetEmployeeBalance
 -- =============================================================================
+DROP FUNCTION IF EXISTS public.usp_HR_Trust_GetEmployeeBalance(INTEGER, VARCHAR(24)) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Trust_GetEmployeeBalance(
     p_company_id    INTEGER,
     p_employee_code VARCHAR(24)
@@ -593,6 +590,8 @@ $$;
 -- =============================================================================
 -- 7. usp_HR_Trust_GetSummary
 -- =============================================================================
+DROP FUNCTION IF EXISTS public.usp_HR_Trust_GetSummary(INTEGER, INTEGER, INTEGER) CASCADE;
+DROP FUNCTION IF EXISTS public.usp_HR_Trust_GetSummary(INTEGER, INTEGER, SMALLINT) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Trust_GetSummary(
     p_company_id    INTEGER,
     p_fiscal_year   INTEGER,
@@ -647,6 +646,7 @@ $$;
 -- =============================================================================
 -- 8. usp_HR_Trust_List
 -- =============================================================================
+DROP FUNCTION IF EXISTS public.usp_HR_Trust_List(INTEGER, INTEGER, SMALLINT, VARCHAR(24), VARCHAR(20), INTEGER, INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Trust_List(
     p_company_id    INTEGER,
     p_fiscal_year   INTEGER         DEFAULT NULL,
@@ -709,6 +709,7 @@ $$;
 -- =============================================================================
 -- 9. usp_HR_Savings_Enroll
 -- =============================================================================
+DROP FUNCTION IF EXISTS public.usp_HR_Savings_Enroll(INTEGER, BIGINT, VARCHAR(24), VARCHAR(200), NUMERIC(8,4), NUMERIC(8,4), DATE, INTEGER, VARCHAR(500)) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Savings_Enroll(
     p_company_id                INTEGER,
     p_employee_id               BIGINT          DEFAULT NULL,
@@ -731,7 +732,7 @@ BEGIN
         WHERE "CompanyId" = p_company_id AND "EmployeeCode" = p_employee_code AND "Status" = 'ACTIVO'
     ) THEN
         p_resultado := -1;
-        p_mensaje   := 'El empleado ya está inscrito en la caja de ahorro.';
+        p_mensaje   := 'El empleado ya estÃ¡ inscrito en la caja de ahorro.';
         RETURN;
     END IF;
 
@@ -765,6 +766,7 @@ $$;
 -- =============================================================================
 -- 10. usp_HR_Savings_ProcessMonthly
 -- =============================================================================
+DROP FUNCTION IF EXISTS public.usp_HR_Savings_ProcessMonthly(INTEGER, DATE, INTEGER, INTEGER, VARCHAR(500)) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Savings_ProcessMonthly(
     p_company_id        INTEGER,
     p_process_date      DATE,
@@ -859,6 +861,7 @@ $$;
 -- =============================================================================
 -- 11. usp_HR_Savings_GetBalance
 -- =============================================================================
+DROP FUNCTION IF EXISTS public.usp_HR_Savings_GetBalance(INTEGER, VARCHAR(24)) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Savings_GetBalance(
     p_company_id    INTEGER,
     p_employee_code VARCHAR(24)
@@ -916,6 +919,7 @@ $$;
 -- =============================================================================
 -- 12. usp_HR_Savings_RequestLoan
 -- =============================================================================
+DROP FUNCTION IF EXISTS public.usp_HR_Savings_RequestLoan(INTEGER, VARCHAR(24), NUMERIC(18,2), NUMERIC(8,5), INTEGER, VARCHAR(500), INTEGER, VARCHAR(500)) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Savings_RequestLoan(
     p_company_id        INTEGER,
     p_employee_code     VARCHAR(24),
@@ -951,19 +955,19 @@ BEGIN
         WHERE "SavingsFundId" = v_fund_id AND "Status" IN ('SOLICITADO','APROBADO','ACTIVO')
     ) THEN
         p_resultado := -2;
-        p_mensaje   := 'El empleado ya tiene un préstamo activo o pendiente.';
+        p_mensaje   := 'El empleado ya tiene un prÃ©stamo activo o pendiente.';
         RETURN;
     END IF;
 
     IF p_loan_amount <= 0 THEN
         p_resultado := -3;
-        p_mensaje   := 'El monto del préstamo debe ser mayor a cero.';
+        p_mensaje   := 'El monto del prÃ©stamo debe ser mayor a cero.';
         RETURN;
     END IF;
 
     IF p_installments_total <= 0 THEN
         p_resultado := -4;
-        p_mensaje   := 'El número de cuotas debe ser mayor a cero.';
+        p_mensaje   := 'El nÃºmero de cuotas debe ser mayor a cero.';
         RETURN;
     END IF;
 
@@ -986,7 +990,7 @@ BEGIN
         )
         RETURNING "LoanId" INTO p_resultado;
 
-        p_mensaje := 'Solicitud de préstamo registrada exitosamente.';
+        p_mensaje := 'Solicitud de prÃ©stamo registrada exitosamente.';
 
     EXCEPTION WHEN OTHERS THEN
         p_resultado := -99;
@@ -998,6 +1002,7 @@ $$;
 -- =============================================================================
 -- 13. usp_HR_Savings_ApproveLoan
 -- =============================================================================
+DROP FUNCTION IF EXISTS public.usp_HR_Savings_ApproveLoan(INTEGER, BOOLEAN, INTEGER, VARCHAR(500), INTEGER, VARCHAR(500)) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Savings_ApproveLoan(
     p_loan_id       INTEGER,
     p_approved      BOOLEAN,
@@ -1024,13 +1029,13 @@ BEGIN
 
     IF v_current_status IS NULL THEN
         p_resultado := -1;
-        p_mensaje   := 'Préstamo no encontrado.';
+        p_mensaje   := 'PrÃ©stamo no encontrado.';
         RETURN;
     END IF;
 
     IF v_current_status <> 'SOLICITADO' THEN
         p_resultado := -2;
-        p_mensaje   := 'Solo se pueden aprobar/rechazar préstamos en estado SOLICITADO. Estado actual: ' || v_current_status;
+        p_mensaje   := 'Solo se pueden aprobar/rechazar prÃ©stamos en estado SOLICITADO. Estado actual: ' || v_current_status;
         RETURN;
     END IF;
 
@@ -1063,12 +1068,12 @@ BEGIN
                 'PRESTAMO',
                 v_loan_amount,
                 v_cur_balance,
-                'Desembolso préstamo #' || p_loan_id::TEXT,
+                'Desembolso prÃ©stamo #' || p_loan_id::TEXT,
                 'Aprobado por usuario ' || p_approved_by::TEXT,
                 (NOW() AT TIME ZONE 'UTC')
             );
 
-            p_mensaje := 'Préstamo aprobado y desembolsado exitosamente.';
+            p_mensaje := 'PrÃ©stamo aprobado y desembolsado exitosamente.';
         ELSE
             UPDATE hr."SavingsLoan"
             SET "Status"    = 'RECHAZADO',
@@ -1077,7 +1082,7 @@ BEGIN
                 "UpdatedAt"  = (NOW() AT TIME ZONE 'UTC')
             WHERE "LoanId" = p_loan_id;
 
-            p_mensaje := 'Préstamo rechazado.';
+            p_mensaje := 'PrÃ©stamo rechazado.';
         END IF;
 
         p_resultado := p_loan_id;
@@ -1092,6 +1097,7 @@ $$;
 -- =============================================================================
 -- 14. usp_HR_Savings_ProcessLoanPayment
 -- =============================================================================
+DROP FUNCTION IF EXISTS public.usp_HR_Savings_ProcessLoanPayment(INTEGER, NUMERIC(18,2), DATE, INTEGER, INTEGER, VARCHAR(500)) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Savings_ProcessLoanPayment(
     p_loan_id           INTEGER,
     p_payment_amount    NUMERIC(18,2)   DEFAULT NULL,
@@ -1123,13 +1129,13 @@ BEGIN
 
     IF v_current_status IS NULL THEN
         p_resultado := -1;
-        p_mensaje   := 'Préstamo no encontrado.';
+        p_mensaje   := 'PrÃ©stamo no encontrado.';
         RETURN;
     END IF;
 
     IF v_current_status <> 'ACTIVO' THEN
         p_resultado := -2;
-        p_mensaje   := 'Solo se pueden registrar pagos en préstamos ACTIVOS. Estado actual: ' || v_current_status;
+        p_mensaje   := 'Solo se pueden registrar pagos en prÃ©stamos ACTIVOS. Estado actual: ' || v_current_status;
         RETURN;
     END IF;
 
@@ -1170,15 +1176,15 @@ BEGIN
             'PAGO_PRESTAMO',
             p_payment_amount,
             v_cur_balance,
-            'Pago cuota ' || v_inst_paid::TEXT || '/' || v_inst_total::TEXT || ' préstamo #' || p_loan_id::TEXT,
+            'Pago cuota ' || v_inst_paid::TEXT || '/' || v_inst_total::TEXT || ' prÃ©stamo #' || p_loan_id::TEXT,
             p_payroll_batch_id,
-            CASE WHEN v_outstanding <= 0 THEN 'Préstamo liquidado' ELSE NULL END,
+            CASE WHEN v_outstanding <= 0 THEN 'PrÃ©stamo liquidado' ELSE NULL END,
             (NOW() AT TIME ZONE 'UTC')
         );
 
         p_resultado := p_loan_id;
         IF v_outstanding <= 0 THEN
-            p_mensaje := 'Préstamo liquidado exitosamente.';
+            p_mensaje := 'PrÃ©stamo liquidado exitosamente.';
         ELSE
             p_mensaje := 'Pago registrado. Saldo pendiente: ' || v_outstanding::TEXT;
         END IF;
@@ -1193,6 +1199,7 @@ $$;
 -- =============================================================================
 -- 15. usp_HR_Savings_List
 -- =============================================================================
+DROP FUNCTION IF EXISTS public.usp_HR_Savings_List(INTEGER, VARCHAR(15), VARCHAR(24), INTEGER, INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Savings_List(
     p_company_id    INTEGER,
     p_status        VARCHAR(15)     DEFAULT NULL,
@@ -1245,6 +1252,7 @@ $$;
 -- =============================================================================
 -- 16. usp_HR_Savings_LoanList
 -- =============================================================================
+DROP FUNCTION IF EXISTS public.usp_HR_Savings_LoanList(INTEGER, VARCHAR(15), VARCHAR(24), INTEGER, INTEGER) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Savings_LoanList(
     p_company_id    INTEGER,
     p_status        VARCHAR(15)     DEFAULT NULL,

@@ -11,25 +11,10 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import DescriptionIcon from "@mui/icons-material/Description";
 import LockIcon from "@mui/icons-material/Lock";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
+import { useCountries, useLookup } from "@zentto/shared-api";
 import { useDocumentTemplatesList, useDeleteDocumentTemplate, type DocumentTemplate } from "../hooks/useNomina";
 
-const TEMPLATE_TYPES = [
-  { value: 'RECIBO_PAGO', label: 'Recibo de Pago', icon: '💰' },
-  { value: 'RECIBO_VAC', label: 'Recibo Vacaciones', icon: '🏖️' },
-  { value: 'UTILIDADES', label: 'Utilidades/Ganancias', icon: '📊' },
-  { value: 'LIQUIDACION', label: 'Liquidación/Finiquito', icon: '📋' },
-  { value: 'NOMINA_ES', label: 'Nómina Oficial (ES)', icon: '🇪🇸' },
-  { value: 'FINIQUITO_ES', label: 'Finiquito (ES)', icon: '🇪🇸' },
-  { value: 'CUSTOM', label: 'Personalizado', icon: '✏️' },
-];
-
-const COUNTRIES = [
-  { code: 'VE', label: 'Venezuela', flag: '🇻🇪' },
-  { code: 'ES', label: 'España', flag: '🇪🇸' },
-  { code: 'MX', label: 'México', flag: '🇲🇽' },
-  { code: 'CO', label: 'Colombia', flag: '🇨🇴' },
-  { code: 'ALL', label: 'Todos los países', flag: '🌍' },
-];
+const FLAG_MAP: Record<string, string> = { VE: '\u{1F1FB}\u{1F1EA}', ES: '\u{1F1EA}\u{1F1F8}', MX: '\u{1F1F2}\u{1F1FD}', CO: '\u{1F1E8}\u{1F1F4}', US: '\u{1F1FA}\u{1F1F8}' };
 
 const TYPE_COLORS: Record<string, string> = {
   RECIBO_PAGO: '#1565c0',
@@ -45,6 +30,19 @@ export default function DocumentosPage({ onEditTemplate }: { onEditTemplate?: (c
   const [filterCountry, setFilterCountry] = useState('');
   const [filterType, setFilterType] = useState('');
 
+  const { data: countriesData = [] } = useCountries();
+  const COUNTRIES = [
+    ...countriesData.map(c => ({ code: c.CountryCode, label: c.CountryName, flag: FLAG_MAP[c.CountryCode] ?? '\u{1F3F3}' })),
+    { code: 'ALL', label: 'Todos los pa\u00edses', flag: '\u{1F30D}' },
+  ];
+
+  const { data: templateTypesData = [] } = useLookup('TEMPLATE_TYPE');
+  const TEMPLATE_TYPES = templateTypesData.map(t => ({
+    value: t.Code,
+    label: t.Label,
+    icon: t.Extra ?? '\u{1F4C4}',
+  }));
+
   const { data, isLoading } = useDocumentTemplatesList(filterCountry || undefined, filterType || undefined);
   const deleteMutation = useDeleteDocumentTemplate();
 
@@ -58,7 +56,7 @@ export default function DocumentosPage({ onEditTemplate }: { onEditTemplate?: (c
   }, {});
 
   const getTypeLabel = (type: string) => TEMPLATE_TYPES.find(t => t.value === type)?.label ?? type;
-  const getTypeIcon = (type: string) => TEMPLATE_TYPES.find(t => t.value === type)?.icon ?? '📄';
+  const getTypeIcon = (type: string) => TEMPLATE_TYPES.find(t => t.value === type)?.icon ?? '\u{1F4C4}';
   const getCountryLabel = (code: string) => {
     const c = COUNTRIES.find(c => c.code === code);
     return c ? `${c.flag} ${c.label}` : code;
@@ -81,14 +79,14 @@ export default function DocumentosPage({ onEditTemplate }: { onEditTemplate?: (c
         <Typography variant="h6" fontWeight={700} sx={{ flexGrow: 1 }}>
           Plantillas de Documentos Legales
         </Typography>
-        <FormControl size="small" sx={{ minWidth: 150 }}>
+        <FormControl sx={{ minWidth: 150 }}>
           <InputLabel>País</InputLabel>
           <Select value={filterCountry} label="País" onChange={e => setFilterCountry(e.target.value)}>
             <MenuItem value="">Todos</MenuItem>
             {COUNTRIES.map(c => <MenuItem key={c.code} value={c.code}>{c.flag} {c.label}</MenuItem>)}
           </Select>
         </FormControl>
-        <FormControl size="small" sx={{ minWidth: 180 }}>
+        <FormControl sx={{ minWidth: 180 }}>
           <InputLabel>Tipo</InputLabel>
           <Select value={filterType} label="Tipo" onChange={e => setFilterType(e.target.value)}>
             <MenuItem value="">Todos</MenuItem>

@@ -28,7 +28,7 @@ export default function SearchBar({ value, onSearch, placeholder = "Buscar produ
     <form onSubmit={handleSubmit} style={{ width: "100%" }}>
       <TextField
         fullWidth
-        size="small"
+       
         placeholder={placeholder}
         value={text}
         onChange={(e) => setText(e.target.value)}

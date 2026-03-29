@@ -23,6 +23,8 @@ import {
   Alert,
 } from "@mui/material";
 import { toDateOnly } from "@zentto/shared-api";
+import { DatePicker, FormGrid, FormField } from "@zentto/shared-ui";
+import dayjs from "dayjs";
 import { useTimezone } from "@zentto/shared-auth";
 import {
   useBalanceReexpresado,
@@ -48,17 +50,17 @@ interface TabDef {
 }
 
 const VE_TABS: TabDef[] = [
-  { label: "Balance General", framework: "VEN-NIF", legalRef: "VEN-NIF BA-8 / NIC 1" },
-  { label: "Estado de Resultados", framework: "VEN-NIF", legalRef: "VEN-NIF BA-8 / NIC 1 par. 81-105" },
-  { label: "Cambios Patrimonio", framework: "VEN-NIF", legalRef: "VEN-NIF BA-8 / NIC 1 par. 106-110" },
-  { label: "Flujos de Efectivo", framework: "VEN-NIF", legalRef: "VEN-NIF BA-8 / NIC 7" },
+  { label: "Balance general", framework: "VEN-NIF", legalRef: "VEN-NIF BA-8 / NIC 1" },
+  { label: "Estado de resultados", framework: "VEN-NIF", legalRef: "VEN-NIF BA-8 / NIC 1 par. 81-105" },
+  { label: "Cambios patrimonio", framework: "VEN-NIF", legalRef: "VEN-NIF BA-8 / NIC 1 par. 106-110" },
+  { label: "Flujos de efectivo", framework: "VEN-NIF", legalRef: "VEN-NIF BA-8 / NIC 7" },
   { label: "REME", framework: "VEN-NIF", legalRef: "VEN-NIF BA-8 / NIC 29 - Reexpresion por inflacion" },
-  { label: "Balance Comprobacion", framework: "VEN-NIF", legalRef: "Art. 35 Codigo de Comercio venezolano" },
+  { label: "Balance comprobación", framework: "VEN-NIF", legalRef: "Art. 35 Codigo de Comercio venezolano" },
 ];
 
 const ES_TABS: TabDef[] = [
-  { label: "Balance Situacion", framework: "PGC", legalRef: "PGC - Tercera parte / Real Decreto 1514/2007" },
-  { label: "Perdidas y Ganancias", framework: "PGC", legalRef: "PGC - Tercera parte, Cuenta de PyG" },
+  { label: "Balance situación", framework: "PGC", legalRef: "PGC - Tercera parte / Real Decreto 1514/2007" },
+  { label: "Pérdidas y ganancias", framework: "PGC", legalRef: "PGC - Tercera parte, Cuenta de PyG" },
   { label: "ECPN", framework: "PGC", legalRef: "PGC - Tercera parte, Estado de cambios en el patrimonio neto" },
   { label: "EFE", framework: "PGC", legalRef: "PGC - Tercera parte, Estado de flujos de efectivo / NIC 7" },
 ];
@@ -203,42 +205,43 @@ export default function ReportesLegalesPage() {
 
       {/* Country selector + date filters */}
       <Paper variant="outlined" sx={{ p: 2, mb: 2 }}>
-        <Stack direction={{ xs: "column", md: "row" }} spacing={2} alignItems="center">
-          <ToggleButtonGroup
-            value={country}
-            exclusive
-            onChange={handleCountryChange}
-            size="small"
-          >
-            <ToggleButton value="VE">VE</ToggleButton>
-            <ToggleButton value="ES">ES</ToggleButton>
-          </ToggleButtonGroup>
-
-          <TextField
-            label="Fecha Desde"
-            type="date"
-            size="small"
-            value={fechaDesde}
-            onChange={(e) => setFechaDesde(e.target.value)}
-            InputLabelProps={{ shrink: true }}
-          />
-          <TextField
-            label="Fecha Hasta"
-            type="date"
-            size="small"
-            value={fechaHasta}
-            onChange={(e) => setFechaHasta(e.target.value)}
-            InputLabelProps={{ shrink: true }}
-          />
-          <TextField
-            label="Fecha Corte"
-            type="date"
-            size="small"
-            value={fechaCorte}
-            onChange={(e) => setFechaCorte(e.target.value)}
-            InputLabelProps={{ shrink: true }}
-          />
-        </Stack>
+        <FormGrid spacing={2} alignItems="center">
+          <FormField xs={12} sm="auto">
+            <ToggleButtonGroup
+              value={country}
+              exclusive
+              onChange={handleCountryChange}
+              size="small"
+            >
+              <ToggleButton value="VE">VE</ToggleButton>
+              <ToggleButton value="ES">ES</ToggleButton>
+            </ToggleButtonGroup>
+          </FormField>
+          <FormField xs={12} sm={3}>
+            <DatePicker
+              label="Fecha desde"
+              value={fechaDesde ? dayjs(fechaDesde) : null}
+              onChange={(v) => setFechaDesde(v ? v.format('YYYY-MM-DD') : '')}
+              slotProps={{ textField: { size: 'small', fullWidth: true } }}
+            />
+          </FormField>
+          <FormField xs={12} sm={3}>
+            <DatePicker
+              label="Fecha hasta"
+              value={fechaHasta ? dayjs(fechaHasta) : null}
+              onChange={(v) => setFechaHasta(v ? v.format('YYYY-MM-DD') : '')}
+              slotProps={{ textField: { size: 'small', fullWidth: true } }}
+            />
+          </FormField>
+          <FormField xs={12} sm={3}>
+            <DatePicker
+              label="Fecha corte"
+              value={fechaCorte ? dayjs(fechaCorte) : null}
+              onChange={(v) => setFechaCorte(v ? v.format('YYYY-MM-DD') : '')}
+              slotProps={{ textField: { size: 'small', fullWidth: true } }}
+            />
+          </FormField>
+        </FormGrid>
       </Paper>
 
       {/* Tabs */}
