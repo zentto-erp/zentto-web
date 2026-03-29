@@ -3243,6 +3243,7 @@ $$;
 -- Nuclear drop: eliminar TODAS las sobrecargas por OID para evitar
 -- el error "function is not unique" que ocurre cuando conviven
 -- sobrecargas con firmas (CHAR vs VARCHAR) diferentes.
+-- +goose StatementBegin
 DO $do$
 DECLARE _oid OID;
 BEGIN
@@ -3258,6 +3259,7 @@ BEGIN
     EXECUTE format('DROP FUNCTION IF EXISTS %s CASCADE', _oid::regprocedure);
   END LOOP;
 END $do$;
+-- +goose StatementEnd
 
 -- --------------------------------------------
 -- usp_HR_DocumentTemplate_List
@@ -8578,11 +8580,13 @@ BEGIN
     RETURN QUERY SELECT v_request_id;
 END;
 $fn$;
+-- +goose StatementEnd
 
 
 -- =============================================================
 -- 2) usp_hr_vacation_request_list
 -- =============================================================
+-- +goose StatementBegin
 DROP FUNCTION IF EXISTS usp_hr_vacation_request_list(INT, VARCHAR, VARCHAR, INT, INT) CASCADE;
 
 CREATE OR REPLACE FUNCTION usp_hr_vacation_request_list(
@@ -8648,11 +8652,13 @@ BEGIN
     OFFSET p_offset;
 END;
 $fn$;
+-- +goose StatementEnd
 
 
 -- =============================================================
 -- 3) usp_hr_vacation_request_get
 -- =============================================================
+-- +goose StatementBegin
 DROP FUNCTION IF EXISTS usp_hr_vacation_request_get(BIGINT);
 
 CREATE OR REPLACE FUNCTION usp_hr_vacation_request_get(
@@ -8708,11 +8714,13 @@ BEGIN
      WHERE vr."RequestId" = p_request_id;
 END;
 $fn$;
+-- +goose StatementEnd
 
 
 -- =============================================================
 -- 3b) usp_hr_vacation_request_get_days
 -- =============================================================
+-- +goose StatementBegin
 DROP FUNCTION IF EXISTS usp_hr_vacation_request_get_days(BIGINT);
 
 CREATE OR REPLACE FUNCTION usp_hr_vacation_request_get_days(
@@ -8738,11 +8746,13 @@ BEGIN
      ORDER BY d."SelectedDate";
 END;
 $fn$;
+-- +goose StatementEnd
 
 
 -- =============================================================
 -- 4) usp_hr_vacation_request_approve
 -- =============================================================
+-- +goose StatementBegin
 DROP FUNCTION IF EXISTS usp_hr_vacation_request_approve(BIGINT, VARCHAR);
 
 CREATE OR REPLACE FUNCTION usp_hr_vacation_request_approve(
@@ -8775,11 +8785,13 @@ BEGIN
     RETURN QUERY SELECT p_request_id, 'APROBADA'::VARCHAR;
 END;
 $fn$;
+-- +goose StatementEnd
 
 
 -- =============================================================
 -- 5) usp_hr_vacation_request_reject
 -- =============================================================
+-- +goose StatementBegin
 DROP FUNCTION IF EXISTS usp_hr_vacation_request_reject(BIGINT, VARCHAR, VARCHAR);
 
 CREATE OR REPLACE FUNCTION usp_hr_vacation_request_reject(
@@ -8814,11 +8826,13 @@ BEGIN
     RETURN QUERY SELECT p_request_id, 'RECHAZADA'::VARCHAR;
 END;
 $fn$;
+-- +goose StatementEnd
 
 
 -- =============================================================
 -- 6) usp_hr_vacation_request_cancel
 -- =============================================================
+-- +goose StatementBegin
 DROP FUNCTION IF EXISTS usp_hr_vacation_request_cancel(BIGINT);
 
 CREATE OR REPLACE FUNCTION usp_hr_vacation_request_cancel(
@@ -8848,11 +8862,13 @@ BEGIN
     RETURN QUERY SELECT p_request_id, 'CANCELADA'::VARCHAR;
 END;
 $fn$;
+-- +goose StatementEnd
 
 
 -- =============================================================
 -- 7) usp_hr_vacation_request_process
 -- =============================================================
+-- +goose StatementBegin
 DROP FUNCTION IF EXISTS usp_hr_vacation_request_process(BIGINT, BIGINT);
 
 CREATE OR REPLACE FUNCTION usp_hr_vacation_request_process(
@@ -8885,11 +8901,13 @@ BEGIN
     RETURN QUERY SELECT p_request_id, 'PROCESADA'::VARCHAR, p_vacation_id;
 END;
 $fn$;
+-- +goose StatementEnd
 
 
 -- =============================================================
 -- 8) usp_hr_vacation_request_get_available_days
 -- =============================================================
+-- +goose StatementBegin
 DROP FUNCTION IF EXISTS usp_hr_vacation_request_get_available_days(INT, VARCHAR);
 
 CREATE OR REPLACE FUNCTION usp_hr_vacation_request_get_available_days(
@@ -8970,12 +8988,14 @@ BEGIN
         (v_dias_disponibles - COALESCE(v_dias_tomados, 0) - COALESCE(v_dias_pendientes, 0));
 END;
 $fn$;
+-- +goose StatementEnd
 
 -- ================================================================
 -- ALIAS: usp_hr_vacationrequest_list
 -- Alias for usp_hr_vacation_request_list to match API calling convention
 -- (usp_HR_VacationRequest_List â†’ usp_hr_vacationrequest_list)
 -- ================================================================
+-- +goose StatementBegin
 DROP FUNCTION IF EXISTS usp_hr_vacationrequest_list(INT, VARCHAR, VARCHAR, INT, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_hr_vacationrequest_list(
     p_company_id    INT,
