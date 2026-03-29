@@ -1,4 +1,6 @@
 -- +goose Up
+
+-- +goose StatementBegin
 -- Analytics functions for Logistics, Fleet, and Manufacturing dashboards
 
 -- ============================================================================
@@ -16,7 +18,6 @@ RETURNS TABLE (
     "MonthLabel"  VARCHAR(20),
     "Total"       INT
 )
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 DECLARE
     v_now TIMESTAMP := NOW() AT TIME ZONE 'UTC';
@@ -43,7 +44,6 @@ BEGIN
     ORDER BY m.month_start;
 END;
 $$;
--- +goose StatementEnd
 
 -- Albaranes por estado
 DROP FUNCTION IF EXISTS usp_logistics_analytics_deliverybystatus(INT, INT) CASCADE;
@@ -56,7 +56,6 @@ RETURNS TABLE (
     "StatusLabel" VARCHAR(40),
     "Count"       INT
 )
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 BEGIN
     RETURN QUERY
@@ -81,7 +80,6 @@ BEGIN
     ORDER BY "Count" DESC;
 END;
 $$;
--- +goose StatementEnd
 
 -- Actividad reciente (recepciones + despachos)
 DROP FUNCTION IF EXISTS usp_logistics_analytics_recentactivity(INT, INT) CASCADE;
@@ -98,7 +96,6 @@ RETURNS TABLE (
     "Status"       VARCHAR(20),
     "StatusLabel"  VARCHAR(40)
 )
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 BEGIN
     RETURN QUERY
@@ -143,7 +140,6 @@ BEGIN
     ORDER BY "ActivityDate" DESC LIMIT 10;
 END;
 $$;
--- +goose StatementEnd
 
 -- Tendencias mes actual vs anterior
 DROP FUNCTION IF EXISTS usp_logistics_analytics_trendcards(INT, INT) CASCADE;
@@ -159,7 +155,6 @@ RETURNS TABLE (
     "ReturnsThisMonth"      INT,
     "ReturnsLastMonth"      INT
 )
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 DECLARE
     v_this_start   TIMESTAMP := DATE_TRUNC('month', NOW() AT TIME ZONE 'UTC');
@@ -187,7 +182,6 @@ BEGIN
            AND "ReturnDate"::TIMESTAMP >= v_last_start AND "ReturnDate"::TIMESTAMP < v_this_start);
 END;
 $$;
--- +goose StatementEnd
 
 -- ============================================================================
 --  FLEET ANALYTICS
@@ -204,7 +198,6 @@ RETURNS TABLE (
     "BrandModel"   VARCHAR(120),
     "TotalCost"    NUMERIC
 )
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 DECLARE
     v_month_start TIMESTAMP := DATE_TRUNC('month', NOW() AT TIME ZONE 'UTC');
@@ -223,7 +216,6 @@ BEGIN
     ORDER BY "TotalCost" DESC LIMIT 5;
 END;
 $$;
--- +goose StatementEnd
 
 -- Km recorridos por mes (ultimos 6 meses)
 DROP FUNCTION IF EXISTS usp_fleet_analytics_kmbymonth(INT) CASCADE;
@@ -235,7 +227,6 @@ RETURNS TABLE (
     "MonthLabel"  VARCHAR(20),
     "TotalKm"     NUMERIC
 )
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 DECLARE
     v_now TIMESTAMP := NOW() AT TIME ZONE 'UTC';
@@ -261,7 +252,6 @@ BEGIN
     ORDER BY m.month_start;
 END;
 $$;
--- +goose StatementEnd
 
 -- Proximos 5 mantenimientos
 DROP FUNCTION IF EXISTS usp_fleet_analytics_nextmaintenance(INT) CASCADE;
@@ -278,7 +268,6 @@ RETURNS TABLE (
     "EstimatedCost"      NUMERIC,
     "Status"             VARCHAR(20)
 )
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 BEGIN
     RETURN QUERY
@@ -300,7 +289,6 @@ BEGIN
     ORDER BY mo."ScheduledDate" ASC LIMIT 5;
 END;
 $$;
--- +goose StatementEnd
 
 -- Tendencias fleet
 DROP FUNCTION IF EXISTS usp_fleet_analytics_trendcards(INT) CASCADE;
@@ -315,7 +303,6 @@ RETURNS TABLE (
     "TripsThisMonth"       INT,
     "TripsLastMonth"       INT
 )
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 DECLARE
     v_this_start  TIMESTAMP := DATE_TRUNC('month', NOW() AT TIME ZONE 'UTC');
@@ -341,7 +328,6 @@ BEGIN
            AND "DepartedAt" >= v_last_start AND "DepartedAt" < v_this_start);
 END;
 $$;
--- +goose StatementEnd
 
 -- ============================================================================
 --  MANUFACTURING ANALYTICS
@@ -362,7 +348,6 @@ RETURNS TABLE (
     "OrdenesATiempo"        INT,
     "OrdenesTotalesMes"     INT
 )
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 DECLARE
     v_this_start  TIMESTAMP := DATE_TRUNC('month', NOW() AT TIME ZONE 'UTC');
@@ -392,7 +377,6 @@ BEGIN
            AND "Status" IN ('IN_PROGRESS', 'COMPLETED') AND "CreatedAt" >= v_this_start);
 END;
 $$;
--- +goose StatementEnd
 
 -- Produccion por producto (top 5)
 DROP FUNCTION IF EXISTS usp_mfg_analytics_productionbyproduct(INT) CASCADE;
@@ -405,7 +389,6 @@ RETURNS TABLE (
     "TotalQuantity" NUMERIC,
     "OrderCount"    INT
 )
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 DECLARE
     v_this_start TIMESTAMP := DATE_TRUNC('month', NOW() AT TIME ZONE 'UTC');
@@ -424,7 +407,6 @@ BEGIN
     ORDER BY "TotalQuantity" DESC LIMIT 5;
 END;
 $$;
--- +goose StatementEnd
 
 -- Ordenes por estado
 DROP FUNCTION IF EXISTS usp_mfg_analytics_ordersbystatus(INT) CASCADE;
@@ -436,7 +418,6 @@ RETURNS TABLE (
     "StatusLabel"  VARCHAR(40),
     "Count"        INT
 )
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 BEGIN
     RETURN QUERY
@@ -453,7 +434,6 @@ BEGIN
     GROUP BY wo."Status" ORDER BY "Count" DESC;
 END;
 $$;
--- +goose StatementEnd
 
 -- Ordenes recientes
 DROP FUNCTION IF EXISTS usp_mfg_analytics_recentorders(INT) CASCADE;
@@ -471,7 +451,6 @@ RETURNS TABLE (
     "PlannedStart"    TIMESTAMP,
     "PlannedEnd"      TIMESTAMP
 )
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 BEGIN
     RETURN QUERY
@@ -495,6 +474,7 @@ BEGIN
     ORDER BY wo."CreatedAt" DESC LIMIT 10;
 END;
 $$;
+
 -- +goose StatementEnd
 
 -- +goose Down

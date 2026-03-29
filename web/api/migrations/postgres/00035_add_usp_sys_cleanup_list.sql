@@ -1,4 +1,6 @@
 -- +goose Up
+
+-- +goose StatementBegin
 -- Crea usp_sys_cleanup_list que faltaba en PostgreSQL (existia solo en SQL Server).
 -- Requerida por GET /v1/backoffice/dashboard.
 
@@ -18,7 +20,6 @@ RETURNS TABLE(
   "LastLoginAt"     TIMESTAMP,
   "DaysUntilDelete"  INT
 )
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 BEGIN
   RETURN QUERY
@@ -49,6 +50,7 @@ BEGIN
   WHERE (p_status IS NULL OR q."Status" = p_status)
   ORDER BY q."FlaggedAt" DESC;
 END; $$;
+
 -- +goose StatementEnd
 
 -- +goose Down

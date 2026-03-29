@@ -1,8 +1,9 @@
 -- +goose Up
+
+-- +goose StatementBegin
 DROP FUNCTION IF EXISTS usp_cfg_exchangerate_getlatest() CASCADE;
 CREATE OR REPLACE FUNCTION usp_cfg_exchangerate_getlatest()
 RETURNS TABLE("CurrencyCode" VARCHAR, "RateToBase" NUMERIC(18,6), "RateDate" DATE, "SourceName" VARCHAR)
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 BEGIN
     RETURN QUERY
@@ -16,6 +17,7 @@ BEGIN
      ORDER BY e."CurrencyCode", e."RateDate" DESC;
 END;
 $$;
+
 -- +goose StatementEnd
 
 -- +goose Down

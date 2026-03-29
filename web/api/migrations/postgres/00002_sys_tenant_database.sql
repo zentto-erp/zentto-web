@@ -1,4 +1,6 @@
 -- +goose Up
+
+-- +goose StatementBegin
 -- Migration: tabla sys.TenantDatabase + funciones de tenant routing
 
 CREATE SCHEMA IF NOT EXISTS sys;
@@ -28,7 +30,6 @@ RETURNS TABLE(
   "DbName" VARCHAR, "DbHost" VARCHAR, "DbPort" INT,
   "DbUser" VARCHAR, "DbPassword" VARCHAR,
   "PoolMin" INT, "PoolMax" INT, "IsDemo" BOOLEAN
--- +goose StatementBegin
 ) LANGUAGE plpgsql AS $$
 BEGIN
   RETURN QUERY
@@ -47,7 +48,6 @@ BEGIN
   END IF;
 END;
 $$;
--- +goose StatementEnd
 
 CREATE OR REPLACE FUNCTION usp_sys_tenantdb_list()
 RETURNS TABLE(
@@ -57,7 +57,6 @@ RETURNS TABLE(
   "PoolMin" INT, "PoolMax" INT,
   "IsActive" BOOLEAN, "IsDemo" BOOLEAN,
   "ProvisionedAt" TIMESTAMP, "LastMigration" VARCHAR
--- +goose StatementBegin
 ) LANGUAGE plpgsql AS $$
 BEGIN
   RETURN QUERY
@@ -72,7 +71,6 @@ BEGIN
   ORDER BY t."CompanyId";
 END;
 $$;
--- +goose StatementEnd
 
 CREATE OR REPLACE FUNCTION usp_sys_tenantdb_register(
   p_company_id   INT,
@@ -86,7 +84,6 @@ CREATE OR REPLACE FUNCTION usp_sys_tenantdb_register(
   p_pool_max     INT DEFAULT 5,
   p_is_demo      BOOLEAN DEFAULT FALSE
 )
--- +goose StatementBegin
 RETURNS TABLE("ok" BOOLEAN, "mensaje" VARCHAR) LANGUAGE plpgsql AS $$
 BEGIN
   INSERT INTO sys."TenantDatabase" (
@@ -115,7 +112,6 @@ EXCEPTION WHEN OTHERS THEN
   RETURN QUERY SELECT FALSE::BOOLEAN, SQLERRM::VARCHAR;
 END;
 $$;
--- +goose StatementEnd
 
 -- Seed: registrar la BD demo actual
 INSERT INTO sys."TenantDatabase" ("CompanyId", "CompanyCode", "DbName", "IsDemo")
@@ -124,6 +120,8 @@ ON CONFLICT ("CompanyId") DO UPDATE SET
   "CompanyCode" = EXCLUDED."CompanyCode",
   "DbName" = EXCLUDED."DbName",
   "IsDemo" = EXCLUDED."IsDemo";
+
+-- +goose StatementEnd
 
 -- +goose Down
 

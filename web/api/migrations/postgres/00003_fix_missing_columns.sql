@@ -1,8 +1,9 @@
 -- +goose Up
+
+-- +goose StatementBegin
 -- Fix: Columnas que el baseline no pudo crear por error de ownership.
 -- Todas usan IF NOT EXISTS / ADD COLUMN IF NOT EXISTS para ser idempotentes.
 
--- +goose StatementBegin
 DO $$
 BEGIN
   -- cfg.Branch.CountryCode (añadido en 003_branch_country_support.sql)
@@ -19,7 +20,6 @@ BEGIN
     WHERE table_schema = 'cfg' AND table_name = 'Country' AND column_name = 'CurrencySymbol'
   ) THEN
     ALTER TABLE cfg."Country" ADD COLUMN "CurrencySymbol" VARCHAR(5) NOT NULL DEFAULT '$';
--- +goose StatementEnd
   END IF;
 
   IF NOT EXISTS (
@@ -146,6 +146,8 @@ BEGIN
 
   RAISE NOTICE 'Fix missing columns: completado';
 END $$;
+
+-- +goose StatementEnd
 
 -- +goose Down
 -- No rollback — las columnas se mantienen

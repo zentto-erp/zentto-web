@@ -1,4 +1,6 @@
 -- +goose Up
+
+-- +goose StatementBegin
 -- Baseline migration: estado completo de la base de datos
 -- Generado automaticamente desde run_all.sql el 2026-03-28
 
@@ -224,7 +226,6 @@ INSERT INTO sec."Role" ("RoleCode", "RoleName", "IsSystem", "IsActive")
 VALUES ('ADMIN', 'Administrators', TRUE, TRUE)
 ON CONFLICT ("RoleCode") DO NOTHING;
 
--- +goose StatementBegin
 DO $$
 DECLARE
   v_system_user_id INT;
@@ -252,7 +253,6 @@ BEGIN
     ON CONFLICT ("CompanyId", "BranchCode") DO NOTHING;
   END IF;
 END $$;
--- +goose StatementEnd
 
 COMMIT;
 
@@ -1069,7 +1069,6 @@ BEGIN;
 -- ============================================================
 -- Obtener IDs por defecto
 -- ============================================================
--- +goose StatementBegin
 DO $$
 DECLARE
   v_DefaultCompanyId INT;
@@ -1085,7 +1084,6 @@ BEGIN
     RAISE EXCEPTION 'Missing DEFAULT company/MAIN branch. Run 01_core_foundation.sql first.';
   END IF;
 END $$;
--- +goose StatementEnd
 
 -- ============================================================
 -- NOTA: Tablas legacy public.* eliminadas (2026-03-16).
@@ -1121,7 +1119,6 @@ RETURNS TABLE (
   "observacion"  VARCHAR,
   "codUsuario"   VARCHAR
 )
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 DECLARE
   v_Page  INT := GREATEST(COALESCE(p_Page, 1), 1);
@@ -1151,7 +1148,6 @@ BEGIN
   LIMIT v_Limit OFFSET v_Offset;
 END;
 $$;
--- +goose StatementEnd
 
 -- sp_CxP_Documentos_List
 DROP FUNCTION IF EXISTS public."sp_CxP_Documentos_List"(VARCHAR, VARCHAR, VARCHAR, DATE, DATE, INT, INT) CASCADE;
@@ -1175,7 +1171,6 @@ RETURNS TABLE (
   "observacion"  VARCHAR,
   "codUsuario"   VARCHAR
 )
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 DECLARE
   v_Page  INT := GREATEST(COALESCE(p_Page, 1), 1);
@@ -1205,7 +1200,6 @@ BEGIN
   LIMIT v_Limit OFFSET v_Offset;
 END;
 $$;
--- +goose StatementEnd
 
 -- ============================================================
 -- Funciones contables: usp_Contabilidad_Asientos_List
@@ -1237,7 +1231,6 @@ RETURNS TABLE(
   "CodUsuario"     VARCHAR,
   "TotalCount"     INT
 )
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 DECLARE
   v_Page  INT := GREATEST(COALESCE(p_Page, 1), 1);
@@ -1281,7 +1274,6 @@ BEGIN
   LIMIT v_Limit OFFSET v_Offset;
 END;
 $$;
--- +goose StatementEnd
 
 -- ============================================================
 -- usp_Contabilidad_Asiento_Get
@@ -1305,7 +1297,6 @@ RETURNS TABLE (
   "OrigenModulo"   VARCHAR,
   "CodUsuario"     VARCHAR
 )
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 BEGIN
   RETURN QUERY
@@ -1328,7 +1319,6 @@ BEGIN
   LIMIT 1;
 END;
 $$;
--- +goose StatementEnd
 
 -- ============================================================
 -- usp_Contabilidad_Asiento_Crear
@@ -1351,7 +1341,6 @@ CREATE OR REPLACE FUNCTION public."usp_Contabilidad_Asiento_Crear"(
   OUT p_Resultado      INT,
   OUT p_Mensaje        VARCHAR
 )
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 DECLARE
   v_TotalDebe  NUMERIC(18,2);
@@ -1409,7 +1398,6 @@ BEGIN
   p_Mensaje := 'Asiento creado correctamente.';
 END;
 $$;
--- +goose StatementEnd
 
 -- ============================================================
 -- usp_Contabilidad_Asiento_Anular
@@ -1422,7 +1410,6 @@ CREATE OR REPLACE FUNCTION public."usp_Contabilidad_Asiento_Anular"(
   OUT p_Resultado INT,
   OUT p_Mensaje   VARCHAR
 )
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM public."Asientos" WHERE "Id" = p_AsientoId) THEN
@@ -1441,7 +1428,6 @@ BEGIN
   p_Mensaje := 'Asiento anulado.';
 END;
 $$;
--- +goose StatementEnd
 
 -- ============================================================
 -- usp_Contabilidad_Ajuste_Crear
@@ -1458,7 +1444,6 @@ CREATE OR REPLACE FUNCTION public."usp_Contabilidad_Ajuste_Crear"(
   OUT p_Resultado  INT,
   OUT p_Mensaje    VARCHAR
 )
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 DECLARE
   v_NumeroAsiento VARCHAR;
@@ -1478,7 +1463,6 @@ BEGIN
   );
 END;
 $$;
--- +goose StatementEnd
 
 -- ============================================================
 -- usp_Contabilidad_Depreciacion_Generar (stub)
@@ -1491,14 +1475,12 @@ CREATE OR REPLACE FUNCTION public."usp_Contabilidad_Depreciacion_Generar"(
   OUT p_Resultado INT,
   OUT p_Mensaje   VARCHAR
 )
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 BEGIN
   p_Resultado := 1;
   p_Mensaje := 'Proceso de depreciacion preparado (sin reglas cargadas).';
 END;
 $$;
--- +goose StatementEnd
 
 -- ============================================================
 -- usp_Contabilidad_Libro_Mayor
@@ -1515,7 +1497,6 @@ RETURNS TABLE (
   "Haber"       NUMERIC,
   "Saldo"       NUMERIC
 )
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 BEGIN
   RETURN QUERY
@@ -1534,7 +1515,6 @@ BEGIN
   ORDER BY d."Cod_Cuenta";
 END;
 $$;
--- +goose StatementEnd
 
 -- ============================================================
 -- usp_Contabilidad_Mayor_Analitico
@@ -1555,7 +1535,6 @@ RETURNS TABLE (
   "Haber"          NUMERIC,
   "SaldoAcumulado" NUMERIC
 )
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 BEGIN
   RETURN QUERY
@@ -1576,7 +1555,6 @@ BEGIN
   ORDER BY a."Fecha", a."Id", d."Id";
 END;
 $$;
--- +goose StatementEnd
 
 -- ============================================================
 -- usp_Contabilidad_Balance_Comprobacion
@@ -1593,7 +1571,6 @@ RETURNS TABLE (
   "Haber"       NUMERIC,
   "Saldo"       NUMERIC
 )
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 BEGIN
   RETURN QUERY
@@ -1612,7 +1589,6 @@ BEGIN
   ORDER BY d."Cod_Cuenta";
 END;
 $$;
--- +goose StatementEnd
 
 -- ============================================================
 -- usp_Contabilidad_Estado_Resultados
@@ -1630,7 +1606,6 @@ RETURNS TABLE (
   "Haber"           NUMERIC,
   "SaldoResultado"  NUMERIC
 )
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 BEGIN
   RETURN QUERY
@@ -1651,7 +1626,6 @@ BEGIN
   ORDER BY d."Cod_Cuenta";
 END;
 $$;
--- +goose StatementEnd
 
 -- ============================================================
 -- usp_Contabilidad_Balance_General
@@ -1668,7 +1642,6 @@ RETURNS TABLE (
   "Haber"       NUMERIC,
   "Saldo"       NUMERIC
 )
--- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 BEGIN
   RETURN QUERY
@@ -1690,7 +1663,6 @@ BEGIN
   ORDER BY d."Cod_Cuenta";
 END;
 $$;
--- +goose StatementEnd
 
 -- ============================================================
 -- NOTA: Los triggers de sincronizacion bidireccional
@@ -1771,7 +1743,6 @@ CREATE INDEX IF NOT EXISTS "IX_rest_DiningTable_Search"
 -- ============================================================
 -- SEEDS
 -- ============================================================
--- +goose StatementBegin
 DO $$
 DECLARE
   v_DefaultCompanyId INT;
@@ -1836,7 +1807,6 @@ BEGIN
 
   END IF;
 END $$;
--- +goose StatementEnd
 
 COMMIT;
 
@@ -2500,7 +2470,6 @@ CREATE TABLE IF NOT EXISTS hr."DocumentTemplate" (
 -- ============================================================
 -- SEED DATA
 -- ============================================================
--- +goose StatementBegin
 DO $$
 DECLARE
   v_DefaultCompanyId INT;
@@ -2588,7 +2557,6 @@ BEGIN
 
   END IF;
 END $$;
--- +goose StatementEnd
 
 COMMIT;
 
@@ -2954,7 +2922,6 @@ LIMIT 1;
 -- ============================================================
 -- SECCION 4: SEED DATA (datos de referencia)
 -- ============================================================
--- +goose StatementBegin
 DO $$
 DECLARE
   v_CompanyId INT;
@@ -3139,7 +3106,6 @@ BEGIN
   -- de modulo deben gestionarse en sec.* o cfg.*.
 
 END $$;
--- +goose StatementEnd
 
 COMMIT;
 
@@ -3161,7 +3127,6 @@ BEGIN;
 
 -- Solo eliminar si existen como tablas (no vistas)
 -- Usa DO block para ignorar si el objeto existe como vista en lugar de tabla
--- +goose StatementBegin
 DO $$
 BEGIN
     IF EXISTS (
@@ -3201,7 +3166,6 @@ BEGIN
         DROP TABLE public."DocumentosCompra" CASCADE;
     END IF;
 END $$;
--- +goose StatementEnd
 
 -- ============================================================
 -- SECCION 2: sec."UserModuleAccess" (permisos de modulos)
@@ -3221,7 +3185,6 @@ CREATE TABLE IF NOT EXISTS sec."UserModuleAccess" (
 -- Migrar datos de public."AccesoUsuarios" (tabla) -> sec."UserModuleAccess"
 -- Solo si public."AccesoUsuarios" existe como tabla
 -- ============================================================
--- +goose StatementBegin
 DO $$
 BEGIN
   -- Verificar si "AccesoUsuarios" existe como tabla (no vista)
@@ -3242,7 +3205,6 @@ BEGIN
     DROP TABLE public."AccesoUsuarios";
   END IF;
 END $$;
--- +goose StatementEnd
 
 -- ============================================================
 -- Vista de compatibilidad: public."AccesoUsuarios" -> sec."UserModuleAccess"
@@ -3271,7 +3233,6 @@ BEGIN;
 -- ============================================================
 -- SECCION 1: AMPLIAR sec."User" CON COLUMNAS LEGACY
 -- ============================================================
--- +goose StatementBegin
 DO $$
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'sec' AND table_name = 'User' AND column_name = 'UserType') THEN
@@ -3302,13 +3263,11 @@ BEGIN
     ALTER TABLE sec."User" ADD COLUMN "Avatar" TEXT NULL;
   END IF;
 END $$;
--- +goose StatementEnd
 
 -- ============================================================
 -- SECCION 2: MIGRAR DATOS public."Usuarios" -> sec."User"
 -- Convertir MERGE -> INSERT ... ON CONFLICT DO UPDATE
 -- ============================================================
--- +goose StatementBegin
 DO $$
 BEGIN
   -- Solo migrar si existe la tabla Usuarios como tabla base
@@ -3365,7 +3324,6 @@ BEGIN
     DROP TABLE public."Usuarios";
   END IF;
 END $$;
--- +goose StatementEnd
 
 -- ============================================================
 -- SECCION 3: VISTA public."Usuarios" -> sec."User"
@@ -3462,7 +3420,6 @@ WHERE UPPER("UserCode") = UPPER(OLD."Cod_Usuario")
 -- ============================================================
 -- SECCION 5: LIMPIAR public."Fiscal*" (duplicados de fiscal.*)
 -- ============================================================
--- +goose StatementBegin
 DO $$
 DECLARE
   v_has_fk BOOLEAN;
@@ -3488,7 +3445,6 @@ BEGIN
     RAISE NOTICE '[11] AVISO: public.Fiscal* tiene dependencias FK externas.';
   END IF;
 END $$;
--- +goose StatementEnd
 
 COMMIT;
 
@@ -3826,7 +3782,6 @@ ON CONFLICT ("Code") DO NOTHING;
 -- ============================================================
 -- SEED: Capabilities para proveedores
 -- ============================================================
--- +goose StatementBegin
 DO $$
 DECLARE
   v_redsysId    INT;
@@ -3901,7 +3856,6 @@ BEGIN
     ON CONFLICT ("ProviderId", "Capability", "PaymentMethod") DO NOTHING;
   END IF;
 END $$;
--- +goose StatementEnd
 
 COMMIT;
 
@@ -4148,14 +4102,12 @@ CREATE INDEX IF NOT EXISTS "IX_inv_ProductBinStock_Warehouse"
 
 -- Trigger para mantener QuantityAvailable sincronizado
 CREATE OR REPLACE FUNCTION inv.trg_product_bin_stock_available()
--- +goose StatementBegin
 RETURNS TRIGGER AS $$
 BEGIN
   NEW."QuantityAvailable" := NEW."QuantityOnHand" - NEW."QuantityReserved";
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
--- +goose StatementEnd
 
 DROP TRIGGER IF EXISTS "TR_inv_ProductBinStock_Available" ON inv."ProductBinStock";
 CREATE TRIGGER "TR_inv_ProductBinStock_Available"
@@ -4270,9 +4222,7 @@ CREATE INDEX IF NOT EXISTS "IX_inv_StockMovement_Type"
 
 COMMIT;
 
--- +goose StatementBegin
 DO $$ BEGIN RAISE NOTICE '>>> 09_inventory_advanced.sql ejecutado correctamente <<<'; END $$;
--- +goose StatementEnd
 
 -- Source: 10_logistics.sql
 -- ============================================================
@@ -4570,9 +4520,7 @@ CREATE TABLE IF NOT EXISTS logistics."DeliveryNoteSerial" (
 
 COMMIT;
 
--- +goose StatementBegin
 DO $$ BEGIN RAISE NOTICE '>>> 10_logistics.sql ejecutado correctamente <<<'; END $$;
--- +goose StatementEnd
 
 -- Source: 11_crm.sql
 -- ============================================================
@@ -4765,9 +4713,7 @@ CREATE INDEX IF NOT EXISTS "IX_crm_LeadHistory_Lead"
 
 COMMIT;
 
--- +goose StatementBegin
 DO $$ BEGIN RAISE NOTICE '>>> 11_crm.sql ejecutado correctamente <<<'; END $$;
--- +goose StatementEnd
 
 -- Source: 12_manufacturing.sql
 -- ============================================================
@@ -5562,25 +5508,21 @@ COMMIT;
 
 -- Funcion reutilizable para incrementar RowVer en UPDATE
 CREATE OR REPLACE FUNCTION trg_increment_row_ver()
--- +goose StatementBegin
 RETURNS TRIGGER AS $$
 BEGIN
     NEW."RowVer" := COALESCE(OLD."RowVer", 0) + 1;
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
--- +goose StatementEnd
 
 -- Funcion reutilizable para auto-actualizar UpdatedAt
 CREATE OR REPLACE FUNCTION trg_set_updated_at()
--- +goose StatementBegin
 RETURNS TRIGGER AS $$
 BEGIN
     NEW."UpdatedAt" := NOW() AT TIME ZONE 'UTC';
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
--- +goose StatementEnd
 
 -- ============================================================
 -- sec."User"
@@ -5853,7 +5795,6 @@ ALTER TABLE master."Product" ADD COLUMN IF NOT EXISTS "SearchVector" TSVECTOR;
 
 -- Trigger para actualizar SearchVector automaticamente
 CREATE OR REPLACE FUNCTION trg_product_search_vector()
--- +goose StatementBegin
 RETURNS TRIGGER AS $$
 BEGIN
     NEW."SearchVector" :=
@@ -5864,7 +5805,6 @@ BEGIN
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
--- +goose StatementEnd
 
 DROP TRIGGER IF EXISTS "trg_master_Product_search" ON master."Product";
 CREATE TRIGGER "trg_master_Product_search"
@@ -6408,7 +6348,6 @@ CREATE TABLE IF NOT EXISTS master."AlternateStock" (
   Seed data: categorias para VE y ES
 */
 
--- +goose StatementBegin
 DO $$
 DECLARE
   v_seed_company_id INT;
@@ -6647,7 +6586,6 @@ EXCEPTION WHEN OTHERS THEN
   RAISE NOTICE 'ERROR en create_activos_fijos.sql: %', SQLERRM;
   RAISE;
 END $$;
--- +goose StatementEnd
 
 -- Source: includes/sp/alter_bank_movement_journal.sql
 -- =============================================================================
@@ -6655,7 +6593,6 @@ END $$;
 -- Permite vincular movimientos bancarios con asientos contables autogenerados.
 -- =============================================================================
 
--- +goose StatementBegin
 DO $$
 BEGIN
     IF NOT EXISTS (
@@ -6677,7 +6614,6 @@ BEGIN
             WHERE "JournalEntryId" IS NOT NULL;
     END IF;
 END $$;
--- +goose StatementEnd
 
 -- Source: includes/sp/create_hr_rrhh_tables.sql
 -- ============================================================================
@@ -7063,7 +6999,6 @@ CREATE INDEX IF NOT EXISTS "IX_Training_Regulatory"
 -- ----------------------------------------------------------------------------
 -- Seed: master."Employee" (si no hay empleados)
 -- ----------------------------------------------------------------------------
--- +goose StatementBegin
 DO $$
 BEGIN
   RAISE NOTICE '>> Seed: Empleados base (si no existen)';
@@ -7112,12 +7047,10 @@ BEGIN
 EXCEPTION WHEN OTHERS THEN
   RAISE NOTICE 'Error en seed empleados: %', SQLERRM;
 END $$;
--- +goose StatementEnd
 
 -- ----------------------------------------------------------------------------
 -- Seed: hr."SavingsFund" — Caja de Ahorro
 -- ----------------------------------------------------------------------------
--- +goose StatementBegin
 DO $$
 BEGIN
   RAISE NOTICE '>> Seed: SavingsFund';
@@ -7182,12 +7115,10 @@ BEGIN
 EXCEPTION WHEN OTHERS THEN
   RAISE NOTICE 'Error en seed SavingsFund: %', SQLERRM;
 END $$;
--- +goose StatementEnd
 
 -- ----------------------------------------------------------------------------
 -- Seed: hr."SavingsFundTransaction"
 -- ----------------------------------------------------------------------------
--- +goose StatementBegin
 DO $$
 DECLARE v_fund1 INT; v_fund2 INT;
 BEGIN
@@ -7252,12 +7183,10 @@ BEGIN
 EXCEPTION WHEN OTHERS THEN
   RAISE NOTICE 'Error en seed SavingsFundTransaction: %', SQLERRM;
 END $$;
--- +goose StatementEnd
 
 -- ----------------------------------------------------------------------------
 -- Seed: hr."SavingsLoan"
 -- ----------------------------------------------------------------------------
--- +goose StatementBegin
 DO $$
 DECLARE v_fund1 INT;
 BEGIN
@@ -7284,12 +7213,10 @@ BEGIN
 EXCEPTION WHEN OTHERS THEN
   RAISE NOTICE 'Error en seed SavingsLoan: %', SQLERRM;
 END $$;
--- +goose StatementEnd
 
 -- ----------------------------------------------------------------------------
 -- Seed: hr."SocialBenefitsTrust" — Fideicomiso Prestaciones Sociales
 -- ----------------------------------------------------------------------------
--- +goose StatementBegin
 DO $$
 BEGIN
   RAISE NOTICE '>> Seed: SocialBenefitsTrust';
@@ -7421,12 +7348,10 @@ BEGIN
 EXCEPTION WHEN OTHERS THEN
   RAISE NOTICE 'Error en seed SocialBenefitsTrust: %', SQLERRM;
 END $$;
--- +goose StatementEnd
 
 -- ----------------------------------------------------------------------------
 -- Seed: hr."ProfitSharing" + hr."ProfitSharingLine" — Utilidades 2025
 -- ----------------------------------------------------------------------------
--- +goose StatementBegin
 DO $$
 DECLARE v_ps_id INT;
 BEGIN
@@ -7537,12 +7462,10 @@ BEGIN
 EXCEPTION WHEN OTHERS THEN
   RAISE NOTICE 'Error en seed ProfitSharing: %', SQLERRM;
 END $$;
--- +goose StatementEnd
 
 -- ----------------------------------------------------------------------------
 -- Seed: hr."OccupationalHealth"
 -- ----------------------------------------------------------------------------
--- +goose StatementBegin
 DO $$
 BEGIN
   RAISE NOTICE '>> Seed: OccupationalHealth';
@@ -7681,12 +7604,10 @@ BEGIN
 EXCEPTION WHEN OTHERS THEN
   RAISE NOTICE 'Error en seed OccupationalHealth: %', SQLERRM;
 END $$;
--- +goose StatementEnd
 
 -- ----------------------------------------------------------------------------
 -- Seed: hr."MedicalExam"
 -- ----------------------------------------------------------------------------
--- +goose StatementBegin
 DO $$
 BEGIN
   RAISE NOTICE '>> Seed: MedicalExam';
@@ -7791,12 +7712,10 @@ BEGIN
 EXCEPTION WHEN OTHERS THEN
   RAISE NOTICE 'Error en seed MedicalExam: %', SQLERRM;
 END $$;
--- +goose StatementEnd
 
 -- ----------------------------------------------------------------------------
 -- Seed: hr."MedicalOrder"
 -- ----------------------------------------------------------------------------
--- +goose StatementBegin
 DO $$
 BEGIN
   RAISE NOTICE '>> Seed: MedicalOrder';
@@ -7875,12 +7794,10 @@ BEGIN
 EXCEPTION WHEN OTHERS THEN
   RAISE NOTICE 'Error en seed MedicalOrder: %', SQLERRM;
 END $$;
--- +goose StatementEnd
 
 -- ----------------------------------------------------------------------------
 -- Seed: hr."TrainingRecord"
 -- ----------------------------------------------------------------------------
--- +goose StatementBegin
 DO $$
 BEGIN
   RAISE NOTICE '>> Seed: TrainingRecord';
@@ -8019,12 +7936,10 @@ BEGIN
 EXCEPTION WHEN OTHERS THEN
   RAISE NOTICE 'Error en seed TrainingRecord: %', SQLERRM;
 END $$;
--- +goose StatementEnd
 
 -- ----------------------------------------------------------------------------
 -- Seed: hr."SafetyCommittee" + hr."SafetyCommitteeMember" + hr."SafetyCommitteeMeeting"
 -- ----------------------------------------------------------------------------
--- +goose StatementBegin
 DO $$
 DECLARE v_comm1 INT; v_comm2 INT;
 BEGIN
@@ -8123,7 +8038,6 @@ BEGIN
 EXCEPTION WHEN OTHERS THEN
   RAISE NOTICE 'Error en seed SafetyCommittee: %', SQLERRM;
 END $$;
--- +goose StatementEnd
 
 -- Source: includes/sp/create_contabilidad_general.sql
 -- ============================================================
@@ -8133,7 +8047,6 @@ END $$;
 -- y centros de costo iniciales.
 -- ============================================================
 
--- +goose StatementBegin
 DO $body$
 BEGIN
 
@@ -8333,7 +8246,6 @@ EXCEPTION WHEN OTHERS THEN
     RAISE EXCEPTION 'Error create_contabilidad_general.sql: %', SQLERRM;
 END;
 $body$;
--- +goose StatementEnd
 
 -- Source: includes/sp/create_fiscal_tributaria.sql
 /*
@@ -8356,7 +8268,6 @@ $body$;
 ================================================================================
 */
 
--- +goose StatementBegin
 DO $$
 BEGIN
 
@@ -8643,7 +8554,6 @@ EXCEPTION WHEN OTHERS THEN
   RAISE NOTICE 'ERROR en módulo fiscal/tributaria: %', SQLERRM;
   RAISE;
 END $$;
--- +goose StatementEnd
 
 -- Source: 18_fiscal_retenciones_schema.sql
 -- =============================================================================
@@ -8697,7 +8607,6 @@ CREATE TABLE IF NOT EXISTS fiscal."WithholdingConcept" (
 -- =============================================================================
 -- 3. ALTER master.Supplier — Campos de clasificación fiscal
 -- =============================================================================
--- +goose StatementBegin
 DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='master' AND table_name='Supplier' AND column_name='SupplierType') THEN
         ALTER TABLE master."Supplier" ADD COLUMN "SupplierType" VARCHAR(20) NOT NULL DEFAULT 'JURIDICA';
@@ -8712,12 +8621,10 @@ DO $$ BEGIN
         ALTER TABLE master."Supplier" ADD COLUMN "CountryCode" CHAR(2) NOT NULL DEFAULT 'VE';
     END IF;
 END $$;
--- +goose StatementEnd
 
 -- =============================================================================
 -- 4. ALTER ap.PayableApplication — Campos de retención en pagos
 -- =============================================================================
--- +goose StatementBegin
 DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='ap' AND table_name='PayableApplication' AND column_name='RetentionType') THEN
         ALTER TABLE ap."PayableApplication" ADD COLUMN "RetentionType" VARCHAR(20) NULL;
@@ -8727,7 +8634,6 @@ DO $$ BEGIN
         ALTER TABLE ap."PayableApplication" ADD COLUMN "WithholdingVoucherId" BIGINT NULL;
     END IF;
 END $$;
--- +goose StatementEnd
 
 -- =============================================================================
 -- 5. hr.EmployeeTaxProfile — Perfil fiscal del empleado (ARI)
@@ -8804,9 +8710,7 @@ WHERE NOT EXISTS (
     SELECT 1 FROM fiscal."WithholdingConcept" WHERE "ConceptCode" = v."ConceptCode" AND "CountryCode" = 'ES'
 );
 
--- +goose StatementBegin
 DO $$ BEGIN RAISE NOTICE '>>> 18_fiscal_retenciones_schema.sql ejecutado correctamente <<<'; END $$;
--- +goose StatementEnd
 
 -- Source: includes/sp/create_vacation_request.sql
 -- ============================================================
@@ -8933,7 +8837,6 @@ CREATE INDEX IF NOT EXISTS "IX_SupervisorOverride_Source"
 
 -- ── Columnas adicionales en tablas POS ──
 
--- +goose StatementBegin
 DO $$
 BEGIN
   -- pos.WaitTicketLine
@@ -8984,7 +8887,6 @@ BEGIN
       ADD COLUMN "SupervisorApprovalId" BIGINT NULL;
   END IF;
 END $$;
--- +goose StatementEnd
 
 -- Source: includes/sp/alter_employee_position_company_address.sql
 -- ============================================================
@@ -9236,7 +9138,6 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA acct, ap, ar, audit, cfg, doc, fin, fiscal, h
 -- Igual que run-functions.sql: borra todos los overloads de usp_* que
 -- tengan >1 version, para que el estado final sea limpio.
 -- ====================================================================
--- +goose StatementBegin
 DO $cleanup$
 DECLARE
   _func_name TEXT;
@@ -9269,9 +9170,10 @@ BEGIN
     RAISE NOTICE 'No duplicate overloads found';
   END IF;
 END $cleanup$;
--- +goose StatementEnd
 
 -- Re-cargar funciones con tipos correctos (después de limpiar overloads)
+
+-- +goose StatementEnd
 
 -- +goose Down
 -- No rollback para baseline
