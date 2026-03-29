@@ -62,6 +62,7 @@ const PENDING_CONTRACT_PREFIXES = new Set([
   '/v1/reportes',
   '/v1/restaurante',
   '/v1/restaurante/admin',
+  '/v1/studio',
   '/v1/support',
   '/v1/tipos',
   '/v1/ventas/analytics',
