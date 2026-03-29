@@ -8,6 +8,7 @@ import { fileURLToPath } from "node:url";
 import swaggerUi from "swagger-ui-express";
 import YAML from "yaml";
 import { env } from "./config/env.js";
+import { subdomainTenantMiddleware } from "./middleware/subdomain-tenant.js";
 import { healthRouter } from "./modules/health/routes.js";
 import { authRouter } from "./modules/usuarios/auth.routes.js";
 import { addonsRouter, loadAddons } from "./modules/addons/routes.js";
@@ -188,6 +189,10 @@ export async function createApp() {
   app.use(express.json({ limit: "2mb" }));
   app.use(morgan("dev"));
   app.use(observabilityMiddleware);
+
+  // ── Multi-tenant: resolver tenant por subdomain del Origin ──
+  // Debe ir ANTES de las rutas. Inyecta req._tenantCompanyId para auth.ts.
+  app.use(subdomainTenantMiddleware);
 
   app.get("/", (_req, res) => {
     res.json({ name: "Zentto ERP API", env: env.nodeEnv, version: "v2" });

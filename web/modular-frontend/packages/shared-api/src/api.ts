@@ -78,10 +78,21 @@ async function authHeader(): Promise<Record<string, string>> {
       headers['x-country-code'] = countryCode;
     }
 
-    // Demo mode header
-    const dbMode = typeof window !== 'undefined' ? localStorage.getItem('zentto-db-mode') : null;
-    if (dbMode === 'demo') {
-      headers['x-db-mode'] = 'demo';
+    // Multi-tenant: si estamos en un subdomain de tenant, forzar su CompanyId
+    if (typeof window !== 'undefined') {
+      const tenantData = localStorage.getItem('zentto-tenant');
+      if (tenantData) {
+        try {
+          const { companyId } = JSON.parse(tenantData);
+          if (companyId) headers['x-company-id'] = String(companyId);
+        } catch { /* ignore parse errors */ }
+      } else {
+        // Demo mode header: solo si NO estamos en un subdomain de tenant
+        const dbMode = localStorage.getItem('zentto-db-mode');
+        if (dbMode === 'demo') {
+          headers['x-db-mode'] = 'demo';
+        }
+      }
     }
 
     return headers;

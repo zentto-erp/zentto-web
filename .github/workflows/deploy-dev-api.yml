@@ -14,9 +14,7 @@ on:
     paths:
       - 'web/api/**'
       - 'docker/Dockerfile.api'
-      - 'docker-compose.dev.yml'
-      - 'scripts/goose-deploy.sh'
-      - 'scripts/goose-deploy-all.sh'
+      # docker-compose.dev.yml y goose-deploy ahora viven en zentto-infra
   workflow_dispatch:
 
 concurrency:
@@ -206,7 +204,7 @@ jobs:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "web/api/migrations/postgres,web/api/sqlweb-pg,scripts/goose-deploy.sh,scripts/goose-deploy-all.sh"
+          source: "web/api/migrations/postgres,web/api/sqlweb-pg"
           target: /opt/zentto-dev/_deploy_tmp
           overwrite: true
 
@@ -221,8 +219,11 @@ jobs:
             mkdir -p /opt/zentto-dev/migrations/postgres /opt/zentto-dev/sqlweb-pg
             cp -rf /opt/zentto-dev/_deploy_tmp/web/api/migrations/postgres/* /opt/zentto-dev/migrations/postgres/
             cp -rf /opt/zentto-dev/_deploy_tmp/web/api/sqlweb-pg/* /opt/zentto-dev/sqlweb-pg/
-            cp -f /opt/zentto-dev/_deploy_tmp/scripts/goose-deploy.sh /opt/zentto-dev/goose-deploy.sh
-            chmod +x /opt/zentto-dev/goose-deploy.sh
+            # goose-deploy viene de zentto-infra
+            if [ -f /opt/zentto-infra/scripts/goose-deploy.sh ]; then
+              cp -f /opt/zentto-infra/scripts/goose-deploy.sh /opt/zentto-dev/goose-deploy.sh
+              chmod +x /opt/zentto-dev/goose-deploy.sh
+            fi
 
             # Check if goose thinks all migrations are applied
             GOOSE_MAX=$(ls /opt/zentto-dev/migrations/postgres/*.sql 2>/dev/null | wc -l)
@@ -297,7 +298,9 @@ jobs:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "docker-compose.dev.yml,nginx/zentto-dev.conf,nginx/zentto-proxy.conf"
+          # Solo copiamos archivos que aun NO estan en zentto-infra (ninguno por ahora)
+          # docker-compose.dev.yml y nginx vienen de zentto-infra
+          source: "docker/pm2.config.cjs"
           target: /opt/zentto-dev
           overwrite: true
 
@@ -338,6 +341,14 @@ jobs:
             docker stop zentto-api-dev 2>/dev/null || true
             docker rm -f zentto-api-dev 2>/dev/null || true
             sleep 2
+
+            # Sincronizar compose y nginx desde zentto-infra
+            if [ -d /opt/zentto-infra ]; then
+              cp -f /opt/zentto-infra/compose/docker-compose.dev.yml /opt/zentto-dev/docker-compose.dev.yml 2>/dev/null || true
+              mkdir -p /opt/zentto-dev/nginx
+              cp -f /opt/zentto-infra/nginx/zentto-dev.conf /opt/zentto-dev/nginx/zentto-dev.conf 2>/dev/null || true
+              cp -f /opt/zentto-infra/nginx/zentto-proxy.conf /opt/zentto-dev/nginx/zentto-proxy.conf 2>/dev/null || true
+            fi
 
             # Pull and start dev API
             cd /opt/zentto-dev

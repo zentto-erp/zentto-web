@@ -534,4 +534,110 @@ backofficeRouter.post("/tenants/:companyId/restore/:backupId", async (req, res) 
   }
 });
 
+// ── POST /tenants/provision-full ───────────────────────────────────────────
+// Provisioning unificado: crea company + admin + BD + subdomain + welcome email.
+// Un solo POST hace todo el pipeline (mismo flujo que paddle.service.ts pero manual).
+
+const provisionFullSchema = z.object({
+  companyCode:  z.string().min(2).max(20).regex(/^[A-Z0-9]+$/),
+  legalName:    z.string().min(2).max(100),
+  ownerEmail:   z.string().email(),
+  countryCode:  z.string().length(2).default("VE"),
+  baseCurrency: z.string().length(3).default("USD"),
+  plan:         z.enum(["FREE", "STARTER", "PRO", "ENTERPRISE"]).default("STARTER"),
+  subdomain:    z.string().min(2).max(30).regex(/^[a-z0-9][a-z0-9-]*$/).optional(),
+});
+
+backofficeRouter.post("/tenants/provision-full", async (req, res) => {
+  const parsed = provisionFullSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "validation_error", issues: parsed.error.flatten() });
+    return;
+  }
+
+  const { companyCode, legalName, ownerEmail, countryCode, baseCurrency, plan, subdomain } = parsed.data;
+  const { randomBytes } = await import("node:crypto");
+  const tempPassword = randomBytes(8).toString("hex");
+
+  try {
+    // 1. Crear company + admin en BD master
+    const { provisionTenant, sendWelcomeEmail } = await import("../tenants/tenant.service.js");
+    const result = await provisionTenant({
+      companyCode,
+      legalName,
+      ownerEmail,
+      countryCode,
+      baseCurrency,
+      adminUserCode: "ADMIN",
+      adminPassword: tempPassword,
+      plan,
+    });
+
+    if (!result.ok) {
+      res.status(400).json({ error: "provision_failed", message: result.mensaje });
+      return;
+    }
+
+    obs.audit("backoffice.provision.company_created", {
+      module: "backoffice",
+      companyId: result.companyId,
+      companyCode,
+      plan,
+    });
+
+    // 2. Set subdomain si se proporcionó
+    const tenantSubdomain = subdomain || companyCode.toLowerCase();
+    await callSp("usp_Cfg_Tenant_SetSubdomain", {
+      CompanyId: result.companyId,
+      Subdomain: tenantSubdomain,
+    }).catch(() => {});
+
+    // 3. Provisionar BD del tenant (crea BD + migra + registra en sys.TenantDatabase)
+    const { provisionTenantDatabase } = await import("../../db/provision-tenant-db.js");
+    const dbResult = await provisionTenantDatabase(result.companyId, companyCode);
+
+    if (!dbResult.ok) {
+      obs.error(`backoffice.provision.db_failed: ${dbResult.error}`, {
+        module: "backoffice",
+        companyId: result.companyId,
+      });
+      // Company fue creada pero BD falló — retornar warning
+      res.status(207).json({
+        ok: true,
+        warning: "database_provision_failed",
+        message: dbResult.error,
+        companyId: result.companyId,
+        tenantUrl: `https://${tenantSubdomain}.zentto.net`,
+      });
+      return;
+    }
+
+    obs.audit("backoffice.provision.db_created", {
+      module: "backoffice",
+      companyId: result.companyId,
+      dbName: dbResult.dbName,
+    });
+
+    // 4. Enviar email de bienvenida (no bloquea)
+    const tenantUrl = `https://${tenantSubdomain}.zentto.net`;
+    sendWelcomeEmail(ownerEmail, legalName, tempPassword, result.companyId, tenantUrl)
+      .catch((err) => console.error("[backoffice] Error enviando welcome email:", err));
+
+    res.json({
+      ok: true,
+      companyId: result.companyId,
+      companyCode,
+      subdomain: tenantSubdomain,
+      tenantUrl,
+      dbName: dbResult.dbName,
+      plan,
+      adminUser: "ADMIN",
+    });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "internal_error";
+    obs.error(`backoffice.provision.failed: ${msg}`, { module: "backoffice", companyCode });
+    res.status(500).json({ error: msg });
+  }
+});
+
 export default backofficeRouter;

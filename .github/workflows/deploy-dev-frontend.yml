@@ -15,8 +15,7 @@ on:
       - 'web/modular-frontend/**'
       - 'docker/Dockerfile.frontend'
       - 'docker/pm2.config.cjs'
-      - 'docker-compose.dev.yml'
-      - 'nginx/zentto-dev.conf'
+      # docker-compose.dev.yml y nginx ahora viven en zentto-infra
   workflow_dispatch:
 
 concurrency:
@@ -76,7 +75,8 @@ jobs:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "docker-compose.dev.yml,docker/pm2.config.cjs,nginx/zentto-dev.conf,nginx/zentto-proxy.conf"
+          # docker-compose y nginx vienen de zentto-infra; solo copiamos pm2 config
+          source: "docker/pm2.config.cjs"
           target: /opt/zentto-dev
           overwrite: true
 
@@ -102,6 +102,14 @@ jobs:
             mkdir -p /opt/zentto-dev/docker
             cp -f /opt/zentto-dev/docker/pm2.config.cjs /opt/zentto-dev/docker/pm2.config.cjs 2>/dev/null || true
 
+            # Sincronizar compose y nginx desde zentto-infra
+            if [ -d /opt/zentto-infra ]; then
+              cp -f /opt/zentto-infra/compose/docker-compose.dev.yml /opt/zentto-dev/docker-compose.dev.yml 2>/dev/null || true
+              mkdir -p /opt/zentto-dev/nginx
+              cp -f /opt/zentto-infra/nginx/zentto-dev.conf /opt/zentto-dev/nginx/zentto-dev.conf 2>/dev/null || true
+              cp -f /opt/zentto-infra/nginx/zentto-proxy.conf /opt/zentto-dev/nginx/zentto-proxy.conf 2>/dev/null || true
+            fi
+
             # Login to GHCR + deploy
             echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u zentto-erp --password-stdin
             docker stop zentto-frontend-dev 2>/dev/null || true
@@ -110,11 +118,13 @@ jobs:
             docker compose -f docker-compose.dev.yml pull frontend-dev
             docker compose -f docker-compose.dev.yml up -d --no-deps frontend-dev
 
-            # Nginx
-            cp -f /opt/zentto-dev/nginx/zentto-dev.conf /etc/nginx/sites-available/zentto-dev.conf
-            cp -f /opt/zentto-dev/nginx/zentto-proxy.conf /etc/nginx/zentto-proxy.conf
-            ln -sf /etc/nginx/sites-available/zentto-dev.conf /etc/nginx/sites-enabled/zentto-dev.conf
-            nginx -t && systemctl reload nginx
+            # Nginx desde zentto-infra
+            if [ -f /opt/zentto-infra/nginx/zentto-dev.conf ]; then
+              cp -f /opt/zentto-infra/nginx/zentto-dev.conf /etc/nginx/sites-available/zentto-dev.conf
+              cp -f /opt/zentto-infra/nginx/zentto-proxy.conf /etc/nginx/zentto-proxy.conf 2>/dev/null || true
+              ln -sf /etc/nginx/sites-available/zentto-dev.conf /etc/nginx/sites-enabled/zentto-dev.conf
+              nginx -t && systemctl reload nginx
+            fi
             echo "✅ Frontend DEV deployed → app.dev.zentto.net"
 
   # set-private omitido — el pre-push hook y los workflows de prod manejan la visibilidad
