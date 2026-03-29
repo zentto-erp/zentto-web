@@ -1,5 +1,4 @@
 -- +goose Up
--- +goose StatementBegin
 -- Fix: INT â†’ BIGINT en parÃ¡metros y columnas RETURNS TABLE de entidades
 -- Afecta: usp_crm, usp_fleet, usp_inv, usp_logistics, usp_mfg, usp_bank
 
@@ -9,6 +8,7 @@ DROP FUNCTION IF EXISTS public.usp_bank_statementline_insert(bigint, timestamp, 
 CREATE OR REPLACE FUNCTION public.usp_bank_statementline_insert(p_reconciliation_id bigint, p_statement_date timestamp, p_description_text character varying DEFAULT NULL::character varying, p_reference_no character varying DEFAULT NULL::character varying, p_entry_type character varying DEFAULT NULL::character varying, p_amount numeric DEFAULT NULL::numeric, p_balance numeric DEFAULT NULL::numeric, p_created_by_user_id integer DEFAULT NULL::integer)
  RETURNS TABLE("Resultado" integer, "Mensaje" character varying)
  LANGUAGE plpgsql
+-- +goose StatementBegin
 AS $function$
 DECLARE v_id INT;
 BEGIN
@@ -19,6 +19,7 @@ BEGIN
     RETURNING "StatementLineId" INTO v_id;
     RETURN QUERY SELECT v_id,'OK'::VARCHAR(500);
 END; $function$;
+-- +goose StatementEnd
 
 -- â”€â”€ usp_crm_lead_close: p_customer_id INT â†’ BIGINT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 DROP FUNCTION IF EXISTS usp_crm_lead_close(INT, BOOLEAN, VARCHAR, INT, INT) CASCADE;
@@ -66,7 +67,6 @@ DROP FUNCTION IF EXISTS usp_inv_lot_validateforsale CASCADE;
 -- Evita conflicto con usp_inv.sql que tiene usp_inv_movement_list(p_company_id, p_product_id, ...)
 DROP FUNCTION IF EXISTS usp_inv_movement_list(VARCHAR, VARCHAR, INT, INT) CASCADE;
 DROP FUNCTION IF EXISTS usp_movinvent_list(VARCHAR, VARCHAR, INT, INT) CASCADE;
--- +goose StatementEnd
 
 -- Re-create from updated SP files (ejecutado por goose-deploy-all.sh via run-functions.sql)
 -- Las funciones se recargan automÃ¡ticamente con run-functions.sql en el deploy

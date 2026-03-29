@@ -19,6 +19,7 @@ BEGIN
     WHERE table_schema = 'cfg' AND table_name = 'Country' AND column_name = 'CurrencySymbol'
   ) THEN
     ALTER TABLE cfg."Country" ADD COLUMN "CurrencySymbol" VARCHAR(5) NOT NULL DEFAULT '$';
+-- +goose StatementEnd
   END IF;
 
   IF NOT EXISTS (
@@ -145,7 +146,6 @@ BEGIN
 
   RAISE NOTICE 'Fix missing columns: completado';
 END $$;
--- +goose StatementEnd
 
 -- +goose Down
 -- No rollback — las columnas se mantienen
