@@ -1,5 +1,4 @@
 -- +goose Up
--- +goose StatementBegin
 -- Fix: CHARÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢VARCHAR casts, BIGINTÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢INT mismatches, missing p_company_id params,
 -- wrong table/schema references across multiple functions
 
@@ -17,6 +16,7 @@ RETURNS TABLE(
     "AutoCapture" BOOLEAN, "AllowRefunds" BOOLEAN, "MaxRefundDays" INT,
     "IsActive" BOOLEAN, "CreatedAt" TIMESTAMP, "UpdatedAt" TIMESTAMP
 )
+-- +goose StatementBegin
 LANGUAGE plpgsql AS $fn$
 BEGIN
     RETURN QUERY
@@ -34,6 +34,7 @@ BEGIN
     ORDER BY p."Name";
 END;
 $fn$;
+-- +goose StatementEnd
 
 -- 2. retenciones/{codigo} ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â CountryCode CHAR(2)ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢VARCHAR
 DROP FUNCTION IF EXISTS public.usp_tax_retention_getbycode(VARCHAR) CASCADE;
@@ -42,6 +43,7 @@ RETURNS TABLE(
     "RetentionId" INT, "RetentionCode" VARCHAR, "Description" VARCHAR,
     "RetentionType" VARCHAR, "RetentionRate" NUMERIC, "CountryCode" VARCHAR, "IsActive" BOOLEAN
 )
+-- +goose StatementBegin
 LANGUAGE plpgsql AS $fn$
 BEGIN
     RETURN QUERY
@@ -52,6 +54,7 @@ BEGIN
     LIMIT 1;
 END;
 $fn$;
+-- +goose StatementEnd
 
 -- 3. vendedores/{codigo} ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â DireccionÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢Address, TelefonosÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢Phone
 DROP FUNCTION IF EXISTS public.usp_vendedores_getbycodigo(VARCHAR) CASCADE;
@@ -67,6 +70,7 @@ RETURNS TABLE(
     "RangoVentasTres" NUMERIC, "ComisionVentasTres" NUMERIC,
     "RangoVentasCuatro" NUMERIC, "ComisionVentasCuatro" NUMERIC
 )
+-- +goose StatementBegin
 LANGUAGE plpgsql AS $fn$
 BEGIN
     RETURN QUERY
@@ -83,11 +87,13 @@ BEGIN
       AND COALESCE(s."IsDeleted", FALSE) = FALSE;
 END;
 $fn$;
+-- +goose StatementEnd
 
 -- 4. centro-costo/{codigo} ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â public.Centro_CostoÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢master.CostCenter
 DROP FUNCTION IF EXISTS public.usp_centrocosto_getbycodigo(VARCHAR) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_centrocosto_getbycodigo(p_codigo VARCHAR)
 RETURNS TABLE("Codigo" VARCHAR, "Descripcion" VARCHAR, "Presupuestado" NUMERIC, "Saldo_Real" NUMERIC)
+-- +goose StatementBegin
 LANGUAGE plpgsql AS $fn$
 BEGIN
     RETURN QUERY
@@ -96,11 +102,13 @@ BEGIN
     WHERE cc."CostCenterCode" = p_codigo AND COALESCE(cc."IsDeleted", FALSE) = FALSE;
 END;
 $fn$;
+-- +goose StatementEnd
 
 -- 5. empresa ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â public.EmpresaÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢cfg.Company
 DROP FUNCTION IF EXISTS public.usp_empresa_get() CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_empresa_get()
 RETURNS TABLE("Empresa" VARCHAR, "RIF" VARCHAR, "Nit" VARCHAR, "Telefono" VARCHAR, "Direccion" VARCHAR, "Rifs" VARCHAR)
+-- +goose StatementBegin
 LANGUAGE plpgsql AS $fn$
 BEGIN
     RETURN QUERY
@@ -109,6 +117,7 @@ BEGIN
     FROM cfg."Company" c LIMIT 1;
 END;
 $fn$;
+-- +goose StatementEnd
 
 -- 6. movinvent/mes ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â SummaryId BIGINTÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢INT
 DROP FUNCTION IF EXISTS public.usp_inv_movement_listperiodsummary(VARCHAR, VARCHAR, INT, INT) CASCADE;
@@ -120,6 +129,7 @@ RETURNS TABLE(
     "OpeningQty" NUMERIC, "InboundQty" NUMERIC, "OutboundQty" NUMERIC,
     "ClosingQty" NUMERIC, "SummaryDate" TIMESTAMP, "IsClosed" BOOLEAN, "TotalCount" INT
 )
+-- +goose StatementBegin
 LANGUAGE plpgsql AS $fn$
 DECLARE v_total INT;
 BEGIN
@@ -134,6 +144,7 @@ BEGIN
     ORDER BY s."Period" DESC, s."ProductCode" LIMIT p_limit OFFSET p_offset;
 END;
 $fn$;
+-- +goose StatementEnd
 
 -- 7. fideicomiso/summary ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â p_fiscal_yearÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢p_year, flat rows
 DROP FUNCTION IF EXISTS public.usp_hr_trust_getsummary(INT, INT, SMALLINT) CASCADE;
@@ -145,6 +156,7 @@ RETURNS TABLE(
     "TotalEmployees" BIGINT, "TotalDeposits" NUMERIC, "TotalInterest" NUMERIC,
     "TotalBonusDays" NUMERIC, "TotalAccumulatedBalance" NUMERIC, "Status" VARCHAR
 )
+-- +goose StatementBegin
 LANGUAGE plpgsql AS $fn$
 BEGIN
     RETURN QUERY
@@ -156,6 +168,7 @@ BEGIN
     GROUP BY t."Status";
 END;
 $fn$;
+-- +goose StatementEnd
 
 -- 8-9. clientes ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â agregar p_company_id
 DROP FUNCTION IF EXISTS public.usp_clientes_list(VARCHAR, VARCHAR, VARCHAR, INT, INT) CASCADE;
@@ -176,6 +189,7 @@ RETURNS TABLE(
     "PaginaWww" VARCHAR, "CodUsuario" VARCHAR, "Credito" DOUBLE PRECISION,
     "TotalCount" INT
 )
+-- +goose StatementBegin
 LANGUAGE plpgsql AS $fn$
 DECLARE v_offset INT; v_limit INT; v_search VARCHAR(100); v_total INT;
 BEGIN
@@ -203,6 +217,7 @@ BEGIN
     ORDER BY c."CustomerCode" LIMIT v_limit OFFSET v_offset;
 END;
 $fn$;
+-- +goose StatementEnd
 
 DROP FUNCTION IF EXISTS public.usp_clientes_getbycodigo(VARCHAR) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_clientes_getbycodigo(
@@ -220,6 +235,7 @@ RETURNS TABLE(
     "PaginaWww" VARCHAR, "CodUsuario" VARCHAR, "Credito" DOUBLE PRECISION,
     "TotalCount" INT
 )
+-- +goose StatementBegin
 LANGUAGE plpgsql AS $fn$
 BEGIN
     RETURN QUERY
@@ -236,6 +252,7 @@ BEGIN
     WHERE c."CustomerCode" = p_codigo AND COALESCE(c."IsDeleted",FALSE)=FALSE LIMIT 1;
 END;
 $fn$;
+-- +goose StatementEnd
 
 -- 10-11. document templates ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â TemplateId INTÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢BIGINT, CountryCode CHARÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢VARCHAR
 DROP FUNCTION IF EXISTS public.usp_hr_documenttemplate_list(INT, CHARACTER, VARCHAR) CASCADE;
@@ -248,6 +265,7 @@ RETURNS TABLE(
     "TemplateType" VARCHAR, "CountryCode" VARCHAR, "PayrollCode" VARCHAR,
     "IsDefault" BOOLEAN, "IsSystem" BOOLEAN, "IsActive" BOOLEAN, "UpdatedAt" TIMESTAMP
 )
+-- +goose StatementBegin
 LANGUAGE plpgsql AS $fn$
 BEGIN
     RETURN QUERY
@@ -261,6 +279,7 @@ BEGIN
     ORDER BY t."CountryCode", t."TemplateType", t."TemplateName";
 END;
 $fn$;
+-- +goose StatementEnd
 
 DROP FUNCTION IF EXISTS public.usp_hr_documenttemplate_get(INT, VARCHAR) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_hr_documenttemplate_get(
@@ -272,6 +291,7 @@ RETURNS TABLE(
     "ContentMD" TEXT, "IsDefault" BOOLEAN, "IsSystem" BOOLEAN, "IsActive" BOOLEAN,
     "CreatedAt" TIMESTAMP, "UpdatedAt" TIMESTAMP
 )
+-- +goose StatementBegin
 LANGUAGE plpgsql AS $fn$
 BEGIN
     RETURN QUERY
@@ -282,6 +302,7 @@ BEGIN
     WHERE t."CompanyId" = p_company_id AND t."TemplateCode" = p_template_code;
 END;
 $fn$;
+-- +goose StatementEnd
 
 -- Save function ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â p_country_code CHARÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢VARCHAR
 DROP FUNCTION IF EXISTS public.usp_hr_documenttemplate_save(INT, VARCHAR, VARCHAR, VARCHAR, CHARACTER, TEXT, VARCHAR, BOOLEAN) CASCADE;
@@ -293,6 +314,7 @@ CREATE OR REPLACE FUNCTION public.usp_hr_documenttemplate_save(
     OUT p_resultado INT, OUT p_mensaje TEXT
 )
 RETURNS RECORD
+-- +goose StatementBegin
 LANGUAGE plpgsql AS $fn$
 DECLARE v_id BIGINT;
 BEGIN
@@ -318,7 +340,7 @@ BEGIN
     p_resultado := 1; p_mensaje := 'Plantilla guardada correctamente.';
 END;
 $fn$;
-
 -- +goose StatementEnd
+
 -- +goose Down
 -- No rollback needed ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â these are type-safety fixes

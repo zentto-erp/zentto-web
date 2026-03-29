@@ -43,6 +43,7 @@ RETURNS TABLE(
     "orden"         INT,
     "activo"        BOOLEAN
 )
+-- +goose StatementBegin
 LANGUAGE plpgsql AS $fn$
 BEGIN
     RETURN QUERY
@@ -70,6 +71,7 @@ BEGIN
     ORDER BY c."ConventionCode", c."CalculationType", c."SortOrder", c."ConceptCode";
 END;
 $fn$;
+-- +goose StatementEnd
 
 -- +goose Down
 DROP FUNCTION IF EXISTS public.usp_hr_legalconcept_list(INT, VARCHAR, VARCHAR, VARCHAR, INT) CASCADE;

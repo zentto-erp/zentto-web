@@ -3243,6 +3243,7 @@ $$;
 -- Nuclear drop: eliminar TODAS las sobrecargas por OID para evitar
 -- el error "function is not unique" que ocurre cuando conviven
 -- sobrecargas con firmas (CHAR vs VARCHAR) diferentes.
+-- +goose StatementBegin
 DO $do$
 DECLARE _oid OID;
 BEGIN
@@ -3258,6 +3259,7 @@ BEGIN
     EXECUTE format('DROP FUNCTION IF EXISTS %s CASCADE', _oid::regprocedure);
   END LOOP;
 END $do$;
+-- +goose StatementEnd
 
 -- --------------------------------------------
 -- usp_HR_DocumentTemplate_List
@@ -8537,6 +8539,7 @@ RETURNS TABLE (
     "RequestId" BIGINT
 )
 LANGUAGE plpgsql
+-- +goose StatementBegin
 AS $fn$
 DECLARE
     v_request_id BIGINT;
@@ -8577,6 +8580,7 @@ BEGIN
     RETURN QUERY SELECT v_request_id;
 END;
 $fn$;
+-- +goose StatementEnd
 
 
 -- =============================================================
@@ -8608,6 +8612,7 @@ RETURNS TABLE (
     "TotalCount"      INT
 )
 LANGUAGE plpgsql
+-- +goose StatementBegin
 AS $fn$
 DECLARE
     v_total_count INT;
@@ -8647,6 +8652,7 @@ BEGIN
     OFFSET p_offset;
 END;
 $fn$;
+-- +goose StatementEnd
 
 
 -- =============================================================
@@ -8678,6 +8684,7 @@ RETURNS TABLE (
     "UpdatedAt"       TIMESTAMP
 )
 LANGUAGE plpgsql
+-- +goose StatementBegin
 AS $fn$
 BEGIN
     RETURN QUERY
@@ -8707,6 +8714,7 @@ BEGIN
      WHERE vr."RequestId" = p_request_id;
 END;
 $fn$;
+-- +goose StatementEnd
 
 
 -- =============================================================
@@ -8724,6 +8732,7 @@ RETURNS TABLE (
     "DayType"      VARCHAR
 )
 LANGUAGE plpgsql
+-- +goose StatementBegin
 AS $fn$
 BEGIN
     RETURN QUERY
@@ -8737,6 +8746,7 @@ BEGIN
      ORDER BY d."SelectedDate";
 END;
 $fn$;
+-- +goose StatementEnd
 
 
 -- =============================================================
@@ -8753,6 +8763,7 @@ RETURNS TABLE (
     "Status"    VARCHAR
 )
 LANGUAGE plpgsql
+-- +goose StatementBegin
 AS $fn$
 BEGIN
     IF NOT EXISTS (
@@ -8774,6 +8785,7 @@ BEGIN
     RETURN QUERY SELECT p_request_id, 'APROBADA'::VARCHAR;
 END;
 $fn$;
+-- +goose StatementEnd
 
 
 -- =============================================================
@@ -8791,6 +8803,7 @@ RETURNS TABLE (
     "Status"    VARCHAR
 )
 LANGUAGE plpgsql
+-- +goose StatementBegin
 AS $fn$
 BEGIN
     IF NOT EXISTS (
@@ -8813,6 +8826,7 @@ BEGIN
     RETURN QUERY SELECT p_request_id, 'RECHAZADA'::VARCHAR;
 END;
 $fn$;
+-- +goose StatementEnd
 
 
 -- =============================================================
@@ -8828,6 +8842,7 @@ RETURNS TABLE (
     "Status"    VARCHAR
 )
 LANGUAGE plpgsql
+-- +goose StatementBegin
 AS $fn$
 BEGIN
     IF NOT EXISTS (
@@ -8847,6 +8862,7 @@ BEGIN
     RETURN QUERY SELECT p_request_id, 'CANCELADA'::VARCHAR;
 END;
 $fn$;
+-- +goose StatementEnd
 
 
 -- =============================================================
@@ -8864,6 +8880,7 @@ RETURNS TABLE (
     "VacationId" BIGINT
 )
 LANGUAGE plpgsql
+-- +goose StatementBegin
 AS $fn$
 BEGIN
     IF NOT EXISTS (
@@ -8884,6 +8901,7 @@ BEGIN
     RETURN QUERY SELECT p_request_id, 'PROCESADA'::VARCHAR, p_vacation_id;
 END;
 $fn$;
+-- +goose StatementEnd
 
 
 -- =============================================================
@@ -8905,6 +8923,7 @@ RETURNS TABLE (
     "DiasSaldo"       INT
 )
 LANGUAGE plpgsql
+-- +goose StatementBegin
 AS $fn$
 DECLARE
     v_hire_date         DATE;
@@ -8969,6 +8988,7 @@ BEGIN
         (v_dias_disponibles - COALESCE(v_dias_tomados, 0) - COALESCE(v_dias_pendientes, 0));
 END;
 $fn$;
+-- +goose StatementEnd
 
 -- ================================================================
 -- ALIAS: usp_hr_vacationrequest_list
