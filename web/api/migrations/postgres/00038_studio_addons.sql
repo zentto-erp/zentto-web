@@ -8,6 +8,8 @@
 -- +goose StatementBegin
 BEGIN;
 
+CREATE SCHEMA IF NOT EXISTS zsys;
+
 -- ============================================================
 -- 1. Tabla: zsys.StudioAddon
 -- ============================================================
