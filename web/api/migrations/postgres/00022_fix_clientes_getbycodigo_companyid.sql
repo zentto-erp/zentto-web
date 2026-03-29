@@ -1,5 +1,4 @@
 -- +goose Up
--- +goose StatementBegin
 -- Fix: usp_clientes_getbycodigo ahora acepta p_company_id para paridad con el service
 
 DROP FUNCTION IF EXISTS usp_clientes_getbycodigo(INT, VARCHAR) CASCADE;
@@ -36,6 +35,7 @@ RETURNS TABLE(
     "CodUsuario"      VARCHAR,
     "Credito"         DOUBLE PRECISION
 )
+-- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 BEGIN
     RETURN QUERY
@@ -74,7 +74,6 @@ $$;
 -- +goose StatementEnd
 
 -- +goose Down
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS usp_clientes_getbycodigo(INT, VARCHAR) CASCADE;
 
 CREATE OR REPLACE FUNCTION usp_clientes_getbycodigo(
@@ -107,6 +106,7 @@ RETURNS TABLE(
     "CodUsuario"      VARCHAR,
     "Credito"         DOUBLE PRECISION
 )
+-- +goose StatementBegin
 LANGUAGE plpgsql AS $$
 BEGIN
     RETURN QUERY
@@ -141,5 +141,5 @@ BEGIN
       AND COALESCE(c."IsDeleted", FALSE) = FALSE;
 END;
 $$;
-
 -- +goose StatementEnd
+

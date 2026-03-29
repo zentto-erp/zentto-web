@@ -2,15 +2,12 @@
 -- Fix: "structure of query does not match function result type"
 -- DROP forzado + recrear con tipos exactos
 
--- +goose StatementBegin
 DROP FUNCTION IF EXISTS public.usp_sec_user_listcompanyaccesses_default();
 DROP FUNCTION IF EXISTS public.usp_sec_user_listcompanyaccesses(character varying);
 DROP FUNCTION IF EXISTS public.usp_sec_user_listcompanyaccesses(VARCHAR);
 DROP FUNCTION IF EXISTS public.usp_sec_user_getcompanyaccesses(character varying);
 DROP FUNCTION IF EXISTS public.usp_sec_user_getcompanyaccesses(VARCHAR);
--- +goose StatementEnd
 
--- +goose StatementBegin
 CREATE FUNCTION public.usp_sec_user_listcompanyaccesses_default()
 RETURNS TABLE(
   "companyId" integer,
@@ -22,6 +19,7 @@ RETURNS TABLE(
   "countryCode" character varying,
   "timeZone" character varying,
   "isDefault" boolean
+-- +goose StatementBegin
 ) LANGUAGE plpgsql AS $$
 BEGIN
   RETURN QUERY
@@ -56,7 +54,6 @@ END;
 $$;
 -- +goose StatementEnd
 
--- +goose StatementBegin
 CREATE FUNCTION public.usp_sec_user_listcompanyaccesses(p_cod_usuario character varying)
 RETURNS TABLE(
   "companyId" integer,
@@ -68,6 +65,7 @@ RETURNS TABLE(
   "countryCode" character varying,
   "timeZone" character varying,
   "isDefault" boolean
+-- +goose StatementBegin
 ) LANGUAGE plpgsql AS $$
 BEGIN
   RETURN QUERY
@@ -107,7 +105,6 @@ END;
 $$;
 -- +goose StatementEnd
 
--- +goose StatementBegin
 CREATE FUNCTION public.usp_sec_user_getcompanyaccesses(p_cod_usuario character varying)
 RETURNS TABLE(
   "companyId" integer,
@@ -119,6 +116,7 @@ RETURNS TABLE(
   "countryCode" character varying,
   "timeZone" character varying,
   "isDefault" boolean
+-- +goose StatementBegin
 ) LANGUAGE plpgsql AS $$
 BEGIN
   RETURN QUERY
@@ -159,12 +157,10 @@ END;
 $$;
 -- +goose StatementEnd
 
--- +goose StatementBegin
 -- Ownership
 ALTER FUNCTION public.usp_sec_user_listcompanyaccesses_default() OWNER TO zentto_app;
 ALTER FUNCTION public.usp_sec_user_listcompanyaccesses(character varying) OWNER TO zentto_app;
 ALTER FUNCTION public.usp_sec_user_getcompanyaccesses(character varying) OWNER TO zentto_app;
--- +goose StatementEnd
 
 -- +goose Down
 SELECT 1;

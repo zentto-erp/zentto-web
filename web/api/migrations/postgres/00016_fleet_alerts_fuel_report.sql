@@ -1,5 +1,4 @@
 -- +goose Up
--- +goose StatementBegin
 -- Fleet: Alertas de documentos/mantenimientos + Reporte combustible mensual
 
 -- usp_Fleet_Alerts_Get
@@ -28,6 +27,7 @@ RETURNS TABLE(
     "OverdueMaintenanceCount" INT
 )
 LANGUAGE plpgsql
+-- +goose StatementBegin
 AS $$
 DECLARE
     v_now        TIMESTAMP := NOW() AT TIME ZONE 'UTC';
@@ -138,6 +138,7 @@ BEGIN
     ORDER BY mo."ScheduledDate";
 END;
 $$;
+-- +goose StatementEnd
 
 -- usp_Fleet_Report_FuelMonthly
 DROP FUNCTION IF EXISTS usp_fleet_report_fuelmonthly(INT, INT, INT, INT) CASCADE;
@@ -157,6 +158,7 @@ RETURNS TABLE(
     "AvgCostPerLiter" NUMERIC
 )
 LANGUAGE plpgsql
+-- +goose StatementBegin
 AS $$
 BEGIN
     RETURN QUERY
