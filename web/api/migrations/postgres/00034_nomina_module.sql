@@ -82,6 +82,7 @@ CREATE INDEX IF NOT EXISTS "IX_hr_PayrollBatchLine_Employee"
 -- ALTER TABLE: Agregar columnas faltantes si la tabla fue creada
 -- por 08_fin_hr_extensions.sql con esquema incompleto.
 -- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+-- +goose StatementBegin
 DO $$ BEGIN
   -- hr."PayrollBatch" â€” columnas que 08_fin_hr_extensions.sql no incluye
   IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='hr' AND table_name='PayrollBatch' AND column_name='BranchId') THEN
@@ -109,6 +110,7 @@ DO $$ BEGIN
     ALTER TABLE hr."PayrollBatch" ADD COLUMN "ApprovedAt" TIMESTAMP NULL;
   END IF;
 END $$;
+-- +goose StatementEnd
 
 
 -- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -2031,6 +2033,7 @@ $$;
 --    Lista conceptos legales con filtros opcionales.
 -- =============================================================================
 -- Nuclear drop: query pg_proc to find ALL overloads and drop them
+-- +goose StatementBegin
 DO $$
 DECLARE _oid OID;
 BEGIN
@@ -2042,6 +2045,7 @@ BEGIN
     EXECUTE format('DROP FUNCTION IF EXISTS %s CASCADE', _oid::regprocedure);
   END LOOP;
 END $$;
+-- +goose StatementEnd
 -- +goose StatementBegin
 CREATE OR REPLACE FUNCTION public.usp_hr_legalconcept_list(
     p_company_id       INT,
@@ -2169,7 +2173,9 @@ END;
 $$;
 -- +goose StatementEnd
 
+-- +goose StatementBegin
 DO $$ BEGIN RAISE NOTICE 'sp_nomina_conceptolegal_crud.sql â€” funciones creadas'; END $$;
+-- +goose StatementEnd
 
 
 -- Source: sp_nomina_constantes_convenios.sql
@@ -2180,6 +2186,7 @@ DO $$ BEGIN RAISE NOTICE 'sp_nomina_conceptolegal_crud.sql â€” funciones cr
 -- Traducido de SQL Server a PostgreSQL
 -- =============================================
 
+-- +goose StatementBegin
 DO $$
 DECLARE
   v_company_id INT;
@@ -2295,6 +2302,7 @@ BEGIN
   RAISE NOTICE 'Conceptos por convenio sembrados/actualizados en hr.PayrollConcept';
 END;
 $$;
+-- +goose StatementEnd
 
 
 -- Source: sp_nomina_constantes_venezuela.sql
@@ -2305,6 +2313,7 @@ $$;
 -- Inserta o actualiza constantes en hr.PayrollConstant.
 -- ============================================================
 
+-- +goose StatementBegin
 DO $$
 DECLARE
     v_company_id INT;
@@ -2391,6 +2400,7 @@ BEGIN
     RAISE NOTICE 'Constantes de nómina Venezuela sembradas/actualizadas en hr.PayrollConstant';
 END;
 $$;
+-- +goose StatementEnd
 
 
 -- Source: sp_nomina_consultas.sql
@@ -3209,6 +3219,7 @@ CREATE TABLE IF NOT EXISTS hr."DocumentTemplate" (
 );
 
 -- Agregar columna IsSystem si la tabla ya existe sin ella (migraciÃ³n)
+-- +goose StatementBegin
 DO $$
 BEGIN
     IF NOT EXISTS (
@@ -3223,6 +3234,7 @@ BEGIN
     END IF;
 END;
 $$;
+-- +goose StatementEnd
 
 -- =============================================
 -- 2. FUNCIONES (equivalentes a los SPs)
@@ -3456,6 +3468,7 @@ $$;
 -- =============================================
 -- 3. SEED â€” Plantillas legales (IsSystem=TRUE)
 -- =============================================
+-- +goose StatementBegin
 DO $$
 DECLARE
     v_seed_company_id INTEGER;
@@ -3952,6 +3965,7 @@ En **{{empresa.direccion}}**, a {{fecha.generacion}},
 
 END;
 $$;
+-- +goose StatementEnd
 
 -- >> sp_nomina_documentos.sql â€” despliegue completo OK
 
@@ -4822,6 +4836,7 @@ $$;
 -- +goose StatementEnd
 
 -- Semilla de constantes base para Venezuela (idempotente)
+-- +goose StatementBegin
 DO $$
 DECLARE
   v_company_id INT;
@@ -4857,6 +4872,7 @@ BEGIN
   RAISE NOTICE 'Instalacion canonica de nomina completada.';
 END;
 $$;
+-- +goose StatementEnd
 
 -- Verificacion de conteos
 SELECT 'PayrollType' AS "Objeto", COUNT(1) AS "Total" FROM hr."PayrollType"
@@ -4875,6 +4891,7 @@ UNION ALL SELECT 'PayrollCalcVariable', COUNT(1) FROM hr."PayrollCalcVariable";
 -- Fecha: 2026-03-16
 -- ============================================================================
 
+-- +goose StatementBegin
 DO $$
 BEGIN
   RAISE NOTICE '=== SEED NOMINA COMPLETO — Inicio ===';
@@ -5597,6 +5614,7 @@ BEGIN
 EXCEPTION WHEN OTHERS THEN
   RAISE NOTICE 'Error en seed_nomina_completo.sql: %', SQLERRM;
 END $$;
+-- +goose StatementEnd
 
 
 -- Source: seed_nomina_completo_p2.sql
@@ -5610,6 +5628,7 @@ END $$;
 -- Fecha: 2026-03-16
 -- ============================================================================
 
+-- +goose StatementBegin
 DO $$
 BEGIN
   RAISE NOTICE '=== SEED NOMINA COMPLETO P2 — Inicio ===';
@@ -6357,6 +6376,7 @@ BEGIN
 EXCEPTION WHEN OTHERS THEN
   RAISE NOTICE 'Error en seed_nomina_completo_p2.sql: %', SQLERRM;
 END $$;
+-- +goose StatementEnd
 
 
 
