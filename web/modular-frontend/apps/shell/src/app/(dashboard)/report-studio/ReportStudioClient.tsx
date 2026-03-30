@@ -44,7 +44,7 @@ import {
   ContentCopy as CopyIcon,
   DesignServices as DesignerIcon,
 } from "@mui/icons-material";
-import { listSavedReports, listPublicReports, updateSavedReport, deleteSavedReport, createSavedReport } from "@zentto/shared-api";
+import { listSavedReports, listPublicReports, getPublicReport, getSavedReport, updateSavedReport, deleteSavedReport, createSavedReport } from "@zentto/shared-api";
 import type { SavedReport } from "@zentto/shared-api";
 
 /* ── Constants ────────────────────────────────────────────────── */
@@ -122,20 +122,37 @@ export default function ReportStudioClient({ basePath = "/report-studio" }: Prop
     router.push(`${basePath}/designer`);
   }, [router, basePath]);
 
+  const resolveLayout = useCallback(async (report: SavedReport): Promise<{ layout: Record<string, unknown>; sampleData: Record<string, unknown> } | null> => {
+    // If layout already loaded (has bands), use it directly
+    if (report.layout && Object.keys(report.layout).length > 2) {
+      return { layout: report.layout, sampleData: report.sampleData };
+    }
+    // Otherwise fetch full layout — try public first, then saved
+    const full = await getPublicReport(report.id).catch(() => null) ?? await getSavedReport(report.id).catch(() => null);
+    if (full?.layout && Object.keys(full.layout).length > 0) {
+      return { layout: full.layout, sampleData: full.sampleData };
+    }
+    return null;
+  }, []);
+
   const handleOpen = useCallback(
-    (report: SavedReport) => {
-      localStorage.setItem(CONFIG_KEY, JSON.stringify({ layout: report.layout, sampleData: report.sampleData }));
+    async (report: SavedReport) => {
+      const resolved = await resolveLayout(report);
+      if (!resolved) return;
+      localStorage.setItem(CONFIG_KEY, JSON.stringify(resolved));
       router.push(`${basePath}/preview`);
     },
-    [router, basePath]
+    [router, basePath, resolveLayout]
   );
 
   const handleEdit = useCallback(
-    (report: SavedReport) => {
-      localStorage.setItem(CONFIG_KEY, JSON.stringify({ layout: report.layout, sampleData: report.sampleData }));
+    async (report: SavedReport) => {
+      const resolved = await resolveLayout(report);
+      if (!resolved) return;
+      localStorage.setItem(CONFIG_KEY, JSON.stringify(resolved));
       router.push(`${basePath}/designer?id=${report.id}`);
     },
-    [router, basePath]
+    [router, basePath, resolveLayout]
   );
 
   const handleStartEditMeta = useCallback((report: SavedReport) => {
