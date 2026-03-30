@@ -112,6 +112,16 @@ export async function updateSavedReport(id: string, input: SaveReportInput): Pro
   }
 }
 
+export async function listPublicReports(): Promise<SavedReport[]> {
+  try {
+    const res = await apiGet('/v1/reportes/public');
+    const data = (Array.isArray(res) ? res : res.data ?? res.rows ?? []) as Record<string, unknown>[];
+    return data.map(normalize);
+  } catch {
+    return [];
+  }
+}
+
 export async function deleteSavedReport(id: string): Promise<void> {
   try {
     await apiDelete(`/v1/reportes/saved/${id}`);

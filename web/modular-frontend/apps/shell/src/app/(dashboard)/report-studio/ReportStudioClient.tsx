@@ -23,7 +23,15 @@ import {
   Toolbar,
   Tooltip,
   TextField,
+  Tabs,
+  Tab,
+  Chip,
+  InputAdornment,
+  CircularProgress,
 } from "@mui/material";
+import SearchIcon from "@mui/icons-material/Search";
+import PublicIcon from "@mui/icons-material/Public";
+import PersonIcon from "@mui/icons-material/Person";
 import Grid from "@mui/material/Grid2";
 import {
   Add as AddIcon,
@@ -36,7 +44,7 @@ import {
   ContentCopy as CopyIcon,
   DesignServices as DesignerIcon,
 } from "@mui/icons-material";
-import { listSavedReports, updateSavedReport, deleteSavedReport, createSavedReport } from "@zentto/shared-api";
+import { listSavedReports, listPublicReports, updateSavedReport, deleteSavedReport, createSavedReport } from "@zentto/shared-api";
 import type { SavedReport } from "@zentto/shared-api";
 
 /* ── Constants ────────────────────────────────────────────────── */
@@ -46,9 +54,30 @@ interface Props {
   basePath?: string;
 }
 
+/* ── Module label mapping ─────────────────────────────────────── */
+const MODULE_LABELS: Record<string, string> = {
+  contabilidad: "Contabilidad",
+  ventas: "Ventas",
+  compras: "Compras",
+  inventario: "Inventario",
+  bancos: "Bancos",
+  nomina: "Nomina",
+  crm: "CRM",
+  maestros: "Maestros",
+};
+
+function getModuleFromId(id: string): string {
+  const first = id.split("-")[0];
+  return MODULE_LABELS[first] || first;
+}
+
 export default function ReportStudioClient({ basePath = "/report-studio" }: Props) {
   const router = useRouter();
-  const [reports, setReports] = useState<SavedReport[]>([]);
+  const [publicReports, setPublicReports] = useState<SavedReport[]>([]);
+  const [myReports, setMyReports] = useState<SavedReport[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [tab, setTab] = useState(0);
+  const [search, setSearch] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<SavedReport | null>(null);
   const [editTarget, setEditTarget] = useState<SavedReport | null>(null);
 
@@ -63,13 +92,26 @@ export default function ReportStudioClient({ basePath = "/report-studio" }: Prop
     severity: "info",
   });
 
-  const refresh = useCallback(() => {
-    listSavedReports().then(setReports).catch(() => setReports([]));
+  const refresh = useCallback(async () => {
+    setLoading(true);
+    const [pub, saved] = await Promise.all([
+      listPublicReports().catch(() => []),
+      listSavedReports().catch(() => []),
+    ]);
+    setPublicReports(pub);
+    setMyReports(saved);
+    setLoading(false);
   }, []);
 
   useEffect(() => {
     refresh();
   }, [refresh]);
+
+  /* ── Filtered reports ──────────────────────────────────────── */
+  const activeReports = tab === 0 ? publicReports : myReports;
+  const filteredReports = search
+    ? activeReports.filter((r) => r.name.toLowerCase().includes(search.toLowerCase()) || r.description?.toLowerCase().includes(search.toLowerCase()))
+    : activeReports;
 
   /* ── Actions ────────────────────────────────────────────────── */
   const handleCreateWizard = useCallback(() => {
@@ -164,29 +206,50 @@ export default function ReportStudioClient({ basePath = "/report-studio" }: Prop
         </Toolbar>
       </AppBar>
 
+      {/* ── Tabs + Search ───────────────────────────────────────── */}
+      <Box sx={{ px: 3, pt: 2, display: "flex", alignItems: "center", gap: 2 }}>
+        <Tabs value={tab} onChange={(_, v) => setTab(v)}>
+          <Tab icon={<PublicIcon fontSize="small" />} iconPosition="start" label={`Plantillas (${publicReports.length})`} />
+          <Tab icon={<PersonIcon fontSize="small" />} iconPosition="start" label={`Mis Reportes (${myReports.length})`} />
+        </Tabs>
+        <Box sx={{ flex: 1 }} />
+        <TextField
+          size="small"
+          placeholder="Buscar reporte..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon fontSize="small" /></InputAdornment> }}
+          sx={{ width: 260 }}
+        />
+      </Box>
+
       {/* ── Content ──────────────────────────────────────────── */}
       <Box sx={{ flex: 1, p: 3 }}>
-        {reports.length === 0 ? (
+        {loading ? (
+          <Box sx={{ display: "flex", justifyContent: "center", py: 10 }}><CircularProgress /></Box>
+        ) : filteredReports.length === 0 ? (
           <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", py: 10 }}>
             <ReportIcon sx={{ fontSize: 64, color: "text.disabled", mb: 2 }} />
             <Typography variant="h6" color="text.secondary" gutterBottom>
-              No hay reportes personalizados
+              {tab === 0 ? "No hay plantillas disponibles" : "No hay reportes personalizados"}
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 3, textAlign: "center", maxWidth: 480 }}>
-              Crea reportes con el Wizard o el Designer
+              {tab === 0 ? "Las plantillas del sistema apareceran aqui cuando sean configuradas" : "Crea reportes con el Wizard o el Designer"}
             </Typography>
-            <Box sx={{ display: "flex", gap: 2 }}>
-              <Button variant="contained" startIcon={<AddIcon />} onClick={handleCreateWizard} sx={{ bgcolor: "#ed6c02", "&:hover": { bgcolor: "#e65100" } }}>
-                Crear con Wizard
-              </Button>
-              <Button variant="outlined" onClick={handleCreateDesigner}>
-                Abrir Designer
-              </Button>
-            </Box>
+            {tab === 1 && (
+              <Box sx={{ display: "flex", gap: 2 }}>
+                <Button variant="contained" startIcon={<AddIcon />} onClick={handleCreateWizard} sx={{ bgcolor: "#ed6c02", "&:hover": { bgcolor: "#e65100" } }}>
+                  Crear con Wizard
+                </Button>
+                <Button variant="outlined" onClick={handleCreateDesigner}>
+                  Abrir Designer
+                </Button>
+              </Box>
+            )}
           </Box>
         ) : (
           <Grid container spacing={3}>
-            {reports.map((report) => (
+            {filteredReports.map((report) => (
               <Grid key={report.id} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
                 <Card variant="outlined" sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
                   <CardContent sx={{ flex: 1 }}>
@@ -196,12 +259,17 @@ export default function ReportStudioClient({ basePath = "/report-studio" }: Prop
                         {report.name}
                       </Typography>
                     </Box>
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                       {report.description || "Sin descripcion"}
                     </Typography>
-                    <Typography variant="caption" color="text.disabled" sx={{ display: "block", mt: 1 }}>
-                      {report.updatedAt ? new Date(report.updatedAt).toLocaleDateString() : new Date(report.createdAt).toLocaleDateString()}
-                    </Typography>
+                    {tab === 0 && (
+                      <Chip label={getModuleFromId(report.id)} size="small" variant="outlined" sx={{ mt: 0.5 }} />
+                    )}
+                    {report.updatedAt && (
+                      <Typography variant="caption" color="text.disabled" sx={{ display: "block", mt: 1 }}>
+                        {new Date(report.updatedAt).toLocaleDateString()}
+                      </Typography>
+                    )}
                   </CardContent>
                   <CardActions sx={{ justifyContent: "flex-end", gap: 0.5 }}>
                     <Tooltip title="Preview">
@@ -214,21 +282,25 @@ export default function ReportStudioClient({ basePath = "/report-studio" }: Prop
                         <DesignerIcon fontSize="small" />
                       </IconButton>
                     </Tooltip>
-                    <Tooltip title="Editar Metadatos">
-                      <IconButton size="small" onClick={() => handleStartEditMeta(report)}>
-                        <EditIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title="Duplicar">
-                      <IconButton size="small" onClick={() => handleDuplicate(report)}>
-                        <CopyIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title="Eliminar">
-                      <IconButton size="small" onClick={() => setDeleteTarget(report)} color="error">
-                        <DeleteIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
+                    {tab === 1 && (
+                      <>
+                        <Tooltip title="Editar Metadatos">
+                          <IconButton size="small" onClick={() => handleStartEditMeta(report)}>
+                            <EditIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Duplicar">
+                          <IconButton size="small" onClick={() => handleDuplicate(report)}>
+                            <CopyIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Eliminar">
+                          <IconButton size="small" onClick={() => setDeleteTarget(report)} color="error">
+                            <DeleteIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      </>
+                    )}
                   </CardActions>
                 </Card>
               </Grid>
