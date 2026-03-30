@@ -234,23 +234,35 @@ describe("SP Contracts — funciones de infraestructura", () => {
     "usp_sys_cleanup_scan",
     "usp_sys_cleanup_list",
     "usp_sys_cleanup_process",
-    // Módulos de negocio (antes opcionales, ahora obligatorios)
-    "usp_ar_receivabledocument_list",
-    "usp_ap_payabledocument_list",
+    // Módulos de negocio — nombres exactos de pg_proc
+    "usp_ar_receivable_list",
+    "usp_ap_payable_list",
     "usp_fin_bank_list",
-    "usp_fin_bankaccount_list",
-    "usp_fin_bankmovement_list",
+    "usp_bank_account_list",
+    "usp_bank_movement_create",
     "usp_acct_account_list",
-    "usp_master_customer_list",
-    "usp_master_supplier_list",
-    "usp_master_product_list",
-    "usp_hr_payrollrun_list",
+    "usp_acct_scope_getdefault",
     "usp_doc_salesdocument_list",
     "usp_doc_purchasedocument_list",
+    "usp_hr_employee_list",
     "usp_shipping_dashboard",
     "usp_shipping_customs_upsert",
     "usp_sys_backup_tenantinfo",
     "usp_sys_backup_latest_per_tenant",
+    // CRM
+    "usp_crm_lead_list",
+    "usp_crm_activity_list",
+    "usp_crm_pipeline_getstages",
+    // Manufactura
+    "usp_mfg_bom_list",
+    "usp_mfg_workorder_list",
+    // Flota
+    "usp_fleet_vehicle_list",
+    // Inventario
+    "usp_inv_movement_list",
+    // POS
+    "usp_pos_saleticketline_insert",
+    "usp_pos_waitticketline_insert",
     // Fiscal (migración 00042)
     "usp_fiscal_taxbook_populate",
     "usp_fiscal_taxbook_list",
