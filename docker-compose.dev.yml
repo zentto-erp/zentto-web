@@ -21,6 +21,7 @@ services:
       - CORS_ORIGINS=https://dev.zentto.net,https://app.dev.zentto.net
       - STORE_URL=https://app.dev.zentto.net
       - NODE_ENV=development
+      - ZENTTO_CACHE_URL=http://zentto-cache:4100
     volumes:
       - api_storage_dev:/app/storage/media
     networks:
