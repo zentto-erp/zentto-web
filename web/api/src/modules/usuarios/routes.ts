@@ -157,25 +157,29 @@ usuariosRouter.use(requireAdmin);
 
 // GET /v1/usuarios - Listar usuarios
 usuariosRouter.get("/", async (req, res) => {
-  const parsed = listSchema.safeParse(req.query);
-  if (!parsed.success) {
-    return res.status(400).json({ error: "invalid_query", issues: parsed.error.flatten() });
+  try {
+    const parsed = listSchema.safeParse(req.query);
+    if (!parsed.success) {
+      return res.status(400).json({ error: "invalid_query", issues: parsed.error.flatten() });
+    }
+
+    const data = await listUsuariosSP({
+      search: parsed.data.search,
+      tipo: parsed.data.tipo,
+      page: parsed.data.page ? parseInt(parsed.data.page) : 1,
+      limit: parsed.data.limit ? parseInt(parsed.data.limit) : 50,
+    });
+
+    // Strip passwords from response
+    const sanitized = {
+      ...data,
+      rows: data.rows.map(({ Password, ...rest }) => rest),
+    };
+
+    return res.json(sanitized);
+  } catch (err: any) {
+    return res.status(500).json({ error: String(err.message ?? err) });
   }
-
-  const data = await listUsuariosSP({
-    search: parsed.data.search,
-    tipo: parsed.data.tipo,
-    page: parsed.data.page ? parseInt(parsed.data.page) : 1,
-    limit: parsed.data.limit ? parseInt(parsed.data.limit) : 50,
-  });
-
-  // Strip passwords from response
-  const sanitized = {
-    ...data,
-    rows: data.rows.map(({ Password, ...rest }) => rest),
-  };
-
-  return res.json(sanitized);
 });
 
 // GET /v1/usuarios/modules - Get all available system modules
@@ -185,47 +189,55 @@ usuariosRouter.get("/modules", async (_req, res) => {
 
 // GET /v1/usuarios/:codigo - Obtener usuario por código
 usuariosRouter.get("/:codigo", async (req, res) => {
-  const codigo = req.params.codigo;
-  if (!codigo) return res.status(400).json({ error: "invalid_codigo" });
+  try {
+    const codigo = req.params.codigo;
+    if (!codigo) return res.status(400).json({ error: "invalid_codigo" });
 
-  const data = await getUsuarioByCodigoSP(codigo);
-  if (!data) return res.status(404).json({ error: "not_found" });
+    const data = await getUsuarioByCodigoSP(codigo);
+    if (!data) return res.status(404).json({ error: "not_found" });
 
-  // Get module access
-  const modulosAcceso = await getModulosAcceso(codigo);
+    // Get module access
+    const modulosAcceso = await getModulosAcceso(codigo);
 
-  // Strip password from response
-  const { Password, ...safe } = data;
-  return res.json({ ...safe, modulosAcceso });
+    // Strip password from response
+    const { Password, ...safe } = data;
+    return res.json({ ...safe, modulosAcceso });
+  } catch (err: any) {
+    return res.status(500).json({ error: String(err.message ?? err) });
+  }
 });
 
 // POST /v1/usuarios - Crear usuario (hash password)
 usuariosRouter.post("/", async (req, res) => {
-  const parsed = insertSchema.safeParse(req.body);
-  if (!parsed.success) {
-    const flat = parsed.error.flatten();
-    const fieldList = Object.entries(flat.fieldErrors).map(([k, v]) => `${k}: ${(v as string[]).join(', ')}`).join('; ');
-    return res.status(400).json({ error: "invalid_payload", message: fieldList || "Datos inválidos", issues: flat });
-  }
+  try {
+    const parsed = insertSchema.safeParse(req.body);
+    if (!parsed.success) {
+      const flat = parsed.error.flatten();
+      const fieldList = Object.entries(flat.fieldErrors).map(([k, v]) => `${k}: ${(v as string[]).join(', ')}`).join('; ');
+      return res.status(400).json({ error: "invalid_payload", message: fieldList || "Datos inválidos", issues: flat });
+    }
 
-  // Map isAdmin → IsAdmin (DB column name)
-  const { isAdmin, ...spFields } = parsed.data as Record<string, unknown>;
-  const row: Record<string, unknown> = { ...spFields };
-  if (isAdmin !== undefined) {
-    row.IsAdmin = isAdmin;
-  }
+    // Map isAdmin → IsAdmin (DB column name)
+    const { isAdmin, ...spFields } = parsed.data as Record<string, unknown>;
+    const row: Record<string, unknown> = { ...spFields };
+    if (isAdmin !== undefined) {
+      row.IsAdmin = isAdmin;
+    }
 
-  // Hash password before storing
-  if (row.Password && typeof row.Password === 'string') {
-    row.Password = await hashPassword(row.Password);
-  }
+    // Hash password before storing
+    if (row.Password && typeof row.Password === 'string') {
+      row.Password = await hashPassword(row.Password);
+    }
 
-  const result = await insertUsuarioSP(row);
-  if (result.success) {
-    await ensureUserDefaultCompanyAccess(String(row.Cod_Usuario ?? ""));
-    return res.status(201).json({ success: true, message: result.message });
-  } else {
-    return res.status(400).json({ success: false, message: result.message });
+    const result = await insertUsuarioSP(row);
+    if (result.success) {
+      await ensureUserDefaultCompanyAccess(String(row.Cod_Usuario ?? ""));
+      return res.status(201).json({ success: true, message: result.message });
+    } else {
+      return res.status(400).json({ success: false, message: result.message });
+    }
+  } catch (err: any) {
+    return res.status(500).json({ error: String(err.message ?? err) });
   }
 });
 
@@ -271,36 +283,48 @@ usuariosRouter.put("/:codigo", async (req, res) => {
 
 // DELETE /v1/usuarios/:codigo - Eliminar usuario
 usuariosRouter.delete("/:codigo", async (req, res) => {
-  const codigo = req.params.codigo;
-  if (!codigo) return res.status(400).json({ error: "invalid_codigo" });
+  try {
+    const codigo = req.params.codigo;
+    if (!codigo) return res.status(400).json({ error: "invalid_codigo" });
 
-  const result = await deleteUsuarioSP(codigo);
-  if (result.success) {
-    return res.json({ success: true, message: result.message });
-  } else {
-    return res.status(400).json({ success: false, message: result.message });
+    const result = await deleteUsuarioSP(codigo);
+    if (result.success) {
+      return res.json({ success: true, message: result.message });
+    } else {
+      return res.status(400).json({ success: false, message: result.message });
+    }
+  } catch (err: any) {
+    return res.status(500).json({ error: String(err.message ?? err) });
   }
 });
 
 // GET /v1/usuarios/:codigo/modulos - Get user module access
 usuariosRouter.get("/:codigo/modulos", async (req, res) => {
-  const codigo = req.params.codigo;
-  if (!codigo) return res.status(400).json({ error: "invalid_codigo" });
+  try {
+    const codigo = req.params.codigo;
+    if (!codigo) return res.status(400).json({ error: "invalid_codigo" });
 
-  const modulos = await getModulosAcceso(codigo);
-  return res.json({ modulos, available: SYSTEM_MODULES });
+    const modulos = await getModulosAcceso(codigo);
+    return res.json({ modulos, available: SYSTEM_MODULES });
+  } catch (err: any) {
+    return res.status(500).json({ error: String(err.message ?? err) });
+  }
 });
 
 // PUT /v1/usuarios/:codigo/modulos - Set user module access
 usuariosRouter.put("/:codigo/modulos", async (req, res) => {
-  const codigo = req.params.codigo;
-  if (!codigo) return res.status(400).json({ error: "invalid_codigo" });
+  try {
+    const codigo = req.params.codigo;
+    if (!codigo) return res.status(400).json({ error: "invalid_codigo" });
 
-  const parsed = setModulosSchema.safeParse(req.body);
-  if (!parsed.success) {
-    return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
+    const parsed = setModulosSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
+    }
+
+    await setModulosAcceso(codigo, parsed.data.modulos);
+    return res.json({ success: true, message: "Acceso a módulos actualizado" });
+  } catch (err: any) {
+    return res.status(500).json({ error: String(err.message ?? err) });
   }
-
-  await setModulosAcceso(codigo, parsed.data.modulos);
-  return res.json({ success: true, message: "Acceso a módulos actualizado" });
 });

@@ -9,7 +9,11 @@ export const posEsperaRouter = Router();
 
 // Listar todas las ventas en espera (multi-estación)
 posEsperaRouter.get("/espera", async (_req, res) => {
-    res.json(await listEspera());
+    try {
+        res.json(await listEspera());
+    } catch (err: any) {
+        return res.status(500).json({ error: String(err.message ?? err) });
+    }
 });
 
 // Poner venta en espera
@@ -56,20 +60,28 @@ posEsperaRouter.post("/espera", async (req, res) => {
 
 // Recuperar venta en espera (carga items + marca como recuperado)
 posEsperaRouter.post("/espera/:id/recuperar", async (req, res) => {
-    const id = Number(req.params.id);
-    if (isNaN(id)) return res.status(400).json({ error: "id inválido" });
-    const recuperadoPor = req.body.codUsuario as string | undefined;
-    const recuperadoEn = req.body.cajaId as string | undefined;
-    const result = await recuperarEspera(id, recuperadoPor, recuperadoEn);
-    if (!result.ok) return res.status(404).json(result);
-    res.json(result);
+    try {
+        const id = Number(req.params.id);
+        if (isNaN(id)) return res.status(400).json({ error: "id inválido" });
+        const recuperadoPor = req.body.codUsuario as string | undefined;
+        const recuperadoEn = req.body.cajaId as string | undefined;
+        const result = await recuperarEspera(id, recuperadoPor, recuperadoEn);
+        if (!result.ok) return res.status(404).json(result);
+        res.json(result);
+    } catch (err: any) {
+        return res.status(500).json({ error: String(err.message ?? err) });
+    }
 });
 
 // Anular venta en espera
 posEsperaRouter.delete("/espera/:id", async (req, res) => {
-    const id = Number(req.params.id);
-    if (isNaN(id)) return res.status(400).json({ error: "id inválido" });
-    res.json(await anularEspera(id));
+    try {
+        const id = Number(req.params.id);
+        if (isNaN(id)) return res.status(400).json({ error: "id inválido" });
+        res.json(await anularEspera(id));
+    } catch (err: any) {
+        return res.status(500).json({ error: String(err.message ?? err) });
+    }
 });
 
 // ═══ REGISTRAR VENTA COMPLETADA ═══
@@ -132,25 +144,29 @@ const contabilizarVentaSchema = z.object({
 });
 
 posEsperaRouter.post("/ventas/:ventaId/contabilizar", async (req, res) => {
-    const ventaId = Number(req.params.ventaId);
-    if (!Number.isFinite(ventaId) || ventaId <= 0) {
-        return res.status(400).json({ error: "ventaId invalido" });
+    try {
+        const ventaId = Number(req.params.ventaId);
+        if (!Number.isFinite(ventaId) || ventaId <= 0) {
+            return res.status(400).json({ error: "ventaId invalido" });
+        }
+
+        const parsed = contabilizarVentaSchema.safeParse(req.body ?? {});
+        if (!parsed.success) {
+            return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
+        }
+
+        const result = await contabilizarVentaExistente({
+            ventaId,
+            codUsuario: parsed.data.codUsuario,
+            countryCode: parsed.data.countryCode,
+            currency: parsed.data.currency,
+            exchangeRate: parsed.data.exchangeRate,
+        });
+
+        if (!result.ok && !result.skipped) return res.status(400).json(result);
+        if (result.skipped && result.reason === "venta_not_found") return res.status(404).json(result);
+        return res.json(result);
+    } catch (err: any) {
+        return res.status(500).json({ error: String(err.message ?? err) });
     }
-
-    const parsed = contabilizarVentaSchema.safeParse(req.body ?? {});
-    if (!parsed.success) {
-        return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
-    }
-
-    const result = await contabilizarVentaExistente({
-        ventaId,
-        codUsuario: parsed.data.codUsuario,
-        countryCode: parsed.data.countryCode,
-        currency: parsed.data.currency,
-        exchangeRate: parsed.data.exchangeRate,
-    });
-
-    if (!result.ok && !result.skipped) return res.status(400).json(result);
-    if (result.skipped && result.reason === "venta_not_found") return res.status(404).json(result);
-    return res.json(result);
 });

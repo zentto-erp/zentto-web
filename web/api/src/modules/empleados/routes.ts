@@ -49,65 +49,85 @@ const updateSchema = z.object({
 
 // GET /v1/empleados - Listar empleados
 empleadosRouter.get("/", async (req, res) => {
-  const parsed = listSchema.safeParse(req.query);
-  if (!parsed.success) {
-    return res.status(400).json({ error: "invalid_query", issues: parsed.error.flatten() });
+  try {
+    const parsed = listSchema.safeParse(req.query);
+    if (!parsed.success) {
+      return res.status(400).json({ error: "invalid_query", issues: parsed.error.flatten() });
+    }
+
+    const data = await listEmpleadosSP({
+      search: parsed.data.search,
+      grupo: parsed.data.grupo,
+      status: parsed.data.status,
+      page: parsed.data.page ? parseInt(parsed.data.page) : 1,
+      limit: parsed.data.limit ? parseInt(parsed.data.limit) : 50,
+    });
+
+    return res.json(data);
+  } catch (err: any) {
+    return res.status(500).json({ error: String(err.message ?? err) });
   }
-
-  const data = await listEmpleadosSP({
-    search: parsed.data.search,
-    grupo: parsed.data.grupo,
-    status: parsed.data.status,
-    page: parsed.data.page ? parseInt(parsed.data.page) : 1,
-    limit: parsed.data.limit ? parseInt(parsed.data.limit) : 50,
-  });
-
-  return res.json(data);
 });
 
 // GET /v1/empleados/:cedula - Obtener empleado por cédula
 empleadosRouter.get("/:cedula", async (req, res) => {
-  const data = await getEmpleadoByCedulaSP(req.params.cedula);
-  if (!data) return res.status(404).json({ error: "not_found" });
-  return res.json(data);
+  try {
+    const data = await getEmpleadoByCedulaSP(req.params.cedula);
+    if (!data) return res.status(404).json({ error: "not_found" });
+    return res.json(data);
+  } catch (err: any) {
+    return res.status(500).json({ error: String(err.message ?? err) });
+  }
 });
 
 // POST /v1/empleados - Crear empleado
 empleadosRouter.post("/", async (req, res) => {
-  const parsed = insertSchema.safeParse(req.body);
-  if (!parsed.success) {
-    return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
-  }
+  try {
+    const parsed = insertSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
+    }
 
-  const result = await insertEmpleadoSP(parsed.data);
-  if (result.success) {
-    return res.status(201).json({ success: true, message: result.message });
-  } else {
-    return res.status(400).json({ success: false, message: result.message });
+    const result = await insertEmpleadoSP(parsed.data);
+    if (result.success) {
+      return res.status(201).json({ success: true, message: result.message });
+    } else {
+      return res.status(400).json({ success: false, message: result.message });
+    }
+  } catch (err: any) {
+    return res.status(500).json({ error: String(err.message ?? err) });
   }
 });
 
 // PUT /v1/empleados/:cedula - Actualizar empleado
 empleadosRouter.put("/:cedula", async (req, res) => {
-  const parsed = updateSchema.safeParse(req.body);
-  if (!parsed.success) {
-    return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
-  }
+  try {
+    const parsed = updateSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
+    }
 
-  const result = await updateEmpleadoSP(req.params.cedula, parsed.data);
-  if (result.success) {
-    return res.json({ success: true, message: result.message });
-  } else {
-    return res.status(400).json({ success: false, message: result.message });
+    const result = await updateEmpleadoSP(req.params.cedula, parsed.data);
+    if (result.success) {
+      return res.json({ success: true, message: result.message });
+    } else {
+      return res.status(400).json({ success: false, message: result.message });
+    }
+  } catch (err: any) {
+    return res.status(500).json({ error: String(err.message ?? err) });
   }
 });
 
 // DELETE /v1/empleados/:cedula - Eliminar empleado
 empleadosRouter.delete("/:cedula", async (req, res) => {
-  const result = await deleteEmpleadoSP(req.params.cedula);
-  if (result.success) {
-    return res.json({ success: true, message: result.message });
-  } else {
-    return res.status(400).json({ success: false, message: result.message });
+  try {
+    const result = await deleteEmpleadoSP(req.params.cedula);
+    if (result.success) {
+      return res.json({ success: true, message: result.message });
+    } else {
+      return res.status(400).json({ success: false, message: result.message });
+    }
+  } catch (err: any) {
+    return res.status(500).json({ error: String(err.message ?? err) });
   }
 });

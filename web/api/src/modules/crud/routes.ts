@@ -26,8 +26,12 @@ const qpSchema = z.object({
 });
 
 crudRouter.get("/tables", async (_req, res) => {
-  const rows = await listTables();
-  res.json(rows);
+  try {
+    const rows = await listTables();
+    res.json(rows);
+  } catch (err: any) {
+    return res.status(500).json({ error: String(err.message ?? err) });
+  }
 });
 
 crudRouter.get("/:table/describe", async (req, res) => {

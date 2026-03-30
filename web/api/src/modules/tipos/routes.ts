@@ -31,77 +31,97 @@ const updateSchema = z.object({
 
 // GET /v1/tipos - Listar tipos
 tiposRouter.get("/", async (req, res) => {
-  const parsed = listSchema.safeParse(req.query);
-  if (!parsed.success) {
-    return res.status(400).json({ error: "invalid_query", issues: parsed.error.flatten() });
+  try {
+    const parsed = listSchema.safeParse(req.query);
+    if (!parsed.success) {
+      return res.status(400).json({ error: "invalid_query", issues: parsed.error.flatten() });
+    }
+
+    const data = await listTiposSP({
+      search: parsed.data.search,
+      categoria: parsed.data.categoria,
+      page: parsed.data.page ? parseInt(parsed.data.page) : 1,
+      limit: parsed.data.limit ? parseInt(parsed.data.limit) : 50,
+    });
+
+    return res.json(data);
+  } catch (err: any) {
+    return res.status(500).json({ error: String(err.message ?? err) });
   }
-
-  const data = await listTiposSP({
-    search: parsed.data.search,
-    categoria: parsed.data.categoria,
-    page: parsed.data.page ? parseInt(parsed.data.page) : 1,
-    limit: parsed.data.limit ? parseInt(parsed.data.limit) : 50,
-  });
-
-  return res.json(data);
 });
 
 // GET /v1/tipos/:codigo - Obtener tipo por código
 tiposRouter.get("/:codigo", async (req, res) => {
-  const codigo = parseInt(req.params.codigo);
-  if (isNaN(codigo)) return res.status(400).json({ error: "invalid_codigo" });
+  try {
+    const codigo = parseInt(req.params.codigo);
+    if (isNaN(codigo)) return res.status(400).json({ error: "invalid_codigo" });
 
-  const data = await getTipoByCodigoSP(codigo);
-  if (!data) return res.status(404).json({ error: "not_found" });
-  return res.json(data);
+    const data = await getTipoByCodigoSP(codigo);
+    if (!data) return res.status(404).json({ error: "not_found" });
+    return res.json(data);
+  } catch (err: any) {
+    return res.status(500).json({ error: String(err.message ?? err) });
+  }
 });
 
 // POST /v1/tipos - Crear tipo
 tiposRouter.post("/", async (req, res) => {
-  const parsed = insertSchema.safeParse(req.body);
-  if (!parsed.success) {
-    return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
-  }
+  try {
+    const parsed = insertSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
+    }
 
-  const result = await insertTipoSP(parsed.data);
-  if (result.success) {
-    return res.status(201).json({ 
-      success: true, 
-      message: result.message,
-      codigo: result.nuevoCodigo 
-    });
-  } else {
-    return res.status(400).json({ success: false, message: result.message });
+    const result = await insertTipoSP(parsed.data);
+    if (result.success) {
+      return res.status(201).json({
+        success: true,
+        message: result.message,
+        codigo: result.nuevoCodigo
+      });
+    } else {
+      return res.status(400).json({ success: false, message: result.message });
+    }
+  } catch (err: any) {
+    return res.status(500).json({ error: String(err.message ?? err) });
   }
 });
 
 // PUT /v1/tipos/:codigo - Actualizar tipo
 tiposRouter.put("/:codigo", async (req, res) => {
-  const codigo = parseInt(req.params.codigo);
-  if (isNaN(codigo)) return res.status(400).json({ error: "invalid_codigo" });
+  try {
+    const codigo = parseInt(req.params.codigo);
+    if (isNaN(codigo)) return res.status(400).json({ error: "invalid_codigo" });
 
-  const parsed = updateSchema.safeParse(req.body);
-  if (!parsed.success) {
-    return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
-  }
+    const parsed = updateSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
+    }
 
-  const result = await updateTipoSP(codigo, parsed.data);
-  if (result.success) {
-    return res.json({ success: true, message: result.message });
-  } else {
-    return res.status(400).json({ success: false, message: result.message });
+    const result = await updateTipoSP(codigo, parsed.data);
+    if (result.success) {
+      return res.json({ success: true, message: result.message });
+    } else {
+      return res.status(400).json({ success: false, message: result.message });
+    }
+  } catch (err: any) {
+    return res.status(500).json({ error: String(err.message ?? err) });
   }
 });
 
 // DELETE /v1/tipos/:codigo - Eliminar tipo
 tiposRouter.delete("/:codigo", async (req, res) => {
-  const codigo = parseInt(req.params.codigo);
-  if (isNaN(codigo)) return res.status(400).json({ error: "invalid_codigo" });
+  try {
+    const codigo = parseInt(req.params.codigo);
+    if (isNaN(codigo)) return res.status(400).json({ error: "invalid_codigo" });
 
-  const result = await deleteTipoSP(codigo);
-  if (result.success) {
-    return res.json({ success: true, message: result.message });
-  } else {
-    return res.status(400).json({ success: false, message: result.message });
+    const result = await deleteTipoSP(codigo);
+    if (result.success) {
+      return res.json({ success: true, message: result.message });
+    } else {
+      return res.status(400).json({ success: false, message: result.message });
+    }
+  } catch (err: any) {
+    return res.status(500).json({ error: String(err.message ?? err) });
   }
 });
