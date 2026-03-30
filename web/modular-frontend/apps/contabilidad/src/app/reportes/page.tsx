@@ -1,12 +1,8 @@
 'use client';
 
-import { ModuleReportsPage } from '@zentto/shared-reports';
+import React from 'react';
+import { ReportesContablesPage } from '@zentto/module-contabilidad';
 
 export default function ReportesPage() {
-  return (
-    <ModuleReportsPage
-      moduleId="contabilidad"
-      moduleName="Contabilidad"
-    />
-  );
+    return <ReportesContablesPage />;
 }

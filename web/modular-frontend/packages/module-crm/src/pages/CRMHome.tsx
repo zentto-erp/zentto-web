@@ -214,7 +214,7 @@ function KPICard({
                   }}
                 >
                   {change >= 0 ? "+" : ""}
-                  {change.toFixed(1)}% vs mes anterior
+                  {Number(change).toFixed(1)}% vs mes anterior
                 </Typography>
               </Box>
             )}
@@ -328,7 +328,7 @@ export default function CRMHome() {
     },
     {
       title: "Tasa Conversion",
-      value: `${(kpis?.ConversionRate ?? 0).toFixed(1)}%`,
+      value: `${Number(kpis?.ConversionRate ?? 0).toFixed(1)}%`,
       subtitle: undefined,
       icon: <PercentIcon />,
       color: "#9c27b0",
@@ -342,7 +342,7 @@ export default function CRMHome() {
     },
     {
       title: "Dias Cierre Prom",
-      value: `${(kpis?.AvgDaysToClose ?? 0).toFixed(0)}d`,
+      value: `${Number(kpis?.AvgDaysToClose ?? 0).toFixed(0)}d`,
       subtitle: undefined,
       icon: <TimerIcon />,
       color: "#ff9800",
@@ -618,7 +618,7 @@ export default function CRMHome() {
                 Mes anterior: {kpis.NewLeadsLastMonth}
                 {leadsChange !== null && (
                   <Chip
-                    label={`${leadsChange >= 0 ? "+" : ""}${leadsChange.toFixed(0)}%`}
+                    label={`${leadsChange >= 0 ? "+" : ""}${Number(leadsChange).toFixed(0)}%`}
                     size="small"
                     color={leadsChange >= 0 ? "success" : "error"}
                     variant="outlined"
