@@ -128,7 +128,7 @@ export default function AsientosListPage() {
       const { action, row } = e.detail;
       if (action === 'view') setSelectedId(row.id);
     };
-    const createHandler = () => router.push("/contabilidad/asientos/new");
+    const createHandler = () => router.push("/asientos/new");
     el.addEventListener('action-click', handler);
     el.addEventListener('create-click', createHandler);
     return () => { el.removeEventListener('action-click', handler); el.removeEventListener('create-click', createHandler); };

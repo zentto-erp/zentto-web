@@ -120,14 +120,14 @@ export default function NuevoAsientoPage() {
         fecha, tipoAsiento, concepto, referencia,
         detalle: lineasValidas.map((l) => ({ codCuenta: l.codCuenta, descripcion: l.descripcion, centroCosto: l.centroCosto, documento: l.documento, debe: l.debe, haber: l.haber })),
       });
-      router.push("/contabilidad/asientos");
+      router.push("/asientos");
     } catch (err: any) { setError(err.message || "Error al crear el asiento"); }
   };
 
   return (
     <Box>
       <Stack direction="row" alignItems="center" spacing={2} mb={3}>
-        <Button startIcon={<ArrowBackIcon />} onClick={() => router.push("/contabilidad/asientos")}>Volver</Button>
+        <Button startIcon={<ArrowBackIcon />} onClick={() => router.push("/asientos")}>Volver</Button>
       </Stack>
 
       {error && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}><AlertTitle>Error</AlertTitle>{error}</Alert>}
@@ -222,7 +222,7 @@ export default function NuevoAsientoPage() {
       </Card>
 
       <Stack direction="row" spacing={2} justifyContent="flex-end">
-        <Button variant="outlined" onClick={() => router.push("/contabilidad/asientos")}>Cancelar</Button>
+        <Button variant="outlined" onClick={() => router.push("/asientos")}>Cancelar</Button>
         <Button variant="contained" startIcon={<SaveIcon />} onClick={handleSubmit} disabled={createMutation.isPending || !isBalanced} size="large">
           {createMutation.isPending ? "Guardando..." : "Guardar asiento"}
         </Button>

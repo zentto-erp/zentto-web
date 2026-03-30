@@ -449,7 +449,7 @@ export default function ContabilidadDashboardPro() {
                       key={a.asientoId ?? a.id ?? idx}
                       hover
                       sx={{ cursor: "pointer" }}
-                      onClick={() => router.push("/contabilidad/asientos")}
+                      onClick={() => router.push("/asientos")}
                     >
                       <TableCell sx={{ fontSize: "0.8rem" }}>{a.fecha}</TableCell>
                       <TableCell sx={{ fontSize: "0.8rem" }}>{a.tipoAsiento}</TableCell>
@@ -511,7 +511,7 @@ export default function ContabilidadDashboardPro() {
                   cursor: "pointer",
                   "&:hover": { opacity: 0.85 },
                 }}
-                onClick={() => router.push("/contabilidad/cierre")}
+                onClick={() => router.push("/cierre")}
               >
                 <Stack direction="row" alignItems="center" spacing={1}>
                   <LockClockIcon sx={{ color: periodosAbiertos > 0 ? "warning.dark" : "success.dark" }} />
@@ -537,7 +537,7 @@ export default function ContabilidadDashboardPro() {
                   cursor: "pointer",
                   "&:hover": { opacity: 0.85 },
                 }}
-                onClick={() => router.push("/contabilidad/recurrentes")}
+                onClick={() => router.push("/recurrentes")}
               >
                 <Stack direction="row" alignItems="center" spacing={1}>
                   <WarningAmberIcon
@@ -565,7 +565,7 @@ export default function ContabilidadDashboardPro() {
                   cursor: "pointer",
                   "&:hover": { opacity: 0.85 },
                 }}
-                onClick={() => router.push("/contabilidad/conciliacion")}
+                onClick={() => router.push("/conciliacion")}
               >
                 <Stack direction="row" alignItems="center" spacing={1}>
                   <AccountBalanceIcon sx={{ color: "info.dark" }} />
