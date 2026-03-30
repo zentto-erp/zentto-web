@@ -1,0 +1,2 @@
+-- Tablas legacy eliminadas: usar master.InventoryPeriodSummary (acct o master schema).
+-- public."CierreMensualInventario" removida (2026-03-16).

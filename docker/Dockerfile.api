@@ -26,6 +26,7 @@ COPY --from=builder /app/.npmrc ./
 COPY web/contracts/openapi.yaml ./contracts/openapi.yaml
 COPY web/api/migrations/postgres ./migrations/postgres
 COPY web/api/sqlweb-pg ./sqlweb-pg
+COPY scripts/bootstrap-db.sh ./scripts/bootstrap-db.sh
 
 # Reinstalar solo dependencias de producción
 RUN npm ci --omit=dev
