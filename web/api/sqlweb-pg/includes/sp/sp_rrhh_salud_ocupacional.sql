@@ -196,16 +196,12 @@ $$;
 -- 3. usp_HR_OccHealth_List
 -- =============================================================================
 DROP FUNCTION IF EXISTS public.usp_HR_OccHealth_List(INTEGER, VARCHAR(25), VARCHAR(15), VARCHAR(24), CHAR(2), DATE, DATE, INTEGER, INTEGER) CASCADE;
+DROP FUNCTION IF EXISTS public.usp_hr_occhealth_list(integer, character varying, character varying, character varying, character, date, date, integer, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_OccHealth_List(
-    p_company_id    INTEGER,
-    p_record_type   VARCHAR(25)     DEFAULT NULL,
-    p_status        VARCHAR(15)     DEFAULT NULL,
-    p_employee_code VARCHAR(24)     DEFAULT NULL,
-    p_country_code  CHAR(2)         DEFAULT NULL,
-    p_from_date     DATE            DEFAULT NULL,
-    p_to_date       DATE            DEFAULT NULL,
-    p_page          INTEGER         DEFAULT 1,
-    p_limit         INTEGER         DEFAULT 50
+    p_company_id    INT,
+    p_search        TEXT            DEFAULT NULL,
+    p_offset        INT             DEFAULT 0,
+    p_limit         INT             DEFAULT 50
 )
 RETURNS TABLE(
     p_total_count                   BIGINT,
@@ -239,7 +235,6 @@ RETURNS TABLE(
 LANGUAGE plpgsql
 AS $$
 BEGIN
-    IF p_page  < 1   THEN p_page  := 1;   END IF;
     IF p_limit < 1   THEN p_limit := 50;  END IF;
     IF p_limit > 500 THEN p_limit := 500; END IF;
 
@@ -274,14 +269,9 @@ BEGIN
         "UpdatedAt"
     FROM hr."OccupationalHealth"
     WHERE "CompanyId" = p_company_id
-      AND (p_record_type   IS NULL OR "RecordType"   = p_record_type)
-      AND (p_status        IS NULL OR "Status"        = p_status)
-      AND (p_employee_code IS NULL OR "EmployeeCode"  = p_employee_code)
-      AND (p_country_code  IS NULL OR "CountryCode"   = p_country_code)
-      AND (p_from_date     IS NULL OR "OccurrenceDate" >= p_from_date)
-      AND (p_to_date       IS NULL OR "OccurrenceDate" <= p_to_date)
+      AND (p_search IS NULL OR "EmployeeName" ILIKE '%' || p_search || '%')
     ORDER BY "OccurrenceDate" DESC, "OccupationalHealthId" DESC
-    LIMIT p_limit OFFSET (p_page - 1) * p_limit;
+    LIMIT p_limit OFFSET p_offset;
 END;
 $$;
 
@@ -460,15 +450,12 @@ $$;
 -- 6. usp_HR_MedExam_List
 -- =============================================================================
 DROP FUNCTION IF EXISTS public.usp_HR_MedExam_List(INTEGER, VARCHAR(20), VARCHAR(20), VARCHAR(24), DATE, DATE, INTEGER, INTEGER) CASCADE;
+DROP FUNCTION IF EXISTS public.usp_hr_medexam_list(integer, character varying, character varying, character varying, date, date, integer, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_MedExam_List(
-    p_company_id    INTEGER,
-    p_exam_type     VARCHAR(20)     DEFAULT NULL,
-    p_result        VARCHAR(20)     DEFAULT NULL,
-    p_employee_code VARCHAR(24)     DEFAULT NULL,
-    p_from_date     DATE            DEFAULT NULL,
-    p_to_date       DATE            DEFAULT NULL,
-    p_page          INTEGER         DEFAULT 1,
-    p_limit         INTEGER         DEFAULT 50
+    p_company_id    INT,
+    p_search        TEXT            DEFAULT NULL,
+    p_offset        INT             DEFAULT 0,
+    p_limit         INT             DEFAULT 50
 )
 RETURNS TABLE(
     p_total_count       BIGINT,
@@ -492,7 +479,6 @@ RETURNS TABLE(
 LANGUAGE plpgsql
 AS $$
 BEGIN
-    IF p_page  < 1   THEN p_page  := 1;   END IF;
     IF p_limit < 1   THEN p_limit := 50;  END IF;
     IF p_limit > 500 THEN p_limit := 500; END IF;
 
@@ -517,13 +503,9 @@ BEGIN
         "UpdatedAt"
     FROM hr."MedicalExam"
     WHERE "CompanyId" = p_company_id
-      AND (p_exam_type     IS NULL OR "ExamType"     = p_exam_type)
-      AND (p_result        IS NULL OR "Result"        = p_result)
-      AND (p_employee_code IS NULL OR "EmployeeCode"  = p_employee_code)
-      AND (p_from_date     IS NULL OR "ExamDate"     >= p_from_date)
-      AND (p_to_date       IS NULL OR "ExamDate"     <= p_to_date)
+      AND (p_search IS NULL OR "EmployeeName" ILIKE '%' || p_search || '%')
     ORDER BY "ExamDate" DESC, "MedicalExamId" DESC
-    LIMIT p_limit OFFSET (p_page - 1) * p_limit;
+    LIMIT p_limit OFFSET p_offset;
 END;
 $$;
 
@@ -731,15 +713,12 @@ $$;
 -- 10. usp_HR_MedOrder_List
 -- =============================================================================
 DROP FUNCTION IF EXISTS public.usp_HR_MedOrder_List(INTEGER, VARCHAR(20), VARCHAR(15), VARCHAR(24), DATE, DATE, INTEGER, INTEGER) CASCADE;
+DROP FUNCTION IF EXISTS public.usp_hr_medorder_list(integer, character varying, character varying, character varying, date, date, integer, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_MedOrder_List(
-    p_company_id    INTEGER,
-    p_order_type    VARCHAR(20)     DEFAULT NULL,
-    p_status        VARCHAR(15)     DEFAULT NULL,
-    p_employee_code VARCHAR(24)     DEFAULT NULL,
-    p_from_date     DATE            DEFAULT NULL,
-    p_to_date       DATE            DEFAULT NULL,
-    p_page          INTEGER         DEFAULT 1,
-    p_limit         INTEGER         DEFAULT 50
+    p_company_id    INT,
+    p_search        TEXT            DEFAULT NULL,
+    p_offset        INT             DEFAULT 0,
+    p_limit         INT             DEFAULT 50
 )
 RETURNS TABLE(
     p_total_count       BIGINT,
@@ -766,7 +745,6 @@ RETURNS TABLE(
 LANGUAGE plpgsql
 AS $$
 BEGIN
-    IF p_page  < 1   THEN p_page  := 1;   END IF;
     IF p_limit < 1   THEN p_limit := 50;  END IF;
     IF p_limit > 500 THEN p_limit := 500; END IF;
 
@@ -794,13 +772,9 @@ BEGIN
         "UpdatedAt"
     FROM hr."MedicalOrder"
     WHERE "CompanyId" = p_company_id
-      AND (p_order_type    IS NULL OR "OrderType"    = p_order_type)
-      AND (p_status        IS NULL OR "Status"        = p_status)
-      AND (p_employee_code IS NULL OR "EmployeeCode"  = p_employee_code)
-      AND (p_from_date     IS NULL OR "OrderDate"    >= p_from_date)
-      AND (p_to_date       IS NULL OR "OrderDate"    <= p_to_date)
+      AND (p_search IS NULL OR "EmployeeName" ILIKE '%' || p_search || '%')
     ORDER BY "OrderDate" DESC, "MedicalOrderId" DESC
-    LIMIT p_limit OFFSET (p_page - 1) * p_limit;
+    LIMIT p_limit OFFSET p_offset;
 END;
 $$;
 
@@ -919,17 +893,12 @@ $$;
 -- 12. usp_HR_Training_List
 -- =============================================================================
 DROP FUNCTION IF EXISTS public.usp_HR_Training_List(INTEGER, VARCHAR(25), VARCHAR(24), CHAR(2), BOOLEAN, VARCHAR(15), DATE, DATE, INTEGER, INTEGER) CASCADE;
+DROP FUNCTION IF EXISTS public.usp_hr_training_list(integer, character varying, character varying, character, boolean, character varying, date, date, integer, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Training_List(
-    p_company_id    INTEGER,
-    p_training_type VARCHAR(25)     DEFAULT NULL,
-    p_employee_code VARCHAR(24)     DEFAULT NULL,
-    p_country_code  CHAR(2)         DEFAULT NULL,
-    p_is_regulatory BOOLEAN         DEFAULT NULL,
-    p_result        VARCHAR(15)     DEFAULT NULL,
-    p_from_date     DATE            DEFAULT NULL,
-    p_to_date       DATE            DEFAULT NULL,
-    p_page          INTEGER         DEFAULT 1,
-    p_limit         INTEGER         DEFAULT 50
+    p_company_id    INT,
+    p_search        TEXT            DEFAULT NULL,
+    p_offset        INT             DEFAULT 0,
+    p_limit         INT             DEFAULT 50
 )
 RETURNS TABLE(
     p_total_count           BIGINT,
@@ -956,7 +925,6 @@ RETURNS TABLE(
 LANGUAGE plpgsql
 AS $$
 BEGIN
-    IF p_page  < 1   THEN p_page  := 1;   END IF;
     IF p_limit < 1   THEN p_limit := 50;  END IF;
     IF p_limit > 500 THEN p_limit := 500; END IF;
 
@@ -984,15 +952,10 @@ BEGIN
         "UpdatedAt"
     FROM hr."TrainingRecord"
     WHERE "CompanyId" = p_company_id
-      AND (p_training_type IS NULL OR "TrainingType" = p_training_type)
-      AND (p_employee_code IS NULL OR "EmployeeCode" = p_employee_code)
-      AND (p_country_code  IS NULL OR "CountryCode"  = p_country_code)
-      AND (p_is_regulatory IS NULL OR "IsRegulatory" = p_is_regulatory)
-      AND (p_result        IS NULL OR "Result"        = p_result)
-      AND (p_from_date     IS NULL OR "StartDate"    >= p_from_date)
-      AND (p_to_date       IS NULL OR "StartDate"    <= p_to_date)
+      AND (p_search IS NULL OR "EmployeeName" ILIKE '%' || p_search || '%'
+                             OR "Title" ILIKE '%' || p_search || '%')
     ORDER BY "StartDate" DESC, "TrainingRecordId" DESC
-    LIMIT p_limit OFFSET (p_page - 1) * p_limit;
+    LIMIT p_limit OFFSET p_offset;
 END;
 $$;
 
@@ -1302,12 +1265,12 @@ $$;
 -- 18. usp_HR_Committee_List
 -- =============================================================================
 DROP FUNCTION IF EXISTS public.usp_HR_Committee_List(INTEGER, CHAR(2), BOOLEAN, INTEGER, INTEGER) CASCADE;
+DROP FUNCTION IF EXISTS public.usp_hr_committee_list(integer, character, boolean, integer, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Committee_List(
-    p_company_id    INTEGER,
-    p_country_code  CHAR(2)     DEFAULT NULL,
-    p_is_active     BOOLEAN     DEFAULT NULL,
-    p_page          INTEGER     DEFAULT 1,
-    p_limit         INTEGER     DEFAULT 50
+    p_company_id    INT,
+    p_search        TEXT            DEFAULT NULL,
+    p_offset        INT             DEFAULT 0,
+    p_limit         INT             DEFAULT 50
 )
 RETURNS TABLE(
     p_total_count           BIGINT,
@@ -1325,7 +1288,6 @@ RETURNS TABLE(
 LANGUAGE plpgsql
 AS $$
 BEGIN
-    IF p_page  < 1   THEN p_page  := 1;   END IF;
     IF p_limit < 1   THEN p_limit := 50;  END IF;
     IF p_limit > 500 THEN p_limit := 500; END IF;
 
@@ -1351,10 +1313,9 @@ BEGIN
         )::BIGINT AS "TotalMeetings"
     FROM hr."SafetyCommittee" sc
     WHERE sc."CompanyId" = p_company_id
-      AND (p_country_code IS NULL OR sc."CountryCode" = p_country_code)
-      AND (p_is_active    IS NULL OR sc."IsActive"    = p_is_active)
+      AND (p_search IS NULL OR sc."CommitteeName" ILIKE '%' || p_search || '%')
     ORDER BY sc."IsActive" DESC, sc."FormationDate" DESC
-    LIMIT p_limit OFFSET (p_page - 1) * p_limit;
+    LIMIT p_limit OFFSET p_offset;
 END;
 $$;
 

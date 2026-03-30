@@ -55,6 +55,8 @@ jobs:
     needs: set-public
     steps:
       - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GHCR_PAT }}
 
       - uses: actions/setup-node@v4
         with:
@@ -97,6 +99,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GHCR_PAT }}
 
       - uses: actions/setup-node@v4
         with:
@@ -162,6 +166,8 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GHCR_PAT }}
 
       - uses: docker/login-action@v3
         with:
@@ -186,6 +192,8 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GHCR_PAT }}
 
       - name: Copy migrations and script to server
         uses: appleboy/scp-action@v0.1.7
@@ -232,6 +240,8 @@ jobs:
       packages: read
     steps:
       - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GHCR_PAT }}
 
       # docker-compose.prod.yml ahora vive en zentto-infra (ya en /opt/zentto-infra/compose/)
       # El deploy usa el compose del servidor; si no existe aun, se usa fallback local

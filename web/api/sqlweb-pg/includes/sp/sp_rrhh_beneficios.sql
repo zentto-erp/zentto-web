@@ -647,14 +647,12 @@ $$;
 -- 8. usp_HR_Trust_List
 -- =============================================================================
 DROP FUNCTION IF EXISTS public.usp_HR_Trust_List(INTEGER, INTEGER, SMALLINT, VARCHAR(24), VARCHAR(20), INTEGER, INTEGER) CASCADE;
+DROP FUNCTION IF EXISTS public.usp_hr_trust_list(integer, integer, smallint, character varying, character varying, integer, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Trust_List(
-    p_company_id    INTEGER,
-    p_fiscal_year   INTEGER         DEFAULT NULL,
-    p_quarter       SMALLINT        DEFAULT NULL,
-    p_employee_code VARCHAR(24)     DEFAULT NULL,
-    p_status        VARCHAR(20)     DEFAULT NULL,
-    p_offset        INTEGER         DEFAULT 0,
-    p_limit         INTEGER         DEFAULT 50
+    p_company_id    INT,
+    p_search        TEXT            DEFAULT NULL,
+    p_offset        INT             DEFAULT 0,
+    p_limit         INT             DEFAULT 50
 )
 RETURNS TABLE(
     p_total_count           BIGINT,
@@ -697,10 +695,7 @@ BEGIN
         t."CreatedAt"
     FROM hr."SocialBenefitsTrust" t
     WHERE t."CompanyId" = p_company_id
-      AND (p_fiscal_year   IS NULL OR t."FiscalYear"    = p_fiscal_year)
-      AND (p_quarter       IS NULL OR t."Quarter"        = p_quarter)
-      AND (p_employee_code IS NULL OR t."EmployeeCode"   = p_employee_code)
-      AND (p_status        IS NULL OR t."Status"         = p_status)
+      AND (p_search IS NULL OR t."EmployeeName" ILIKE '%' || p_search || '%')
     ORDER BY t."FiscalYear" DESC, t."Quarter" DESC, t."EmployeeName"
     LIMIT p_limit OFFSET p_offset;
 END;
@@ -1200,12 +1195,12 @@ $$;
 -- 15. usp_HR_Savings_List
 -- =============================================================================
 DROP FUNCTION IF EXISTS public.usp_HR_Savings_List(INTEGER, VARCHAR(15), VARCHAR(24), INTEGER, INTEGER) CASCADE;
+DROP FUNCTION IF EXISTS public.usp_hr_savings_list(integer, character varying, character varying, integer, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Savings_List(
-    p_company_id    INTEGER,
-    p_status        VARCHAR(15)     DEFAULT NULL,
-    p_employee_code VARCHAR(24)     DEFAULT NULL,
-    p_offset        INTEGER         DEFAULT 0,
-    p_limit         INTEGER         DEFAULT 50
+    p_company_id    INT,
+    p_search        TEXT            DEFAULT NULL,
+    p_offset        INT             DEFAULT 0,
+    p_limit         INT             DEFAULT 50
 )
 RETURNS TABLE(
     p_total_count           BIGINT,
@@ -1242,8 +1237,7 @@ BEGIN
         ), 0::NUMERIC) AS "CurrentBalance"
     FROM hr."SavingsFund" sf
     WHERE sf."CompanyId" = p_company_id
-      AND (p_status        IS NULL OR sf."Status"       = p_status)
-      AND (p_employee_code IS NULL OR sf."EmployeeCode" = p_employee_code)
+      AND (p_search IS NULL OR sf."EmployeeName" ILIKE '%' || p_search || '%')
     ORDER BY sf."EmployeeName"
     LIMIT p_limit OFFSET p_offset;
 END;
