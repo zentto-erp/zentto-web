@@ -17,6 +17,10 @@ export type { ReportSlotPickerProps } from './components/ReportSlotPicker';
 export { ModuleReportsPage } from './components/ModuleReportsPage';
 export type { ModuleReportsPageProps } from './components/ModuleReportsPage';
 
+// ─── Providers ──────────────────────────────────────────────────────
+
+export { zenttoDataFetchProvider } from './providers/ZenttoDataFetchProvider';
+
 // ─── Hooks ───────────────────────────────────────────────────────────
 
 export { useModuleReports } from './hooks/useModuleReports';

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef } from 'react';
-import type { ReportLayout, DataSet } from '@zentto/report-core';
+import type { ReportLayout, DataSet, DataFetchProvider } from '@zentto/report-core';
 
 // Importar el web component (side-effect: registra <zentto-report-viewer>)
 import '@zentto/report-viewer';
@@ -15,6 +15,8 @@ export interface ReportViewerProps {
   viewMode?: 'single' | 'all';
   showThumbnails?: boolean;
   toolbarItems?: string[];
+  /** Optional provider to fetch live data from API endpoints defined in dataSources */
+  dataFetchProvider?: DataFetchProvider | null;
   style?: React.CSSProperties;
   className?: string;
 }
@@ -35,6 +37,7 @@ export function ReportViewer({
   viewMode = 'single',
   showThumbnails = false,
   toolbarItems = ['navigation', 'zoom', 'view-mode', 'fit-width', 'print', 'download-html', 'theme'],
+  dataFetchProvider,
   style,
   className,
 }: ReportViewerProps) {
@@ -52,8 +55,9 @@ export function ReportViewer({
       el.viewMode = viewMode;
       el.showThumbnails = showThumbnails;
       el.toolbarItems = toolbarItems;
+      el.dataFetchProvider = dataFetchProvider ?? null;
     });
-  }, [layout, data, zoom, showToolbar, theme, viewMode, showThumbnails, toolbarItems]);
+  }, [layout, data, zoom, showToolbar, theme, viewMode, showThumbnails, toolbarItems, dataFetchProvider]);
 
   // React.createElement avoids JSX type issues with custom elements in React 19
   return React.createElement('zentto-report-viewer', {

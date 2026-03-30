@@ -179,3 +179,19 @@ export const PLAN_CUENTAS_LAYOUT = {
     },
   ],
 };
+
+export const PLAN_CUENTAS_LAYOUT_SAMPLE = {
+  header: {
+    empresa: "Zentto Soluciones Tecnologicas S.L.",
+    totalCuentas: 7,
+  },
+  cuentas: [
+    { codCuenta: "1", descripcion: "Activo", tipo: "TITULO", nivel: 1 },
+    { codCuenta: "1.1", descripcion: "Activo Circulante", tipo: "TITULO", nivel: 2 },
+    { codCuenta: "1.1.01", descripcion: "Caja General", tipo: "DETALLE", nivel: 3 },
+    { codCuenta: "1.1.02", descripcion: "Banesco Cta. Corriente", tipo: "DETALLE", nivel: 3 },
+    { codCuenta: "2", descripcion: "Pasivo", tipo: "TITULO", nivel: 1 },
+    { codCuenta: "2.1", descripcion: "Pasivo Circulante", tipo: "TITULO", nivel: 2 },
+    { codCuenta: "2.1.01", descripcion: "Cuentas por pagar proveedores", tipo: "DETALLE", nivel: 3 },
+  ],
+};

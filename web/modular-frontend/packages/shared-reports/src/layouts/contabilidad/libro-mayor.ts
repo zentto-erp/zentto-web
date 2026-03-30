@@ -214,3 +214,20 @@ export const LIBRO_MAYOR_LAYOUT = {
     },
   ],
 };
+
+export const LIBRO_MAYOR_LAYOUT_SAMPLE = {
+  header: {
+    empresa: "Zentto Soluciones Tecnologicas S.L.",
+    fechaDesde: "01/01/2026",
+    fechaHasta: "31/03/2026",
+  },
+  movimientos: [
+    { codCuenta: "1.1.01", descripcion: "Caja General", fecha: "05/01/2026", concepto: "Cobro factura FV-001", debe: 12500.00, haber: 0.00, saldo: 12500.00 },
+    { codCuenta: "1.1.01", descripcion: "Caja General", fecha: "10/01/2026", concepto: "Pago alquiler oficina enero", debe: 0.00, haber: 3500.00, saldo: 9000.00 },
+    { codCuenta: "1.1.02", descripcion: "Banesco Cta. Corriente", fecha: "15/01/2026", concepto: "Deposito cliente Martinez", debe: 28750.00, haber: 0.00, saldo: 28750.00 },
+    { codCuenta: "4.1.01", descripcion: "Ventas nacionales", fecha: "20/02/2026", concepto: "Venta mercancia febrero", debe: 0.00, haber: 45000.00, saldo: -45000.00 },
+    { codCuenta: "5.1.01", descripcion: "Costo de ventas", fecha: "20/02/2026", concepto: "Costo mercancia vendida febrero", debe: 31500.00, haber: 0.00, saldo: 31500.00 },
+    { codCuenta: "6.1.03", descripcion: "Gastos de personal", fecha: "28/02/2026", concepto: "Nomina febrero 2026", debe: 18200.00, haber: 0.00, saldo: 18200.00 },
+    { codCuenta: "2.1.01", descripcion: "Cuentas por pagar", fecha: "15/03/2026", concepto: "Compra inventario a credito", debe: 0.00, haber: 22000.00, saldo: -22000.00 },
+  ],
+};

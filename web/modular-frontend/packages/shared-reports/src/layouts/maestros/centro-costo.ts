@@ -166,3 +166,18 @@ export const CENTRO_COSTO_LAYOUT = {
     },
   ],
 };
+
+export const CENTRO_COSTO_LAYOUT_SAMPLE = {
+  header: {
+    empresa: "Zentto Soluciones Tecnologicas S.L.",
+    totalCentros: 6,
+  },
+  centros: [
+    { codigo: "CC-ADM", nombre: "Administracion General", responsable: "Maria Fernandez", presupuesto: 35000.00, estado: "ACTIVO" },
+    { codigo: "CC-VTA", nombre: "Departamento de Ventas", responsable: "Carlos Mendoza", presupuesto: 28000.00, estado: "ACTIVO" },
+    { codigo: "CC-TEC", nombre: "Tecnologia e Innovacion", responsable: "Jorge Morales", presupuesto: 42000.00, estado: "ACTIVO" },
+    { codigo: "CC-ALM", nombre: "Operaciones y Almacen", responsable: "Pedro Ramirez", presupuesto: 18000.00, estado: "ACTIVO" },
+    { codigo: "CC-RHH", nombre: "Recursos Humanos", responsable: "Rosa Diaz", presupuesto: 15000.00, estado: "ACTIVO" },
+    { codigo: "CC-MKT", nombre: "Marketing y Publicidad", responsable: "Patricia Herrera", presupuesto: 22000.00, estado: "INACTIVO" },
+  ],
+};

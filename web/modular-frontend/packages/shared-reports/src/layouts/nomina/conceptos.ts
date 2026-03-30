@@ -169,3 +169,19 @@ export const CONCEPTOS_NOMINA_LAYOUT = {
     },
   ],
 };
+
+export const CONCEPTOS_NOMINA_LAYOUT_SAMPLE = {
+  header: {
+    empresa: "Zentto Soluciones Tecnologicas S.L.",
+    totalConceptos: 7,
+  },
+  conceptos: [
+    { codigo: "ASG-001", descripcion: "Sueldo Basico", tipo: "ASIGNACION", formula: "SUELDO_BASE", porcentaje: 100.00, estado: "ACTIVO" },
+    { codigo: "ASG-002", descripcion: "Bono de Alimentacion", tipo: "ASIGNACION", formula: "CESTATICKET * DIAS_LAB", porcentaje: 0.00, estado: "ACTIVO" },
+    { codigo: "ASG-003", descripcion: "Horas Extras", tipo: "ASIGNACION", formula: "HORA_EXTRA * CANT_HE", porcentaje: 150.00, estado: "ACTIVO" },
+    { codigo: "DED-001", descripcion: "Seguro Social Obligatorio", tipo: "DEDUCCION", formula: "SUELDO_BASE * PCT", porcentaje: 4.00, estado: "ACTIVO" },
+    { codigo: "DED-002", descripcion: "Regimen Prestacional de Empleo", tipo: "DEDUCCION", formula: "SUELDO_BASE * PCT", porcentaje: 0.50, estado: "ACTIVO" },
+    { codigo: "DED-003", descripcion: "Fondo Ahorro Habitacional", tipo: "DEDUCCION", formula: "SUELDO_INTEGRAL * PCT", porcentaje: 1.00, estado: "ACTIVO" },
+    { codigo: "DED-004", descripcion: "ISLR Retenido", tipo: "DEDUCCION", formula: "TABLA_ISLR(SUELDO_ANUAL)", porcentaje: 0.00, estado: "ACTIVO" },
+  ],
+};

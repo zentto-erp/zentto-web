@@ -163,3 +163,19 @@ export const CATEGORIAS_LAYOUT = {
     },
   ],
 };
+
+export const CATEGORIAS_LAYOUT_SAMPLE = {
+  header: {
+    empresa: "Zentto Soluciones Tecnologicas S.L.",
+    totalCategorias: 7,
+  },
+  categorias: [
+    { codigo: "CAT-001", descripcion: "Equipos de Computacion", tipo: "INVENTARIO", estado: "ACTIVO" },
+    { codigo: "CAT-002", descripcion: "Perifericos", tipo: "INVENTARIO", estado: "ACTIVO" },
+    { codigo: "CAT-003", descripcion: "Accesorios", tipo: "INVENTARIO", estado: "ACTIVO" },
+    { codigo: "CAT-004", descripcion: "Almacenamiento", tipo: "INVENTARIO", estado: "ACTIVO" },
+    { codigo: "CAT-005", descripcion: "Software y Licencias", tipo: "SERVICIO", estado: "ACTIVO" },
+    { codigo: "CAT-006", descripcion: "Mobiliario de Oficina", tipo: "ACTIVO_FIJO", estado: "ACTIVO" },
+    { codigo: "CAT-007", descripcion: "Papeleria y Consumibles", tipo: "INVENTARIO", estado: "INACTIVO" },
+  ],
+};

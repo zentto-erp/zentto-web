@@ -77,7 +77,8 @@ import {
   Category as CategoryIcon,
 } from "@mui/icons-material";
 import type { ReportLayout, DataSet } from "@zentto/report-core";
-import { listSavedReports, listPublicReports, getSavedReport } from "@zentto/shared-api";
+import { listSavedReports, listPublicReports, getSavedReport, getPublicReport } from "@zentto/shared-api";
+import { zenttoDataFetchProvider } from "@zentto/shared-reports";
 import type { SavedReport } from "@zentto/shared-api";
 
 // ─── Safe imports from @zentto/report-core (pure functions) ─────────
@@ -620,6 +621,7 @@ export default function ReportStudio() {
 
     el.layout = layout;
     el.data = sampleData;
+    el.dataFetchProvider = zenttoDataFetchProvider;
   }, [registered, mode, layout, sampleData]);
 
   // ── Bind data to split viewer ──
@@ -630,6 +632,7 @@ export default function ReportStudio() {
 
     el.layout = layout;
     el.data = sampleData;
+    el.dataFetchProvider = zenttoDataFetchProvider;
   }, [registered, mode, layout, sampleData]);
 
   // ── Sync zoom to viewer ──
@@ -1060,12 +1063,21 @@ export default function ReportStudio() {
     notify(`"${tmpl.name}" descargado`);
   }, [notify]);
 
+  // Resolve a report's full layout — try saved first, then public
+  const resolveReport = useCallback(async (id: string) => {
+    const saved = await getSavedReport(id).catch(() => null);
+    if (saved?.layout && Object.keys(saved.layout).length > 2) return saved;
+    const pub = await getPublicReport(id).catch(() => null);
+    if (pub?.layout && Object.keys(pub.layout).length > 0) return pub;
+    return null;
+  }, []);
+
   const handleStoreLoadSaved = useCallback(async (report: { id: string; name: string }) => {
     try {
-      const saved = await getSavedReport(report.id);
-      if (saved?.layout) {
-        setLayout(saved.layout as unknown as ReportLayout);
-        setSampleData((saved.sampleData || {}) as DataSet);
+      const full = await resolveReport(report.id);
+      if (full?.layout) {
+        setLayout(full.layout as unknown as ReportLayout);
+        setSampleData((full.sampleData || {}) as DataSet);
         setFileName(report.name);
         setFileHandle(null);
         setIsModified(false);
@@ -1076,31 +1088,31 @@ export default function ReportStudio() {
         notify("Error al cargar el reporte", "error");
       }
     } catch {
-      notify("Error de conexión al cargar el reporte", "error");
+      notify("Error de conexion al cargar el reporte", "error");
     }
-  }, [notify]);
+  }, [notify, resolveReport]);
 
   const handleStorePreviewSaved = useCallback(async (report: { id: string; name: string }) => {
     try {
-      const saved = await getSavedReport(report.id);
-      if (saved?.layout) {
-        setPreviewLayout(saved.layout as unknown as ReportLayout);
-        setPreviewData((saved.sampleData || {}) as DataSet);
+      const full = await resolveReport(report.id);
+      if (full?.layout) {
+        setPreviewLayout(full.layout as unknown as ReportLayout);
+        setPreviewData((full.sampleData || {}) as DataSet);
         setPreviewTitle(report.name);
         setPreviewOpen(true);
       }
     } catch { /* ignore */ }
-  }, []);
+  }, [resolveReport]);
 
   const handleStoreDownloadSaved = useCallback(async (report: { id: string; name: string }) => {
     try {
-      const saved = await getSavedReport(report.id);
-      if (saved?.layout) {
-        downloadAsFile(JSON.stringify(saved.layout, null, 2), `${safeFileName(report.name)}.report.json`);
+      const full = await resolveReport(report.id);
+      if (full?.layout) {
+        downloadAsFile(JSON.stringify(full.layout, null, 2), `${safeFileName(report.name)}.report.json`);
         notify(`"${report.name}" descargado`);
       }
     } catch { /* ignore */ }
-  }, [notify]);
+  }, [notify, resolveReport]);
 
   // ── Store: compute filtered templates ──
   const filteredTemplates = useMemo(() => {

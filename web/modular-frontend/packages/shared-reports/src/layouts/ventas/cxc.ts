@@ -201,3 +201,18 @@ export const CXC_DOCUMENTOS_LAYOUT = {
     },
   ],
 };
+
+export const CXC_DOCUMENTOS_LAYOUT_SAMPLE = {
+  header: {
+    empresa: "Zentto Soluciones Tecnologicas S.L.",
+    totalPendiente: 107620.00,
+  },
+  documentos: [
+    { tipoDoc: "FAC", numero: "FV-0015", fecha: "05/03/2026", fechaVence: "04/04/2026", codCliente: "CLI-005", nombreCliente: "Tecnologia Global C.A.", montoOriginal: 48720.00, montoPagado: 0.00, saldo: 48720.00, estado: "PENDIENTE" },
+    { tipoDoc: "FAC", numero: "FV-0018", fecha: "22/03/2026", fechaVence: "21/04/2026", codCliente: "CLI-001", nombreCliente: "Distribuidora Norte C.A.", montoOriginal: 46400.00, montoPagado: 0.00, saldo: 46400.00, estado: "PENDIENTE" },
+    { tipoDoc: "FAC", numero: "FV-0010", fecha: "18/02/2026", fechaVence: "20/03/2026", codCliente: "CLI-004", nombreCliente: "Grupo Andino C.A.", montoOriginal: 12500.00, montoPagado: 0.00, saldo: 12500.00, estado: "VENCIDA" },
+    { tipoDoc: "FAC", numero: "FV-0001", fecha: "08/01/2026", fechaVence: "07/02/2026", codCliente: "CLI-001", nombreCliente: "Distribuidora Norte C.A.", montoOriginal: 29000.00, montoPagado: 29000.00, saldo: 0.00, estado: "PAGADA" },
+    { tipoDoc: "FAC", numero: "FV-0002", fecha: "15/01/2026", fechaVence: "14/02/2026", codCliente: "CLI-003", nombreCliente: "Inversiones Oriente S.A.", montoOriginal: 21460.00, montoPagado: 21460.00, saldo: 0.00, estado: "PAGADA" },
+    { tipoDoc: "N/C", numero: "NC-0001", fecha: "12/02/2026", fechaVence: "12/02/2026", codCliente: "CLI-002", nombreCliente: "Comercial Bolivar S.R.L.", montoOriginal: 3480.00, montoPagado: 3480.00, saldo: 0.00, estado: "APLICADA" },
+  ],
+};

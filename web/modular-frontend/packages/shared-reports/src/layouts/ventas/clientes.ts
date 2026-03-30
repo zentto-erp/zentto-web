@@ -198,3 +198,18 @@ export const CLIENTES_LAYOUT = {
     },
   ],
 };
+
+export const CLIENTES_LAYOUT_SAMPLE = {
+  header: {
+    empresa: "Zentto Soluciones Tecnologicas S.L.",
+    totalClientes: 6,
+  },
+  clientes: [
+    { codigo: "CLI-001", nombre: "Distribuidora Norte C.A.", rif: "J-12345678-0", direccion: "Av. Bolivar Norte, Valencia", telefono: "0241-8221234", email: "ventas@distnorte.com", vendedor: "Juan Perez", saldo: 46400.00, estado: "ACTIVO" },
+    { codigo: "CLI-002", nombre: "Comercial Bolivar S.R.L.", rif: "J-98765432-1", direccion: "Calle Principal, Maracay", telefono: "0243-2465500", email: "compras@combolivar.com", vendedor: "Maria Lopez", saldo: 0.00, estado: "ACTIVO" },
+    { codigo: "CLI-003", nombre: "Inversiones Oriente S.A.", rif: "J-45678901-5", direccion: "Av. Municipal, Barcelona", telefono: "0281-2771000", email: "admin@invoriente.com", vendedor: "Juan Perez", saldo: 0.00, estado: "ACTIVO" },
+    { codigo: "CLI-004", nombre: "Grupo Andino C.A.", rif: "J-11223344-8", direccion: "Calle 5, Merida", telefono: "0274-2631500", email: "info@grupoandino.com", vendedor: "Carlos Ruiz", saldo: 12500.00, estado: "ACTIVO" },
+    { codigo: "CLI-005", nombre: "Tecnologia Global C.A.", rif: "J-55667788-3", direccion: "Av. Romulo Gallegos, Caracas", telefono: "0212-2381000", email: "pedidos@tecglobal.com", vendedor: "Maria Lopez", saldo: 48720.00, estado: "ACTIVO" },
+    { codigo: "CLI-006", nombre: "Repuestos del Centro S.A.", rif: "J-33445566-7", direccion: "Av. Cedeño, San Cristobal", telefono: "0276-3445500", email: "ventas@repcentro.com", vendedor: "Carlos Ruiz", saldo: 0.00, estado: "INACTIVO" },
+  ],
+};

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useMemo } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
   Box,
@@ -94,28 +94,35 @@ export default function AsientosListPage() {
 
   const rows = data?.data ?? data?.rows ?? [];
 
-  // ── Report data mapping ─────────────────────────────────────
-  const reportData = useMemo((): DataSet => {
-    if (!rows.length) return {} as DataSet;
+  // ── Report: build data from grid's current rows (filtered/sorted) ──
+  const buildReportData = useCallback((): DataSet => {
+    const el = gridRef.current;
+    // Prefer grid's public filteredRows getter; fall back to raw API rows
+    const gridRows: any[] = el?.filteredRows ?? el?.rows ?? rows ?? [];
+    if (!gridRows.length) return {} as DataSet;
+
     let sumDebe = 0;
     let sumHaber = 0;
-    const mapped = rows.map((r: any, i: number) => {
-      const debe = Number(r.totalDebe ?? r.debe ?? 0);
-      const haber = Number(r.totalHaber ?? r.haber ?? 0);
-      sumDebe += debe;
-      sumHaber += haber;
-      return {
-        num: i + 1,
-        id: r.asientoId ?? r.id ?? r.Id,
-        fecha: r.fecha ? new Date(r.fecha).toLocaleDateString("es", { day: "2-digit", month: "2-digit", year: "numeric" }) : "",
-        tipoAsiento: r.tipoAsiento ?? "",
-        concepto: r.concepto ?? "",
-        referencia: r.referencia ?? "",
-        totalDebe: debe,
-        totalHaber: haber,
-        estado: r.estado ?? "",
-      };
-    });
+    const mapped = gridRows
+      .filter((r: any) => !r._isTotals) // exclude totals row
+      .map((r: any, i: number) => {
+        const debe = Number(r.totalDebe ?? r.debe ?? 0);
+        const haber = Number(r.totalHaber ?? r.haber ?? 0);
+        sumDebe += debe;
+        sumHaber += haber;
+        return {
+          num: i + 1,
+          id: r.asientoId ?? r.id ?? r.Id,
+          fecha: r.fecha ? new Date(r.fecha).toLocaleDateString("es", { day: "2-digit", month: "2-digit", year: "numeric" }) : "",
+          tipoAsiento: r.tipoAsiento ?? "",
+          concepto: r.concepto ?? "",
+          referencia: r.referencia ?? "",
+          totalDebe: debe,
+          totalHaber: haber,
+          estado: r.estado ?? "",
+        };
+      });
+
     return {
       header: {
         empresa: "Zentto ERP",
@@ -123,11 +130,13 @@ export default function AsientosListPage() {
         fechaHasta: filter.fechaHasta ?? "—",
         totalDebe: sumDebe,
         totalHaber: sumHaber,
-        totalRegistros: rows.length,
+        totalRegistros: mapped.length,
       },
       asientos: mapped,
     };
   }, [rows, filter.fechaDesde, filter.fechaHasta]);
+
+  const [reportData, setReportData] = useState<DataSet>({} as DataSet);
 
   useEffect(() => {
     const el = gridRef.current;
@@ -179,7 +188,7 @@ export default function AsientosListPage() {
       <ContextActionHeader
         title="Asientos contables"
         secondaryActions={[
-          { label: "Reporte", onClick: () => setReportOpen(true), disabled: !rows.length },
+          { label: "Reporte", onClick: () => { setReportData(buildReportData()); setReportOpen(true); }, disabled: !rows.length },
         ]}
       />
 

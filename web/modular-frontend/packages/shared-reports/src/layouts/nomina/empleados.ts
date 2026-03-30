@@ -172,3 +172,19 @@ export const EMPLEADOS_LAYOUT = {
     },
   ],
 };
+
+export const EMPLEADOS_LAYOUT_SAMPLE = {
+  header: {
+    empresa: "Zentto Soluciones Tecnologicas S.L.",
+    totalEmpleados: 7,
+  },
+  empleados: [
+    { cedula: "V-12345678", nombre: "Maria Fernandez Garcia", cargo: "Gerente Administrativo", departamento: "Administracion", fechaIngreso: "15/03/2020", sueldo: 8500.00, status: "ACTIVO" },
+    { cedula: "V-23456789", nombre: "Carlos Mendoza Rodriguez", cargo: "Jefe de Ventas", departamento: "Ventas", fechaIngreso: "01/06/2021", sueldo: 6200.00, status: "ACTIVO" },
+    { cedula: "V-34567890", nombre: "Ana Gutierrez Lopez", cargo: "Contador Senior", departamento: "Contabilidad", fechaIngreso: "10/01/2019", sueldo: 7800.00, status: "ACTIVO" },
+    { cedula: "V-45678901", nombre: "Pedro Ramirez Silva", cargo: "Almacenista", departamento: "Almacen", fechaIngreso: "20/08/2022", sueldo: 3500.00, status: "ACTIVO" },
+    { cedula: "V-56789012", nombre: "Luis Torres Martinez", cargo: "Vendedor", departamento: "Ventas", fechaIngreso: "05/11/2023", sueldo: 4000.00, status: "ACTIVO" },
+    { cedula: "V-67890123", nombre: "Rosa Diaz Hernandez", cargo: "Asistente RRHH", departamento: "Recursos Humanos", fechaIngreso: "15/02/2024", sueldo: 3800.00, status: "ACTIVO" },
+    { cedula: "V-78901234", nombre: "Jorge Morales Bravo", cargo: "Programador", departamento: "Tecnologia", fechaIngreso: "01/09/2021", sueldo: 7000.00, status: "VACACIONES" },
+  ],
+};

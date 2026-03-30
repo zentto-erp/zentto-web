@@ -181,3 +181,18 @@ export const LEADS_LAYOUT = {
     },
   ],
 };
+
+export const LEADS_LAYOUT_SAMPLE = {
+  header: {
+    empresa: "Zentto Soluciones Tecnologicas S.L.",
+    totalLeads: 6,
+  },
+  leads: [
+    { nombre: "Proyecto ERP Multinacional", contacto: "Fernando Alvarez", email: "falvarez@multinac.com", telefono: "0212-9551234", pipeline: "Ventas", stage: "Negociacion", valor: 45000.00, prioridad: "ALTA", asignado: "Carlos Mendoza", status: "ACTIVO" },
+    { nombre: "Implementacion POS Cadena", contacto: "Gabriela Reyes", email: "greyes@cadena.com", telefono: "0241-8221000", pipeline: "Ventas", stage: "Propuesta", valor: 28000.00, prioridad: "ALTA", asignado: "Maria Lopez", status: "ACTIVO" },
+    { nombre: "Migracion contable PyME", contacto: "Roberto Sanchez", email: "rsanchez@pymecont.com", telefono: "0261-7621500", pipeline: "Consultoria", stage: "Contacto", valor: 12000.00, prioridad: "MEDIA", asignado: "Carlos Mendoza", status: "ACTIVO" },
+    { nombre: "Soporte anual corporativo", contacto: "Laura Martinez", email: "lmartinez@corpglobal.com", telefono: "0212-2381500", pipeline: "Soporte", stage: "Cierre", valor: 18500.00, prioridad: "MEDIA", asignado: "Luis Torres", status: "ACTIVO" },
+    { nombre: "Desarrollo modulo logistica", contacto: "Andres Perez", email: "aperez@logistica.com", telefono: "0243-2461000", pipeline: "Desarrollo", stage: "Calificacion", valor: 35000.00, prioridad: "BAJA", asignado: "Maria Lopez", status: "ACTIVO" },
+    { nombre: "Licencia SaaS restaurante", contacto: "Carmen Flores", email: "cflores@restobar.com", telefono: "0251-2531500", pipeline: "Ventas", stage: "Perdido", valor: 8000.00, prioridad: "BAJA", asignado: "Luis Torres", status: "CERRADO" },
+  ],
+};
