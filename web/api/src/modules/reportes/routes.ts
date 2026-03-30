@@ -415,6 +415,23 @@ reportesRouter.get("/public", async (req: Request, res: Response) => {
     }
 });
 
+// GET /v1/reportes/public/:id — get a single public report with full layout
+reportesRouter.get("/public/:id", async (req: Request, res: Response) => {
+    try {
+        const companyId = (req as any).companyId || (req as any).jwt?.companyId || "1";
+        const resp = await safeFetch(
+            `${CACHE_URL}/v1/report-templates/public/${req.params.id}?companyId=${companyId}`,
+            { headers: cacheHeaders(req) },
+            10000,
+        );
+        if (!resp.ok) return res.status(resp.status).json({ error: "not_found" });
+        const d = await resp.json();
+        res.json({ layout: d.template?.layout, sampleData: d.template?.sampleData, name: d.name });
+    } catch (err: any) {
+        res.status(500).json({ error: err?.message });
+    }
+});
+
 // PUT /v1/reportes/public/:id — save a public/company-wide report
 reportesRouter.put("/public/:id", async (req: Request, res: Response) => {
     try {

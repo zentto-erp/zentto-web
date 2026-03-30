@@ -73,6 +73,26 @@ export async function getSavedReport(id: string): Promise<SavedReport | null> {
   }
 }
 
+export async function getPublicReport(id: string): Promise<SavedReport | null> {
+  try {
+    const res = await apiGet(`/v1/reportes/public/${id}`);
+    if (!res || (!res.layout && !res.data?.layout)) return null;
+    const d = res.data ?? res;
+    return {
+      id,
+      name: String(d.name ?? ''),
+      description: '',
+      icon: '📊',
+      layout: (d.layout ?? {}) as Record<string, unknown>,
+      sampleData: (d.sampleData ?? {}) as Record<string, unknown>,
+      createdAt: '',
+      updatedAt: '',
+    };
+  } catch {
+    return null;
+  }
+}
+
 export async function createSavedReport(input: SaveReportInput): Promise<SavedReport> {
   const id = `report-${Date.now()}`;
   const report: SavedReport = {
