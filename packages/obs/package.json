@@ -1,0 +1,39 @@
+{
+  "name": "@zentto/obs",
+  "version": "1.0.0",
+  "description": "Zentto Observability SDK — Kafka-based structured logging, audit, perf & events",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "npm run build"
+  },
+  "dependencies": {
+    "kafkajs": "^2.2.4",
+    "pino": "^9.6.0"
+  },
+  "peerDependencies": {
+    "express": ">=4.0.0"
+  },
+  "peerDependenciesMeta": {
+    "express": { "optional": true }
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "typescript": "^5.7.0"
+  },
+  "keywords": ["zentto", "observability", "kafka", "logging", "audit"],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/zentto-erp/zentto-web"
+  }
+}
