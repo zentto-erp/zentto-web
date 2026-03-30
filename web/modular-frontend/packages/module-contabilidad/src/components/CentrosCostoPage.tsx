@@ -7,7 +7,7 @@ import {
   CircularProgress, Skeleton,
 } from "@mui/material";
 import type { ColumnDef } from "@zentto/datagrid-core";
-import { DatePicker, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
+import { DatePicker } from "@zentto/shared-ui";
 import dayjs from "dayjs";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
@@ -264,19 +264,11 @@ function PivotTab() {
 }
 
 // ---- Main Component ----
-const CENTROS_COSTO_FILTERS: FilterFieldDef[] = [
-  { field: "estado", label: "Estado", type: "select", options: [
-    { value: "active", label: "Activo" }, { value: "inactive", label: "Inactivo" },
-  ]},
-];
-
 const GRID_IDS = {
   gridRef: buildContabilidadGridId("centros-costo", "main"),
 } as const;
 
 export default function CentrosCostoPage() {
-  const [search, setSearch] = useState("");
-  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
   const [tabValue, setTabValue] = useState(0);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -284,7 +276,7 @@ export default function CentrosCostoPage() {
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const { data, isLoading } = useCentrosCostoList(search || undefined);
+  const { data, isLoading } = useCentrosCostoList();
   const deleteMutation = useDeleteCentroCosto();
   const centros: CentroCosto[] = useMemo(() => data?.data ?? data?.rows ?? [], [data]);
   const tree = useMemo(() => buildCentroCostoTree(centros), [centros]);
@@ -316,8 +308,6 @@ export default function CentrosCostoPage() {
 
       {tabValue === 0 && (
         <>
-          <ZenttoFilterPanel filters={CENTROS_COSTO_FILTERS} values={filterValues} onChange={setFilterValues}
-            searchPlaceholder="Buscar por codigo o nombre..." searchValue={search} onSearchChange={setSearch} />
           <Paper sx={{ borderRadius: 2, overflow: "hidden" }}>
             <Box sx={{ display: "flex", alignItems: "center", py: 1, px: 2, bgcolor: "grey.100", borderBottom: "2px solid", borderColor: "divider" }}>
               <Box sx={{ width: 32, mr: 1 }} />
