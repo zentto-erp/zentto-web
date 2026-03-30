@@ -2083,47 +2083,6 @@ END;
 $function$
 ;
 
--- usp_hr_committee_list
-DROP FUNCTION IF EXISTS public.usp_hr_committee_list(integer, character, boolean, integer, integer) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_hr_committee_list(p_company_id integer, p_country_code character DEFAULT NULL::bpchar, p_is_active boolean DEFAULT NULL::boolean, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
- RETURNS TABLE(p_total_count bigint, "SafetyCommitteeId" integer, "CompanyId" integer, "CountryCode" character, "CommitteeName" character varying, "FormationDate" date, "MeetingFrequency" character varying, "IsActive" boolean, "CreatedAt" timestamp without time zone, "ActiveMemberCount" bigint, "TotalMeetings" bigint)
- LANGUAGE plpgsql
-AS $function$
-BEGIN
-    IF p_page  < 1   THEN p_page  := 1;   END IF;
-    IF p_limit < 1   THEN p_limit := 50;  END IF;
-    IF p_limit > 500 THEN p_limit := 500; END IF;
-
-    RETURN QUERY
-    SELECT
-        COUNT(*) OVER()         AS p_total_count,
-        sc."SafetyCommitteeId",
-        sc."CompanyId",
-        sc."CountryCode",
-        sc."CommitteeName",
-        sc."FormationDate",
-        sc."MeetingFrequency",
-        sc."IsActive",
-        sc."CreatedAt",
-        (
-            SELECT COUNT(*) FROM hr."SafetyCommitteeMember" m
-            WHERE m."SafetyCommitteeId" = sc."SafetyCommitteeId"
-              AND (m."EndDate" IS NULL OR m."EndDate" >= CAST((NOW() AT TIME ZONE 'UTC') AS DATE))
-        )::BIGINT AS "ActiveMemberCount",
-        (
-            SELECT COUNT(*) FROM hr."SafetyCommitteeMeeting" mt
-            WHERE mt."SafetyCommitteeId" = sc."SafetyCommitteeId"
-        )::BIGINT AS "TotalMeetings"
-    FROM hr."SafetyCommittee" sc
-    WHERE sc."CompanyId" = p_company_id
-      AND (p_country_code IS NULL OR sc."CountryCode" = p_country_code)
-      AND (p_is_active    IS NULL OR sc."IsActive"    = p_is_active)
-    ORDER BY sc."IsActive" DESC, sc."FormationDate" DESC
-    LIMIT p_limit OFFSET (p_page - 1) * p_limit;
-END;
-$function$
-;
-
 -- usp_hr_committee_recordmeeting
 DROP FUNCTION IF EXISTS public.usp_hr_committee_recordmeeting(integer, integer, timestamp without time zone, character varying, text, text, integer, character varying) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_hr_committee_recordmeeting(p_safety_committee_id integer, p_company_id integer, p_meeting_date timestamp without time zone, p_minutes_url character varying DEFAULT NULL::character varying, p_topics_summary text DEFAULT NULL::text, p_action_items text DEFAULT NULL::text, OUT p_resultado integer, OUT p_mensaje character varying)
@@ -3175,49 +3134,6 @@ END;
 $function$
 ;
 
--- usp_hr_medexam_list
-DROP FUNCTION IF EXISTS public.usp_hr_medexam_list(integer, character varying, character varying, character varying, date, date, integer, integer) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_hr_medexam_list(p_company_id integer, p_exam_type character varying DEFAULT NULL::character varying, p_result character varying DEFAULT NULL::character varying, p_employee_code character varying DEFAULT NULL::character varying, p_from_date date DEFAULT NULL::date, p_to_date date DEFAULT NULL::date, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
- RETURNS TABLE(p_total_count bigint, "MedicalExamId" integer, "CompanyId" integer, "EmployeeId" bigint, "EmployeeCode" character varying, "EmployeeName" character varying, "ExamType" character varying, "ExamDate" date, "NextDueDate" date, "Result" character varying, "Restrictions" character varying, "PhysicianName" character varying, "ClinicName" character varying, "DocumentUrl" character varying, "Notes" character varying, "CreatedAt" timestamp without time zone, "UpdatedAt" timestamp without time zone)
- LANGUAGE plpgsql
-AS $function$
-BEGIN
-    IF p_page  < 1   THEN p_page  := 1;   END IF;
-    IF p_limit < 1   THEN p_limit := 50;  END IF;
-    IF p_limit > 500 THEN p_limit := 500; END IF;
-
-    RETURN QUERY
-    SELECT
-        COUNT(*) OVER()         AS p_total_count,
-        "MedicalExamId",
-        "CompanyId",
-        "EmployeeId",
-        "EmployeeCode",
-        "EmployeeName",
-        "ExamType",
-        "ExamDate",
-        "NextDueDate",
-        "Result",
-        "Restrictions",
-        "PhysicianName",
-        "ClinicName",
-        "DocumentUrl",
-        "Notes",
-        "CreatedAt",
-        "UpdatedAt"
-    FROM hr."MedicalExam"
-    WHERE "CompanyId" = p_company_id
-      AND (p_exam_type     IS NULL OR "ExamType"     = p_exam_type)
-      AND (p_result        IS NULL OR "Result"        = p_result)
-      AND (p_employee_code IS NULL OR "EmployeeCode"  = p_employee_code)
-      AND (p_from_date     IS NULL OR "ExamDate"     >= p_from_date)
-      AND (p_to_date       IS NULL OR "ExamDate"     <= p_to_date)
-    ORDER BY "ExamDate" DESC, "MedicalExamId" DESC
-    LIMIT p_limit OFFSET (p_page - 1) * p_limit;
-END;
-$function$
-;
-
 -- usp_hr_medexam_save
 DROP FUNCTION IF EXISTS public.usp_hr_medexam_save(integer, integer, bigint, character varying, character varying, character varying, date, date, character varying, character varying, character varying, character varying, character varying, character varying, integer, character varying) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_hr_medexam_save(p_medical_exam_id integer DEFAULT NULL::integer, p_company_id integer DEFAULT NULL::integer, p_employee_id bigint DEFAULT NULL::bigint, p_employee_code character varying DEFAULT NULL::character varying, p_employee_name character varying DEFAULT NULL::character varying, p_exam_type character varying DEFAULT NULL::character varying, p_exam_date date DEFAULT NULL::date, p_next_due_date date DEFAULT NULL::date, p_result character varying DEFAULT 'PENDING'::character varying, p_restrictions character varying DEFAULT NULL::character varying, p_physician_name character varying DEFAULT NULL::character varying, p_clinic_name character varying DEFAULT NULL::character varying, p_document_url character varying DEFAULT NULL::character varying, p_notes character varying DEFAULT NULL::character varying, OUT p_resultado integer, OUT p_mensaje character varying)
@@ -3398,136 +3314,6 @@ BEGIN
         p_resultado := -1;
         p_mensaje   := SQLERRM;
     END;
-END;
-$function$
-;
-
--- usp_hr_medorder_list
-DROP FUNCTION IF EXISTS public.usp_hr_medorder_list(integer, character varying, character varying, character varying, date, date, integer, integer) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_hr_medorder_list(p_company_id integer, p_order_type character varying DEFAULT NULL::character varying, p_status character varying DEFAULT NULL::character varying, p_employee_code character varying DEFAULT NULL::character varying, p_from_date date DEFAULT NULL::date, p_to_date date DEFAULT NULL::date, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
- RETURNS TABLE(p_total_count bigint, "MedicalOrderId" integer, "CompanyId" integer, "EmployeeId" bigint, "EmployeeCode" character varying, "EmployeeName" character varying, "OrderType" character varying, "OrderDate" date, "Diagnosis" character varying, "PhysicianName" character varying, "Prescriptions" character varying, "EstimatedCost" numeric, "ApprovedAmount" numeric, "Status" character varying, "ApprovedBy" integer, "ApprovedAt" timestamp without time zone, "DocumentUrl" character varying, "Notes" character varying, "CreatedAt" timestamp without time zone, "UpdatedAt" timestamp without time zone)
- LANGUAGE plpgsql
-AS $function$
-BEGIN
-    IF p_page  < 1   THEN p_page  := 1;   END IF;
-    IF p_limit < 1   THEN p_limit := 50;  END IF;
-    IF p_limit > 500 THEN p_limit := 500; END IF;
-
-    RETURN QUERY
-    SELECT
-        COUNT(*) OVER()         AS p_total_count,
-        "MedicalOrderId",
-        "CompanyId",
-        "EmployeeId",
-        "EmployeeCode",
-        "EmployeeName",
-        "OrderType",
-        "OrderDate",
-        "Diagnosis",
-        "PhysicianName",
-        "Prescriptions",
-        "EstimatedCost",
-        "ApprovedAmount",
-        "Status",
-        "ApprovedBy",
-        "ApprovedAt",
-        "DocumentUrl",
-        "Notes",
-        "CreatedAt",
-        "UpdatedAt"
-    FROM hr."MedicalOrder"
-    WHERE "CompanyId" = p_company_id
-      AND (p_order_type    IS NULL OR "OrderType"    = p_order_type)
-      AND (p_status        IS NULL OR "Status"        = p_status)
-      AND (p_employee_code IS NULL OR "EmployeeCode"  = p_employee_code)
-      AND (p_from_date     IS NULL OR "OrderDate"    >= p_from_date)
-      AND (p_to_date       IS NULL OR "OrderDate"    <= p_to_date)
-    ORDER BY "OrderDate" DESC, "MedicalOrderId" DESC
-    LIMIT p_limit OFFSET (p_page - 1) * p_limit;
-END;
-$function$
-;
-
--- usp_hr_obligation_getbycountry
-DROP FUNCTION IF EXISTS public.usp_hr_obligation_getbycountry(character, date) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_hr_obligation_getbycountry(p_country_code character, p_as_of_date date DEFAULT NULL::date)
- RETURNS TABLE("LegalObligationId" integer, "CountryCode" character, "Code" character varying, "Name" character varying, "InstitutionName" character varying, "ObligationType" character varying, "CalculationBasis" character varying, "SalaryCap" numeric, "SalaryCapUnit" character varying, "EmployerRate" numeric, "EmployeeRate" numeric, "RateVariableByRisk" boolean, "FilingFrequency" character varying, "FilingDeadlineRule" character varying, "EffectiveFrom" date, "EffectiveTo" date, "Notes" character varying)
- LANGUAGE plpgsql
-AS $function$
-BEGIN
-    IF p_as_of_date IS NULL THEN
-        p_as_of_date := CAST((NOW() AT TIME ZONE 'UTC') AS DATE);
-    END IF;
-
-    RETURN QUERY
-    SELECT
-        o."LegalObligationId",
-        o."CountryCode",
-        o."Code",
-        o."Name",
-        o."InstitutionName",
-        o."ObligationType",
-        o."CalculationBasis",
-        o."SalaryCap",
-        o."SalaryCapUnit",
-        o."EmployerRate",
-        o."EmployeeRate",
-        o."RateVariableByRisk",
-        o."FilingFrequency",
-        o."FilingDeadlineRule",
-        o."EffectiveFrom",
-        o."EffectiveTo",
-        o."Notes"
-    FROM hr."LegalObligation" o
-    WHERE o."CountryCode" = p_country_code
-      AND o."IsActive" = TRUE
-      AND o."EffectiveFrom" <= p_as_of_date
-      AND (o."EffectiveTo" IS NULL OR o."EffectiveTo" >= p_as_of_date)
-    ORDER BY o."Code";
-END;
-$function$
-;
-
--- usp_hr_obligation_list
-DROP FUNCTION IF EXISTS public.usp_hr_obligation_list(character, character varying, boolean, character varying, integer, integer) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_hr_obligation_list(p_country_code character DEFAULT NULL::bpchar, p_obligation_type character varying DEFAULT NULL::character varying, p_is_active boolean DEFAULT NULL::boolean, p_search character varying DEFAULT NULL::character varying, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
- RETURNS TABLE(p_total_count bigint, "LegalObligationId" integer, "CountryCode" character, "Code" character varying, "Name" character varying, "InstitutionName" character varying, "ObligationType" character varying, "CalculationBasis" character varying, "SalaryCap" numeric, "SalaryCapUnit" character varying, "EmployerRate" numeric, "EmployeeRate" numeric, "RateVariableByRisk" boolean, "FilingFrequency" character varying, "FilingDeadlineRule" character varying, "EffectiveFrom" date, "EffectiveTo" date, "IsActive" boolean, "Notes" character varying)
- LANGUAGE plpgsql
-AS $function$
-BEGIN
-    IF p_page  < 1   THEN p_page  := 1;   END IF;
-    IF p_limit < 1   THEN p_limit := 50;  END IF;
-    IF p_limit > 500 THEN p_limit := 500; END IF;
-
-    RETURN QUERY
-    SELECT
-        COUNT(*) OVER()         AS p_total_count,
-        "LegalObligationId",
-        "CountryCode",
-        "Code",
-        "Name",
-        "InstitutionName",
-        "ObligationType",
-        "CalculationBasis",
-        "SalaryCap",
-        "SalaryCapUnit",
-        "EmployerRate",
-        "EmployeeRate",
-        "RateVariableByRisk",
-        "FilingFrequency",
-        "FilingDeadlineRule",
-        "EffectiveFrom",
-        "EffectiveTo",
-        "IsActive",
-        "Notes"
-    FROM hr."LegalObligation"
-    WHERE (p_country_code    IS NULL OR "CountryCode"    = p_country_code)
-      AND (p_obligation_type IS NULL OR "ObligationType" = p_obligation_type)
-      AND (p_is_active       IS NULL OR "IsActive"       = p_is_active)
-      AND (p_search          IS NULL OR "Name" ILIKE '%' || p_search || '%'
-                                     OR "Code" ILIKE '%' || p_search || '%')
-    ORDER BY "CountryCode", "Code"
-    LIMIT p_limit OFFSET (p_page - 1) * p_limit;
 END;
 $function$
 ;
@@ -3751,60 +3537,6 @@ BEGIN
     FROM hr."OccupationalHealth" o
     WHERE o."OccupationalHealthId" = p_occupational_health_id
       AND o."CompanyId" = p_company_id;
-END;
-$function$
-;
-
--- usp_hr_occhealth_list
-DROP FUNCTION IF EXISTS public.usp_hr_occhealth_list(integer, character varying, character varying, character varying, character, date, date, integer, integer) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_hr_occhealth_list(p_company_id integer, p_record_type character varying DEFAULT NULL::character varying, p_status character varying DEFAULT NULL::character varying, p_employee_code character varying DEFAULT NULL::character varying, p_country_code character DEFAULT NULL::bpchar, p_from_date date DEFAULT NULL::date, p_to_date date DEFAULT NULL::date, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
- RETURNS TABLE(p_total_count bigint, "OccupationalHealthId" integer, "CompanyId" integer, "CountryCode" character, "RecordType" character varying, "EmployeeId" bigint, "EmployeeCode" character varying, "EmployeeName" character varying, "OccurrenceDate" timestamp without time zone, "ReportDeadline" timestamp without time zone, "ReportedDate" timestamp without time zone, "Severity" character varying, "BodyPartAffected" character varying, "DaysLost" integer, "Location" character varying, "Description" character varying, "RootCause" character varying, "CorrectiveAction" character varying, "InvestigationDueDate" date, "InvestigationCompletedDate" date, "InstitutionReference" character varying, "Status" character varying, "DocumentUrl" character varying, "Notes" character varying, "CreatedBy" integer, "CreatedAt" timestamp without time zone, "UpdatedAt" timestamp without time zone)
- LANGUAGE plpgsql
-AS $function$
-BEGIN
-    IF p_page  < 1   THEN p_page  := 1;   END IF;
-    IF p_limit < 1   THEN p_limit := 50;  END IF;
-    IF p_limit > 500 THEN p_limit := 500; END IF;
-
-    RETURN QUERY
-    SELECT
-        COUNT(*) OVER()         AS p_total_count,
-        "OccupationalHealthId",
-        "CompanyId",
-        "CountryCode",
-        "RecordType",
-        "EmployeeId",
-        "EmployeeCode",
-        "EmployeeName",
-        "OccurrenceDate",
-        "ReportDeadline",
-        "ReportedDate",
-        "Severity",
-        "BodyPartAffected",
-        "DaysLost",
-        "Location",
-        "Description",
-        "RootCause",
-        "CorrectiveAction",
-        "InvestigationDueDate",
-        "InvestigationCompletedDate",
-        "InstitutionReference",
-        "Status",
-        "DocumentUrl",
-        "Notes",
-        "CreatedBy",
-        "CreatedAt",
-        "UpdatedAt"
-    FROM hr."OccupationalHealth"
-    WHERE "CompanyId" = p_company_id
-      AND (p_record_type   IS NULL OR "RecordType"   = p_record_type)
-      AND (p_status        IS NULL OR "Status"        = p_status)
-      AND (p_employee_code IS NULL OR "EmployeeCode"  = p_employee_code)
-      AND (p_country_code  IS NULL OR "CountryCode"   = p_country_code)
-      AND (p_from_date     IS NULL OR "OccurrenceDate" >= p_from_date)
-      AND (p_to_date       IS NULL OR "OccurrenceDate" <= p_to_date)
-    ORDER BY "OccurrenceDate" DESC, "OccupationalHealthId" DESC
-    LIMIT p_limit OFFSET (p_page - 1) * p_limit;
 END;
 $function$
 ;
@@ -6010,40 +5742,6 @@ END;
 $function$
 ;
 
--- usp_hr_savings_list
-DROP FUNCTION IF EXISTS public.usp_hr_savings_list(integer, character varying, character varying, integer, integer) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_hr_savings_list(p_company_id integer, p_status character varying DEFAULT NULL::character varying, p_employee_code character varying DEFAULT NULL::character varying, p_offset integer DEFAULT 0, p_limit integer DEFAULT 50)
- RETURNS TABLE(p_total_count bigint, "SavingsFundId" integer, "EmployeeId" bigint, "EmployeeCode" character varying, "EmployeeName" character varying, "EmployeeContribution" numeric, "EmployerMatch" numeric, "EnrollmentDate" date, "Status" character varying, "CreatedAt" timestamp without time zone, "CurrentBalance" numeric)
- LANGUAGE plpgsql
-AS $function$
-BEGIN
-    RETURN QUERY
-    SELECT
-        COUNT(*) OVER()         AS p_total_count,
-        sf."SavingsFundId",
-        sf."EmployeeId",
-        sf."EmployeeCode",
-        sf."EmployeeName",
-        sf."EmployeeContribution",
-        sf."EmployerMatch",
-        sf."EnrollmentDate",
-        sf."Status",
-        sf."CreatedAt",
-        COALESCE((
-            SELECT "Balance" FROM hr."SavingsFundTransaction"
-            WHERE "SavingsFundId" = sf."SavingsFundId"
-            ORDER BY "TransactionId" DESC LIMIT 1
-        ), 0::NUMERIC) AS "CurrentBalance"
-    FROM hr."SavingsFund" sf
-    WHERE sf."CompanyId" = p_company_id
-      AND (p_status        IS NULL OR sf."Status"       = p_status)
-      AND (p_employee_code IS NULL OR sf."EmployeeCode" = p_employee_code)
-    ORDER BY sf."EmployeeName"
-    LIMIT p_limit OFFSET p_offset;
-END;
-$function$
-;
-
 -- usp_hr_savings_loanlist
 DROP FUNCTION IF EXISTS public.usp_hr_savings_loanlist(integer, character varying, character varying, integer, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_hr_savings_loanlist(p_company_id integer, p_status character varying DEFAULT NULL::character varying, p_employee_code character varying DEFAULT NULL::character varying, p_offset integer DEFAULT 0, p_limit integer DEFAULT 50)
@@ -6374,54 +6072,6 @@ BEGIN
       AND t."Result"            = 'PASSED'
       AND t."CertificateNumber" IS NOT NULL
     ORDER BY t."StartDate" DESC;
-END;
-$function$
-;
-
--- usp_hr_training_list
-DROP FUNCTION IF EXISTS public.usp_hr_training_list(integer, character varying, character varying, character, boolean, character varying, date, date, integer, integer) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_hr_training_list(p_company_id integer, p_training_type character varying DEFAULT NULL::character varying, p_employee_code character varying DEFAULT NULL::character varying, p_country_code character DEFAULT NULL::bpchar, p_is_regulatory boolean DEFAULT NULL::boolean, p_result character varying DEFAULT NULL::character varying, p_from_date date DEFAULT NULL::date, p_to_date date DEFAULT NULL::date, p_page integer DEFAULT 1, p_limit integer DEFAULT 50)
- RETURNS TABLE(p_total_count bigint, "TrainingRecordId" integer, "CompanyId" integer, "CountryCode" character, "TrainingType" character varying, "Title" character varying, "Provider" character varying, "StartDate" date, "EndDate" date, "DurationHours" numeric, "EmployeeId" bigint, "EmployeeCode" character varying, "EmployeeName" character varying, "CertificateNumber" character varying, "CertificateUrl" character varying, "Result" character varying, "IsRegulatory" boolean, "Notes" character varying, "CreatedAt" timestamp without time zone, "UpdatedAt" timestamp without time zone)
- LANGUAGE plpgsql
-AS $function$
-BEGIN
-    IF p_page  < 1   THEN p_page  := 1;   END IF;
-    IF p_limit < 1   THEN p_limit := 50;  END IF;
-    IF p_limit > 500 THEN p_limit := 500; END IF;
-
-    RETURN QUERY
-    SELECT
-        COUNT(*) OVER()         AS p_total_count,
-        "TrainingRecordId",
-        "CompanyId",
-        "CountryCode",
-        "TrainingType",
-        "Title",
-        "Provider",
-        "StartDate",
-        "EndDate",
-        "DurationHours",
-        "EmployeeId",
-        "EmployeeCode",
-        "EmployeeName",
-        "CertificateNumber",
-        "CertificateUrl",
-        "Result",
-        "IsRegulatory",
-        "Notes",
-        "CreatedAt",
-        "UpdatedAt"
-    FROM hr."TrainingRecord"
-    WHERE "CompanyId" = p_company_id
-      AND (p_training_type IS NULL OR "TrainingType" = p_training_type)
-      AND (p_employee_code IS NULL OR "EmployeeCode" = p_employee_code)
-      AND (p_country_code  IS NULL OR "CountryCode"  = p_country_code)
-      AND (p_is_regulatory IS NULL OR "IsRegulatory" = p_is_regulatory)
-      AND (p_result        IS NULL OR "Result"        = p_result)
-      AND (p_from_date     IS NULL OR "StartDate"    >= p_from_date)
-      AND (p_to_date       IS NULL OR "StartDate"    <= p_to_date)
-    ORDER BY "StartDate" DESC, "TrainingRecordId" DESC
-    LIMIT p_limit OFFSET (p_page - 1) * p_limit;
 END;
 $function$
 ;
@@ -6768,43 +6418,6 @@ BEGIN
     FROM hr."SocialBenefitsTrust" t
     WHERE t."CompanyId" = p_company_id AND t."FiscalYear" = p_fiscal_year AND t."Quarter" = p_quarter
     ORDER BY t."EmployeeName";
-END;
-$function$
-;
-
--- usp_hr_trust_list
-DROP FUNCTION IF EXISTS public.usp_hr_trust_list(integer, integer, smallint, character varying, character varying, integer, integer) CASCADE;
-CREATE OR REPLACE FUNCTION public.usp_hr_trust_list(p_company_id integer, p_fiscal_year integer DEFAULT NULL::integer, p_quarter smallint DEFAULT NULL::smallint, p_employee_code character varying DEFAULT NULL::character varying, p_status character varying DEFAULT NULL::character varying, p_offset integer DEFAULT 0, p_limit integer DEFAULT 50)
- RETURNS TABLE(p_total_count bigint, "TrustId" integer, "EmployeeId" bigint, "EmployeeCode" character varying, "EmployeeName" character varying, "FiscalYear" integer, "Quarter" smallint, "DailySalary" numeric, "DaysDeposited" integer, "BonusDays" integer, "DepositAmount" numeric, "InterestRate" numeric, "InterestAmount" numeric, "AccumulatedBalance" numeric, "Status" character varying, "CreatedAt" timestamp without time zone)
- LANGUAGE plpgsql
-AS $function$
-BEGIN
-    RETURN QUERY
-    SELECT
-        COUNT(*) OVER()         AS p_total_count,
-        t."TrustId",
-        t."EmployeeId",
-        t."EmployeeCode",
-        t."EmployeeName",
-        t."FiscalYear",
-        t."Quarter",
-        t."DailySalary",
-        t."DaysDeposited",
-        t."BonusDays",
-        t."DepositAmount",
-        t."InterestRate",
-        t."InterestAmount",
-        t."AccumulatedBalance",
-        t."Status",
-        t."CreatedAt"
-    FROM hr."SocialBenefitsTrust" t
-    WHERE t."CompanyId" = p_company_id
-      AND (p_fiscal_year   IS NULL OR t."FiscalYear"    = p_fiscal_year)
-      AND (p_quarter       IS NULL OR t."Quarter"        = p_quarter)
-      AND (p_employee_code IS NULL OR t."EmployeeCode"   = p_employee_code)
-      AND (p_status        IS NULL OR t."Status"         = p_status)
-    ORDER BY t."FiscalYear" DESC, t."Quarter" DESC, t."EmployeeName"
-    LIMIT p_limit OFFSET p_offset;
 END;
 $function$
 ;
