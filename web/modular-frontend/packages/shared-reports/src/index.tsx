@@ -43,7 +43,7 @@ export type {
 
 // ─── Layouts de reportes por módulo ─────────────────────────────
 
-export { ASIENTOS_LIST_LAYOUT } from './layouts/contabilidad/asientos-list';
+export * from './layouts';
 
 // ─── Re-exports from report-core (convenience) ──────────────────────
 
