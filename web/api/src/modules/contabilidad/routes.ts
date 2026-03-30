@@ -88,19 +88,42 @@ const depreciacionSchema = z.object({
   centroCosto: z.string().optional()
 });
 
+/** Normalise a date string (DD/MM/YYYY, MM/DD/YYYY, YYYY-MM-DD, etc.) to ISO YYYY-MM-DD */
+function toISODate(raw: string): string {
+  // Already ISO
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+  // DD/MM/YYYY (common with locale "es")
+  const dmy = raw.match(/^(\d{1,2})[/\-.](\d{1,2})[/\-.](\d{4})$/);
+  if (dmy) {
+    const [, a, b, y] = dmy;
+    // If first segment > 12, it must be day (DD/MM/YYYY)
+    if (Number(a) > 12) return `${y}-${b.padStart(2, "0")}-${a.padStart(2, "0")}`;
+    // If second segment > 12, first is month (MM/DD/YYYY)
+    if (Number(b) > 12) return `${y}-${a.padStart(2, "0")}-${b.padStart(2, "0")}`;
+    // Ambiguous (both <= 12) — assume DD/MM/YYYY (es locale default)
+    return `${y}-${b.padStart(2, "0")}-${a.padStart(2, "0")}`;
+  }
+  // Fallback: let Date parse and extract ISO
+  const d = new Date(raw);
+  if (!isNaN(d.getTime())) return d.toISOString().slice(0, 10);
+  return raw;
+}
+
+const zDateISO = z.string().min(1).transform(toISODate);
+
 const rangoSchema = z.object({
-  fechaDesde: z.string().min(1),
-  fechaHasta: z.string().min(1)
+  fechaDesde: zDateISO,
+  fechaHasta: zDateISO,
 });
 
 const mayorAnaliticoSchema = z.object({
   codCuenta: z.string().min(1),
-  fechaDesde: z.string().min(1),
-  fechaHasta: z.string().min(1)
+  fechaDesde: zDateISO,
+  fechaHasta: zDateISO,
 });
 
 const balanceGeneralSchema = z.object({
-  fechaCorte: z.string().min(1)
+  fechaCorte: zDateISO,
 });
 
 contabilidadRouter.get("/asientos", async (req, res) => {

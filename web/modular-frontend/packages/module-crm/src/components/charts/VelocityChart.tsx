@@ -40,13 +40,13 @@ export default function VelocityChart({ data }: Props) {
             data: data.map((d) => d.AvgDaysInStage),
             label: "Promedio",
             color: "#1976d2",
-            valueFormatter: (v) => `${(v ?? 0).toFixed(1)} días`,
+            valueFormatter: (v) => `${Number(v ?? 0).toFixed(1)} días`,
           },
           {
             data: data.map((d) => d.MedianDaysInStage),
             label: "Mediana",
             color: "#ff9800",
-            valueFormatter: (v) => `${(v ?? 0).toFixed(1)} días`,
+            valueFormatter: (v) => `${Number(v ?? 0).toFixed(1)} días`,
           },
         ]}
         colors={data.map((d) => d.Color || "#1976d2")}

@@ -68,8 +68,8 @@ export default function ContabilidadHome() {
   const { fechaDesde, fechaHasta } = useMemo(() => {
     const now = new Date();
     return {
-      fechaDesde: toDateOnly(new Date(now.getFullYear(), 0, 1), timeZone),
-      fechaHasta: toDateOnly(now, timeZone),
+      fechaDesde: new Date(now.getFullYear(), 0, 1).toISOString().slice(0, 10),
+      fechaHasta: now.toISOString().slice(0, 10),
     };
   }, [timeZone]);
 
