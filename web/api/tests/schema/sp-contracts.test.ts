@@ -175,10 +175,7 @@ describe("SP Contracts — tipos BIGINT en funciones POS", () => {
   for (const fn of bigintReturnFunctions) {
     it(`${fn} debe retornar "Resultado" como BIGINT`, async () => {
       const metas = await getFuncMeta(fn);
-      if (metas.length === 0) {
-        console.warn(`  ⚠  ${fn} no encontrada — omitiendo test de tipo`);
-        return; // skip si no existe
-      }
+      expect(metas.length, `La función ${fn} no existe en la base de datos`).toBeGreaterThan(0);
       const meta = metas[0];
       expect(
         meta.rettype.toLowerCase(),
@@ -189,7 +186,7 @@ describe("SP Contracts — tipos BIGINT en funciones POS", () => {
 
   it("usp_pos_waitticketline_insert primer parámetro debe ser bigint", async () => {
     const metas = await getFuncMeta("usp_pos_waitticketline_insert");
-    if (metas.length === 0) return;
+    expect(metas.length, "usp_pos_waitticketline_insert no existe").toBeGreaterThan(0);
     const firstArgType = metas[0]?.argtypes[0] ?? "";
     expect(
       firstArgType.toLowerCase(),
@@ -199,8 +196,7 @@ describe("SP Contracts — tipos BIGINT en funciones POS", () => {
 
   it("usp_pos_waitticket_recover p_wait_ticket_id debe ser bigint", async () => {
     const metas = await getFuncMeta("usp_pos_waitticket_recover");
-    if (metas.length === 0) return;
-    // Tercer parámetro (índice 2) es p_wait_ticket_id
+    expect(metas.length, "usp_pos_waitticket_recover no existe").toBeGreaterThan(0);
     const thirdArgType = metas[0]?.argtypes[2] ?? "";
     expect(
       thirdArgType.toLowerCase(),
@@ -214,29 +210,61 @@ describe("SP Contracts — tipos BIGINT en funciones POS", () => {
 // ────────────────────────────────────────────────────────────────────────────
 
 describe("SP Contracts — funciones de infraestructura", () => {
-  // Solo las funciones más críticas para que el sistema arranque
   const requiredFunctions = [
+    // Auth + config (sistema base)
     "usp_sec_user_authenticate",
     "usp_cfg_resolvecontext",
     "usp_cfg_fiscal_getconfig",
+    // POS
     "usp_pos_waitticket_create",
     "usp_pos_saleticket_create",
-    // Módulo shipping (migración 00020)
+    // Shipping (migración 00020)
     "usp_shipping_customer_register",
     "usp_shipping_customer_login",
     "usp_shipping_shipment_create",
     "usp_shipping_shipment_list",
     "usp_shipping_track",
-    // Sistema de respaldos de tenants (migraciones 00029/00030)
+    // Backups (migraciones 00029/00030)
     "usp_sys_backup_create",
     "usp_sys_backup_complete",
     "usp_sys_backup_fail",
     "usp_sys_backup_list",
-    // Resource management + cleanup (migración 00028)
+    // Resource management (migración 00028)
     "usp_sys_resource_audit",
     "usp_sys_cleanup_scan",
     "usp_sys_cleanup_list",
     "usp_sys_cleanup_process",
+    // Módulos de negocio (antes opcionales, ahora obligatorios)
+    "usp_ar_receivabledocument_list",
+    "usp_ap_payabledocument_list",
+    "usp_fin_bank_list",
+    "usp_fin_bankaccount_list",
+    "usp_fin_bankmovement_list",
+    "usp_acct_account_list",
+    "usp_master_customer_list",
+    "usp_master_supplier_list",
+    "usp_master_product_list",
+    "usp_hr_payrollrun_list",
+    "usp_doc_salesdocument_list",
+    "usp_doc_purchasedocument_list",
+    "usp_shipping_dashboard",
+    "usp_shipping_customs_upsert",
+    "usp_sys_backup_tenantinfo",
+    "usp_sys_backup_latest_per_tenant",
+    // Fiscal (migración 00042)
+    "usp_fiscal_taxbook_populate",
+    "usp_fiscal_taxbook_list",
+    "usp_fiscal_taxbook_summary",
+    "usp_fiscal_declaration_calculate",
+    "usp_fiscal_declaration_list",
+    "usp_fiscal_declaration_get",
+    "usp_fiscal_declaration_submit",
+    "usp_fiscal_declaration_amend",
+    "usp_fiscal_withholding_generate",
+    "usp_fiscal_withholding_list",
+    "usp_fiscal_withholding_get",
+    "usp_fiscal_export_taxbook",
+    "usp_fiscal_export_declaration",
   ];
 
   for (const fn of requiredFunctions) {
@@ -599,55 +627,8 @@ describe("SP Contracts — columnas de RETURNS TABLE deben ser BIGINT", () => {
   });
 });
 
-// ────────────────────────────────────────────────────────────────────────────
-// Test 8: Funciones de módulo críticas — opcionales (warn si no existen)
-// ────────────────────────────────────────────────────────────────────────────
-
-describe("SP Contracts — funciones de módulo críticas (opcionales)", () => {
-  const optionalModuleFunctions: string[] = [
-    "usp_ar_receivabledocument_list",
-    "usp_ap_payabledocument_list",
-    "usp_fin_bank_list",
-    "usp_fin_bankaccount_list",
-    "usp_fin_bankmovement_list",
-    "usp_acct_account_list",
-    "usp_master_customer_list",
-    "usp_master_supplier_list",
-    "usp_master_product_list",
-    "usp_hr_payrollrun_list",
-    // Módulos con filtro de estado (migración 00021)
-    "usp_doc_salesdocument_list",
-    "usp_doc_purchasedocument_list",
-    // Shipping dashboard y customs
-    "usp_shipping_dashboard",
-    "usp_shipping_customs_upsert",
-    // Backup helpers
-    "usp_sys_backup_tenantinfo",
-    "usp_sys_backup_latest_per_tenant",
-  ];
-
-  for (const fn of optionalModuleFunctions) {
-    it(`${fn} debe existir (opcional — warn si falta)`, async () => {
-      const res = await pool.query<{ cnt: string }>(
-        `SELECT COUNT(*) AS cnt FROM pg_proc WHERE proname = $1`,
-        [fn.toLowerCase()],
-      );
-      const exists = Number(res.rows[0]?.cnt ?? 0) > 0;
-
-      if (!exists) {
-        console.warn(
-          `[SP Contracts] WARN: La función "${fn}" no existe — puede estar pendiente de implementación.`,
-        );
-        // Test opcional: no falla, solo advierte
-        return;
-      }
-
-      expect(exists, `La función ${fn} no existe en la base de datos`).toBe(
-        true,
-      );
-    });
-  }
-});
+// Test 8 eliminado — todas las funciones antes "opcionales" ahora son
+// obligatorias en Test 4 (requiredFunctions). 0 skips permitidos.
 
 // ────────────────────────────────────────────────────────────────────────────
 // Test 9: Tablas del esquema sys — deben existir tras las migraciones
