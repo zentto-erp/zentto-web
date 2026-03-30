@@ -123,31 +123,18 @@ jobs:
           PG_PASSWORD: test_password
           DB_TYPE: postgres
         run: |
-          # Validar el mismo flujo que usa producción/tenant provisioning.
-          psql -h 127.0.0.1 -U zentto_app -d zentto_test -v ON_ERROR_STOP=1 -c "CREATE EXTENSION IF NOT EXISTS pgcrypto;"
-          psql -h 127.0.0.1 -U zentto_app -d zentto_test -v ON_ERROR_STOP=1 -c "CREATE EXTENSION IF NOT EXISTS unaccent;"
-          psql -h 127.0.0.1 -U zentto_app -d zentto_test -v ON_ERROR_STOP=1 -c "CREATE EXTENSION IF NOT EXISTS pg_trgm;"
-          psql -h 127.0.0.1 -U zentto_app -d zentto_test -v ON_ERROR_STOP=1 -c "CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";"
-          psql -h 127.0.0.1 -U zentto_app -d zentto_test -v ON_ERROR_STOP=1 -c "CREATE EXTENSION IF NOT EXISTS btree_gin;"
-          curl -fsSL -o /usr/local/bin/goose https://github.com/pressly/goose/releases/download/v3.24.1/goose_linux_x86_64
-          chmod +x /usr/local/bin/goose
-          bash ../../scripts/migrate.sh up
+          # Bootstrap from baseline (pg_dump of zentto_dev)
           cd sqlweb-pg
-          psql -h 127.0.0.1 -U zentto_app -d zentto_test -v ON_ERROR_STOP=1 -f run-functions.sql
-          psql -h 127.0.0.1 -U zentto_app -d zentto_test -v ON_ERROR_STOP=1 -f run-seeds-config.sql
-          psql -h 127.0.0.1 -U zentto_app -d zentto_test -v ON_ERROR_STOP=1 -f run-seeds-starter.sql
-          # Limpiar overloads duplicados creados por migraciones + run-functions
-          psql -h 127.0.0.1 -U zentto_app -d zentto_test -v ON_ERROR_STOP=1 <<'CLEANUP'
-          DO $$ DECLARE fn_name TEXT; fn_oid OID; fn_args TEXT; keep_oid OID;
-          BEGIN
-            FOR fn_name IN SELECT p.proname FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='public' AND p.proname LIKE 'usp_%' GROUP BY p.proname HAVING COUNT(*)>1
-            LOOP
-              SELECT MAX(p.oid) INTO keep_oid FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='public' AND p.proname=fn_name;
-              FOR fn_oid, fn_args IN SELECT p.oid, pg_get_function_identity_arguments(p.oid) FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='public' AND p.proname=fn_name AND p.oid<>keep_oid
-              LOOP EXECUTE format('DROP FUNCTION IF EXISTS public.%I(%s) CASCADE', fn_name, fn_args); END LOOP;
-            END LOOP;
-          END $$;
-          CLEANUP
+          for f in baseline/000_schemas.sql baseline/001_extensions.sql baseline/002_types.sql \
+                   baseline/003_tables.sql baseline/004_sequences.sql baseline/005_functions.sql \
+                   baseline/006_indexes.sql baseline/007_constraints.sql baseline/008_triggers.sql; do
+            echo "  $(basename $f)..."
+            psql -h 127.0.0.1 -U zentto_app -d zentto_test -v ON_ERROR_STOP=1 < "$f"
+          done
+          echo "==> Applying seeds..."
+          psql -h 127.0.0.1 -U zentto_app -d zentto_test -c "SET session_replication_role = 'replica';"
+          psql -h 127.0.0.1 -U zentto_app -d zentto_test < seeds/001_seed_data.sql || true
+          psql -h 127.0.0.1 -U zentto_app -d zentto_test -c "SET session_replication_role = 'origin';"
 
       - name: Run SP contract tests
         working-directory: web/api
@@ -157,7 +144,7 @@ jobs:
           PG_DATABASE: zentto_test
           PG_USER: zentto_app
           PG_PASSWORD: test_password
-        run: npm run test:schema
+        run: npx vitest run tests/schema/sp-contracts.test.ts
 
   # ── Build & Push Docker image ───────────────────────────────
   build:
