@@ -250,3 +250,24 @@ export const MOVIMIENTOS_BANCARIOS_LAYOUT = {
     },
   ],
 };
+
+export const MOVIMIENTOS_BANCARIOS_LAYOUT_SAMPLE = {
+  header: {
+    empresa: "Zentto Soluciones Tecnologicas S.L.",
+    nroCuenta: "0134-0012-34-0123456789",
+    banco: "Banesco Banco Universal",
+    fechaDesde: "01/01/2026",
+    fechaHasta: "31/03/2026",
+    saldoInicial: 120000.00,
+    saldoFinal: 185320.50,
+  },
+  movimientos: [
+    { fecha: "05/01/2026", referencia: "DEP-0001", concepto: "Deposito cobro factura FV-001", debito: 28750.00, credito: 0.00, saldo: 148750.00 },
+    { fecha: "10/01/2026", referencia: "CHQ-0455", concepto: "Pago alquiler oficina enero", debito: 0.00, credito: 3500.00, saldo: 145250.00 },
+    { fecha: "28/01/2026", referencia: "TRF-0012", concepto: "Pago nomina enero 2026", debito: 0.00, credito: 18200.00, saldo: 127050.00 },
+    { fecha: "15/02/2026", referencia: "DEP-0015", concepto: "Deposito cobro factura FV-008", debito: 45000.00, credito: 0.00, saldo: 172050.00 },
+    { fecha: "28/02/2026", referencia: "TRF-0028", concepto: "Pago nomina febrero 2026", debito: 0.00, credito: 18200.00, saldo: 153850.00 },
+    { fecha: "10/03/2026", referencia: "DEP-0022", concepto: "Cobro cliente Distribuidora Norte", debito: 35000.00, credito: 0.00, saldo: 188850.00 },
+    { fecha: "20/03/2026", referencia: "CHQ-0480", concepto: "Pago servicios publicos marzo", debito: 0.00, credito: 3529.50, saldo: 185320.50 },
+  ],
+};

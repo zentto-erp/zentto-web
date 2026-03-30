@@ -207,3 +207,20 @@ export const MOVIMIENTOS_INVENTARIO_LAYOUT = {
     },
   ],
 };
+
+export const MOVIMIENTOS_INVENTARIO_LAYOUT_SAMPLE = {
+  header: {
+    empresa: "Zentto Soluciones Tecnologicas S.L.",
+    fechaDesde: "01/01/2026",
+    fechaHasta: "31/03/2026",
+    totalMovimientos: 6,
+  },
+  movimientos: [
+    { fecha: "05/01/2026", tipoMovimiento: "ENTRADA", codArticulo: "ART-001", nombreArticulo: "Laptop HP ProBook 450 G10", almacen: "Principal", cantidad: 10, costoUnitario: 4200.00, costoTotal: 42000.00 },
+    { fecha: "12/01/2026", tipoMovimiento: "SALIDA", codArticulo: "ART-002", nombreArticulo: "Monitor Dell 27\" 4K", almacen: "Principal", cantidad: 3, costoUnitario: 1700.00, costoTotal: 5100.00 },
+    { fecha: "20/02/2026", tipoMovimiento: "ENTRADA", codArticulo: "ART-005", nombreArticulo: "Disco SSD Samsung 1TB", almacen: "Deposito Sur", cantidad: 25, costoUnitario: 350.00, costoTotal: 8750.00 },
+    { fecha: "05/03/2026", tipoMovimiento: "TRASLADO", codArticulo: "ART-003", nombreArticulo: "Teclado mecanico Logitech MX", almacen: "Sucursal Norte", cantidad: 12, costoUnitario: 420.00, costoTotal: 5040.00 },
+    { fecha: "18/03/2026", tipoMovimiento: "SALIDA", codArticulo: "ART-001", nombreArticulo: "Laptop HP ProBook 450 G10", almacen: "Principal", cantidad: 5, costoUnitario: 4200.00, costoTotal: 21000.00 },
+    { fecha: "25/03/2026", tipoMovimiento: "AJUSTE", codArticulo: "ART-004", nombreArticulo: "Cable HDMI 2.1 3m", almacen: "Principal", cantidad: -2, costoUnitario: 32.00, costoTotal: 64.00 },
+  ],
+};

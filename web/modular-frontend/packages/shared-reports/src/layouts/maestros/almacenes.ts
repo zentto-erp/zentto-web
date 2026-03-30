@@ -169,3 +169,17 @@ export const ALMACENES_LAYOUT = {
     },
   ],
 };
+
+export const ALMACENES_LAYOUT_SAMPLE = {
+  header: {
+    empresa: "Zentto Soluciones Tecnologicas S.L.",
+    totalAlmacenes: 5,
+  },
+  almacenes: [
+    { codigo: "ALM-001", nombre: "Almacen Principal", tipo: "PRINCIPAL", direccion: "Av. Bolivar Norte, Galpón 3, Valencia", responsable: "Pedro Ramirez", estado: "ACTIVO" },
+    { codigo: "ALM-002", nombre: "Deposito Sur", tipo: "DEPOSITO", direccion: "Zona Industrial Sur, Galpon 12, Valencia", responsable: "Ana Gutierrez", estado: "ACTIVO" },
+    { codigo: "ALM-003", nombre: "Sucursal Norte", tipo: "SUCURSAL", direccion: "Av. Cedeño, Local 5, Barquisimeto", responsable: "Luis Torres", estado: "ACTIVO" },
+    { codigo: "ALM-004", nombre: "Almacen Transito", tipo: "TRANSITO", direccion: "Puerto La Guaira, Deposito 8", responsable: "Maria Fernandez", estado: "ACTIVO" },
+    { codigo: "ALM-005", nombre: "Almacen Obsoletos", tipo: "OBSOLETO", direccion: "Av. Bolivar Norte, Galpon 5, Valencia", responsable: "Pedro Ramirez", estado: "INACTIVO" },
+  ],
+};

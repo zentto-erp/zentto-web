@@ -172,3 +172,18 @@ export const VACACIONES_LAYOUT = {
     },
   ],
 };
+
+export const VACACIONES_LAYOUT_SAMPLE = {
+  header: {
+    empresa: "Zentto Soluciones Tecnologicas S.L.",
+    totalSolicitudes: 6,
+  },
+  solicitudes: [
+    { empleado: "V-12345678", nombreEmpleado: "Maria Fernandez Garcia", fechaSolicitud: "10/01/2026", fechaInicio: "02/02/2026", fechaFin: "16/02/2026", dias: 15, status: "APROBADA" },
+    { empleado: "V-78901234", nombreEmpleado: "Jorge Morales Bravo", fechaSolicitud: "15/02/2026", fechaInicio: "16/03/2026", fechaFin: "30/03/2026", dias: 15, status: "APROBADA" },
+    { empleado: "V-23456789", nombreEmpleado: "Carlos Mendoza Rodriguez", fechaSolicitud: "01/03/2026", fechaInicio: "06/04/2026", fechaFin: "17/04/2026", dias: 12, status: "PENDIENTE" },
+    { empleado: "V-56789012", nombreEmpleado: "Luis Torres Martinez", fechaSolicitud: "05/03/2026", fechaInicio: "20/04/2026", fechaFin: "01/05/2026", dias: 12, status: "PENDIENTE" },
+    { empleado: "V-34567890", nombreEmpleado: "Ana Gutierrez Lopez", fechaSolicitud: "20/01/2026", fechaInicio: "03/03/2026", fechaFin: "10/03/2026", dias: 8, status: "DISFRUTADA" },
+    { empleado: "V-67890123", nombreEmpleado: "Rosa Diaz Hernandez", fechaSolicitud: "18/03/2026", fechaInicio: "01/06/2026", fechaFin: "15/06/2026", dias: 15, status: "RECHAZADA" },
+  ],
+};

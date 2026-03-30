@@ -169,3 +169,17 @@ export const CAJA_CHICA_LAYOUT = {
     },
   ],
 };
+
+export const CAJA_CHICA_LAYOUT_SAMPLE = {
+  header: {
+    empresa: "Zentto Soluciones Tecnologicas S.L.",
+    totalCajas: 5,
+  },
+  cajas: [
+    { codigo: "CC-001", nombre: "Caja Chica Administracion", responsable: "Maria Fernandez", montoAsignado: 5000.00, montoDisponible: 2350.00, estado: "ACTIVO" },
+    { codigo: "CC-002", nombre: "Caja Chica Ventas", responsable: "Carlos Mendoza", montoAsignado: 3000.00, montoDisponible: 1200.50, estado: "ACTIVO" },
+    { codigo: "CC-003", nombre: "Caja Chica Almacen", responsable: "Pedro Ramirez", montoAsignado: 2000.00, montoDisponible: 850.00, estado: "ACTIVO" },
+    { codigo: "CC-004", nombre: "Caja Chica Gerencia", responsable: "Ana Gutierrez", montoAsignado: 8000.00, montoDisponible: 6500.00, estado: "ACTIVO" },
+    { codigo: "CC-005", nombre: "Caja Chica Sucursal Norte", responsable: "Luis Torres", montoAsignado: 3000.00, montoDisponible: 0.00, estado: "CERRADA" },
+  ],
+};

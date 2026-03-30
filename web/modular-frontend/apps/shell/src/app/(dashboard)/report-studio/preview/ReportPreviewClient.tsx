@@ -22,7 +22,7 @@ import {
   Add as ZoomInIcon,
   Remove as ZoomOutIcon,
 } from "@mui/icons-material";
-import { ReportViewer } from "@zentto/shared-reports";
+import { ReportViewer, zenttoDataFetchProvider } from "@zentto/shared-reports";
 import type { ReportLayout, DataSet } from "@zentto/report-core";
 import { renderToFullHtml } from "@zentto/report-core";
 
@@ -147,7 +147,7 @@ export default function ReportPreviewClient({ basePath = "/report-studio" }: Pro
 
       {/* ── Report viewer ────────────────────────────────────── */}
       <Box sx={{ flex: 1, overflow: "auto" }}>
-        <ReportViewer layout={layout} data={data} zoom={zoom} showToolbar />
+        <ReportViewer layout={layout} data={data} zoom={zoom} showToolbar dataFetchProvider={zenttoDataFetchProvider} />
       </Box>
     </Box>
   );

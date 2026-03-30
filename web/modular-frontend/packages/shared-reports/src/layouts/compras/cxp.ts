@@ -201,3 +201,18 @@ export const CXP_DOCUMENTOS_LAYOUT = {
     },
   ],
 };
+
+export const CXP_DOCUMENTOS_LAYOUT_SAMPLE = {
+  header: {
+    empresa: "Zentto Soluciones Tecnologicas S.L.",
+    totalPendiente: 93960.00,
+  },
+  documentos: [
+    { tipoDoc: "FAC", numero: "FC-0012", fecha: "15/02/2026", fechaVence: "17/03/2026", codProveedor: "PRV-002", nombreProveedor: "Distribuidora Nacional C.A.", montoOriginal: 25520.00, montoPagado: 0.00, saldo: 25520.00, estado: "VENCIDA" },
+    { tipoDoc: "FAC", numero: "FC-0018", fecha: "01/03/2026", fechaVence: "31/03/2026", codProveedor: "PRV-001", nombreProveedor: "Importadora Tech C.A.", montoOriginal: 40600.00, montoPagado: 0.00, saldo: 40600.00, estado: "PENDIENTE" },
+    { tipoDoc: "FAC", numero: "FC-0025", fecha: "20/03/2026", fechaVence: "19/04/2026", codProveedor: "PRV-004", nombreProveedor: "Servicios Integrados C.A.", montoOriginal: 27840.00, montoPagado: 0.00, saldo: 27840.00, estado: "PENDIENTE" },
+    { tipoDoc: "FAC", numero: "FC-0001", fecha: "10/01/2026", fechaVence: "09/02/2026", codProveedor: "PRV-001", nombreProveedor: "Importadora Tech C.A.", montoOriginal: 48720.00, montoPagado: 48720.00, saldo: 0.00, estado: "PAGADA" },
+    { tipoDoc: "FAC", numero: "FC-0005", fecha: "25/01/2026", fechaVence: "24/02/2026", codProveedor: "PRV-003", nombreProveedor: "Suministros Express S.A.", montoOriginal: 9860.00, montoPagado: 9860.00, saldo: 0.00, estado: "PAGADA" },
+    { tipoDoc: "N/C", numero: "NC-P001", fecha: "10/03/2026", fechaVence: "10/03/2026", codProveedor: "PRV-003", nombreProveedor: "Suministros Express S.A.", montoOriginal: 1740.00, montoPagado: 1740.00, saldo: 0.00, estado: "APLICADA" },
+  ],
+};

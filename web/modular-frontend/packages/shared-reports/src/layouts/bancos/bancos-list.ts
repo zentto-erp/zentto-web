@@ -169,3 +169,18 @@ export const BANCOS_LIST_LAYOUT = {
     },
   ],
 };
+
+export const BANCOS_LIST_LAYOUT_SAMPLE = {
+  header: {
+    empresa: "Zentto Soluciones Tecnologicas S.L.",
+    totalBancos: 6,
+  },
+  bancos: [
+    { codigo: "BAN-001", nombre: "Banco Nacional de Credito", direccion: "Av. Libertador, Torre BNC, Piso 3", telefono: "0212-5551234", contacto: "Maria Fernandez", estado: "ACTIVO" },
+    { codigo: "BAN-002", nombre: "Banesco Banco Universal", direccion: "Av. Principal La Castellana", telefono: "0212-5015000", contacto: "Carlos Mendoza", estado: "ACTIVO" },
+    { codigo: "BAN-003", nombre: "Banco Mercantil", direccion: "Av. Andres Bello, Edif. Mercantil", telefono: "0212-6001000", contacto: "Ana Gutierrez", estado: "ACTIVO" },
+    { codigo: "BAN-004", nombre: "Banco Provincial BBVA", direccion: "Calle Madrid, Las Mercedes", telefono: "0212-5046111", contacto: "Pedro Ramirez", estado: "ACTIVO" },
+    { codigo: "BAN-005", nombre: "Banco de Venezuela", direccion: "Av. Universidad, Esq. Traposos", telefono: "0212-4081111", contacto: "Luis Torres", estado: "ACTIVO" },
+    { codigo: "BAN-006", nombre: "Banco Exterior", direccion: "Av. Urdaneta, Esq. Ibarras", telefono: "0212-5031111", contacto: "Rosa Diaz", estado: "INACTIVO" },
+  ],
+};

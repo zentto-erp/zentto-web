@@ -2,7 +2,7 @@
 #  Zentto DEV — ambiente de desarrollo en el mismo servidor
 #
 #  Rama: developer
-#  URLs: app.dev.zentto.net / api.dev.zentto.net
+#  URLs: appdev.zentto.net / apidev.zentto.net
 #  Puertos: API 4200, Frontend 3200-3215
 #  BD: zentto_dev (PostgreSQL separada de producción)
 #  Imágenes: ghcr.io/zentto-erp/zentto-web/api:dev
@@ -18,9 +18,10 @@ services:
     env_file:
       - /opt/zentto-dev/.env.api
     environment:
-      - CORS_ORIGINS=https://dev.zentto.net,https://app.dev.zentto.net
-      - STORE_URL=https://app.dev.zentto.net
+      - CORS_ORIGINS=https://dev.zentto.net,https://app.dev.zentto.net,https://appdev.zentto.net
+      - STORE_URL=https://appdev.zentto.net
       - NODE_ENV=development
+      - ZENTTO_CACHE_URL=http://zentto-cache:4100
     volumes:
       - api_storage_dev:/app/storage/media
     networks:
@@ -37,7 +38,7 @@ services:
     environment:
       - NODE_ENV=development
       - AUTH_TRUST_HOST=true
-      - NEXTAUTH_URL=https://app.dev.zentto.net
+      - NEXTAUTH_URL=https://appdev.zentto.net
       - BACKEND_URL=http://zentto-api-dev:4000
       - API_URL=http://zentto-api-dev:4000
     volumes:

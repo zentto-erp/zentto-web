@@ -97,8 +97,8 @@ export default function AsientosListPage() {
   // ── Report: build data from grid's current rows (filtered/sorted) ──
   const buildReportData = useCallback((): DataSet => {
     const el = gridRef.current;
-    // Prefer grid's filtered/sorted rows; fall back to raw API rows
-    const gridRows: any[] = el?._filteredRows ?? el?._sortedRows ?? el?.rows ?? rows ?? [];
+    // Prefer grid's public filteredRows getter; fall back to raw API rows
+    const gridRows: any[] = el?.filteredRows ?? el?.rows ?? rows ?? [];
     if (!gridRows.length) return {} as DataSet;
 
     let sumDebe = 0;

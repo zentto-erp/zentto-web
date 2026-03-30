@@ -237,3 +237,22 @@ export const ASIENTOS_LIST_LAYOUT = {
     },
   ],
 };
+
+export const ASIENTOS_LIST_LAYOUT_SAMPLE = {
+  header: {
+    empresa: "Zentto Soluciones Tecnologicas S.L.",
+    fechaDesde: "01/01/2026",
+    fechaHasta: "31/03/2026",
+    totalDebe: 298822.22,
+    totalHaber: 298822.22,
+    totalRegistros: 6,
+  },
+  asientos: [
+    { num: 1, id: 77, fecha: "30/03/2026", tipoAsiento: "AJUSTE_INFLACION", concepto: "Ajuste por inflacion periodo 202603", referencia: "", totalDebe: 133357.22, totalHaber: 133357.22, estado: "APPROVED" },
+    { num: 2, id: 23, fecha: "30/03/2026", tipoAsiento: "DIA", concepto: "Depreciacion mensual marzo 2026", referencia: "", totalDebe: 5625.00, totalHaber: 5625.00, estado: "APPROVED" },
+    { num: 3, id: 22, fecha: "14/03/2026", tipoAsiento: "DIA", concepto: "Comisiones bancarias marzo 2026", referencia: "", totalDebe: 1500.00, totalHaber: 1500.00, estado: "APPROVED" },
+    { num: 4, id: 20, fecha: "14/03/2026", tipoAsiento: "DIA", concepto: "Pago nomina marzo 2026", referencia: "", totalDebe: 45000.00, totalHaber: 45000.00, estado: "APPROVED" },
+    { num: 5, id: 21, fecha: "09/03/2026", tipoAsiento: "DIA", concepto: "Publicidad y mercadeo marzo 2026", referencia: "", totalDebe: 6000.00, totalHaber: 6000.00, estado: "APPROVED" },
+    { num: 6, id: 19, fecha: "07/03/2026", tipoAsiento: "DIA", concepto: "Compra contado inventario marzo", referencia: "", totalDebe: 8120.00, totalHaber: 8120.00, estado: "APPROVED" },
+  ],
+};
