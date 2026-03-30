@@ -29,6 +29,7 @@ import {
 } from "../hooks/useManufactura";
 import type { ColumnDef } from "@zentto/datagrid-core";
 import { useGridLayoutSync } from "@zentto/shared-api";
+import { useManufacturaGridRegistration } from "./zenttoGridPersistence";
 
 
 /* ─── Types ──────────────────────────────────────────────── */
@@ -72,13 +73,8 @@ export default function RoutingPage({ bomId }: RoutingPageProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState<RoutingFormData>(emptyForm());
   const gridRef = useRef<any>(null);
-  const [registered, setRegistered] = useState(false);
   const { ready: layoutReady } = useGridLayoutSync(GRID_ID);
-
-  useEffect(() => {
-    if (!layoutReady) return;
-    import("@zentto/datagrid").then(() => setRegistered(true));
-  }, [layoutReady]);
+  const { gridReady, registered } = useManufacturaGridRegistration(layoutReady);
 
   const { data: routingRows, isLoading } = useRoutingList(bomId);
   const { data: wcData } = useWorkCentersList({ limit: 500 });

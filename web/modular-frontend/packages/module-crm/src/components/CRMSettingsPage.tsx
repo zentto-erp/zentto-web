@@ -40,6 +40,7 @@ import {
 } from "../hooks/useCRM";
 import type { ColumnDef } from "@zentto/datagrid-core";
 import { useGridLayoutSync } from "@zentto/shared-api";
+import { useCRMGridRegistration } from "./zenttoGridPersistence";
 
 
 /* ─── Tab panel helper ──────────────────────────────────────── */
@@ -92,8 +93,8 @@ export default function CRMSettingsPage() {
   const [stageIsClosed, setStageIsClosed] = useState(false);
   const [stageIsWon, setStageIsWon] = useState(false);
   const gridRef = useRef<any>(null);
-  const [registered, setRegistered] = useState(false);
   const { ready: stagesLayoutReady } = useGridLayoutSync(STAGES_GRID_ID);
+  const { registered } = useCRMGridRegistration(stagesLayoutReady);
 
   // Data
   const { data: pipelinesRaw, isLoading: pipelinesLoading } = usePipelinesList();
@@ -104,11 +105,6 @@ export default function CRMSettingsPage() {
 
   const createPipeline = useCreatePipeline();
   const createStage = useCreateStage();
-
-  useEffect(() => {
-    if (!stagesLayoutReady) return;
-    import("@zentto/datagrid").then(() => setRegistered(true));
-  }, [stagesLayoutReady]);
 
   // Auto-select first pipeline
   useEffect(() => {

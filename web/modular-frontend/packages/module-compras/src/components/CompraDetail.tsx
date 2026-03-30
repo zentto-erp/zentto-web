@@ -30,6 +30,7 @@ import type { ColumnDef, GridRow } from "@zentto/datagrid-core";
 import { useCompraById, useDetalleCompra, useIndicadoresCompra } from "../hooks/useCompras";
 import { useTimezone } from "@zentto/shared-auth";
 import { formatDate, useGridLayoutSync } from "@zentto/shared-api";
+import { useComprasGridRegistration } from "./zenttoGridPersistence";
 
 interface CompraDetailProps {
   numFact: string;
@@ -71,9 +72,9 @@ export default function CompraDetail({ numFact }: CompraDetailProps) {
   const indicadores = useIndicadoresCompra(numFact);
 
   const [anularOpen, setAnularOpen] = useState(false);
-  const [registered, setRegistered] = useState(false);
   const gridRef = useRef<any>(null);
-  const { ready: layoutReady } = useGridLayoutSync(GRID_ID);
+  const { ready: gridLayoutReady } = useGridLayoutSync(GRID_ID);
+  const { registered } = useComprasGridRegistration(gridLayoutReady);
 
   const row = (compra.data ?? null) as Record<string, any> | null;
   const detRows = (detalle.data ?? []) as CompraDetalleRow[];
@@ -108,12 +109,6 @@ export default function CompraDetail({ numFact }: CompraDetailProps) {
     };
   });
 
-  // Register web component
-  useEffect(() => {
-    if (!layoutReady) return;
-    import("@zentto/datagrid").then(() => setRegistered(true));
-  }, [layoutReady]);
-
   // Bind data to grid
   useEffect(() => {
     const el = gridRef.current;
@@ -135,7 +130,7 @@ export default function CompraDetail({ numFact }: CompraDetailProps) {
         <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <Stack direction="row" alignItems="center" spacing={1.5}>
             <Tooltip title="Volver a compras">
-              <IconButton onClick={() => router.push("/compras")} size="small">
+              <IconButton onClick={() => router.push("/")} size="small">
                 <ArrowBackIcon />
               </IconButton>
             </Tooltip>
@@ -280,7 +275,7 @@ export default function CompraDetail({ numFact }: CompraDetailProps) {
           Lineas de compra
         </Typography>
 
-        {!layoutReady || !registered ? (
+        {!gridLayoutReady || !registered ? (
           <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
             <CircularProgress />
           </Box>

@@ -45,7 +45,7 @@ import {
     useUpsertProductoAdminMutation,
     useUpdateCompraMutation,
 } from '@/hooks/useRestauranteAdmin';
-import { useScopedGridId } from '@/lib/zentto-grid';
+import { useScopedGridId, useGridRegistration } from '@/lib/zentto-grid';
 
 
 type CompraDetalleRow = CompraDetalleInput & { rowId: string };
@@ -55,7 +55,6 @@ export default function AdminComprasPage() {
     const gridRef = useRef<any>(null);
     const detalleGridRef = useRef<any>(null);
     const detalleCompraGridRef = useRef<any>(null);
-    const [registered, setRegistered] = useState(false);
     const comprasGridId = useScopedGridId('compras-main');
     const detalleDraftGridId = useScopedGridId('compras-detalle-draft');
     const detalleExistenteGridId = useScopedGridId('compras-detalle-existente');
@@ -63,6 +62,7 @@ export default function AdminComprasPage() {
     const { ready: detalleDraftLayoutReady } = useGridLayoutSync(detalleDraftGridId);
     const { ready: detalleExistenteLayoutReady } = useGridLayoutSync(detalleExistenteGridId);
     const layoutReady = comprasLayoutReady && detalleDraftLayoutReady && detalleExistenteLayoutReady;
+    const { registered } = useGridRegistration(layoutReady);
 
     const { timeZone } = useTimezone();
     const [estado, setEstado] = useState('');
@@ -115,11 +115,6 @@ export default function AdminComprasPage() {
     const compraDetalleQuery = useCompraDetalleQuery(compraDetalleId ?? undefined);
 
     const comprasRows = (data?.rows ?? []) as CompraRestauranteAdmin[];
-
-    useEffect(() => {
-        if (!layoutReady) return;
-        import('@zentto/datagrid').then(() => setRegistered(true));
-    }, [layoutReady]);
 
     // --- Main compras grid columns ---
     const comprasColumns = useMemo<ColumnDef[]>(() => [

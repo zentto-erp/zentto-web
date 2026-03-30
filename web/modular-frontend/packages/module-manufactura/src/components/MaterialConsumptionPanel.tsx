@@ -16,6 +16,7 @@ import {
 } from "../hooks/useManufactura";
 import type { ColumnDef } from "@zentto/datagrid-core";
 import { useGridLayoutSync } from "@zentto/shared-api";
+import { useManufacturaGridRegistration } from "./zenttoGridPersistence";
 
 /* ─── Props ──────────────────────────────────────────────── */
 
@@ -35,13 +36,8 @@ export default function MaterialConsumptionPanel({ workOrderId }: MaterialConsum
   const [error, setError] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
   const gridRef = useRef<any>(null);
-  const [registered, setRegistered] = useState(false);
   const { ready: layoutReady } = useGridLayoutSync(GRID_ID);
-
-  useEffect(() => {
-    if (!layoutReady) return;
-    import("@zentto/datagrid").then(() => setRegistered(true));
-  }, [layoutReady]);
+  const { gridReady, registered } = useManufacturaGridRegistration(layoutReady);
 
   const order = (detail ?? {}) as Record<string, unknown>;
   const materials = (Array.isArray(order.Materials) ? order.Materials : []) as Record<string, unknown>[];

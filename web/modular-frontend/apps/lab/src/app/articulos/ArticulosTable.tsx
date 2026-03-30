@@ -8,7 +8,7 @@ import { Add as AddIcon } from "@mui/icons-material";
 import type { ColumnDef, GridRow } from "@zentto/datagrid-core";
 import { useGridLayoutSync } from "@zentto/shared-api";
 import { useArticulosList, useDeleteArticulo } from "../../hooks/useArticulos";
-import { LAB_GRID_IDS } from "../../lib/zentto-grid-ids";
+import { LAB_GRID_IDS, useGridRegistration } from "../../lib/zentto-grid-ids";
 
 // ─── SVG Icons ───────────────────────────────────────
 
@@ -63,16 +63,10 @@ const DETAIL_RENDERER = (row: any) => `
 export default function ArticulosTable() {
   const router = useRouter();
   const gridRef = useRef<any>(null);
-  const [registered, setRegistered] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedArticulo, setSelectedArticulo] = useState<string | null>(null);
   const { ready: layoutReady } = useGridLayoutSync(LAB_GRID_IDS.articulos);
-
-  // Register web component
-  useEffect(() => {
-    if (!layoutReady) return;
-    import('@zentto/datagrid').then(() => setRegistered(true));
-  }, [layoutReady]);
+  const { registered } = useGridRegistration(layoutReady);
 
   // Fetch data (page 1, large limit since grid handles client-side pagination)
   const { data: articulosData, isLoading } = useArticulosList({ page: 1, limit: 200 });

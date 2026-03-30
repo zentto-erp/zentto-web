@@ -27,6 +27,7 @@ import { CustomStepper, useToast, FormGrid, FormField } from "@zentto/shared-ui"
 import type { StepDef } from "@zentto/shared-ui";
 import { EditableDataGrid } from "@zentto/module-contabilidad";
 
+import { useBancosGridRegistration } from "./zenttoGridPersistence";
 import {
   useCuentasBank, useCrearConciliacion, useImportarExtracto, useConciliarMovimiento, useCerrarConciliacion,
 } from "../hooks/useConciliacionBancaria";
@@ -61,7 +62,6 @@ const SISTEMA_GRID_ID = "module-bancos:conciliacion-wizard:sistema";
 export default function ConciliacionWizard() {
   const extractoGridRef = useRef<any>(null);
   const sistemaGridRef = useRef<any>(null);
-  const [registered, setRegistered] = useState(false);
   const router = useRouter();
   const { showToast } = useToast();
   const { timeZone } = useTimezone();
@@ -89,6 +89,7 @@ export default function ConciliacionWizard() {
   const { ready: extractoLayoutReady } = useGridLayoutSync(EXTRACTO_GRID_ID);
   const { ready: sistemaLayoutReady } = useGridLayoutSync(SISTEMA_GRID_ID);
   const layoutReady = extractoLayoutReady && sistemaLayoutReady;
+  const { registered } = useBancosGridRegistration(layoutReady);
 
   const cuentaObj = useMemo(() => cuentas.find((c) => (c.Nro_Cta ?? c.nroCta ?? c.id) === nroCtaSeleccionada), [cuentas, nroCtaSeleccionada]);
   const cuentaKey = (c: CuentaRow) => c.Nro_Cta ?? c.nroCta ?? c.id;
@@ -96,11 +97,6 @@ export default function ConciliacionWizard() {
 
   const movSistemaConId = useMemo(() => movSistema.map((m: any, i: number) => ({ ...m, id: m.id ?? m.Mov_ID ?? i })) as any[], [movSistema]);
   const noConciliados = useMemo(() => movSistemaConId.filter((m: any) => !conciliadosIds.has(String(m.id))), [movSistemaConId, conciliadosIds]);
-
-  useEffect(() => {
-    if (!layoutReady) return;
-    import("@zentto/datagrid").then(() => setRegistered(true));
-  }, [layoutReady]);
 
   // Bind step 3 grids
   useEffect(() => {
@@ -140,8 +136,8 @@ export default function ConciliacionWizard() {
   };
 
   const handleFinalizar = async () => {
-    if (!conciliacionId) { showToast("Conciliación procesada (sin backend)"); router.push("/bancos/conciliacion"); return; }
-    try { await cerrarMut.mutateAsync({ Conciliacion_ID: conciliacionId, Saldo_Final_Banco: saldoFinalBanco ? Number(saldoFinalBanco) : Number(cuentaObj?.Saldo ?? 0), Observaciones: observaciones || undefined }); showToast("Conciliación cerrada exitosamente"); router.push("/bancos/conciliacion"); }
+    if (!conciliacionId) { showToast("Conciliación procesada (sin backend)"); router.push("/conciliacion"); return; }
+    try { await cerrarMut.mutateAsync({ Conciliacion_ID: conciliacionId, Saldo_Final_Banco: saldoFinalBanco ? Number(saldoFinalBanco) : Number(cuentaObj?.Saldo ?? 0), Observaciones: observaciones || undefined }); showToast("Conciliación cerrada exitosamente"); router.push("/conciliacion"); }
     catch (e: unknown) { setError(e instanceof Error ? e.message : "Error al cerrar la conciliación"); }
   };
 
@@ -240,7 +236,7 @@ export default function ConciliacionWizard() {
               <TextField fullWidth label="Observaciones" multiline rows={2} value={observaciones} onChange={(e) => setObservaciones(e.target.value)} />
             </Stack>
             <Stack direction="row" spacing={2} justifyContent="flex-end">
-              <Button variant="outlined" color="error" onClick={() => router.push("/bancos/conciliacion")}>Cancelar</Button>
+              <Button variant="outlined" color="error" onClick={() => router.push("/conciliacion")}>Cancelar</Button>
               <Button variant="contained" color="success" startIcon={<SaveIcon />} onClick={handleFinalizar} disabled={cerrarMut.isPending}>{cerrarMut.isPending ? "Guardando..." : "Guardar y Cerrar Conciliación"}</Button>
             </Stack>
           </CardContent></Card>

@@ -53,7 +53,7 @@ import dynamic from "next/dynamic";
 import { useRef } from "react";
 import type { ColumnDef } from "@zentto/datagrid-core";
 import { useGridLayoutSync, apiGet } from "@zentto/shared-api";
-import { useScopedGridId } from "@/lib/zentto-grid";
+import { useScopedGridId, useGridRegistration } from "@/lib/zentto-grid";
 
 const TurnstileCaptcha = dynamic(
   () => import("@zentto/shared-auth").then((m) => ({ default: m.TurnstileCaptcha })),
@@ -1270,13 +1270,7 @@ export default function BackofficePage() {
   const { ready: cleanupReady } = useGridLayoutSync(cleanupGridId);
   const { ready: respaldosReady } = useGridLayoutSync(respaldosGridId);
   const layoutReady = tenantsReady && recursosReady && cleanupReady && respaldosReady;
-  const [registered, setRegistered] = useState(false);
-
-  // Register zentto-grid web component
-  useEffect(() => {
-    if (!layoutReady) return;
-    import("@zentto/datagrid").then(() => setRegistered(true)).catch(() => {});
-  }, [layoutReady]);
+  const { registered } = useGridRegistration(layoutReady);
 
   const isSysAdmin = isAdmin;
 

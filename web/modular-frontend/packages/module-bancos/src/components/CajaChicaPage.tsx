@@ -17,6 +17,7 @@ import {
   useCajaChicaBoxes, useCreateCajaChicaBox, useOpenSession, useCloseSession,
   useActiveSession, useAddExpense, useExpensesList,
 } from "../hooks/useCajaChica";
+import { useBancosGridRegistration } from "./zenttoGridPersistence";
 
 
 const CATEGORIAS = [
@@ -65,7 +66,6 @@ const EXPENSES_GRID_ID = "module-bancos:caja-chica:expenses";
 export default function CajaChicaPage() {
   const boxesGridRef = useRef<any>(null);
   const expensesGridRef = useRef<any>(null);
-  const [registered, setRegistered] = useState(false);
   const { showToast } = useToast();
   const [cajaSearch, setCajaSearch] = useState("");
   const [cajaFilterValues, setCajaFilterValues] = useState<Record<string, string>>({});
@@ -94,11 +94,7 @@ export default function CajaChicaPage() {
   const { ready: boxesLayoutReady } = useGridLayoutSync(BOXES_GRID_ID);
   const { ready: expensesLayoutReady } = useGridLayoutSync(EXPENSES_GRID_ID);
   const layoutReady = boxesLayoutReady && expensesLayoutReady;
-
-  useEffect(() => {
-    if (!layoutReady) return;
-    import("@zentto/datagrid").then(() => setRegistered(true));
-  }, [layoutReady]);
+  const { registered } = useBancosGridRegistration(layoutReady);
 
   useEffect(() => {
     const el = boxesGridRef.current; if (!el || !registered) return;

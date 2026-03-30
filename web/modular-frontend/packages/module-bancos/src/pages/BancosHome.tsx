@@ -161,7 +161,7 @@ export default function BancosHome() {
                       key={c.CuentaBancariaId ?? idx}
                       hover
                       sx={{ cursor: "pointer" }}
-                      onClick={() => router.push("/bancos/cuentas")}
+                      onClick={() => router.push("/cuentas")}
                     >
                       <TableCell>{c.NombreBanco ?? c.Banco ?? "—"}</TableCell>
                       <TableCell sx={{ fontFamily: "monospace" }}>{c.NumeroCuenta ?? "—"}</TableCell>

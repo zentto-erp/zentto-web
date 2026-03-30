@@ -62,7 +62,7 @@ export default function LiquidacionesPage() {
     const el = gridRef.current; if (!el || !registered) return;
     const handler = (e: CustomEvent) => { if (e.detail.action === "view") setSelectedId(e.detail.row.liquidacionId); };
     el.addEventListener("action-click", handler);
-    const createHandler = () => router.push("/nomina/liquidaciones/nueva");
+    const createHandler = () => router.push("/liquidaciones/nueva");
     el.addEventListener("create-click", createHandler);
     return () => { el.removeEventListener("action-click", handler); el.removeEventListener("create-click", createHandler); };
   }, [registered, rows]);

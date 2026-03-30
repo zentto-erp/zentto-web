@@ -10,6 +10,7 @@ import {
 import { DeleteDialog } from "@zentto/shared-ui";
 import type { ColumnDef, GridRow } from "@zentto/datagrid-core";
 import { useGridLayoutSync } from "@zentto/shared-api";
+import { useComprasGridRegistration } from "./zenttoGridPersistence";
 import { useProveedoresList, useDeleteProveedor } from "../hooks/useProveedores";
 import { Proveedor, ProveedorFilter } from "@zentto/shared-api/types";
 
@@ -54,7 +55,8 @@ const GRID_ID = "module-compras:proveedores:list";
 export default function ProveedoresTable() {
   const router = useRouter();
   const gridRef = useRef<any>(null);
-  const [registered, setRegistered] = useState(false);
+  const { ready: gridLayoutReady } = useGridLayoutSync(GRID_ID);
+  const { registered } = useComprasGridRegistration(gridLayoutReady);
   const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 50 });
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [selectedProveedor, setSelectedProveedor] = useState<Proveedor | null>(null);
@@ -64,8 +66,6 @@ export default function ProveedoresTable() {
     limit: paginationModel.pageSize,
   } as ProveedorFilter);
   const { mutate: deleteProveedor, isPending: isDeleting } = useDeleteProveedor();
-  const { ready: layoutReady } = useGridLayoutSync(GRID_ID);
-
   const rows: GridRow[] = ((data?.items ?? []) as unknown as Record<string, unknown>[]).map((r) => ({
     id: r.codigo ?? r.id ?? Math.random(),
     ...r,
@@ -81,11 +81,6 @@ export default function ProveedoresTable() {
       });
     }
   };
-
-  useEffect(() => {
-    if (!layoutReady) return;
-    import("@zentto/datagrid").then(() => setRegistered(true));
-  }, [layoutReady]);
 
   useEffect(() => {
     const el = gridRef.current;
@@ -120,7 +115,7 @@ export default function ProveedoresTable() {
 
   return (
     <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-      {!layoutReady || !registered ? (
+      {!gridLayoutReady || !registered ? (
         <Box sx={{ display: "flex", justifyContent: "center", py: 6 }}>
           <CircularProgress />
         </Box>

@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { Box, Paper, Typography, IconButton, Tooltip, Stack } from "@mui/material";
 import type { ColumnDef } from "@zentto/datagrid-core";
 import LinkIcon from "@mui/icons-material/Link";
 import { useGridLayoutSync } from "@zentto/shared-api";
+import { useBancosGridRegistration } from "../zenttoGridPersistence";
 
 const COLUMNS: ColumnDef[] = [
   { field: "Fecha", header: "Fecha", width: 100 },
@@ -29,13 +30,8 @@ export default function ExtractoPendienteGrid({
   extracto, hasConciliacion, onSelectionChange, onConciliar, canConciliar = false, isConciliando = false,
 }: ExtractoPendienteGridProps) {
   const gridRef = useRef<any>(null);
-  const [registered, setRegistered] = useState(false);
   const { ready: layoutReady } = useGridLayoutSync(GRID_ID);
-
-  useEffect(() => {
-    if (!layoutReady) return;
-    import("@zentto/datagrid").then(() => setRegistered(true));
-  }, [layoutReady]);
+  const { registered } = useBancosGridRegistration(layoutReady);
 
   useEffect(() => {
     const el = gridRef.current; if (!el || !registered) return;

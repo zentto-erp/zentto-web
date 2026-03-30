@@ -12,7 +12,7 @@ import {
 } from '@mui/material';
 import type { ColumnDef, GridRow } from '@zentto/datagrid-core';
 import { useGridLayoutSync } from '@zentto/shared-api';
-import { LAB_GRID_IDS } from '../../lib/zentto-grid-ids';
+import { LAB_GRID_IDS, useGridRegistration } from '../../lib/zentto-grid-ids';
 
 // ─── Mock Data: 50 products in tree structure ─────────────────────────────────
 // Categories (level 0)
@@ -367,15 +367,9 @@ function readFeatureStateFromGrid(el: ShowcaseGridElement, prev: FeatureToggles)
 
 export default function ShowcasePage() {
   const gridRef = useRef<ShowcaseGridElement | null>(null);
-  const [registered, setRegistered] = useState(false);
   const [toggles, setToggles] = useState<FeatureToggles>(DEFAULT_TOGGLES);
   const { ready: layoutReady } = useGridLayoutSync(GRID_ID);
-
-  // Register web component
-  useEffect(() => {
-    if (!layoutReady) return;
-    import('@zentto/datagrid').then(() => setRegistered(true));
-  }, [layoutReady]);
+  const { registered } = useGridRegistration(layoutReady);
 
   // Set default features ONCE on first mount (only if no saved layout exists).
   // After that, the web component's built-in persistence (grid-id) handles everything.

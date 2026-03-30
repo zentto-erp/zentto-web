@@ -78,7 +78,7 @@ export default function InventarioTable() {
           <Button
             variant="contained"
             startIcon={<AddIcon />}
-            onClick={() => router.push("/inventario/articulos/new")}
+            onClick={() => router.push("/articulos/new")}
           >
             Nuevo Artículo
           </Button>

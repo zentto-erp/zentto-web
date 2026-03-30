@@ -9,7 +9,7 @@ import type { ColumnDef, GridRow } from "@zentto/datagrid-core";
 import { useGridLayoutSync } from "@zentto/shared-api";
 import { useFacturasList, useDeleteFactura, useDetalleFactura } from "../../hooks/useFacturas";
 import { useTimezone } from "../../hooks/useTimezone";
-import { LAB_GRID_IDS } from "../../lib/zentto-grid-ids";
+import { LAB_GRID_IDS, useGridRegistration } from "../../lib/zentto-grid-ids";
 
 // ─── SVG Icons ───────────────────────────────────────
 
@@ -54,16 +54,10 @@ export default function FacturasTable() {
   const router = useRouter();
   const { timeZone } = useTimezone();
   const gridRef = useRef<any>(null);
-  const [registered, setRegistered] = useState(false);
   const [anularOpen, setAnularOpen] = useState(false);
   const [selectedFactura, setSelectedFactura] = useState<string | null>(null);
   const { ready: layoutReady } = useGridLayoutSync(LAB_GRID_IDS.facturas);
-
-  // Register web component
-  useEffect(() => {
-    if (!layoutReady) return;
-    import('@zentto/datagrid').then(() => setRegistered(true));
-  }, [layoutReady]);
+  const { registered } = useGridRegistration(layoutReady);
 
   // Fetch data
   const { data: facturas, isLoading } = useFacturasList({ page: 1, limit: 100 });

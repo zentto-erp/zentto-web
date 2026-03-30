@@ -12,6 +12,7 @@ import {
 } from "@mui/material";
 import Grid from "@mui/material/Grid2";
 import { formatCurrency, useGridLayoutSync } from "@zentto/shared-api";
+import { useFlotaGridRegistration } from "../components/zenttoGridPersistence";
 import { useFuelMonthlyReport } from "../hooks/useFlota";
 import type { ColumnDef } from "@zentto/datagrid-core";
 
@@ -71,13 +72,8 @@ export default function ReportesPage() {
   const [year, setYear] = useState(currentYear);
   const [month, setMonth] = useState(new Date().getMonth() + 1);
   const gridRef = useRef<any>(null);
-  const [registered, setRegistered] = useState(false);
   const { ready: layoutReady } = useGridLayoutSync(GRID_ID);
-
-  useEffect(() => {
-    if (!layoutReady) return;
-    import("@zentto/datagrid").then(() => setRegistered(true));
-  }, [layoutReady]);
+  const { gridReady, registered } = useFlotaGridRegistration(layoutReady);
 
   const { data, isLoading } = useFuelMonthlyReport(year, month);
 

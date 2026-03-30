@@ -115,6 +115,7 @@ function generateCode(cfg: LabConfig, fields: FieldOption[]): string {
 import React, { useRef, useEffect, useState } from "react";
 import { Box, Typography } from "@mui/material";
 import type { ColumnDef } from "@zentto/datagrid-core";
+import { useGridLayoutSync } from "@zentto/shared-api";
 
 // ─── Tipos ─────────────────────────────────────────────────
 interface Producto {
@@ -190,13 +191,19 @@ const productos: Producto[] = [
 ];
 
 // ─── Componente ────────────────────────────────────────────
+const GRID_ID = "lab:grid-sidebar:main";
+
 export default function ProductosTable() {
   const gridRef = useRef<any>(null);
   const [registered, setRegistered] = useState(false);
+  const { ready: layoutReady } = useGridLayoutSync(GRID_ID);
 
   useEffect(() => {
-    import("@zentto/datagrid").then(() => setRegistered(true));
-  }, []);
+    if (!layoutReady) return;
+    let cancelled = false;
+    import("@zentto/datagrid").then(() => { if (!cancelled) setRegistered(true); });
+    return () => { cancelled = true; };
+  }, [layoutReady]);
 
   useEffect(() => {
     const el = gridRef.current;

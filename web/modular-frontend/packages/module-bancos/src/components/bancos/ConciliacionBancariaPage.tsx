@@ -18,6 +18,7 @@ import {
   useCuentasBank, useGenerarAjuste, useImportarExtracto, useAsientosVinculados,
 } from "../../hooks/useConciliacionBancaria";
 import { useAuth } from "@zentto/shared-auth";
+import { useBancosGridRegistration } from "../zenttoGridPersistence";
 
 type ConciliacionRow = Record<string, any>;
 
@@ -32,7 +33,6 @@ export default function ConciliacionBancariaPage() {
   const movSistemaGridRef = useRef<any>(null);
   const extractoGridRef = useRef<any>(null);
   const asientosGridRef = useRef<any>(null);
-  const [registered, setRegistered] = useState(false);
   const router = useRouter();
   const { showToast } = useToast();
   const { timeZone } = useTimezone();
@@ -65,6 +65,7 @@ export default function ConciliacionBancariaPage() {
   const { ready: extractoLayoutReady } = useGridLayoutSync(EXTRACTO_GRID_ID);
   const { ready: asientosLayoutReady } = useGridLayoutSync(ASIENTOS_GRID_ID);
   const layoutReady = listLayoutReady && movimientosLayoutReady && extractoLayoutReady && asientosLayoutReady;
+  const { registered } = useBancosGridRegistration(layoutReady);
 
   const rows = (listData?.rows ?? []) as ConciliacionRow[];
   const cuentas = (cuentasData?.rows ?? []) as Record<string, any>[];
@@ -112,11 +113,6 @@ export default function ConciliacionBancariaPage() {
   ];
 
   useEffect(() => {
-    if (!layoutReady) return;
-    import("@zentto/datagrid").then(() => setRegistered(true));
-  }, [layoutReady]);
-
-  useEffect(() => {
     const el = gridRef.current; if (!el || !registered) return;
     el.columns = COLUMNS; el.rows = rows; el.loading = isLoading;
     el.getRowId = (r: any) => r.ID ?? Math.random();
@@ -129,7 +125,7 @@ export default function ConciliacionBancariaPage() {
       if (action === "view") setSelectedId(Number(row.ID));
       if (action === "close" && row.Estado === "ABIERTA") { setSelectedId(Number(row.ID)); setCerrarOpen(true); }
     };
-    const createHandler = () => router.push("/bancos/conciliacion");
+    const createHandler = () => router.push("/conciliacion");
     el.addEventListener("action-click", handler);
     el.addEventListener("create-click", createHandler);
     return () => { el.removeEventListener("action-click", handler); el.removeEventListener("create-click", createHandler); };

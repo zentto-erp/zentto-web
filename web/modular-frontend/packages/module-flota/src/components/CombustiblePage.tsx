@@ -23,6 +23,7 @@ import {  DatePicker, FormGrid, FormField, ZenttoFilterPanel, type FilterFieldDe
 import dayjs from "dayjs";
 import CloseIcon from "@mui/icons-material/Close";
 import { formatCurrency, useGridLayoutSync } from "@zentto/shared-api";
+import { useFlotaGridRegistration } from "./zenttoGridPersistence";
 import {
   useFuelLogsList,
   useCreateFuelLog,
@@ -58,13 +59,8 @@ export default function CombustiblePage() {
   const [stationName, setStationName] = useState("");
   const [notes, setNotes] = useState("");
   const gridRef = useRef<any>(null);
-  const [registered, setRegistered] = useState(false);
   const { ready: layoutReady } = useGridLayoutSync(GRID_ID);
-
-  useEffect(() => {
-    if (!layoutReady) return;
-    import("@zentto/datagrid").then(() => setRegistered(true));
-  }, [layoutReady]);
+  const { gridReady, registered } = useFlotaGridRegistration(layoutReady);
 
   const { data, isLoading } = useFuelLogsList({
     ...filter,
