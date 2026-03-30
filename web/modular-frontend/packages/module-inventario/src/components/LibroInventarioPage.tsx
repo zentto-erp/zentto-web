@@ -1,18 +1,11 @@
 // components/LibroInventarioPage.tsx
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import {
   Box,
   Button,
-  TextField,
   Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   CircularProgress,
   Typography,
   Alert,
@@ -23,10 +16,27 @@ import DownloadIcon from "@mui/icons-material/Download";
 import { useLibroInventario } from "../hooks/useInventario";
 import { DatePicker } from "@zentto/shared-ui";
 import dayjs from "dayjs";
-import { formatCurrency, toDateOnly } from "@zentto/shared-api";
+import { formatCurrency, toDateOnly, useGridLayoutSync } from "@zentto/shared-api";
 import { useTimezone } from "@zentto/shared-auth";
+import { useInventarioGridRegistration } from "./zenttoGridPersistence";
+import type { ColumnDef } from "@zentto/datagrid-core";
+
+const GRID_ID = "module-inventario:libro:list";
+
+const COLUMNS: ColumnDef[] = [
+  { field: "codigo", header: "Codigo", width: 120, sortable: true },
+  { field: "articulo", header: "Articulo", flex: 1, minWidth: 200, sortable: true },
+  { field: "unidad", header: "Unidad", width: 80 },
+  { field: "stockInicial", header: "Stock Inicial", width: 110, type: "number", aggregation: "sum" },
+  { field: "entradas", header: "Entradas", width: 100, type: "number", aggregation: "sum" },
+  { field: "salidas", header: "Salidas", width: 100, type: "number", aggregation: "sum" },
+  { field: "stockFinal", header: "Stock Final", width: 110, type: "number", aggregation: "sum" },
+  { field: "costoUnit", header: "Costo Unit.", width: 120, type: "number", currency: "VES", aggregation: "avg" },
+  { field: "valorTotal", header: "Valor Total", width: 130, type: "number", currency: "VES", aggregation: "sum" },
+];
 
 export default function LibroInventarioPage() {
+  const gridRef = useRef<any>(null);
   const { timeZone } = useTimezone();
   const [fechaDesde, setFechaDesde] = useState(() => {
     const d = new Date();
@@ -36,6 +46,9 @@ export default function LibroInventarioPage() {
   const [fechaHasta, setFechaHasta] = useState(() => toDateOnly(new Date(), timeZone));
   const [filter, setFilter] = useState<{ fechaDesde: string; fechaHasta: string } | undefined>(undefined);
 
+  const { ready } = useGridLayoutSync(GRID_ID);
+  const { registered } = useInventarioGridRegistration(ready);
+
   const { data, isLoading } = useLibroInventario(filter);
   const rows = (data?.rows ?? []) as Record<string, unknown>[];
 
@@ -43,17 +56,31 @@ export default function LibroInventarioPage() {
     setFilter({ fechaDesde, fechaHasta });
   };
 
-  // Totales
-  const totales = rows.reduce<{ stockInicial: number; entradas: number; salidas: number; stockFinal: number; valorTotal: number }>(
-    (acc, r) => ({
-      stockInicial: acc.stockInicial + Number(r.StockInicial ?? 0),
-      entradas: acc.entradas + Number(r.Entradas ?? 0),
-      salidas: acc.salidas + Number(r.Salidas ?? 0),
-      stockFinal: acc.stockFinal + Number(r.StockFinal ?? 0),
-      valorTotal: acc.valorTotal + Number(r.StockFinal ?? 0) * Number(r.CostoUnitario ?? 0),
-    }),
-    { stockInicial: 0, entradas: 0, salidas: 0, stockFinal: 0, valorTotal: 0 }
-  );
+  const gridRows = useMemo(() => rows.map((r, i) => {
+    const stockFinal = Number(r.StockFinal ?? 0);
+    const costoUnit = Number(r.CostoUnitario ?? 0);
+    return {
+      id: i,
+      codigo: String(r.CODIGO ?? ""),
+      articulo: String(r.DescripcionCompleta ?? r.DESCRIPCION ?? ""),
+      unidad: String(r.Unidad ?? ""),
+      stockInicial: Number(r.StockInicial ?? 0),
+      entradas: Number(r.Entradas ?? 0),
+      salidas: Number(r.Salidas ?? 0),
+      stockFinal,
+      costoUnit,
+      valorTotal: stockFinal * costoUnit,
+    };
+  }), [rows]);
+
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+    el.columns = COLUMNS;
+    el.rows = gridRows;
+    el.loading = isLoading;
+    el.getRowId = (r: any) => r.id;
+  }, [gridRows, isLoading, registered]);
 
   const handleExportCsv = () => {
     if (rows.length === 0) return;
@@ -129,53 +156,31 @@ export default function LibroInventarioPage() {
       )}
 
       {rows.length > 0 && (
-        <TableContainer component={Paper}>
-          <Table size="small">
-            <TableHead>
-              <TableRow sx={{ backgroundColor: "#f5f5f5" }}>
-                <TableCell sx={{ fontWeight: 600 }}>Codigo</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>Articulo</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>Unidad</TableCell>
-                <TableCell align="right" sx={{ fontWeight: 600 }}>Stock Inicial</TableCell>
-                <TableCell align="right" sx={{ fontWeight: 600, color: "success.main" }}>Entradas</TableCell>
-                <TableCell align="right" sx={{ fontWeight: 600, color: "error.main" }}>Salidas</TableCell>
-                <TableCell align="right" sx={{ fontWeight: 600 }}>Stock Final</TableCell>
-                <TableCell align="right" sx={{ fontWeight: 600 }}>Costo Unit.</TableCell>
-                <TableCell align="right" sx={{ fontWeight: 600 }}>Valor Total</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {rows.map((r, i) => {
-                const stockFinal = Number(r.StockFinal ?? 0);
-                const costoUnit = Number(r.CostoUnitario ?? 0);
-                return (
-                  <TableRow key={i} hover>
-                    <TableCell sx={{ fontWeight: 500 }}>{String(r.CODIGO ?? "")}</TableCell>
-                    <TableCell>{String(r.DescripcionCompleta ?? r.DESCRIPCION ?? "")}</TableCell>
-                    <TableCell>{String(r.Unidad ?? "")}</TableCell>
-                    <TableCell align="right">{Number(r.StockInicial ?? 0)}</TableCell>
-                    <TableCell align="right" sx={{ color: "success.main" }}>{Number(r.Entradas ?? 0)}</TableCell>
-                    <TableCell align="right" sx={{ color: "error.main" }}>{Number(r.Salidas ?? 0)}</TableCell>
-                    <TableCell align="right" sx={{ fontWeight: 500 }}>{stockFinal}</TableCell>
-                    <TableCell align="right">{formatCurrency(costoUnit)}</TableCell>
-                    <TableCell align="right" sx={{ fontWeight: 500 }}>{formatCurrency(stockFinal * costoUnit)}</TableCell>
-                  </TableRow>
-                );
-              })}
-              {/* Totales */}
-              <TableRow sx={{ backgroundColor: "#e8eaf6" }}>
-                <TableCell colSpan={3} sx={{ fontWeight: 700 }}>TOTALES</TableCell>
-                <TableCell align="right" sx={{ fontWeight: 700 }}>{totales.stockInicial}</TableCell>
-                <TableCell align="right" sx={{ fontWeight: 700, color: "success.main" }}>{totales.entradas}</TableCell>
-                <TableCell align="right" sx={{ fontWeight: 700, color: "error.main" }}>{totales.salidas}</TableCell>
-                <TableCell align="right" sx={{ fontWeight: 700 }}>{totales.stockFinal}</TableCell>
-                <TableCell />
-                <TableCell align="right" sx={{ fontWeight: 700 }}>{formatCurrency(totales.valorTotal)}</TableCell>
-              </TableRow>
-            </TableBody>
-          </Table>
-        </TableContainer>
+        <zentto-grid
+          ref={gridRef}
+          grid-id={GRID_ID}
+          height="calc(100vh - 320px)"
+          default-currency="VES"
+          export-filename={`libro-inventario-${fechaDesde}-${fechaHasta}`}
+          show-totals
+          enable-toolbar
+          enable-header-menu
+          enable-header-filters
+          enable-clipboard
+          enable-quick-search
+          enable-context-menu
+          enable-status-bar
+          enable-configurator
+        />
       )}
     </Box>
   );
+}
+
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'zentto-grid': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & Record<string, any>, HTMLElement>;
+    }
+  }
 }
