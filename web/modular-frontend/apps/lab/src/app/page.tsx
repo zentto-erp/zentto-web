@@ -5,6 +5,9 @@ import {
   Inventory as ArticulosIcon,
   Receipt as FacturasIcon,
   Science as LabIcon,
+  Extension as StudioIcon,
+  AutoFixHigh as WizardIcon,
+  Apps as AddonsIcon,
 } from "@mui/icons-material";
 import { useRouter } from "next/navigation";
 
@@ -22,6 +25,27 @@ const PAGES = [
     href: "/facturas",
     icon: <FacturasIcon sx={{ fontSize: 48 }} />,
     color: "#2196f3",
+  },
+  {
+    title: "Studio Designer",
+    description: "Designer visual Figma-style con drag-drop, undo/redo, templates y export JSON",
+    href: "/studio-designer",
+    icon: <StudioIcon sx={{ fontSize: 48 }} />,
+    color: "#9c27b0",
+  },
+  {
+    title: "Studio Wizard",
+    description: "Wizard 7 pasos para crear apps completas desde plantillas (CRM, E-Commerce, HR)",
+    href: "/studio-designer/wizard",
+    icon: <WizardIcon sx={{ fontSize: 48 }} />,
+    color: "#00bcd4",
+  },
+  {
+    title: "Addons",
+    description: "Aplicaciones personalizadas creadas con Studio — API first, localStorage fallback",
+    href: "/addons",
+    icon: <AddonsIcon sx={{ fontSize: 48 }} />,
+    color: "#546e7a",
   },
 ];
 
