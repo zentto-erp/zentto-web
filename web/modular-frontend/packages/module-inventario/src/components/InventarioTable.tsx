@@ -1,73 +1,91 @@
 // components/InventarioTable.tsx
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import {
-  Box,
-  Button,
-  TextField,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TablePagination,
-  Paper,
-  CircularProgress,
-  IconButton,
-  Chip,
-  InputAdornment,
-  Typography,
-  Tooltip,
-} from "@mui/material";
-import { Add as AddIcon, Visibility as ViewIcon, Search as SearchIcon } from "@mui/icons-material";
+import { Box, Button, Typography } from "@mui/material";
+import { Add as AddIcon } from "@mui/icons-material";
 import { useInventarioList } from "../hooks/useInventario";
-import { formatCurrency } from "@zentto/shared-api";
-import { debounce } from "lodash";
+import { formatCurrency, useGridLayoutSync } from "@zentto/shared-api";
+import { useInventarioGridRegistration } from "./zenttoGridPersistence";
+import type { ColumnDef } from "@zentto/datagrid-core";
+
+const GRID_ID = "module-inventario:articulos:list";
+
+const COLUMNS: ColumnDef[] = [
+  { field: "codigo", header: "Codigo", width: 120, sortable: true },
+  { field: "nombre", header: "Articulo", flex: 1, minWidth: 200, sortable: true },
+  { field: "categoria", header: "Categoria", width: 140, sortable: true },
+  { field: "stock", header: "Stock", width: 90, type: "number", sortable: true },
+  { field: "minimo", header: "Minimo", width: 90, type: "number" },
+  { field: "costo", header: "Costo", width: 120, type: "number", currency: "VES" },
+  { field: "precio", header: "Precio", width: 120, type: "number", currency: "VES" },
+  {
+    field: "estado", header: "Estado", width: 100,
+    statusColors: { Bajo: "error", Normal: "success" },
+    statusVariant: "outlined",
+  },
+  {
+    field: "actions", header: "Acciones", type: "actions", width: 80, pin: "right",
+    actions: [
+      { icon: "view", label: "Ver detalle", action: "view", color: "#6b7280" },
+    ],
+  },
+];
 
 export default function InventarioTable() {
   const router = useRouter();
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(25);
+  const gridRef = useRef<any>(null);
   const [search, setSearch] = useState("");
 
   const { data: inventario, isLoading } = useInventarioList({
     search,
-    page: page + 1,
-    limit: rowsPerPage,
+    limit: 200,
   });
 
   const rows = (inventario?.rows ?? []) as Record<string, unknown>[];
-  const total = inventario?.total ?? 0;
 
-  const debouncedSearch = useCallback(
-    debounce((value: string) => {
-      setSearch(value);
-      setPage(0);
-    }, 500),
-    []
-  );
+  const { ready } = useGridLayoutSync(GRID_ID);
+  const { registered } = useInventarioGridRegistration(ready);
 
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    debouncedSearch(e.target.value);
-  };
+  const gridRows = useMemo(() => rows.map((item, i) => {
+    const codigo = String(item.CODIGO ?? item.ProductCode ?? "");
+    const stock = Number(item.EXISTENCIA ?? item.StockQty ?? 0);
+    const minimo = Number(item.MINIMO ?? item.StockMin ?? 0);
+    return {
+      id: i,
+      codigo,
+      nombre: String(item.DescripcionCompleta ?? item.DESCRIPCION ?? item.ProductName ?? ""),
+      categoria: String(item.Categoria ?? ""),
+      stock,
+      minimo,
+      costo: Number(item.PRECIO_COMPRA ?? item.CostPrice ?? 0),
+      precio: Number(item.PRECIO_VENTA ?? item.SalesPrice ?? 0),
+      estado: minimo > 0 && stock < minimo ? "Bajo" : "Normal",
+    };
+  }), [rows]);
 
-  const handlePageChange = (_: unknown, newPage: number) => {
-    setPage(newPage);
-  };
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+    el.columns = COLUMNS;
+    el.rows = gridRows;
+    el.loading = isLoading;
+    el.getRowId = (r: any) => r.id;
+  }, [gridRows, isLoading, registered]);
 
-  const handleRowsPerPageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setRowsPerPage(parseInt(e.target.value, 10));
-    setPage(0);
-  };
-
-  const getStockColor = (stock: number, minimo: number): "error" | "warning" | "success" => {
-    if (minimo > 0 && stock < minimo) return "error";
-    if (minimo > 0 && stock < minimo * 1.5) return "warning";
-    return "success";
-  };
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+    const handler = (e: CustomEvent) => {
+      const { action, row } = e.detail;
+      if (action === "view" && row?.codigo) {
+        router.push(`/articulos/${row.codigo}`);
+      }
+    };
+    el.addEventListener("action-click", handler);
+    return () => el.removeEventListener("action-click", handler);
+  }, [registered, router]);
 
   return (
     <Box sx={{ p: 2 }}>
@@ -80,7 +98,7 @@ export default function InventarioTable() {
             startIcon={<AddIcon />}
             onClick={() => router.push("/articulos/new")}
           >
-            Nuevo Artículo
+            Nuevo Articulo
           </Button>
           <Button
             variant="outlined"
@@ -91,111 +109,29 @@ export default function InventarioTable() {
         </Box>
       </Box>
 
-      {/* Search */}
-      <TextField
-        placeholder="Buscar por codigo, nombre, categoria..."
-        defaultValue=""
-        onChange={handleSearchChange}
-        fullWidth
-       
-        sx={{ mb: 2 }}
-        InputProps={{
-          startAdornment: (
-            <InputAdornment position="start">
-              <SearchIcon fontSize="small" />
-            </InputAdornment>
-          ),
-        }}
+      <zentto-grid
+        ref={gridRef}
+        grid-id={GRID_ID}
+        height="calc(100vh - 200px)"
+        default-currency="VES"
+        export-filename="inventario"
+        enable-toolbar
+        enable-header-menu
+        enable-header-filters
+        enable-clipboard
+        enable-quick-search
+        enable-context-menu
+        enable-status-bar
+        enable-configurator
       />
-
-      {/* Table */}
-      <TableContainer component={Paper}>
-        <Table size="small">
-          <TableHead>
-            <TableRow sx={{ backgroundColor: "#f5f5f5" }}>
-              <TableCell sx={{ fontWeight: 600 }}>Codigo</TableCell>
-              <TableCell sx={{ fontWeight: 600 }}>Articulo</TableCell>
-              <TableCell sx={{ fontWeight: 600 }}>Categoria</TableCell>
-              <TableCell align="right" sx={{ fontWeight: 600 }}>Stock</TableCell>
-              <TableCell align="right" sx={{ fontWeight: 600 }}>Minimo</TableCell>
-              <TableCell align="right" sx={{ fontWeight: 600 }}>Costo</TableCell>
-              <TableCell align="right" sx={{ fontWeight: 600 }}>Precio</TableCell>
-              <TableCell sx={{ fontWeight: 600 }}>Estado</TableCell>
-              <TableCell align="center" sx={{ fontWeight: 600 }}>Acciones</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={9} align="center" sx={{ py: 4 }}>
-                  <CircularProgress size={40} />
-                </TableCell>
-              </TableRow>
-            ) : rows.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={9} align="center" sx={{ py: 4, color: "text.secondary" }}>
-                  No hay registros de inventario
-                </TableCell>
-              </TableRow>
-            ) : (
-              rows.map((item) => {
-                const codigo = String(item.CODIGO ?? item.ProductCode ?? "");
-                const nombre = String(item.DescripcionCompleta ?? item.DESCRIPCION ?? item.ProductName ?? "");
-                const categoria = String(item.Categoria ?? "");
-                const stock = Number(item.EXISTENCIA ?? item.StockQty ?? 0);
-                const minimo = Number(item.MINIMO ?? item.StockMin ?? 0);
-                const costo = Number(item.PRECIO_COMPRA ?? item.CostPrice ?? 0);
-                const precio = Number(item.PRECIO_VENTA ?? item.SalesPrice ?? 0);
-
-                return (
-                  <TableRow key={codigo} hover>
-                    <TableCell sx={{ fontWeight: 500 }}>{codigo}</TableCell>
-                    <TableCell>{nombre}</TableCell>
-                    <TableCell>{categoria}</TableCell>
-                    <TableCell align="right" sx={{ fontWeight: 500 }}>{stock}</TableCell>
-                    <TableCell align="right">{minimo}</TableCell>
-                    <TableCell align="right">{formatCurrency(costo)}</TableCell>
-                    <TableCell align="right">{formatCurrency(precio)}</TableCell>
-                    <TableCell>
-                      <Chip
-                        label={minimo > 0 && stock < minimo ? "Bajo" : "Normal"}
-                        size="small"
-                        color={getStockColor(stock, minimo)}
-                        variant="outlined"
-                      />
-                    </TableCell>
-                    <TableCell align="center">
-                      <Tooltip title="Ver detalle">
-                        <IconButton
-                          size="small"
-                          onClick={() => router.push(`/articulos/${codigo}`)}
-                        >
-                          <ViewIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                    </TableCell>
-                  </TableRow>
-                );
-              })
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
-
-      {/* Pagination */}
-      {total > 0 && (
-        <TablePagination
-          rowsPerPageOptions={[10, 25, 50, 100]}
-          component="div"
-          count={total}
-          rowsPerPage={rowsPerPage}
-          page={page}
-          onPageChange={handlePageChange}
-          onRowsPerPageChange={handleRowsPerPageChange}
-          labelRowsPerPage="Filas por pagina:"
-          labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count}`}
-        />
-      )}
     </Box>
   );
+}
+
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'zentto-grid': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & Record<string, any>, HTMLElement>;
+    }
+  }
 }
