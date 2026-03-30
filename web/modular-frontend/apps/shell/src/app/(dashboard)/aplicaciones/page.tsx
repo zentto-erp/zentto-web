@@ -63,6 +63,9 @@ interface StoreApp {
     author: string;
 }
 
+const DescriptionIcon = dynamic(() => import('@mui/icons-material/Description'), { ssr: false });
+const ExtensionIcon = dynamic(() => import('@mui/icons-material/Extension'), { ssr: false });
+
 const CATALOG: StoreApp[] = [
     {
         id: 'contabilidad',
@@ -256,6 +259,32 @@ const CATALOG: StoreApp[] = [
         category: 'Operaciones',
         path: '/shipping',
         features: ['Envíos nacionales e internacionales', 'Cotización multi-carrier', 'Rastreo en tiempo real', 'Gestión de aduanas', 'Notificaciones automáticas', 'Portal público de rastreo', 'Zoom / MRW / Liberty Express'],
+        version: '1.0.0',
+        author: 'Zentto'
+    },
+    {
+        id: 'report-studio',
+        name: 'Report Studio',
+        description: 'Diseñador de reportes profesional con motor propio y plantillas listas para usar.',
+        fullDescription: 'Crea reportes personalizados para tu empresa sin programar. El Designer visual permite arrastrar y soltar campos, tablas, graficos y codigos QR. Incluye 30+ plantillas del sistema (facturas, nominas, inventario) y 25 layouts predefinidos por modulo. Los reportes se guardan en la nube y los cambios se ven inmediatamente sin deploy.',
+        icon: <DescriptionIcon sx={{ fontSize: 40, color: '#fff' }} />,
+        bgColor: '#FF6F00',
+        category: 'Herramientas',
+        path: '/report-studio',
+        features: ['Designer visual WYSIWYG', '30+ plantillas del sistema', '25 layouts por modulo', 'Motor de expresiones (80+ funciones)', 'Graficos SVG, QR y codigos de barra', 'Exportar a PDF y HTML', 'Guardar en la nube sin deploy'],
+        version: '1.9.2',
+        author: 'Zentto'
+    },
+    {
+        id: 'addons',
+        name: 'Addons',
+        description: 'Crea aplicaciones personalizadas con el Wizard o el Designer visual.',
+        fullDescription: 'Extiende tu ERP con aplicaciones a medida. El Wizard guiado permite crear apps en minutos sin codigo, mientras que el Designer ofrece control total sobre el layout. Las apps creadas aparecen automaticamente en el menu del modulo que elijas (Ventas, Inventario, Contabilidad, etc.).',
+        icon: <ExtensionIcon sx={{ fontSize: 40, color: '#fff' }} />,
+        bgColor: '#37474F',
+        category: 'Herramientas',
+        path: '/addons',
+        features: ['Wizard guiado paso a paso', 'Designer visual avanzado', 'Asignar a multiples modulos', 'Preview en tiempo real', 'Publicar y compartir', 'Sin necesidad de programar'],
         version: '1.0.0',
         author: 'Zentto'
     },
