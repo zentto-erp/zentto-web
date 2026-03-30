@@ -514,7 +514,7 @@ export default function CompraForm({ numeroCompra }: CompraFormProps) {
       </Paper>
 
       <Stack direction="row" spacing={1} justifyContent="flex-end">
-        <Button variant="outlined" onClick={() => router.push("/compras")}>
+        <Button variant="outlined" onClick={() => router.push("/")}>
           Volver
         </Button>
         <Button variant="contained" onClick={guardarCompraTx} disabled={emitirTx.isPending}>

@@ -205,7 +205,7 @@ export default function VacacionesWizard({ initialCedula, onClose }: VacacionesW
         fechaReintegro: fechaReintegro?.format("YYYY-MM-DD"),
       });
       showToast("Vacaciones procesadas correctamente");
-      router.push("/nomina/vacaciones");
+      router.push("/vacaciones");
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Error al procesar vacaciones");
     }
@@ -495,7 +495,7 @@ export default function VacacionesWizard({ initialCedula, onClose }: VacacionesW
               <Divider sx={{ my: 3 }} />
 
               <Stack direction="row" spacing={2} justifyContent="flex-end">
-                <Button variant="outlined" color="error" onClick={() => router.push("/nomina/vacaciones")}>
+                <Button variant="outlined" color="error" onClick={() => router.push("/vacaciones")}>
                   Cancelar
                 </Button>
                 <Button
@@ -523,7 +523,7 @@ export default function VacacionesWizard({ initialCedula, onClose }: VacacionesW
     <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
       {/* Header */}
       <Stack direction="row" alignItems="center" spacing={2}>
-        <Button startIcon={<ArrowBackIcon />} onClick={() => router.push("/nomina/vacaciones")}>
+        <Button startIcon={<ArrowBackIcon />} onClick={() => router.push("/vacaciones")}>
           Volver
         </Button>
         <Typography variant="h5" fontWeight={700}>

@@ -105,7 +105,7 @@ export default function VacacionesPage() {
         <Button
           variant="contained"
           startIcon={<PlayArrowIcon />}
-          onClick={() => router.push("/nomina/vacaciones/procesar")}
+          onClick={() => router.push("/vacaciones/procesar")}
         >
           Procesar Vacaciones
         </Button>

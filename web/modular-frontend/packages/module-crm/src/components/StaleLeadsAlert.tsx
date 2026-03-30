@@ -85,7 +85,7 @@ export function StaleLeadsAlert({
               variant="text"
               color="warning"
               endIcon={<OpenInNewIcon sx={{ fontSize: 14 }} />}
-              onClick={() => router.push("/crm/leads?status=OPEN")}
+              onClick={() => router.push("/leads?status=OPEN")}
             >
               Ver todos
             </Button>
