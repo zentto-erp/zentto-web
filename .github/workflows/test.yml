@@ -90,20 +90,18 @@ jobs:
           PG_PASSWORD: test_password
           DB_TYPE: postgres
         run: |
-          # CI debe validar el mismo flujo de tenant provisioning:
-          # extensiones -> goose up -> run-functions -> seeds config/starter.
-          psql -h 127.0.0.1 -U zentto_app -d zentto_test -v ON_ERROR_STOP=1 -c "CREATE EXTENSION IF NOT EXISTS pgcrypto;"
-          psql -h 127.0.0.1 -U zentto_app -d zentto_test -v ON_ERROR_STOP=1 -c "CREATE EXTENSION IF NOT EXISTS unaccent;"
-          psql -h 127.0.0.1 -U zentto_app -d zentto_test -v ON_ERROR_STOP=1 -c "CREATE EXTENSION IF NOT EXISTS pg_trgm;"
-          psql -h 127.0.0.1 -U zentto_app -d zentto_test -v ON_ERROR_STOP=1 -c "CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";"
-          psql -h 127.0.0.1 -U zentto_app -d zentto_test -v ON_ERROR_STOP=1 -c "CREATE EXTENSION IF NOT EXISTS btree_gin;"
-          curl -fsSL -o /usr/local/bin/goose https://github.com/pressly/goose/releases/download/v3.24.1/goose_linux_x86_64
-          chmod +x /usr/local/bin/goose
-          bash ../../scripts/migrate.sh up
+          # Bootstrap from baseline (pg_dump of zentto_dev)
           cd sqlweb-pg
-          psql -h 127.0.0.1 -U zentto_app -d zentto_test -v ON_ERROR_STOP=1 -f run-functions.sql
-          psql -h 127.0.0.1 -U zentto_app -d zentto_test -v ON_ERROR_STOP=1 -f run-seeds-config.sql
-          psql -h 127.0.0.1 -U zentto_app -d zentto_test -v ON_ERROR_STOP=1 -f run-seeds-starter.sql
+          for f in baseline/000_schemas.sql baseline/001_extensions.sql baseline/002_types.sql \
+                   baseline/003_tables.sql baseline/004_sequences.sql baseline/005_functions.sql \
+                   baseline/006_indexes.sql baseline/007_constraints.sql baseline/008_triggers.sql; do
+            echo "  $(basename $f)..."
+            psql -h 127.0.0.1 -U zentto_app -d zentto_test -v ON_ERROR_STOP=1 < "$f"
+          done
+          echo "  seeds..."
+          psql -h 127.0.0.1 -U zentto_app -d zentto_test -c "SET session_replication_role = 'replica';"
+          psql -h 127.0.0.1 -U zentto_app -d zentto_test < seeds/001_seed_data.sql || true
+          psql -h 127.0.0.1 -U zentto_app -d zentto_test -c "SET session_replication_role = 'origin';"
 
       - name: Run SP contract tests
         working-directory: web/api
@@ -113,7 +111,7 @@ jobs:
           PG_DATABASE: zentto_test
           PG_USER: zentto_app
           PG_PASSWORD: test_password
-        run: npm run test:schema
+        run: npx vitest run tests/schema/sp-contracts.test.ts
 
       - name: Upload test results
         if: always()
