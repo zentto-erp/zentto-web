@@ -170,7 +170,9 @@ export default function ReportesAvanzadosPage() {
   const [run, setRun] = useState(false);
   const [agingSubTab, setAgingSubTab] = useState(0);
   const [drillDown, setDrillDown] = useState<{ accountCode: string; accountName?: string } | null>(null);
-  const [registered, setRegistered] = useState(false);
+
+  const { ready: gridLayoutReady } = useGridLayoutSync(GRID_IDS.gridRef);
+  const { registered } = useContabilidadGridRegistration(gridLayoutReady);
 
   // Grid refs for tabs 0,1,2,6(cxc),6(cxp),8
   const diarioRef = useRef<any>(null);

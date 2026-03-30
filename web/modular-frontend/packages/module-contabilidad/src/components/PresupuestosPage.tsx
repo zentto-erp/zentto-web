@@ -132,7 +132,8 @@ const VARIANZA_COLUMNS: ColumnDef[] = [
 
 function VarianzaTab({ presupuestoId }: { presupuestoId: number }) {
   const gridRef = useRef<any>(null);
-  const [registered, setRegistered] = useState(false);
+  const { ready: gridLayoutReady } = useGridLayoutSync(GRID_IDS.gridRef);
+  const { registered } = useContabilidadGridRegistration(gridLayoutReady);
   const { timeZone } = useTimezone();
   const today = toDateOnly(new Date(), timeZone);
   const firstDay = toDateOnly(new Date(new Date().getFullYear(), 0, 1), timeZone);
@@ -209,7 +210,8 @@ const GRID_IDS = {
 
 export default function PresupuestosPage() {
   const gridRef = useRef<any>(null);
-  const [registered, setRegistered] = useState(false);
+  const { ready: gridLayoutReady } = useGridLayoutSync(GRID_IDS.gridRef);
+  const { registered } = useContabilidadGridRegistration(gridLayoutReady);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editItem, setEditItem] = useState<Presupuesto | null>(null);

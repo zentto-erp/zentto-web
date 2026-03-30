@@ -201,7 +201,8 @@ const PIVOT_COLUMNS: ColumnDef[] = [
 
 function PivotTab() {
   const gridRef = useRef<any>(null);
-  const [registered, setRegistered] = useState(false);
+  const { ready: gridLayoutReady } = useGridLayoutSync(GRID_IDS.gridRef);
+  const { registered } = useContabilidadGridRegistration(gridLayoutReady);
   const { timeZone } = useTimezone();
   const today = toDateOnly(new Date(), timeZone);
   const firstDay = toDateOnly(new Date(new Date().getFullYear(), 0, 1), timeZone);
