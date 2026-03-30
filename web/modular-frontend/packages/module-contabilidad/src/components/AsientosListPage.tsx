@@ -29,7 +29,7 @@ import {
   useAnularAsiento,
   type AsientoFilter,
 } from "../hooks/useContabilidad";
-import { ASIENTOS_LIST_LAYOUT } from "./report-layouts/asientos-list-layout";
+import { ASIENTOS_LIST_LAYOUT } from "@zentto/shared-reports";
 
 import { buildContabilidadGridId, useContabilidadGridId, useContabilidadGridRegistration } from "./zenttoGridPersistence";
 

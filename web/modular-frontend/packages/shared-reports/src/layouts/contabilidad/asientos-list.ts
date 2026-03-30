@@ -20,6 +20,7 @@ export const ASIENTOS_LIST_LAYOUT = {
       id: "header",
       name: "Encabezado",
       type: "object" as const,
+      endpoint: "/v1/contabilidad/empresa",
       fields: [
         { name: "empresa", label: "Empresa", type: "string" },
         { name: "fechaDesde", label: "Fecha desde", type: "string" },
@@ -33,6 +34,7 @@ export const ASIENTOS_LIST_LAYOUT = {
       id: "asientos",
       name: "Asientos",
       type: "array" as const,
+      endpoint: "/v1/contabilidad/asientos",
       fields: [
         { name: "num", label: "#", type: "number" },
         { name: "id", label: "ID", type: "number" },
