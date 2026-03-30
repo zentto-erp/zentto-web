@@ -38,8 +38,8 @@ function MayorAnaliticoDialog({ open, onClose, cuenta }: { open: boolean; onClos
   const layoutReady = gridLayoutReady;
   const { registered } = useContabilidadGridRegistration(layoutReady);
   const { timeZone } = useTimezone();
-  const [fechaDesde, setFechaDesde] = useState(toDateOnly(new Date(new Date().getFullYear(), 0, 1), timeZone));
-  const [fechaHasta, setFechaHasta] = useState(toDateOnly(new Date(), timeZone));
+  const [fechaDesde, setFechaDesde] = useState(new Date(new Date().getFullYear(), 0, 1).toISOString().slice(0, 10));
+  const [fechaHasta, setFechaHasta] = useState(new Date().toISOString().slice(0, 10));
   const { data, isLoading } = useMayorAnalitico(cuenta?.codCuenta || "", fechaDesde, fechaHasta, open && !!cuenta?.codCuenta);
   useEffect(() => {
     const el = gridRef.current;
