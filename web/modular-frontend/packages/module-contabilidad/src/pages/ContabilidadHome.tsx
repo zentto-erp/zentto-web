@@ -221,7 +221,7 @@ export default function ContabilidadHome() {
                       key={a.asientoId ?? a.id ?? idx}
                       hover
                       sx={{ cursor: "pointer" }}
-                      onClick={() => router.push("/contabilidad/asientos")}
+                      onClick={() => router.push("/asientos")}
                     >
                       <TableCell>{a.fecha}</TableCell>
                       <TableCell>{a.tipoAsiento}</TableCell>

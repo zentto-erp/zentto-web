@@ -148,7 +148,7 @@ export default function PlanCuentasPageMejorado() {
         primaryAction={{ label: "Nueva cuenta", onClick: () => console.log("Nueva cuenta activada") }}
         secondaryActions={[
           { label: seedMutation.isPending ? "Creando..." : "Crear datos ejemplo", onClick: handleSeedData, disabled: seedMutation.isPending },
-          { label: "Nuevo asiento", onClick: () => router.push("/contabilidad/asientos/new") },
+          { label: "Nuevo asiento", onClick: () => router.push("/asientos/new") },
         ]}
         onSearch={setSearch}
         searchPlaceholder="Buscar por codigo o descripcion..."

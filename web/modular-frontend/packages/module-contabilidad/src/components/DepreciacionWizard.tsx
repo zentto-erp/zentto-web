@@ -222,7 +222,7 @@ export default function DepreciacionWizard() {
               <Button
                 variant="contained"
                 startIcon={<ListAltIcon />}
-                onClick={() => router.push("/contabilidad/activos-fijos")}
+                onClick={() => router.push("/activos-fijos")}
               >
                 Ver activos fijos
               </Button>
