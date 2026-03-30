@@ -209,7 +209,7 @@ export default function LiquidacionesWizard({ initialCedula, onClose }: Liquidac
 
   const handleGuardar = async () => {
     showToast("Liquidación guardada correctamente");
-    router.push("/nomina/liquidaciones");
+    router.push("/liquidaciones");
   };
 
   // ─── Render paso a paso ──────────────────────────────────────
@@ -469,7 +469,7 @@ export default function LiquidacionesWizard({ initialCedula, onClose }: Liquidac
               <Divider sx={{ my: 3 }} />
 
               <Stack direction="row" spacing={2} justifyContent="flex-end">
-                <Button variant="outlined" color="error" onClick={() => router.push("/nomina/liquidaciones")}>
+                <Button variant="outlined" color="error" onClick={() => router.push("/liquidaciones")}>
                   Cancelar
                 </Button>
                 <Button
@@ -542,7 +542,7 @@ export default function LiquidacionesWizard({ initialCedula, onClose }: Liquidac
     <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
       {/* Header */}
       <Stack direction="row" alignItems="center" spacing={2}>
-        <Button startIcon={<ArrowBackIcon />} onClick={() => router.push("/nomina/liquidaciones")}>
+        <Button startIcon={<ArrowBackIcon />} onClick={() => router.push("/liquidaciones")}>
           Volver
         </Button>
         <Typography variant="h5" fontWeight={700}>

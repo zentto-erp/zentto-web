@@ -20,7 +20,7 @@ import {
 import { useTimezone } from "@zentto/shared-auth";
 import { toDateOnly, useGridLayoutSync } from "@zentto/shared-api";
 import type { ColumnDef, GridRow } from "@zentto/datagrid-core";
-import { useScopedGridId } from "../../../lib/zentto-grid";
+import { useScopedGridId, useAdminGridRegistration } from "../../../lib/zentto-grid";
 
 
 // ============ Master-detail: renglones de factura ============
@@ -85,9 +85,9 @@ export default function FacturasTable() {
   const router = useRouter();
   const { timeZone } = useTimezone();
   const gridRef = useRef<any>(null);
-  const [registered, setRegistered] = useState(false);
   const gridId = useScopedGridId('facturas-main');
   const { ready: layoutReady } = useGridLayoutSync(gridId);
+  const { registered } = useAdminGridRegistration(layoutReady);
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(10);
   const [anularOpen, setAnularOpen] = useState(false);
@@ -96,11 +96,6 @@ export default function FacturasTable() {
   // Filtros (manejados por ZenttoFilterPanel)
   const [search, setSearch] = useState("");
   const [filterValues, setFilterValues] = useState<Record<string, string>>({});
-
-  useEffect(() => {
-    if (!layoutReady) return;
-    import("@zentto/datagrid").then(() => setRegistered(true));
-  }, [layoutReady]);
 
   const handleFilterChange = (vals: Record<string, string>) => {
     setFilterValues(vals);

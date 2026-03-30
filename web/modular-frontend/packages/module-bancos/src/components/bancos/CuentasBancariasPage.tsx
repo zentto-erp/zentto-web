@@ -16,6 +16,7 @@ import {
   useBancosList, useCuentasBancarias, useMovimientosCuenta,
   useCreateCuentaBancaria, useUpdateCuentaBancaria, useDeleteCuentaBancaria,
 } from "../../hooks/useBancosAuxiliares";
+import { useBancosGridRegistration } from "../zenttoGridPersistence";
 
 const MOVIMIENTOS_FILTERS: FilterFieldDef[] = [
   { field: "tipo", label: "Tipo", type: "select", options: [
@@ -55,7 +56,6 @@ const MOVIMIENTOS_GRID_ID = "module-bancos:cuentas-bancarias:movimientos";
 export default function CuentasBancariasPage() {
   const ctasGridRef = useRef<any>(null);
   const movsGridRef = useRef<any>(null);
-  const [registered, setRegistered] = useState(false);
   const router = useRouter();
   const { timeZone } = useTimezone();
   const { showToast } = useToast();
@@ -90,11 +90,7 @@ export default function CuentasBancariasPage() {
   const { ready: cuentasLayoutReady } = useGridLayoutSync(CUENTAS_GRID_ID);
   const { ready: movimientosLayoutReady } = useGridLayoutSync(MOVIMIENTOS_GRID_ID);
   const layoutReady = cuentasLayoutReady && movimientosLayoutReady;
-
-  useEffect(() => {
-    if (!layoutReady) return;
-    import("@zentto/datagrid").then(() => setRegistered(true));
-  }, [layoutReady]);
+  const { registered } = useBancosGridRegistration(layoutReady);
 
   // Cuentas grid
   useEffect(() => {

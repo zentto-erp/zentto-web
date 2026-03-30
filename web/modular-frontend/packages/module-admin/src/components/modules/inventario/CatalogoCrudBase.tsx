@@ -6,7 +6,7 @@ import { Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, 
 import { ContextActionHeader } from '@zentto/shared-ui';
 import type { ColumnDef } from '@zentto/datagrid-core';
 import { useGridLayoutSync } from '@zentto/shared-api';
-import { useScopedGridId } from '../../../lib/zentto-grid';
+import { useScopedGridId, useAdminGridRegistration } from '../../../lib/zentto-grid';
 
 
 export type CatalogField = {
@@ -196,19 +196,14 @@ function mapColumnType(sqlType?: string): string | undefined {
 export default function CatalogoCrudBase({ endpoint, title, apiClient, fields, tableName, schema, timeZone }: CatalogoCrudBaseProps) {
   const queryClient = useQueryClient();
   const gridRef = useRef<any>(null);
-  const [registered, setRegistered] = useState(false);
   const gridId = useScopedGridId(`${endpoint || title}-catalogo`);
   const { ready: layoutReady } = useGridLayoutSync(gridId);
+  const { registered } = useAdminGridRegistration(layoutReady);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [createValues, setCreateValues] = useState<Record<string, string>>({});
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
-
-  useEffect(() => {
-    if (!layoutReady) return;
-    import('@zentto/datagrid').then(() => setRegistered(true));
-  }, [layoutReady]);
 
   const metadataQuery = useQuery<CatalogTableMetadata | null>({
     queryKey: [endpoint, 'catalog-meta', tableName || endpoint, schema || 'dbo'],

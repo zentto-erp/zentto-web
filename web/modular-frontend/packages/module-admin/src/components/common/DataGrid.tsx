@@ -8,11 +8,11 @@
 
 'use client';
 
-import React, { useEffect, useRef, useState, useMemo } from 'react';
+import React, { useEffect, useRef, useMemo } from 'react';
 import { Box, CircularProgress } from '@mui/material';
 import type { ColumnDef } from '@zentto/datagrid-core';
 import { useGridLayoutSync } from '@zentto/shared-api';
-import { useScopedGridId } from '../../lib/zentto-grid';
+import { useScopedGridId, useAdminGridRegistration } from '../../lib/zentto-grid';
 
 
 export interface Column<T> {
@@ -66,16 +66,11 @@ export default function DataGrid<T extends Record<string, unknown>>({
   timeZone,
 }: DataGridProps<T>) {
   const gridRef = useRef<any>(null);
-  const [registered, setRegistered] = useState(false);
   const scopedGridId = useScopedGridId(
     gridId || `${title || 'data-grid'}-${columns.map((column) => String(column.accessor)).join('-')}`
   );
   const { ready: layoutReady } = useGridLayoutSync(scopedGridId);
-
-  useEffect(() => {
-    if (!layoutReady) return;
-    import('@zentto/datagrid').then(() => setRegistered(true));
-  }, [layoutReady]);
+  const { registered } = useAdminGridRegistration(layoutReady);
 
   // Map Column<T> to ColumnDef[]
   const gridColumns = useMemo<ColumnDef[]>(() => {

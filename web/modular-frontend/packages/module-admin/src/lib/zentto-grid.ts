@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { usePathname } from 'next/navigation';
 
 function normalizePart(value: string): string {
@@ -27,4 +27,29 @@ export function useScopedGridId(scope: string): string {
 
     return `module-admin:${normalizedPath}:${normalizePart(scope)}`;
   }, [pathname, scope]);
+}
+
+export function useAdminGridRegistration(layoutReady: boolean) {
+  const [registered, setRegistered] = useState(false);
+
+  useEffect(() => {
+    if (!layoutReady) return;
+
+    let cancelled = false;
+
+    import('@zentto/datagrid').then(() => {
+      if (!cancelled) {
+        setRegistered(true);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [layoutReady]);
+
+  return {
+    gridReady: layoutReady && registered,
+    registered,
+  };
 }

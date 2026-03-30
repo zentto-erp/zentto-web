@@ -41,65 +41,85 @@ const updateSchema = z.object({
 
 // GET /v1/cuentas - Listar cuentas
 cuentasRouter.get("/", async (req, res) => {
-  const parsed = listSchema.safeParse(req.query);
-  if (!parsed.success) {
-    return res.status(400).json({ error: "invalid_query", issues: parsed.error.flatten() });
+  try {
+    const parsed = listSchema.safeParse(req.query);
+    if (!parsed.success) {
+      return res.status(400).json({ error: "invalid_query", issues: parsed.error.flatten() });
+    }
+
+    const data = await listCuentasSP({
+      search: parsed.data.search,
+      tipo: parsed.data.tipo,
+      grupo: parsed.data.grupo,
+      page: parsed.data.page ? parseInt(parsed.data.page) : 1,
+      limit: parsed.data.limit ? parseInt(parsed.data.limit) : 50,
+    });
+
+    return res.json(data);
+  } catch (err: any) {
+    return res.status(500).json({ error: String(err.message ?? err) });
   }
-
-  const data = await listCuentasSP({
-    search: parsed.data.search,
-    tipo: parsed.data.tipo,
-    grupo: parsed.data.grupo,
-    page: parsed.data.page ? parseInt(parsed.data.page) : 1,
-    limit: parsed.data.limit ? parseInt(parsed.data.limit) : 50,
-  });
-
-  return res.json(data);
 });
 
 // GET /v1/cuentas/:codCuenta - Obtener cuenta por código
 cuentasRouter.get("/:codCuenta", async (req, res) => {
-  const data = await getCuentaByCodigoSP(req.params.codCuenta);
-  if (!data) return res.status(404).json({ error: "not_found" });
-  return res.json(data);
+  try {
+    const data = await getCuentaByCodigoSP(req.params.codCuenta);
+    if (!data) return res.status(404).json({ error: "not_found" });
+    return res.json(data);
+  } catch (err: any) {
+    return res.status(500).json({ error: String(err.message ?? err) });
+  }
 });
 
 // POST /v1/cuentas - Crear cuenta
 cuentasRouter.post("/", async (req, res) => {
-  const parsed = insertSchema.safeParse(req.body);
-  if (!parsed.success) {
-    return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
-  }
+  try {
+    const parsed = insertSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
+    }
 
-  const result = await insertCuentaSP(parsed.data);
-  if (result.success) {
-    return res.status(201).json({ success: true, message: result.message });
-  } else {
-    return res.status(400).json({ success: false, message: result.message });
+    const result = await insertCuentaSP(parsed.data);
+    if (result.success) {
+      return res.status(201).json({ success: true, message: result.message });
+    } else {
+      return res.status(400).json({ success: false, message: result.message });
+    }
+  } catch (err: any) {
+    return res.status(500).json({ error: String(err.message ?? err) });
   }
 });
 
 // PUT /v1/cuentas/:codCuenta - Actualizar cuenta
 cuentasRouter.put("/:codCuenta", async (req, res) => {
-  const parsed = updateSchema.safeParse(req.body);
-  if (!parsed.success) {
-    return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
-  }
+  try {
+    const parsed = updateSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
+    }
 
-  const result = await updateCuentaSP(req.params.codCuenta, parsed.data);
-  if (result.success) {
-    return res.json({ success: true, message: result.message });
-  } else {
-    return res.status(400).json({ success: false, message: result.message });
+    const result = await updateCuentaSP(req.params.codCuenta, parsed.data);
+    if (result.success) {
+      return res.json({ success: true, message: result.message });
+    } else {
+      return res.status(400).json({ success: false, message: result.message });
+    }
+  } catch (err: any) {
+    return res.status(500).json({ error: String(err.message ?? err) });
   }
 });
 
 // DELETE /v1/cuentas/:codCuenta - Eliminar cuenta
 cuentasRouter.delete("/:codCuenta", async (req, res) => {
-  const result = await deleteCuentaSP(req.params.codCuenta);
-  if (result.success) {
-    return res.json({ success: true, message: result.message });
-  } else {
-    return res.status(400).json({ success: false, message: result.message });
+  try {
+    const result = await deleteCuentaSP(req.params.codCuenta);
+    if (result.success) {
+      return res.json({ success: true, message: result.message });
+    } else {
+      return res.status(400).json({ success: false, message: result.message });
+    }
+  } catch (err: any) {
+    return res.status(500).json({ error: String(err.message ?? err) });
   }
 });

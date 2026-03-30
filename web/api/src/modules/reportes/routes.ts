@@ -342,7 +342,8 @@ reportesRouter.get("/saved", async (req: Request, res: Response) => {
             10000,
         );
         if (!resp.ok) return res.status(resp.status).json({ error: "cache_error" });
-        const ids: string[] = await resp.json();
+        const body = await resp.json();
+        const ids: string[] = Array.isArray(body) ? body : (body.templateIds ?? body.data ?? []);
         const reports = await Promise.all(ids.map(async (id) => {
             try {
                 const r = await safeFetch(

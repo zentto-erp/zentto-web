@@ -39,6 +39,7 @@ import {
 import { brandColors } from "@zentto/shared-ui";
 import type { ColumnDef } from "@zentto/datagrid-core";
 import { useGridLayoutSync } from "@zentto/shared-api";
+import { useManufacturaGridRegistration } from "../components/zenttoGridPersistence";
 
 /* ─── Helpers ─────────────────────────────────────────────── */
 
@@ -206,16 +207,10 @@ export default function ManufacturaHome({ basePath = "" }: { basePath?: string }
   const bp = basePath.replace(/\/+$/, "");
   const bomGridRef = useRef<any>(null);
   const ordersGridRef = useRef<any>(null);
-  const [registered, setRegistered] = useState(false);
   const { ready: dashboardBomsLayoutReady } = useGridLayoutSync(DASHBOARD_BOMS_GRID_ID);
   const { ready: dashboardOrdersLayoutReady } = useGridLayoutSync(DASHBOARD_ORDERS_GRID_ID);
   const layoutReady = dashboardBomsLayoutReady && dashboardOrdersLayoutReady;
-
-  // Register zentto-grid web component
-  useEffect(() => {
-    if (!layoutReady) return;
-    import("@zentto/datagrid").then(() => setRegistered(true));
-  }, [layoutReady]);
+  const { gridReady, registered } = useManufacturaGridRegistration(layoutReady);
 
   // Data hooks
   const { data: dashboard, isLoading: dashLoading } = useManufacturaDashboard();

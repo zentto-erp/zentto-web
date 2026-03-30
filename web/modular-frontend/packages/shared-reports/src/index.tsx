@@ -41,6 +41,10 @@ export type {
   ModuleReportConfig,
 } from './config/module-reports';
 
+// ─── Layouts de reportes por módulo ─────────────────────────────
+
+export * from './layouts';
+
 // ─── Re-exports from report-core (convenience) ──────────────────────
 
 export {

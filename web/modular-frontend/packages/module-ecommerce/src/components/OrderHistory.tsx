@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { Box, Typography, CircularProgress } from "@mui/material";
 import type { ColumnDef } from "@zentto/datagrid-core";
 import { useGridLayoutSync } from "@zentto/shared-api";
+import { useEcommerceGridRegistration } from "./zenttoGridPersistence";
 
 
 interface OrderRow {
@@ -52,13 +53,8 @@ const GRID_ID = "module-ecommerce:order-history:list";
 
 export default function OrderHistory({ orders, loading, onViewOrder }: Props) {
   const gridRef = useRef<any>(null);
-  const [registered, setRegistered] = useState(false);
-  const { ready: layoutReady } = useGridLayoutSync(GRID_ID);
-
-  useEffect(() => {
-    if (!layoutReady) return;
-    import("@zentto/datagrid").then(() => setRegistered(true));
-  }, [layoutReady]);
+  const { ready: gridLayoutReady } = useGridLayoutSync(GRID_ID);
+  const { registered } = useEcommerceGridRegistration(gridLayoutReady);
 
   const rows = orders.map((o) => ({
     ...o,
@@ -100,7 +96,7 @@ export default function OrderHistory({ orders, loading, onViewOrder }: Props) {
     );
   }
 
-  if (!layoutReady || !registered) {
+  if (!gridLayoutReady || !registered) {
     return <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}><CircularProgress /></Box>;
   }
 

@@ -7,7 +7,6 @@ import {
 import Grid from "@mui/material/Grid2";
 import type { ColumnDef } from "@zentto/datagrid-core";
 import { useGridLayoutSync } from "@zentto/shared-api";
-import { ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import {
   useConciliaciones, useCuentasBank, useConciliacionDetalle, useImportarExtracto,
@@ -44,11 +43,6 @@ const ENTRY_COLUMNS: ColumnDef[] = [
   { field: "TotalCredit", header: "Haber", width: 120, type: "number", currency: "VES" },
 ];
 
-const CONCILIACION_FILTERS: FilterFieldDef[] = [
-  { field: "fechaDesde", label: "Fecha desde", type: "date" },
-  { field: "fechaHasta", label: "Fecha hasta", type: "date" },
-];
-
 const GRID_IDS = {
   gridRef: buildContabilidadGridId("conciliacion-bancaria", "main"),
 } as const;
@@ -60,8 +54,6 @@ export default function ConciliacionBancariaPage() {
   const layoutReady = gridLayoutReady;
   const { registered } = useContabilidadGridRegistration(layoutReady);
   const [selectedNroCta, setSelectedNroCta] = useState<string>("");
-  const [search, setSearch] = useState("");
-  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
   const [selectedConciliacionId, setSelectedConciliacionId] = useState<number | null>(null);
   const [selectedMovSistemaId, setSelectedMovSistemaId] = useState<number | null>(null);
   const [selectedExtractoId, setSelectedExtractoId] = useState<number | null>(null);
@@ -123,9 +115,6 @@ export default function ConciliacionBancariaPage() {
   return (
     <Box>
       <Typography variant="h5" fontWeight={700} sx={{ mb: 3 }}>Conciliacion bancaria</Typography>
-
-      <ZenttoFilterPanel filters={CONCILIACION_FILTERS} values={filterValues} onChange={setFilterValues}
-        searchPlaceholder="Buscar movimiento..." searchValue={search} onSearchChange={setSearch} />
 
       <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 3 }}>
         <CuentaBancariaSelector cuentas={cuentas} selectedNroCta={selectedNroCta}

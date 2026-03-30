@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useRef, useCallback } from "react";
+import { useStudioRegistration } from "@/lib/zentto-grid";
 import { useRouter } from "next/navigation";
 import {
   Box,
@@ -37,7 +38,7 @@ const WIZARD_CONFIG_KEY = "zentto-studio-wizard-config";
 export default function StudioPreviewClient() {
   const router = useRouter();
   const appRef = useRef<HTMLElement>(null);
-  const [registered, setRegistered] = useState(false);
+  const { registered } = useStudioRegistration();
   const [config, setConfig] = useState<AppConfig | null>(null);
   const [noConfig, setNoConfig] = useState(false);
 
@@ -53,11 +54,6 @@ export default function StudioPreviewClient() {
     } catch {
       setNoConfig(true);
     }
-  }, []);
-
-  /* ── Register web components ─────────────────────────────────── */
-  useEffect(() => {
-    import("@zentto/studio").then(() => setRegistered(true));
   }, []);
 
   /* ── Push config into <zentto-studio-app> ────────────────────── */

@@ -28,6 +28,7 @@ import {
 } from "../hooks/useFlota";
 import type { ColumnDef } from "@zentto/datagrid-core";
 import { useGridLayoutSync } from "@zentto/shared-api";
+import { useFlotaGridRegistration } from "./zenttoGridPersistence";
 
 
 function VehiculoDetailPanel({ row }: { row: Record<string, unknown> }) {
@@ -94,13 +95,8 @@ export default function VehiculosPage() {
   const [vin, setVin] = useState("");
   const [notes, setNotes] = useState("");
   const gridRef = useRef<any>(null);
-  const [registered, setRegistered] = useState(false);
   const { ready: layoutReady } = useGridLayoutSync(GRID_ID);
-
-  useEffect(() => {
-    if (!layoutReady) return;
-    import("@zentto/datagrid").then(() => setRegistered(true));
-  }, [layoutReady]);
+  const { gridReady, registered } = useFlotaGridRegistration(layoutReady);
 
   const { data, isLoading } = useVehiclesList({
     ...filter,

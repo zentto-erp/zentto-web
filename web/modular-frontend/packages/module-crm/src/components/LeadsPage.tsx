@@ -29,6 +29,7 @@ import {
 } from "../hooks/useCRM";
 import type { ColumnDef } from "@zentto/datagrid-core";
 import { useGridLayoutSync } from "@zentto/shared-api";
+import { useCRMGridRegistration } from "./zenttoGridPersistence";
 
 
 const priorityColor: Record<string, "error" | "warning" | "info" | "default"> = {
@@ -70,13 +71,8 @@ export default function LeadsPage() {
   const [editId, setEditId] = useState<number | null>(null);
   const [form, setForm] = useState(emptyLead);
   const gridRef = useRef<any>(null);
-  const [registered, setRegistered] = useState(false);
-  const { ready: layoutReady } = useGridLayoutSync(GRID_ID);
-
-  useEffect(() => {
-    if (!layoutReady) return;
-    import("@zentto/datagrid").then(() => setRegistered(true));
-  }, [layoutReady]);
+  const { ready: gridLayoutReady } = useGridLayoutSync(GRID_ID);
+  const { registered } = useCRMGridRegistration(gridLayoutReady);
 
   const { data, isLoading } = useLeadsList(filter);
   const { data: pipelinesData } = usePipelinesList();

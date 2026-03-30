@@ -24,6 +24,7 @@ import {
 import { usePipelineStages } from "../hooks/useCRM";
 import type { ColumnDef } from "@zentto/datagrid-core";
 import { useGridLayoutSync } from "@zentto/shared-api";
+import { useCRMGridRegistration } from "./zenttoGridPersistence";
 
 
 /* ─── Trigger / Action labels & colors ───────────────────────── */
@@ -129,8 +130,8 @@ export default function AutomationRulesPage() {
   const [deleteTarget, setDeleteTarget] = useState<AutomationRule | null>(null);
   const [form, setForm] = useState<RuleForm>(emptyForm);
   const gridRef = useRef<any>(null);
-  const [registered, setRegistered] = useState(false);
-  const { ready: layoutReady } = useGridLayoutSync(GRID_ID);
+  const { ready: gridLayoutReady } = useGridLayoutSync(GRID_ID);
+  const { registered } = useCRMGridRegistration(gridLayoutReady);
 
   // Stages for condition/action selects
   const { data: stagesRaw } = usePipelineStages(undefined);
@@ -138,11 +139,6 @@ export default function AutomationRulesPage() {
     if (!stagesRaw) return [];
     return Array.isArray(stagesRaw) ? stagesRaw : (stagesRaw as any)?.data ?? [];
   }, [stagesRaw]);
-
-  useEffect(() => {
-    if (!layoutReady) return;
-    import("@zentto/datagrid").then(() => setRegistered(true));
-  }, [layoutReady]);
 
   // Reset form when dialog opens
   useEffect(() => {

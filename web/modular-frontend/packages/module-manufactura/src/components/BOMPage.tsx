@@ -33,6 +33,7 @@ import {
 } from "../hooks/useManufactura";
 import type { ColumnDef } from "@zentto/datagrid-core";
 import { useGridLayoutSync } from "@zentto/shared-api";
+import { useManufacturaGridRegistration } from "./zenttoGridPersistence";
 
 
 interface BOMLine {
@@ -87,13 +88,8 @@ export default function BOMPage() {
   const [outputQuantity, setOutputQuantity] = useState("1");
   const [lines, setLines] = useState<BOMLine[]>([emptyLine()]);
   const gridRef = useRef<any>(null);
-  const [registered, setRegistered] = useState(false);
   const { ready: layoutReady } = useGridLayoutSync(GRID_ID);
-
-  useEffect(() => {
-    if (!layoutReady) return;
-    import("@zentto/datagrid").then(() => setRegistered(true));
-  }, [layoutReady]);
+  const { gridReady, registered } = useManufacturaGridRegistration(layoutReady);
 
   const { data, isLoading } = useBOMList({
     ...filter,

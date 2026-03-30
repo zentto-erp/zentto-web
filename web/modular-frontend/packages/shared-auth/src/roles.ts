@@ -23,6 +23,10 @@ export const SYSTEM_MODULES = [
   'inventario', 'articulos', 'pagos', 'abonos', 'cuentas-por-pagar',
   'cxc', 'cxp', 'bancos', 'contabilidad', 'nomina',
   'configuracion', 'reportes', 'usuarios',
+  // Módulos avanzados (requieren licencia + acceso por usuario)
+  'pos', 'restaurante', 'ecommerce', 'auditoria',
+  'logistica', 'crm', 'manufactura', 'flota', 'shipping',
+  'report-studio', 'addons',
 ] as const;
 
 export type SystemModule = typeof SYSTEM_MODULES[number];

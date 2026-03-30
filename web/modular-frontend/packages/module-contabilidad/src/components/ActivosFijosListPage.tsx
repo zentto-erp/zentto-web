@@ -23,7 +23,7 @@ import {
 } from "@mui/material";
 import type { ColumnDef } from "@zentto/datagrid-core";
 import { useGridLayoutSync, formatCurrency } from "@zentto/shared-api";
-import { ContextActionHeader, DatePicker, FormGrid, FormField, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
+import { ContextActionHeader, DatePicker, FormGrid, FormField } from "@zentto/shared-ui";
 import dayjs from "dayjs";
 
 
@@ -60,17 +60,6 @@ const emptyForm: CreateAssetInput = {
   location: "",
   serialNumber: "",
 };
-
-const ACTIVOS_FILTERS: FilterFieldDef[] = [
-  { field: "status", label: "Estado", type: "select", options: [
-    { value: "ACTIVE", label: "Activo" },
-    { value: "DISPOSED", label: "Dado de baja" },
-    { value: "FULLY_DEPRECIATED", label: "Totalmente depreciado" },
-  ]},
-  { field: "categoryCode", label: "Categoria", type: "select", options: [] },
-  { field: "fechaDesde", label: "Fecha desde", type: "date" },
-  { field: "fechaHasta", label: "Fecha hasta", type: "date" },
-];
 
 const COLUMNS: ColumnDef[] = [
   { field: "AssetCode", header: "Codigo", width: 110, sortable: true },
@@ -122,15 +111,6 @@ export default function ActivosFijosListPage() {
 
   const rows = data?.rows ?? [];
   const categorias: any[] = categoriasData?.rows ?? [];
-  const [search, setSearch] = useState("");
-  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
-
-  const activosFilterDefs: FilterFieldDef[] = React.useMemo(() => {
-    const catOptions = categorias.map((c) => ({ value: c.CategoryCode, label: c.CategoryName }));
-    return ACTIVOS_FILTERS.map((f) =>
-      f.field === "categoryCode" ? { ...f, options: catOptions } : f
-    );
-  }, [categorias]);
 
   useEffect(() => {
     const el = gridRef.current;
@@ -184,26 +164,6 @@ export default function ActivosFijosListPage() {
       <ContextActionHeader title="Activos fijos" />
 
       <Box sx={{ p: { xs: 2, md: 3 }, flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-        <ZenttoFilterPanel
-          filters={activosFilterDefs}
-          values={filterValues}
-          onChange={(vals) => {
-            setFilterValues(vals);
-            setFilter((f) => ({
-              ...f,
-              status: vals.status || undefined,
-              categoryCode: vals.categoryCode || undefined,
-              page: 1,
-            }));
-          }}
-          searchPlaceholder="Buscar activo..."
-          searchValue={search}
-          onSearchChange={(v) => {
-            setSearch(v);
-            setFilter((f) => ({ ...f, search: v || undefined, page: 1 }));
-          }}
-        />
-
         <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, width: "100%", elevation: 0, border: "1px solid #E5E7EB" }}>
           <zentto-grid
             ref={gridRef}

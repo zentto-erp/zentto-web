@@ -7,8 +7,8 @@ import {
 import type { ColumnDef } from "@zentto/datagrid-core";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import AutorenewIcon from "@mui/icons-material/Autorenew";
-import { useGridLayoutSync, useCountries } from "@zentto/shared-api";
-import { ContextActionHeader, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
+import { useGridLayoutSync } from "@zentto/shared-api";
+import { ContextActionHeader } from "@zentto/shared-ui";
 import {
   useGenerarLibroFiscal, useLibroFiscal, useResumenLibroFiscal, type TaxBookFilter,
 } from "../hooks/useFiscalTributaria";
@@ -55,10 +55,7 @@ export default function LibroFiscalPage() {
   useContabilidadGridId(resumenGridRef, GRID_IDS.resumenGridRef);
   const layoutReady = gridLayoutReady && resumenGridLayoutReady;
   const { registered } = useContabilidadGridRegistration(layoutReady);
-  const { data: countries = [] } = useCountries();
-  const [filter, setFilter] = useState<TaxBookFilter>({ bookType: "PURCHASE", periodCode: "", countryCode: "VE", page: 1, limit: 50 });
-  const [search, setSearch] = useState("");
-  const [filterValues, setFilterValues] = useState<Record<string, string>>({ bookType: "PURCHASE", countryCode: "VE" });
+  const [filter] = useState<TaxBookFilter>({ bookType: "PURCHASE", periodCode: "", countryCode: "VE", page: 1, limit: 50 });
 
   const generarMutation = useGenerarLibroFiscal();
   const { data: libroData, isLoading } = useLibroFiscal(filter.periodCode ? filter : null);
@@ -97,23 +94,6 @@ export default function LibroFiscalPage() {
       <ContextActionHeader title="Libro fiscal de compras / ventas" />
 
       <Box sx={{ p: { xs: 2, md: 3 }, flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-        <ZenttoFilterPanel
-          filters={[
-            { field: "bookType", label: "Tipo", type: "select", options: BOOK_TYPES.map((t) => ({ value: t.value, label: t.label })) },
-            { field: "periodCode", label: "Periodo (YYYY-MM)", type: "text", placeholder: "2026-03", minWidth: 160 },
-            { field: "countryCode", label: "Pais", type: "select", options: countries.map((c) => ({ value: c.CountryCode, label: c.CountryName })) },
-          ] as FilterFieldDef[]}
-          values={filterValues}
-          onChange={(vals) => {
-            setFilterValues(vals);
-            setFilter((f) => ({ ...f, bookType: vals.bookType || "PURCHASE", periodCode: vals.periodCode || "", countryCode: vals.countryCode || "VE" }));
-          }}
-          searchPlaceholder="Buscar en libro fiscal..."
-          searchValue={search}
-          onSearchChange={setSearch}
-          defaultOpen
-          hideToggle
-        />
         <Stack direction="row" spacing={2} mb={2} alignItems="center">
           <Button variant="contained" onClick={handleGenerar} disabled={!filter.periodCode || generarMutation.isPending}
             startIcon={generarMutation.isPending ? <CircularProgress size={16} /> : <AutorenewIcon />}>Generar libro</Button>

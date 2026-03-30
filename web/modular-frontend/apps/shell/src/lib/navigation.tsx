@@ -87,7 +87,12 @@ export function buildNavigation(isAdmin: boolean, modulos: string[], pathname: s
         nav.push({ kind: 'divider' });
         nav.push({ kind: 'page', segment: 'reportes', title: 'Reportes', icon: <PrintIcon /> });
         nav.push({ kind: 'divider' });
-        nav.push({ kind: 'page', segment: 'addons', title: 'Addons', icon: <ExtensionIcon /> });
+        if (isAdmin || modulos.includes('addons')) {
+            nav.push({ kind: 'page', segment: 'addons', title: 'Addons', icon: <ExtensionIcon /> });
+        }
+        if (isAdmin || modulos.includes('report-studio')) {
+            nav.push({ kind: 'page', segment: 'report-studio', title: 'Report Studio', icon: <AssessmentIcon /> });
+        }
         nav.push({ kind: 'header', title: 'RECURSOS' });
         nav.push({ kind: 'page', segment: 'docs', title: 'Documentación', icon: <MenuBookIcon /> });
         nav.push({ kind: 'page', segment: 'soporte', title: 'Soporte Técnico', icon: <HelpIcon /> });
@@ -105,6 +110,19 @@ export function buildNavigation(isAdmin: boolean, modulos: string[], pathname: s
         nav.push({ kind: 'page', segment: 'studio-designer/wizard', title: 'Wizard', icon: <SmartToyIcon /> });
         nav.push({ kind: 'divider' });
         nav.push({ kind: 'page', segment: 'addons', title: 'Mis Aplicaciones', icon: <AppsIcon /> });
+        nav.push({ kind: 'divider' });
+        nav.push({ kind: 'page', segment: '', title: 'Volver al Inicio', icon: <DashboardIcon /> });
+        return nav;
+    }
+
+    // ── App: Reportes / Report Studio ─────────────────────────────────
+    if (isApp('/reportes') || isApp('/report-studio')) {
+        const base = isApp('/reportes') ? 'reportes' : 'report-studio';
+        nav.push({ kind: 'header', title: 'REPORTES' });
+        nav.push({ kind: 'page', segment: `${base}/designer`, title: 'Designer', icon: <BarChartIcon /> });
+        nav.push({ kind: 'page', segment: `${base}/wizard`, title: 'Wizard', icon: <SmartToyIcon /> });
+        nav.push({ kind: 'divider' });
+        nav.push({ kind: 'page', segment: base, title: 'Mis Reportes', icon: <PrintIcon /> });
         nav.push({ kind: 'divider' });
         nav.push({ kind: 'page', segment: '', title: 'Volver al Inicio', icon: <DashboardIcon /> });
         return nav;

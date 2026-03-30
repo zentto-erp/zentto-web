@@ -22,6 +22,7 @@ import { DatePicker } from "@zentto/shared-ui";
 import dayjs from "dayjs";
 import CloseIcon from "@mui/icons-material/Close";
 import { useGridLayoutSync } from "@zentto/shared-api";
+import { useFlotaGridRegistration } from "./zenttoGridPersistence";
 import {
   useTripsList,
   useCreateTrip,
@@ -69,13 +70,8 @@ export default function ViajesPage() {
   const [arrivalDate, setArrivedAt] = useState("");
   const [fuelUsed, setFuelUsed] = useState("");
   const gridRef = useRef<any>(null);
-  const [registered, setRegistered] = useState(false);
   const { ready: layoutReady } = useGridLayoutSync(GRID_ID);
-
-  useEffect(() => {
-    if (!layoutReady) return;
-    import("@zentto/datagrid").then(() => setRegistered(true));
-  }, [layoutReady]);
+  const { gridReady, registered } = useFlotaGridRegistration(layoutReady);
 
   const { data, isLoading } = useTripsList({
     ...filter,

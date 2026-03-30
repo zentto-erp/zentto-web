@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Box, Typography, Chip, CircularProgress } from '@mui/material';
 import type { ColumnDef, GridRow } from '@zentto/datagrid-core';
 import { useGridLayoutSync } from '@zentto/shared-api';
-import { LAB_GRID_IDS } from '../../lib/zentto-grid-ids';
+import { LAB_GRID_IDS, useGridRegistration } from '../../lib/zentto-grid-ids';
 
 const COLUMNS: ColumnDef[] = [
   { field: 'numeroFactura', header: 'N. Factura', width: 140, sortable: true },
@@ -114,13 +114,8 @@ export default function NativoFacturasPage() {
   const gridRef = useRef<any>(null);
   const [rows, setRows] = useState<GridRow[]>([]);
   const [loading, setLoading] = useState(true);
-  const [registered, setRegistered] = useState(false);
   const { ready: layoutReady } = useGridLayoutSync(LAB_GRID_IDS.nativoFacturas);
-
-  useEffect(() => {
-    if (!layoutReady) return;
-    import('@zentto/datagrid').then(() => setRegistered(true));
-  }, [layoutReady]);
+  const { registered } = useGridRegistration(layoutReady);
 
   useEffect(() => {
     async function fetchData() {

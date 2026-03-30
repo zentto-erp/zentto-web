@@ -442,12 +442,12 @@ RETURNS TABLE(
     "NetPayable"         NUMERIC(18,2),
     "Status"             VARCHAR(20),
     "SubmittedAt"        TIMESTAMP,
-    "SubmittedFile"      TEXT,
+    "SubmittedFile"      VARCHAR(500),
     "AuthorityResponse"  TEXT,
     "PaidAt"             TIMESTAMP,
     "PaymentReference"   VARCHAR(100),
     "JournalEntryId"     BIGINT,
-    "Notes"              TEXT,
+    "Notes"              VARCHAR(1000),
     "CreatedBy"          VARCHAR(40),
     "UpdatedBy"          VARCHAR(40),
     "CreatedAt"          TIMESTAMP,
@@ -462,20 +462,20 @@ BEGIN
 
     RETURN QUERY
     SELECT COUNT(*) OVER()  AS p_total_count,
-           "DeclarationId", "CompanyId", "BranchId", "CountryCode",
-           "DeclarationType", "PeriodCode", "PeriodStart", "PeriodEnd",
-           "SalesBase", "SalesTax", "PurchasesBase", "PurchasesTax",
-           "TaxableBase", "TaxAmount", "WithholdingsCredit",
-           "PreviousBalance", "NetPayable", "Status",
-           "SubmittedAt", "SubmittedFile", "AuthorityResponse",
-           "PaidAt", "PaymentReference", "JournalEntryId", "Notes",
-           "CreatedBy", "UpdatedBy", "CreatedAt", "UpdatedAt"
-    FROM fiscal."TaxDeclaration"
-    WHERE "CompanyId" = p_company_id
-      AND (p_declaration_type IS NULL OR "DeclarationType" = p_declaration_type)
-      AND (p_year IS NULL OR LEFT("PeriodCode", 4) = CAST(p_year AS VARCHAR(4)))
-      AND (p_status IS NULL OR "Status" = p_status)
-    ORDER BY "PeriodCode" DESC
+           d."DeclarationId", d."CompanyId", d."BranchId", d."CountryCode",
+           d."DeclarationType", d."PeriodCode", d."PeriodStart", d."PeriodEnd",
+           d."SalesBase", d."SalesTax", d."PurchasesBase", d."PurchasesTax",
+           d."TaxableBase", d."TaxAmount", d."WithholdingsCredit",
+           d."PreviousBalance", d."NetPayable", d."Status",
+           d."SubmittedAt", d."SubmittedFile", d."AuthorityResponse",
+           d."PaidAt", d."PaymentReference", d."JournalEntryId", d."Notes",
+           d."CreatedBy", d."UpdatedBy", d."CreatedAt", d."UpdatedAt"
+    FROM fiscal."TaxDeclaration" d
+    WHERE d."CompanyId" = p_company_id
+      AND (p_declaration_type IS NULL OR d."DeclarationType" = p_declaration_type)
+      AND (p_year IS NULL OR LEFT(d."PeriodCode", 4) = CAST(p_year AS VARCHAR(4)))
+      AND (p_status IS NULL OR d."Status" = p_status)
+    ORDER BY d."PeriodCode" DESC
     LIMIT p_limit OFFSET (p_page - 1) * p_limit;
 END;
 $$;
@@ -509,12 +509,12 @@ RETURNS TABLE(
     "NetPayable"         NUMERIC(18,2),
     "Status"             VARCHAR(20),
     "SubmittedAt"        TIMESTAMP,
-    "SubmittedFile"      TEXT,
+    "SubmittedFile"      VARCHAR(500),
     "AuthorityResponse"  TEXT,
     "PaidAt"             TIMESTAMP,
     "PaymentReference"   VARCHAR(100),
     "JournalEntryId"     BIGINT,
-    "Notes"              TEXT,
+    "Notes"              VARCHAR(1000),
     "CreatedBy"          VARCHAR(40),
     "UpdatedBy"          VARCHAR(40),
     "CreatedAt"          TIMESTAMP,
@@ -756,15 +756,15 @@ RETURNS TABLE(
     p_total_count       BIGINT,
     "VoucherId"         BIGINT,
     "CompanyId"         INTEGER,
-    "VoucherNumber"     VARCHAR(50),
-    "VoucherDate"       TIMESTAMP,
+    "VoucherNumber"     VARCHAR(40),
+    "VoucherDate"       DATE,
     "WithholdingType"   VARCHAR(20),
-    "ThirdPartyId"      VARCHAR(50),
+    "ThirdPartyId"      VARCHAR(40),
     "ThirdPartyName"    VARCHAR(200),
-    "DocumentNumber"    VARCHAR(50),
+    "DocumentNumber"    VARCHAR(60),
     "DocumentDate"      DATE,
     "TaxableBase"       NUMERIC(18,2),
-    "WithholdingRate"   NUMERIC(8,4),
+    "WithholdingRate"   NUMERIC(5,2),
     "WithholdingAmount" NUMERIC(18,2),
     "PeriodCode"        VARCHAR(7),
     "Status"            VARCHAR(20),
@@ -782,18 +782,18 @@ BEGIN
 
     RETURN QUERY
     SELECT COUNT(*) OVER()  AS p_total_count,
-           "VoucherId", "CompanyId", "VoucherNumber", "VoucherDate",
-           "WithholdingType", "ThirdPartyId", "ThirdPartyName",
-           "DocumentNumber", "DocumentDate", "TaxableBase",
-           "WithholdingRate", "WithholdingAmount", "PeriodCode",
-           "Status", "CountryCode", "JournalEntryId",
-           "CreatedBy", "CreatedAt"
-    FROM fiscal."WithholdingVoucher"
-    WHERE "CompanyId" = p_company_id
-      AND (p_withholding_type IS NULL OR "WithholdingType" = p_withholding_type)
-      AND (p_period_code      IS NULL OR "PeriodCode"      = p_period_code)
-      AND (p_country_code     IS NULL OR "CountryCode"     = p_country_code)
-    ORDER BY "VoucherDate" DESC
+           v."VoucherId", v."CompanyId", v."VoucherNumber", v."VoucherDate",
+           v."WithholdingType", v."ThirdPartyId", v."ThirdPartyName",
+           v."DocumentNumber", v."DocumentDate", v."TaxableBase",
+           v."WithholdingRate", v."WithholdingAmount", v."PeriodCode",
+           v."Status", v."CountryCode", v."JournalEntryId",
+           v."CreatedBy", v."CreatedAt"
+    FROM fiscal."WithholdingVoucher" v
+    WHERE v."CompanyId" = p_company_id
+      AND (p_withholding_type IS NULL OR v."WithholdingType" = p_withholding_type)
+      AND (p_period_code      IS NULL OR v."PeriodCode"      = p_period_code)
+      AND (p_country_code     IS NULL OR v."CountryCode"     = p_country_code)
+    ORDER BY v."VoucherDate" DESC
     LIMIT p_limit OFFSET (p_page - 1) * p_limit;
 END;
 $$;
@@ -810,15 +810,15 @@ CREATE OR REPLACE FUNCTION usp_Fiscal_Withholding_Get(
 RETURNS TABLE(
     "VoucherId"          BIGINT,
     "CompanyId"          INTEGER,
-    "VoucherNumber"      VARCHAR(50),
-    "VoucherDate"        TIMESTAMP,
+    "VoucherNumber"      VARCHAR(40),
+    "VoucherDate"        DATE,
     "WithholdingType"    VARCHAR(20),
-    "ThirdPartyId"       VARCHAR(50),
+    "ThirdPartyId"       VARCHAR(40),
     "ThirdPartyName"     VARCHAR(200),
-    "DocumentNumber"     VARCHAR(50),
+    "DocumentNumber"     VARCHAR(60),
     "DocumentDate"       DATE,
     "TaxableBase"        NUMERIC(18,2),
-    "WithholdingRate"    NUMERIC(8,4),
+    "WithholdingRate"    NUMERIC(5,2),
     "WithholdingAmount"  NUMERIC(18,2),
     "PeriodCode"         VARCHAR(7),
     "Status"             VARCHAR(20),
@@ -928,12 +928,12 @@ RETURNS TABLE(
     "NetPayable"         NUMERIC(18,2),
     "Status"             VARCHAR(20),
     "SubmittedAt"        TIMESTAMP,
-    "SubmittedFile"      TEXT,
+    "SubmittedFile"      VARCHAR(500),
     "AuthorityResponse"  TEXT,
     "PaidAt"             TIMESTAMP,
     "PaymentReference"   VARCHAR(100),
     "JournalEntryId"     BIGINT,
-    "Notes"              TEXT,
+    "Notes"              VARCHAR(1000),
     "CreatedBy"          VARCHAR(40),
     "UpdatedBy"          VARCHAR(40),
     "CreatedAt"          TIMESTAMP,

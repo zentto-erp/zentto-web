@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import {
   Box,
@@ -8,44 +8,30 @@ import {
   Typography,
   Button,
   TextField,
-  Chip,
   IconButton,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
-  Stack,
   CircularProgress,
   Alert,
-  Tooltip,
 } from "@mui/material";
+import CloseIcon from "@mui/icons-material/Close";
 import type { ColumnDef } from "@zentto/datagrid-core";
-import { useGridLayoutSync, formatCurrency, toDateOnly } from "@zentto/shared-api";
+import { useGridLayoutSync } from "@zentto/shared-api";
 import { useTimezone } from "@zentto/shared-auth";
-import { ContextActionHeader, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
+import { ContextActionHeader } from "@zentto/shared-ui";
+import { ReportViewer } from "@zentto/shared-reports";
+import type { ReportLayout, DataSet } from "@zentto/report-core";
 import {
   useAsientosList,
   useAsientoDetalle,
   useAnularAsiento,
   type AsientoFilter,
 } from "../hooks/useContabilidad";
+import { ASIENTOS_LIST_LAYOUT } from "@zentto/shared-reports";
 
 import { buildContabilidadGridId, useContabilidadGridId, useContabilidadGridRegistration } from "./zenttoGridPersistence";
-const ASIENTOS_FILTERS: FilterFieldDef[] = [
-  { field: "fechaDesde", label: "Fecha desde", type: "date" },
-  { field: "fechaHasta", label: "Fecha hasta", type: "date" },
-  { field: "tipoAsiento", label: "Tipo", type: "select", options: [
-    { value: "APERTURA", label: "Apertura" },
-    { value: "DIARIO", label: "Diario" },
-    { value: "AJUSTE", label: "Ajuste" },
-    { value: "CIERRE", label: "Cierre" },
-  ]},
-  { field: "estado", label: "Estado", type: "select", options: [
-    { value: "BORRADOR", label: "Borrador" },
-    { value: "APROBADO", label: "Aprobado" },
-    { value: "ANULADO", label: "Anulado" },
-  ]},
-];
 
 const COLUMNS: ColumnDef[] = [
   { field: "id", header: "ID", width: 70, sortable: true },
@@ -97,17 +83,51 @@ export default function AsientosListPage() {
   const layoutReady = gridLayoutReady && detailGridLayoutReady;
   const { registered } = useContabilidadGridRegistration(layoutReady);
   const [filter, setFilter] = useState<AsientoFilter>({ page: 1, limit: 25 });
-  const [search, setSearch] = useState("");
-  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [anularId, setAnularId] = useState<number | null>(null);
   const [motivoAnulacion, setMotivoAnulacion] = useState("");
+  const [reportOpen, setReportOpen] = useState(false);
 
   const { data, isLoading } = useAsientosList(filter);
   const detalle = useAsientoDetalle(selectedId);
   const anularMutation = useAnularAsiento();
 
   const rows = data?.data ?? data?.rows ?? [];
+
+  // ── Report data mapping ─────────────────────────────────────
+  const reportData = useMemo((): DataSet => {
+    if (!rows.length) return {} as DataSet;
+    let sumDebe = 0;
+    let sumHaber = 0;
+    const mapped = rows.map((r: any, i: number) => {
+      const debe = Number(r.totalDebe ?? r.debe ?? 0);
+      const haber = Number(r.totalHaber ?? r.haber ?? 0);
+      sumDebe += debe;
+      sumHaber += haber;
+      return {
+        num: i + 1,
+        id: r.asientoId ?? r.id ?? r.Id,
+        fecha: r.fecha ? new Date(r.fecha).toLocaleDateString("es", { day: "2-digit", month: "2-digit", year: "numeric" }) : "",
+        tipoAsiento: r.tipoAsiento ?? "",
+        concepto: r.concepto ?? "",
+        referencia: r.referencia ?? "",
+        totalDebe: debe,
+        totalHaber: haber,
+        estado: r.estado ?? "",
+      };
+    });
+    return {
+      header: {
+        empresa: "Zentto ERP",
+        fechaDesde: filter.fechaDesde ?? "—",
+        fechaHasta: filter.fechaHasta ?? "—",
+        totalDebe: sumDebe,
+        totalHaber: sumHaber,
+        totalRegistros: rows.length,
+      },
+      asientos: mapped,
+    };
+  }, [rows, filter.fechaDesde, filter.fechaHasta]);
 
   useEffect(() => {
     const el = gridRef.current;
@@ -128,7 +148,7 @@ export default function AsientosListPage() {
       const { action, row } = e.detail;
       if (action === 'view') setSelectedId(row.id);
     };
-    const createHandler = () => router.push("/contabilidad/asientos/new");
+    const createHandler = () => router.push("/asientos/new");
     el.addEventListener('action-click', handler);
     el.addEventListener('create-click', createHandler);
     return () => { el.removeEventListener('action-click', handler); el.removeEventListener('create-click', createHandler); };
@@ -156,31 +176,14 @@ export default function AsientosListPage() {
 
   return (
     <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-      <ContextActionHeader title="Asientos contables" />
+      <ContextActionHeader
+        title="Asientos contables"
+        secondaryActions={[
+          { label: "Reporte", onClick: () => setReportOpen(true), disabled: !rows.length },
+        ]}
+      />
 
       <Box sx={{ p: { xs: 2, md: 3 }, flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-        <ZenttoFilterPanel
-          filters={ASIENTOS_FILTERS}
-          values={filterValues}
-          onChange={(vals) => {
-            setFilterValues(vals);
-            setFilter((f) => ({
-              ...f,
-              fechaDesde: vals.fechaDesde || undefined,
-              fechaHasta: vals.fechaHasta || undefined,
-              tipoAsiento: vals.tipoAsiento || undefined,
-              estado: vals.estado || undefined,
-              page: 1,
-            }));
-          }}
-          searchPlaceholder="Buscar asiento..."
-          searchValue={search}
-          onSearchChange={(v) => {
-            setSearch(v);
-            setFilter((f) => ({ ...f, search: v || undefined, page: 1 }));
-          }}
-        />
-
         <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 400, width: "100%", elevation: 0, border: '1px solid #E5E7EB', overflow: 'auto' }}>
           <zentto-grid
             ref={gridRef}
@@ -264,6 +267,25 @@ export default function AsientosListPage() {
             Anular
           </Button>
         </DialogActions>
+      </Dialog>
+
+      {/* Report Dialog */}
+      <Dialog open={reportOpen} onClose={() => setReportOpen(false)} maxWidth={false} fullWidth PaperProps={{ sx: { height: "90vh", maxWidth: "95vw" } }}>
+        <DialogTitle sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <Typography variant="h6">Listado de Asientos Contables</Typography>
+          <IconButton onClick={() => setReportOpen(false)} size="small">
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent sx={{ p: 0, overflow: "hidden" }}>
+          <ReportViewer
+            layout={ASIENTOS_LIST_LAYOUT as unknown as ReportLayout}
+            data={reportData}
+            showToolbar
+            viewMode="all"
+            style={{ height: "100%" }}
+          />
+        </DialogContent>
       </Dialog>
     </Box>
   );

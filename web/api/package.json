@@ -17,7 +17,8 @@
     "test:watch": "vitest",
     "test:schema": "vitest run tests/schema",
     "test:smoke": "vitest run tests/api",
-    "test:contract": "vitest run tests/api/contract-endpoints.test.ts"
+    "test:contract": "vitest run tests/api/contract-endpoints.test.ts",
+    "seed:reports": "node scripts/seed-report-layouts.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1016.0",

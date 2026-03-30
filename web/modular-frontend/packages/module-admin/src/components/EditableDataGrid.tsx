@@ -5,7 +5,7 @@ import { Box, Button, Stack } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import type { ColumnDef } from '@zentto/datagrid-core';
 import { useGridLayoutSync } from '@zentto/shared-api';
-import { useScopedGridId } from '../lib/zentto-grid';
+import { useScopedGridId, useAdminGridRegistration } from '../lib/zentto-grid';
 
 type GridRow = Record<string, unknown>;
 
@@ -48,17 +48,12 @@ export default function EditableDataGrid({
   timeZone,
 }: EditableDataGridProps) {
   const gridRef = useRef<any>(null);
-  const [registered, setRegistered] = useState(false);
   const [localRows, setLocalRows] = useState<GridRow[]>(rows);
   const scopedGridId = useScopedGridId(
     gridId || `editable-grid-${columns.map((column) => column.field).join('-')}`
   );
   const { ready: layoutReady } = useGridLayoutSync(scopedGridId);
-
-  useEffect(() => {
-    if (!layoutReady) return;
-    import('@zentto/datagrid').then(() => setRegistered(true));
-  }, [layoutReady]);
+  const { registered } = useAdminGridRegistration(layoutReady);
 
   useEffect(() => {
     setLocalRows(rows);

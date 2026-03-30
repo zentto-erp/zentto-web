@@ -41,6 +41,7 @@ import {
 } from "../hooks/useManufactura";
 import type { ColumnDef } from "@zentto/datagrid-core";
 import { useGridLayoutSync } from "@zentto/shared-api";
+import { useManufacturaGridRegistration } from "./zenttoGridPersistence";
 
 // ── Status helpers ──────────────────────────────────────────────
 
@@ -396,15 +397,10 @@ export default function OrdenDetalleDialog({ open, onClose, workOrderId }: Orden
   const [outputOpen, setOutputOpen] = useState(false);
   const materialsGridRef = useRef<any>(null);
   const outputsGridRef = useRef<any>(null);
-  const [registered, setRegistered] = useState(false);
   const { ready: materialsLayoutReady } = useGridLayoutSync(MATERIALS_GRID_ID);
   const { ready: outputsLayoutReady } = useGridLayoutSync(OUTPUTS_GRID_ID);
   const layoutReady = materialsLayoutReady && outputsLayoutReady;
-
-  useEffect(() => {
-    if (!layoutReady) return;
-    import("@zentto/datagrid").then(() => setRegistered(true));
-  }, [layoutReady]);
+  const { gridReady, registered } = useManufacturaGridRegistration(layoutReady);
 
   const { data: detail, isLoading } = useWorkOrderDetail(workOrderId ?? undefined);
   const startOrder = useStartWorkOrder();

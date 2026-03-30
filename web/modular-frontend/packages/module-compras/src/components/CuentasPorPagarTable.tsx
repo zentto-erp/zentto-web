@@ -10,6 +10,7 @@ import {
 import { DeleteDialog } from "@zentto/shared-ui";
 import type { ColumnDef, GridRow } from "@zentto/datagrid-core";
 import { useGridLayoutSync } from "@zentto/shared-api";
+import { useComprasGridRegistration } from "./zenttoGridPersistence";
 import { useCuentasPorPagarList, useDeleteCuentaPorPagar } from "../hooks/useCuentasPorPagar";
 
 
@@ -54,7 +55,8 @@ const GRID_ID = "module-compras:cuentas-por-pagar:list";
 export default function CuentasPorPagarTable() {
   const router = useRouter();
   const gridRef = useRef<any>(null);
-  const [registered, setRegistered] = useState(false);
+  const { ready: gridLayoutReady } = useGridLayoutSync(GRID_ID);
+  const { registered } = useComprasGridRegistration(gridLayoutReady);
   const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 50 });
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedCuenta, setSelectedCuenta] = useState<Record<string, unknown> | null>(null);
@@ -65,7 +67,6 @@ export default function CuentasPorPagarTable() {
   });
 
   const { mutate: deleteCuenta, isPending: isDeleting } = useDeleteCuentaPorPagar();
-  const { ready: layoutReady } = useGridLayoutSync(GRID_ID);
 
   const handleConfirmDelete = () => {
     if (selectedCuenta) {
@@ -94,11 +95,6 @@ export default function CuentasPorPagarTable() {
       diasVencidos,
     };
   });
-
-  useEffect(() => {
-    if (!layoutReady) return;
-    import("@zentto/datagrid").then(() => setRegistered(true));
-  }, [layoutReady]);
 
   useEffect(() => {
     const el = gridRef.current;
@@ -133,7 +129,7 @@ export default function CuentasPorPagarTable() {
 
   return (
     <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-      {!layoutReady || !registered ? (
+      {!gridLayoutReady || !registered ? (
         <Box sx={{ display: "flex", justifyContent: "center", py: 6 }}>
           <CircularProgress />
         </Box>

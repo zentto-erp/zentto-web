@@ -61,32 +61,40 @@ const updateSchema = z.object({
 
 // GET /v1/bancos - Listar bancos
 bancosRouter.get("/", async (req, res) => {
-  const parsed = listSchema.safeParse(req.query);
-  if (!parsed.success) {
-    return res.status(400).json({ error: "invalid_query", issues: parsed.error.flatten() });
+  try {
+    const parsed = listSchema.safeParse(req.query);
+    if (!parsed.success) {
+      return res.status(400).json({ error: "invalid_query", issues: parsed.error.flatten() });
+    }
+
+    const data = await listBancosSP({
+      search: parsed.data.search,
+      page: parsed.data.page ? parseInt(parsed.data.page) : 1,
+      limit: parsed.data.limit ? parseInt(parsed.data.limit) : 50,
+    });
+
+    return res.json(data);
+  } catch (err: any) {
+    return res.status(500).json({ error: String(err.message ?? err) });
   }
-
-  const data = await listBancosSP({
-    search: parsed.data.search,
-    page: parsed.data.page ? parseInt(parsed.data.page) : 1,
-    limit: parsed.data.limit ? parseInt(parsed.data.limit) : 50,
-  });
-
-  return res.json(data);
 });
 
 // POST /v1/bancos - Crear banco
 bancosRouter.post("/", async (req, res) => {
-  const parsed = insertSchema.safeParse(req.body);
-  if (!parsed.success) {
-    return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
-  }
+  try {
+    const parsed = insertSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
+    }
 
-  const result = await insertBancoSP(parsed.data);
-  if (result.success) {
-    return res.status(201).json({ success: true, message: result.message });
-  } else {
-    return res.status(400).json({ success: false, message: result.message });
+    const result = await insertBancoSP(parsed.data);
+    if (result.success) {
+      return res.status(201).json({ success: true, message: result.message });
+    } else {
+      return res.status(400).json({ success: false, message: result.message });
+    }
+  } catch (err: any) {
+    return res.status(500).json({ error: String(err.message ?? err) });
   }
 });
 
@@ -600,32 +608,44 @@ bancosRouter.get("/caja-chica/:boxId/resumen", async (req, res) => {
 
 // GET /v1/bancos/:nombre - Obtener banco por nombre
 bancosRouter.get("/:nombre", async (req, res) => {
-  const data = await getBancoByNombreSP(req.params.nombre);
-  if (!data) return res.status(404).json({ error: "not_found" });
-  return res.json(data);
+  try {
+    const data = await getBancoByNombreSP(req.params.nombre);
+    if (!data) return res.status(404).json({ error: "not_found" });
+    return res.json(data);
+  } catch (err: any) {
+    return res.status(500).json({ error: String(err.message ?? err) });
+  }
 });
 
 // PUT /v1/bancos/:nombre - Actualizar banco
 bancosRouter.put("/:nombre", async (req, res) => {
-  const parsed = updateSchema.safeParse(req.body);
-  if (!parsed.success) {
-    return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
-  }
+  try {
+    const parsed = updateSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
+    }
 
-  const result = await updateBancoSP(req.params.nombre, parsed.data);
-  if (result.success) {
-    return res.json({ success: true, message: result.message });
-  } else {
-    return res.status(400).json({ success: false, message: result.message });
+    const result = await updateBancoSP(req.params.nombre, parsed.data);
+    if (result.success) {
+      return res.json({ success: true, message: result.message });
+    } else {
+      return res.status(400).json({ success: false, message: result.message });
+    }
+  } catch (err: any) {
+    return res.status(500).json({ error: String(err.message ?? err) });
   }
 });
 
 // DELETE /v1/bancos/:nombre - Eliminar banco
 bancosRouter.delete("/:nombre", async (req, res) => {
-  const result = await deleteBancoSP(req.params.nombre);
-  if (result.success) {
-    return res.json({ success: true, message: result.message });
-  } else {
-    return res.status(400).json({ success: false, message: result.message });
+  try {
+    const result = await deleteBancoSP(req.params.nombre);
+    if (result.success) {
+      return res.json({ success: true, message: result.message });
+    } else {
+      return res.status(400).json({ success: false, message: result.message });
+    }
+  } catch (err: any) {
+    return res.status(500).json({ error: String(err.message ?? err) });
   }
 });

@@ -11,6 +11,7 @@ import type { ColumnDef, GridRow } from "@zentto/datagrid-core";
 import { useComprasList, useDeleteCompra } from "../hooks/useCompras";
 import { useTimezone } from "@zentto/shared-auth";
 import { apiGet, toDateOnly, useGridLayoutSync } from "@zentto/shared-api";
+import { useComprasGridRegistration } from "./zenttoGridPersistence";
 import { useToast } from "@zentto/shared-ui";
 
 // Icon names resolved by zentto-grid's built-in icon system (v0.3.1+)
@@ -86,9 +87,9 @@ export default function ComprasTable() {
   const { timeZone } = useTimezone();
   const { showToast } = useToast();
   const gridRef = useRef<any>(null);
-  const [registered, setRegistered] = useState(false);
+  const { ready: gridLayoutReady } = useGridLayoutSync(GRID_ID);
+  const { registered } = useComprasGridRegistration(gridLayoutReady);
   const deleteMutation = useDeleteCompra();
-  const { ready: layoutReady } = useGridLayoutSync(GRID_ID);
 
   // Detail cache: documentNumber → detail rows
   const detailCache = useRef<Record<string, GridRow[]>>({});
@@ -130,12 +131,6 @@ export default function ComprasTable() {
   // Anular dialog
   const [anularOpen, setAnularOpen] = useState(false);
   const [anularRow, setAnularRow] = useState<Record<string, unknown> | null>(null);
-
-  // Register web component
-  useEffect(() => {
-    if (!layoutReady) return;
-    import("@zentto/datagrid").then(() => setRegistered(true));
-  }, [layoutReady]);
 
   // Fetch detail lines for a given document
   const fetchDetail = useCallback(
@@ -208,7 +203,7 @@ export default function ComprasTable() {
         setAnularOpen(true);
       }
     };
-    const createHandler = () => router.push("/compras/new");
+    const createHandler = () => router.push("/new");
     el.addEventListener("action-click", actionHandler);
     el.addEventListener("create-click", createHandler);
     return () => {
@@ -232,7 +227,7 @@ export default function ComprasTable() {
 
   return (
     <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-      {!layoutReady || !registered ? (
+      {!gridLayoutReady || !registered ? (
         <Box sx={{ display: "flex", justifyContent: "center", py: 6 }}>
           <CircularProgress />
         </Box>

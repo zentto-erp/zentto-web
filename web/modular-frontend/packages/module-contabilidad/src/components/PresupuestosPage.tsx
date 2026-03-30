@@ -7,7 +7,7 @@ import {
 } from "@mui/material";
 import Grid from "@mui/material/Grid2";
 import type { ColumnDef } from "@zentto/datagrid-core";
-import { DatePicker, FormGrid, FormField, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
+import { DatePicker, FormGrid, FormField } from "@zentto/shared-ui";
 import dayjs from "dayjs";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
@@ -132,7 +132,8 @@ const VARIANZA_COLUMNS: ColumnDef[] = [
 
 function VarianzaTab({ presupuestoId }: { presupuestoId: number }) {
   const gridRef = useRef<any>(null);
-  const [registered, setRegistered] = useState(false);
+  const { ready: gridLayoutReady } = useGridLayoutSync(GRID_IDS.gridRef);
+  const { registered } = useContabilidadGridRegistration(gridLayoutReady);
   const { timeZone } = useTimezone();
   const today = toDateOnly(new Date(), timeZone);
   const firstDay = toDateOnly(new Date(new Date().getFullYear(), 0, 1), timeZone);
@@ -177,11 +178,6 @@ function VarianzaTab({ presupuestoId }: { presupuestoId: number }) {
 }
 
 // ---- Main Component ----
-const PRESUPUESTOS_FILTERS: FilterFieldDef[] = [
-  { field: "fiscalYear", label: "Ano fiscal", type: "select", options: Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - 2 + i).map((y) => ({ value: String(y), label: String(y) })) },
-  { field: "status", label: "Estado", type: "select", options: [{ value: "DRAFT", label: "Borrador" }, { value: "APPROVED", label: "Aprobado" }, { value: "CLOSED", label: "Cerrado" }] },
-];
-
 const MAIN_COLUMNS: ColumnDef[] = [
   { field: "id", header: "ID", width: 70 },
   { field: "name", header: "Nombre", flex: 1, minWidth: 200, sortable: true },
@@ -209,14 +205,13 @@ const GRID_IDS = {
 
 export default function PresupuestosPage() {
   const gridRef = useRef<any>(null);
-  const [registered, setRegistered] = useState(false);
+  const { ready: gridLayoutReady } = useGridLayoutSync(GRID_IDS.gridRef);
+  const { registered } = useContabilidadGridRegistration(gridLayoutReady);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editItem, setEditItem] = useState<Presupuesto | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
   const [fiscalYear, setFiscalYear] = useState<number>(new Date().getFullYear());
-  const [search, setSearch] = useState("");
-  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
 
   const { data, isLoading } = usePresupuestosList(fiscalYear);
@@ -224,12 +219,7 @@ export default function PresupuestosPage() {
 
   const presupuestos: Presupuesto[] = useMemo(() => (data?.data ?? data?.rows ?? []).map((r: any) => ({ ...r, id: r.BudgetId ?? r.id ?? r.budgetId })), [data]);
 
-  const filteredPresupuestos = useMemo(() => {
-    let result = presupuestos;
-    if (filterValues.status) result = result.filter((r: any) => (r.status || "DRAFT") === filterValues.status);
-    if (search) { const s = search.toLowerCase(); result = result.filter((r: any) => (r.name || "").toLowerCase().includes(s)); }
-    return result;
-  }, [presupuestos, filterValues, search]);
+  const filteredPresupuestos = presupuestos;
   useEffect(() => {
     const el = gridRef.current;
     if (!el || !registered || selectedId != null) return;
@@ -269,9 +259,6 @@ export default function PresupuestosPage() {
         <Typography variant="h5" fontWeight={700}>Presupuestos</Typography>
         <Button variant="contained" startIcon={<AddIcon />} onClick={() => { setEditItem(null); setDialogOpen(true); }}>Crear Presupuesto</Button>
       </Stack>
-      <ZenttoFilterPanel filters={PRESUPUESTOS_FILTERS} values={filterValues}
-        onChange={(vals) => { setFilterValues(vals); if (vals.fiscalYear) setFiscalYear(Number(vals.fiscalYear)); }}
-        searchPlaceholder="Buscar presupuesto..." searchValue={search} onSearchChange={setSearch} />
       {error && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>{error}</Alert>}
       <Paper sx={{ borderRadius: 2 }}>
         <zentto-grid ref={gridRef} default-currency="VES" export-filename="presupuestos" height="calc(100vh - 300px)"

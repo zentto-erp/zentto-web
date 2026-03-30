@@ -9,7 +9,7 @@ import { useGridLayoutSync } from '@zentto/shared-api';
 import { useUpsertProductoAdminMutation } from '@/hooks/useRestauranteAdmin';
 import type { ColumnDef } from '@zentto/datagrid-core';
 import { useInsumosAdminQuery, useProductosAdminQuery } from '@/hooks/useRestauranteAdmin';
-import { useScopedGridId } from '@/lib/zentto-grid';
+import { useScopedGridId, useGridRegistration } from '@/lib/zentto-grid';
 
 
 type InsumoRow = {
@@ -35,9 +35,9 @@ type ProductoAdminRow = {
 
 export default function AdminInsumosPage() {
     const gridRef = useRef<any>(null);
-    const [registered, setRegistered] = useState(false);
     const gridId = useScopedGridId('insumos-main');
     const { ready: layoutReady } = useGridLayoutSync(gridId);
+    const { registered } = useGridRegistration(layoutReady);
     const [search, setSearch] = useState('');
     const { data, isLoading } = useInsumosAdminQuery(search);
     const { data: productosData } = useProductosAdminQuery();
@@ -45,11 +45,6 @@ export default function AdminInsumosPage() {
     const [form, setForm] = useState({ codigo: '', nombre: '', unidad: '', descripcion: '' });
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
     const upsertMutation = useUpsertProductoAdminMutation();
-
-    useEffect(() => {
-        if (!layoutReady) return;
-        import('@zentto/datagrid').then(() => setRegistered(true));
-    }, [layoutReady]);
 
     const productos = (productosData?.rows ?? []) as unknown as ProductoAdminRow[];
     const productoByCodigo = useMemo(() => {

@@ -12,6 +12,7 @@ import { useMovimientosList, useInventarioList } from "../hooks/useInventario";
 import { ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
 import type { ColumnDef } from "@zentto/datagrid-core";
 import { formatCurrency, toDateOnly, useGridLayoutSync } from "@zentto/shared-api";
+import { useInventarioGridRegistration } from "./zenttoGridPersistence";
 import { useTimezone } from "@zentto/shared-auth";
 import { debounce } from "lodash";
 
@@ -68,7 +69,6 @@ const MOVIMIENTOS_GRID_ID = "module-inventario:movimientos:list";
 export default function MovimientosTable() {
   const artGridRef = useRef<any>(null);
   const movGridRef = useRef<any>(null);
-  const [registered, setRegistered] = useState(false);
   const { timeZone } = useTimezone();
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(25);
@@ -87,6 +87,7 @@ export default function MovimientosTable() {
   const { ready: articulosLayoutReady } = useGridLayoutSync(ARTICULOS_GRID_ID);
   const { ready: movimientosLayoutReady } = useGridLayoutSync(MOVIMIENTOS_GRID_ID);
   const layoutReady = articulosLayoutReady && movimientosLayoutReady;
+  const { gridReady, registered } = useInventarioGridRegistration(layoutReady);
 
   const { data: movimientos, isLoading } = useMovimientosList({
     search: search || undefined, productCode: selectedProductCode || undefined,
@@ -114,11 +115,6 @@ export default function MovimientosTable() {
       _fechaCreacion: String(m.CreatedAt ?? "").slice(0, 19).replace("T", " "),
     };
   });
-
-  useEffect(() => {
-    if (!layoutReady) return;
-    import("@zentto/datagrid").then(() => setRegistered(true));
-  }, [layoutReady]);
 
   useEffect(() => {
     const el = artGridRef.current; if (!el || !registered) return;

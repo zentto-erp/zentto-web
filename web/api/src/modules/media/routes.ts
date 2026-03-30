@@ -82,22 +82,26 @@ const uploader = multer({
 export const mediaRouter = Router();
 
 mediaRouter.get("/entities/:entityType/:entityId/images", async (req, res) => {
-  const parsed = listEntityImagesSchema.safeParse({
-    entityType: req.params.entityType,
-    entityId: req.params.entityId,
-  });
-  if (!parsed.success) {
-    return res.status(400).json({ error: "invalid_params", issues: parsed.error.flatten() });
-  }
+  try {
+    const parsed = listEntityImagesSchema.safeParse({
+      entityType: req.params.entityType,
+      entityId: req.params.entityId,
+    });
+    if (!parsed.success) {
+      return res.status(400).json({ error: "invalid_params", issues: parsed.error.flatten() });
+    }
 
-  const scope = await getMediaScope();
-  const entityType = getEntityTypeFromPathEntity(parsed.data.entityType);
-  const data = await listEntityImages(scope, entityType, parsed.data.entityId);
-  return res.json({
-    entityType,
-    entityId: parsed.data.entityId,
-    ...data,
-  });
+    const scope = await getMediaScope();
+    const entityType = getEntityTypeFromPathEntity(parsed.data.entityType);
+    const data = await listEntityImages(scope, entityType, parsed.data.entityId);
+    return res.json({
+      entityType,
+      entityId: parsed.data.entityId,
+      ...data,
+    });
+  } catch (err: any) {
+    return res.status(500).json({ error: String(err.message ?? err) });
+  }
 });
 
 mediaRouter.post("/upload", uploader.single("file"), async (req, res) => {
@@ -169,145 +173,161 @@ mediaRouter.post("/upload", uploader.single("file"), async (req, res) => {
 });
 
 mediaRouter.post("/entities/:entityType/:entityId/images", async (req, res) => {
-  const paramsParsed = z
-    .object({
-      entityType: entityTypeSchema,
-      entityId: entityIdSchema,
-    })
-    .safeParse(req.params);
-  if (!paramsParsed.success) {
-    return res.status(400).json({ error: "invalid_params", issues: paramsParsed.error.flatten() });
+  try {
+    const paramsParsed = z
+      .object({
+        entityType: entityTypeSchema,
+        entityId: entityIdSchema,
+      })
+      .safeParse(req.params);
+    if (!paramsParsed.success) {
+      return res.status(400).json({ error: "invalid_params", issues: paramsParsed.error.flatten() });
+    }
+
+    const bodyParsed = linkImageBodySchema.safeParse(req.body ?? {});
+    if (!bodyParsed.success) {
+      return res.status(400).json({ error: "invalid_payload", issues: bodyParsed.error.flatten() });
+    }
+
+    const scope = await getMediaScope();
+    const actorUserId = await resolveUserIdByCode((req as AuthenticatedRequest).user?.sub);
+    const entityType = getEntityTypeFromPathEntity(paramsParsed.data.entityType);
+
+    const media = await getMediaAssetById(scope, bodyParsed.data.mediaAssetId);
+    if (!media || media.isDeleted || !media.isActive) {
+      return res.status(404).json({ error: "media_not_found" });
+    }
+
+    const linked = await linkMediaToEntity({
+      companyId: scope.companyId,
+      branchId: scope.branchId,
+      entityType,
+      entityId: paramsParsed.data.entityId,
+      mediaAssetId: bodyParsed.data.mediaAssetId,
+      roleCode: bodyParsed.data.roleCode ?? null,
+      sortOrder: bodyParsed.data.sortOrder ?? 0,
+      isPrimary: bodyParsed.data.isPrimary ?? true,
+      actorUserId,
+    });
+
+    return res.status(201).json({ ok: true, linked });
+  } catch (err: any) {
+    return res.status(500).json({ error: String(err.message ?? err) });
   }
-
-  const bodyParsed = linkImageBodySchema.safeParse(req.body ?? {});
-  if (!bodyParsed.success) {
-    return res.status(400).json({ error: "invalid_payload", issues: bodyParsed.error.flatten() });
-  }
-
-  const scope = await getMediaScope();
-  const actorUserId = await resolveUserIdByCode((req as AuthenticatedRequest).user?.sub);
-  const entityType = getEntityTypeFromPathEntity(paramsParsed.data.entityType);
-
-  const media = await getMediaAssetById(scope, bodyParsed.data.mediaAssetId);
-  if (!media || media.isDeleted || !media.isActive) {
-    return res.status(404).json({ error: "media_not_found" });
-  }
-
-  const linked = await linkMediaToEntity({
-    companyId: scope.companyId,
-    branchId: scope.branchId,
-    entityType,
-    entityId: paramsParsed.data.entityId,
-    mediaAssetId: bodyParsed.data.mediaAssetId,
-    roleCode: bodyParsed.data.roleCode ?? null,
-    sortOrder: bodyParsed.data.sortOrder ?? 0,
-    isPrimary: bodyParsed.data.isPrimary ?? true,
-    actorUserId,
-  });
-
-  return res.status(201).json({ ok: true, linked });
 });
 
 mediaRouter.put("/entities/:entityType/:entityId/images/:entityImageId/primary", async (req, res) => {
-  const parsed = setPrimarySchema.safeParse({
-    entityType: req.params.entityType,
-    entityId: req.params.entityId,
-    entityImageId: req.params.entityImageId,
-  });
-  if (!parsed.success) {
-    return res.status(400).json({ error: "invalid_params", issues: parsed.error.flatten() });
+  try {
+    const parsed = setPrimarySchema.safeParse({
+      entityType: req.params.entityType,
+      entityId: req.params.entityId,
+      entityImageId: req.params.entityImageId,
+    });
+    if (!parsed.success) {
+      return res.status(400).json({ error: "invalid_params", issues: parsed.error.flatten() });
+    }
+
+    const scope = await getMediaScope();
+    const actorUserId = await resolveUserIdByCode((req as AuthenticatedRequest).user?.sub);
+    const entityType = getEntityTypeFromPathEntity(parsed.data.entityType);
+    const ok = await setPrimaryEntityImage({
+      companyId: scope.companyId,
+      branchId: scope.branchId,
+      entityType,
+      entityId: parsed.data.entityId,
+      entityImageId: parsed.data.entityImageId,
+      actorUserId,
+    });
+
+    if (!ok) return res.status(404).json({ error: "entity_image_not_found" });
+    return res.json({ ok: true });
+  } catch (err: any) {
+    return res.status(500).json({ error: String(err.message ?? err) });
   }
-
-  const scope = await getMediaScope();
-  const actorUserId = await resolveUserIdByCode((req as AuthenticatedRequest).user?.sub);
-  const entityType = getEntityTypeFromPathEntity(parsed.data.entityType);
-  const ok = await setPrimaryEntityImage({
-    companyId: scope.companyId,
-    branchId: scope.branchId,
-    entityType,
-    entityId: parsed.data.entityId,
-    entityImageId: parsed.data.entityImageId,
-    actorUserId,
-  });
-
-  if (!ok) return res.status(404).json({ error: "entity_image_not_found" });
-  return res.json({ ok: true });
 });
 
 mediaRouter.delete("/entities/:entityType/:entityId/images/:entityImageId", async (req, res) => {
-  const parsed = setPrimarySchema.safeParse({
-    entityType: req.params.entityType,
-    entityId: req.params.entityId,
-    entityImageId: req.params.entityImageId,
-  });
-  if (!parsed.success) {
-    return res.status(400).json({ error: "invalid_params", issues: parsed.error.flatten() });
+  try {
+    const parsed = setPrimarySchema.safeParse({
+      entityType: req.params.entityType,
+      entityId: req.params.entityId,
+      entityImageId: req.params.entityImageId,
+    });
+    if (!parsed.success) {
+      return res.status(400).json({ error: "invalid_params", issues: parsed.error.flatten() });
+    }
+
+    const scope = await getMediaScope();
+    const actorUserId = await resolveUserIdByCode((req as AuthenticatedRequest).user?.sub);
+    const entityType = getEntityTypeFromPathEntity(parsed.data.entityType);
+
+    await unlinkEntityImage({
+      companyId: scope.companyId,
+      branchId: scope.branchId,
+      entityType,
+      entityId: parsed.data.entityId,
+      entityImageId: parsed.data.entityImageId,
+      actorUserId,
+    });
+
+    return res.json({ ok: true });
+  } catch (err: any) {
+    return res.status(500).json({ error: String(err.message ?? err) });
   }
-
-  const scope = await getMediaScope();
-  const actorUserId = await resolveUserIdByCode((req as AuthenticatedRequest).user?.sub);
-  const entityType = getEntityTypeFromPathEntity(parsed.data.entityType);
-
-  await unlinkEntityImage({
-    companyId: scope.companyId,
-    branchId: scope.branchId,
-    entityType,
-    entityId: parsed.data.entityId,
-    entityImageId: parsed.data.entityImageId,
-    actorUserId,
-  });
-
-  return res.json({ ok: true });
 });
 
 mediaRouter.post("/link-by-url", async (req, res) => {
-  const parsed = z
-    .object({
-      entityType: entityTypeSchema,
-      entityId: entityIdSchema,
-      imageUrl: z.string().trim().min(1),
-      roleCode: z.string().trim().max(30).optional(),
-      sortOrder: z.coerce.number().int().min(0).max(9999).optional(),
-      isPrimary: z.boolean().optional(),
-    })
-    .safeParse(req.body ?? {});
+  try {
+    const parsed = z
+      .object({
+        entityType: entityTypeSchema,
+        entityId: entityIdSchema,
+        imageUrl: z.string().trim().min(1),
+        roleCode: z.string().trim().max(30).optional(),
+        sortOrder: z.coerce.number().int().min(0).max(9999).optional(),
+        isPrimary: z.boolean().optional(),
+      })
+      .safeParse(req.body ?? {});
 
-  if (!parsed.success) {
-    return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
-  }
-
-  const scope = await getMediaScope();
-  const actorUserId = await resolveUserIdByCode((req as AuthenticatedRequest).user?.sub);
-  const storageKey = parseStorageKeyFromUrl(parsed.data.imageUrl);
-  if (!storageKey) {
-    return res.status(400).json({ error: "invalid_image_url", message: "La URL no pertenece al storage local de media" });
-  }
-
-  const mediaRows = await callSp<{ mediaAssetId: number }>(
-    "usp_Cfg_MediaAsset_GetByStorageKey",
-    {
-      CompanyId: scope.companyId,
-      BranchId: scope.branchId,
-      StorageKey: storageKey,
+    if (!parsed.success) {
+      return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
     }
-  );
 
-  const mediaAssetId = Number(mediaRows[0]?.mediaAssetId ?? 0);
-  if (!Number.isFinite(mediaAssetId) || mediaAssetId <= 0) {
-    return res.status(404).json({ error: "media_not_found" });
+    const scope = await getMediaScope();
+    const actorUserId = await resolveUserIdByCode((req as AuthenticatedRequest).user?.sub);
+    const storageKey = parseStorageKeyFromUrl(parsed.data.imageUrl);
+    if (!storageKey) {
+      return res.status(400).json({ error: "invalid_image_url", message: "La URL no pertenece al storage local de media" });
+    }
+
+    const mediaRows = await callSp<{ mediaAssetId: number }>(
+      "usp_Cfg_MediaAsset_GetByStorageKey",
+      {
+        CompanyId: scope.companyId,
+        BranchId: scope.branchId,
+        StorageKey: storageKey,
+      }
+    );
+
+    const mediaAssetId = Number(mediaRows[0]?.mediaAssetId ?? 0);
+    if (!Number.isFinite(mediaAssetId) || mediaAssetId <= 0) {
+      return res.status(404).json({ error: "media_not_found" });
+    }
+
+    const linked = await linkMediaToEntity({
+      companyId: scope.companyId,
+      branchId: scope.branchId,
+      entityType: getEntityTypeFromPathEntity(parsed.data.entityType),
+      entityId: parsed.data.entityId,
+      mediaAssetId,
+      roleCode: parsed.data.roleCode ?? null,
+      sortOrder: parsed.data.sortOrder ?? 0,
+      isPrimary: parsed.data.isPrimary ?? true,
+      actorUserId,
+    });
+
+    return res.status(201).json({ ok: true, linked });
+  } catch (err: any) {
+    return res.status(500).json({ error: String(err.message ?? err) });
   }
-
-  const linked = await linkMediaToEntity({
-    companyId: scope.companyId,
-    branchId: scope.branchId,
-    entityType: getEntityTypeFromPathEntity(parsed.data.entityType),
-    entityId: parsed.data.entityId,
-    mediaAssetId,
-    roleCode: parsed.data.roleCode ?? null,
-    sortOrder: parsed.data.sortOrder ?? 0,
-    isPrimary: parsed.data.isPrimary ?? true,
-    actorUserId,
-  });
-
-  return res.status(201).json({ ok: true, linked });
 });

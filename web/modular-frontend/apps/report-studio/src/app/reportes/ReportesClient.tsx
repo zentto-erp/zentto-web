@@ -77,6 +77,8 @@ import {
   Category as CategoryIcon,
 } from "@mui/icons-material";
 import type { ReportLayout, DataSet } from "@zentto/report-core";
+import { listSavedReports, listPublicReports, getSavedReport } from "@zentto/shared-api";
+import type { SavedReport } from "@zentto/shared-api";
 
 // ─── Safe imports from @zentto/report-core (pure functions) ─────────
 let renderToFullHtml: ((layout: ReportLayout, data: DataSet) => string) | null = null;
@@ -375,9 +377,13 @@ export default function ReportStudio() {
 
   // ── Register web components ──
   useEffect(() => {
-    import("./register-components").then(() => setRegistered(true)).catch((err) => {
+    let cancelled = false;
+    import("./register-components").then(() => {
+      if (!cancelled) setRegistered(true);
+    }).catch((err) => {
       console.error("Failed to register report components:", err);
     });
+    return () => { cancelled = true; };
   }, []);
 
   // ── Auto-recovery on load ──
@@ -555,48 +561,28 @@ export default function ReportStudio() {
       logout: async () => { zenttoToken = ""; },
     };
 
-    // Report storage provider (zentto-cache via API proxy)
-    // In production this will be the client's database
+    // Report storage provider (zentto-cache via shared-api)
     el.storageProvider = {
       list: async () => {
         try {
-          const res = await fetch("/api/v1/reportes/saved", {
-            headers: zenttoToken ? { Authorization: `Bearer ${zenttoToken}` } : {},
-          });
-          if (!res.ok) return [];
-          const data = await res.json();
-          return (data.data || data || []).map((r: any) => ({
-            id: r.id || r.templateId,
-            name: r.name || r.layout?.name || "Untitled",
-            updatedAt: r.updatedAt || r.savedAt,
-          }));
+          const reports = await listSavedReports();
+          return reports.map((r) => ({ id: r.id, name: r.name, updatedAt: r.updatedAt }));
         } catch { return []; }
       },
       load: async (id: string) => {
         try {
-          const res = await fetch(`/api/v1/reportes/saved/${id}`, {
-            headers: zenttoToken ? { Authorization: `Bearer ${zenttoToken}` } : {},
-          });
-          if (!res.ok) return null;
-          const data = await res.json();
-          return { layout: data.layout, sampleData: data.sampleData };
+          const saved = await getSavedReport(id);
+          if (!saved) return null;
+          return { layout: saved.layout, sampleData: saved.sampleData };
         } catch { return null; }
       },
       save: async (id: string, layoutData: any, sampleDataVal?: any) => {
-        await fetch(`/api/v1/reportes/saved/${id}`, {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            ...(zenttoToken ? { Authorization: `Bearer ${zenttoToken}` } : {}),
-          },
-          body: JSON.stringify({ layout: layoutData, sampleData: sampleDataVal }),
-        });
+        const { updateSavedReport } = await import("@zentto/shared-api");
+        await updateSavedReport(id, { name: (layoutData as any)?.name || id, layout: layoutData, sampleData: sampleDataVal });
       },
       delete: async (id: string) => {
-        await fetch(`/api/v1/reportes/saved/${id}`, {
-          method: "DELETE",
-          headers: zenttoToken ? { Authorization: `Bearer ${zenttoToken}` } : {},
-        });
+        const { deleteSavedReport } = await import("@zentto/shared-api");
+        await deleteSavedReport(id);
       },
     };
 
@@ -1021,11 +1007,8 @@ export default function ReportStudio() {
   const fetchSavedReports = useCallback(async () => {
     setSavedReportsLoading(true);
     try {
-      const resp = await fetch("/api/v1/reportes/saved");
-      if (resp.ok) {
-        const json = await resp.json();
-        setSavedReports(json.data || []);
-      }
+      const reports = await listSavedReports();
+      setSavedReports(reports.map((r) => ({ id: r.id, name: r.name, updatedAt: r.updatedAt, description: r.description })));
     } catch {
       // Cache service not available
     } finally {
@@ -1036,11 +1019,8 @@ export default function ReportStudio() {
   const fetchPublicReports = useCallback(async () => {
     setPublicReportsLoading(true);
     try {
-      const resp = await fetch("/api/v1/reportes/public");
-      if (resp.ok) {
-        const json = await resp.json();
-        setPublicReports(json.data || []);
-      }
+      const reports = await listPublicReports();
+      setPublicReports(reports.map((r) => ({ id: r.id, name: r.name, updatedAt: r.updatedAt, description: r.description })));
     } catch {
       // Cache service not available
     } finally {
@@ -1082,18 +1062,18 @@ export default function ReportStudio() {
 
   const handleStoreLoadSaved = useCallback(async (report: { id: string; name: string }) => {
     try {
-      const resp = await fetch(`/api/v1/reportes/saved/${report.id}`);
-      if (!resp.ok) { notify("Error al cargar el reporte", "error"); return; }
-      const json = await resp.json();
-      if (json.layout) {
-        setLayout(json.layout);
-        setSampleData(json.sampleData || {});
+      const saved = await getSavedReport(report.id);
+      if (saved?.layout) {
+        setLayout(saved.layout as unknown as ReportLayout);
+        setSampleData((saved.sampleData || {}) as DataSet);
         setFileName(report.name);
         setFileHandle(null);
         setIsModified(false);
         setLastSaveTime(null);
         setMode("designer");
         notify(`Reporte "${report.name}" cargado`);
+      } else {
+        notify("Error al cargar el reporte", "error");
       }
     } catch {
       notify("Error de conexión al cargar el reporte", "error");
@@ -1102,12 +1082,10 @@ export default function ReportStudio() {
 
   const handleStorePreviewSaved = useCallback(async (report: { id: string; name: string }) => {
     try {
-      const resp = await fetch(`/api/v1/reportes/saved/${report.id}`);
-      if (!resp.ok) return;
-      const json = await resp.json();
-      if (json.layout) {
-        setPreviewLayout(json.layout);
-        setPreviewData(json.sampleData || {});
+      const saved = await getSavedReport(report.id);
+      if (saved?.layout) {
+        setPreviewLayout(saved.layout as unknown as ReportLayout);
+        setPreviewData((saved.sampleData || {}) as DataSet);
         setPreviewTitle(report.name);
         setPreviewOpen(true);
       }
@@ -1116,11 +1094,9 @@ export default function ReportStudio() {
 
   const handleStoreDownloadSaved = useCallback(async (report: { id: string; name: string }) => {
     try {
-      const resp = await fetch(`/api/v1/reportes/saved/${report.id}`);
-      if (!resp.ok) return;
-      const json = await resp.json();
-      if (json.layout) {
-        downloadAsFile(JSON.stringify(json.layout, null, 2), `${safeFileName(report.name)}.report.json`);
+      const saved = await getSavedReport(report.id);
+      if (saved?.layout) {
+        downloadAsFile(JSON.stringify(saved.layout, null, 2), `${safeFileName(report.name)}.report.json`);
         notify(`"${report.name}" descargado`);
       }
     } catch { /* ignore */ }
