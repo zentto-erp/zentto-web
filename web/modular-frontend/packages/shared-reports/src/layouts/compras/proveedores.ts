@@ -195,3 +195,18 @@ export const PROVEEDORES_LAYOUT = {
     },
   ],
 };
+
+export const PROVEEDORES_LAYOUT_SAMPLE = {
+  header: {
+    empresa: "Zentto Soluciones Tecnologicas S.L.",
+    totalProveedores: 6,
+  },
+  proveedores: [
+    { codigo: "PRV-001", nombre: "Importadora Tech C.A.", rif: "J-30112233-5", direccion: "Av. Francisco de Miranda, Caracas", telefono: "0212-2641000", email: "ventas@importech.com", saldo: 40600.00, estado: "ACTIVO" },
+    { codigo: "PRV-002", nombre: "Distribuidora Nacional C.A.", rif: "J-40223344-9", direccion: "Zona Industrial Sur, Valencia", telefono: "0241-8335500", email: "pedidos@distnacional.com", saldo: 25520.00, estado: "ACTIVO" },
+    { codigo: "PRV-003", nombre: "Suministros Express S.A.", rif: "J-50334455-2", direccion: "Calle Comercio, Barquisimeto", telefono: "0251-2531000", email: "info@sumexpress.com", saldo: 0.00, estado: "ACTIVO" },
+    { codigo: "PRV-004", nombre: "Servicios Integrados C.A.", rif: "J-60445566-6", direccion: "Av. Bolivar, Maracaibo", telefono: "0261-7921000", email: "contacto@servintegrados.com", saldo: 27840.00, estado: "ACTIVO" },
+    { codigo: "PRV-005", nombre: "Materiales del Este S.R.L.", rif: "J-70556677-0", direccion: "Av. Intercomunal, Guarenas", telefono: "0212-3621500", email: "ventas@mateste.com", saldo: 0.00, estado: "ACTIVO" },
+    { codigo: "PRV-006", nombre: "Comercial Andina C.A.", rif: "J-80667788-4", direccion: "Calle 10, San Cristobal", telefono: "0276-3561000", email: "admin@comandina.com", saldo: 0.00, estado: "INACTIVO" },
+  ],
+};

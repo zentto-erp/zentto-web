@@ -169,3 +169,18 @@ export const CUENTAS_BANCARIAS_LAYOUT = {
     },
   ],
 };
+
+export const CUENTAS_BANCARIAS_LAYOUT_SAMPLE = {
+  header: {
+    empresa: "Zentto Soluciones Tecnologicas S.L.",
+    totalCuentas: 6,
+  },
+  cuentas: [
+    { nroCuenta: "0134-0012-34-0123456789", banco: "Banesco Banco Universal", tipoCuenta: "Corriente", moneda: "VES", saldoActual: 185320.50, estado: "ACTIVO" },
+    { nroCuenta: "0105-0088-71-0987654321", banco: "Banco Mercantil", tipoCuenta: "Corriente", moneda: "VES", saldoActual: 42750.00, estado: "ACTIVO" },
+    { nroCuenta: "0108-0200-00-0111222333", banco: "Banco Provincial BBVA", tipoCuenta: "Ahorro", moneda: "VES", saldoActual: 8900.75, estado: "ACTIVO" },
+    { nroCuenta: "0134-0012-34-0000111222", banco: "Banesco Banco Universal", tipoCuenta: "Corriente", moneda: "USD", saldoActual: 25400.00, estado: "ACTIVO" },
+    { nroCuenta: "0102-0345-67-0444555666", banco: "Banco de Venezuela", tipoCuenta: "Corriente", moneda: "VES", saldoActual: 12100.30, estado: "ACTIVO" },
+    { nroCuenta: "0115-0100-00-0777888999", banco: "Banco Exterior", tipoCuenta: "Ahorro", moneda: "VES", saldoActual: 0.00, estado: "INACTIVO" },
+  ],
+};

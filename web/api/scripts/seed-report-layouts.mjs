@@ -54,46 +54,29 @@ async function request(method, path, body, headers = {}) {
 }
 
 /**
- * Extrae la constante exportada de un archivo .ts sin compilar.
- * Busca `export const XXX = { ... }` y evalua el objeto JSON-like.
+ * Extrae TODAS las constantes exportadas de un archivo .ts sin compilar.
+ * Retorna un Map<exportName, object>.
  */
-function extractLayoutFromFile(filePath) {
+function extractExportsFromFile(filePath) {
   let src = readFileSync(filePath, "utf-8");
+  src = src.replace(/\/\*\*[\s\S]*?\*\//g, ""); // JSDoc
+  src = src.replace(/\/\/.*$/gm, "");            // line comments
+  src = src.replace(/\s+as\s+(?:const|"[^"]*"|'[^']*')/g, ""); // as const
 
-  // Quitar JSDoc comments
-  src = src.replace(/\/\*\*[\s\S]*?\*\//g, "");
-  // Quitar line comments
-  src = src.replace(/\/\/.*$/gm, "");
-  // Quitar `as const`, `as "landscape"`, etc.
-  src = src.replace(/\s+as\s+(?:const|"[^"]*"|'[^']*')/g, "");
-  // Quitar `export const XXX =` para dejar solo el objeto
-  const match = src.match(/export\s+const\s+(\w+)\s*=\s*(\{[\s\S]*\})\s*;?\s*$/);
-  if (!match) return null;
-
-  const exportName = match[1];
-  const objStr = match[2];
-
-  try {
-    // Convertir a JSON valido: quitar trailing commas, quotear keys
-    const jsonStr = objStr
-      .replace(/,\s*([\]}])/g, "$1")          // trailing commas
-      .replace(/(\w+)\s*:/g, '"$1":')         // unquoted keys
-      .replace(/""(\w+)"":/g, '"$1":')        // fix double-quoted keys
-      .replace(/"(\w+)""/g, '"$1"')           // fix trailing double quotes
-      ;
-
-    const layout = JSON.parse(jsonStr);
-    return { exportName, layout };
-  } catch (e) {
-    // Fallback: usar Function constructor (safe — solo literals)
+  const results = new Map();
+  const regex = /export\s+const\s+(\w+)\s*=\s*(\{[\s\S]*?\n\});\s*/g;
+  let m;
+  while ((m = regex.exec(src)) !== null) {
+    const name = m[1];
+    const objStr = m[2];
     try {
       const fn = new Function(`return (${objStr})`);
-      return { exportName, layout: fn() };
-    } catch (e2) {
-      console.warn(`  WARN: no se pudo parsear ${basename(filePath)}: ${e2.message}`);
-      return null;
+      results.set(name, fn());
+    } catch {
+      // skip unparseable
     }
   }
+  return results;
 }
 
 /**
@@ -112,15 +95,31 @@ function discoverLayouts() {
 
     for (const file of files) {
       const filePath = join(modDir, file);
-      const result = extractLayoutFromFile(filePath);
-      if (result) {
+      const exports = extractExportsFromFile(filePath);
+
+      // Find the layout (non-SAMPLE export) and its matching SAMPLE
+      let layoutName = null;
+      let layoutObj = null;
+      let sampleObj = {};
+
+      for (const [name, obj] of exports) {
+        if (name.endsWith("_SAMPLE")) {
+          sampleObj = obj;
+        } else if (obj.version && obj.bands) {
+          layoutName = name;
+          layoutObj = obj;
+        }
+      }
+
+      if (layoutObj) {
         const templateId = `${mod}-${basename(file, ".ts")}`;
         layouts.push({
           templateId,
           module: mod,
           file: `${mod}/${file}`,
-          exportName: result.exportName,
-          layout: result.layout,
+          exportName: layoutName,
+          layout: layoutObj,
+          sampleData: sampleObj,
         });
       }
     }
@@ -170,7 +169,7 @@ async function main() {
     const body = {
       name: item.layout.name || id,
       layout: item.layout,
-      sampleData: {},
+      sampleData: item.sampleData || {},
     };
 
     try {

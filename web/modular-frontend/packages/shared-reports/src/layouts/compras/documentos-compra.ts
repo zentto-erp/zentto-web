@@ -215,3 +215,19 @@ export const DOCUMENTOS_COMPRA_LAYOUT = {
     },
   ],
 };
+
+export const DOCUMENTOS_COMPRA_LAYOUT_SAMPLE = {
+  header: {
+    empresa: "Zentto Soluciones Tecnologicas S.L.",
+    totalDocumentos: 6,
+    totalMonto: 152680.00,
+  },
+  documentos: [
+    { numero: "FC-0001", fecha: "10/01/2026", tipoOperacion: "FACTURA", codProveedor: "PRV-001", nombreProveedor: "Importadora Tech C.A.", subtotal: 42000.00, impuesto: 6720.00, total: 48720.00, estado: "PAGADA" },
+    { numero: "FC-0005", fecha: "25/01/2026", tipoOperacion: "FACTURA", codProveedor: "PRV-003", nombreProveedor: "Suministros Express S.A.", subtotal: 8500.00, impuesto: 1360.00, total: 9860.00, estado: "PAGADA" },
+    { numero: "FC-0012", fecha: "15/02/2026", tipoOperacion: "FACTURA", codProveedor: "PRV-002", nombreProveedor: "Distribuidora Nacional C.A.", subtotal: 22000.00, impuesto: 3520.00, total: 25520.00, estado: "PENDIENTE" },
+    { numero: "FC-0018", fecha: "01/03/2026", tipoOperacion: "FACTURA", codProveedor: "PRV-001", nombreProveedor: "Importadora Tech C.A.", subtotal: 35000.00, impuesto: 5600.00, total: 40600.00, estado: "PENDIENTE" },
+    { numero: "NC-P001", fecha: "10/03/2026", tipoOperacion: "NOTA_CREDITO", codProveedor: "PRV-003", nombreProveedor: "Suministros Express S.A.", subtotal: 1500.00, impuesto: 240.00, total: 1740.00, estado: "APLICADA" },
+    { numero: "FC-0025", fecha: "20/03/2026", tipoOperacion: "FACTURA", codProveedor: "PRV-004", nombreProveedor: "Servicios Integrados C.A.", subtotal: 24000.00, impuesto: 3840.00, total: 27840.00, estado: "PENDIENTE" },
+  ],
+};

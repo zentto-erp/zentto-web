@@ -172,3 +172,19 @@ export const ACTIVIDADES_CRM_LAYOUT = {
     },
   ],
 };
+
+export const ACTIVIDADES_CRM_LAYOUT_SAMPLE = {
+  header: {
+    empresa: "Zentto Soluciones Tecnologicas S.L.",
+    totalActividades: 7,
+  },
+  actividades: [
+    { tipo: "LLAMADA", titulo: "Seguimiento propuesta ERP", lead: "Proyecto ERP Multinacional", cliente: "Multinacional C.A.", asignado: "Carlos Mendoza", fechaProgramada: "28/03/2026", completada: "SI" },
+    { tipo: "REUNION", titulo: "Demo sistema POS", lead: "Implementacion POS Cadena", cliente: "Cadena Comercial S.A.", asignado: "Maria Lopez", fechaProgramada: "30/03/2026", completada: "NO" },
+    { tipo: "EMAIL", titulo: "Enviar cotizacion migracion", lead: "Migracion contable PyME", cliente: "PyME Contable S.R.L.", asignado: "Carlos Mendoza", fechaProgramada: "25/03/2026", completada: "SI" },
+    { tipo: "REUNION", titulo: "Firma contrato soporte", lead: "Soporte anual corporativo", cliente: "Corp Global C.A.", asignado: "Luis Torres", fechaProgramada: "01/04/2026", completada: "NO" },
+    { tipo: "LLAMADA", titulo: "Primer contacto logistica", lead: "Desarrollo modulo logistica", cliente: "Logistica Express C.A.", asignado: "Maria Lopez", fechaProgramada: "02/04/2026", completada: "NO" },
+    { tipo: "TAREA", titulo: "Preparar presentacion tecnica", lead: "Proyecto ERP Multinacional", cliente: "Multinacional C.A.", asignado: "Carlos Mendoza", fechaProgramada: "27/03/2026", completada: "SI" },
+    { tipo: "VISITA", titulo: "Visita instalaciones cliente", lead: "Implementacion POS Cadena", cliente: "Cadena Comercial S.A.", asignado: "Maria Lopez", fechaProgramada: "05/04/2026", completada: "NO" },
+  ],
+};

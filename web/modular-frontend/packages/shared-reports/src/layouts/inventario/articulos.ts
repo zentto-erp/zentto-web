@@ -175,3 +175,18 @@ export const ARTICULOS_LAYOUT = {
     },
   ],
 };
+
+export const ARTICULOS_LAYOUT_SAMPLE = {
+  header: {
+    empresa: "Zentto Soluciones Tecnologicas S.L.",
+    totalArticulos: 6,
+  },
+  articulos: [
+    { codigo: "ART-001", nombre: "Laptop HP ProBook 450 G10", categoria: "Equipos", marca: "HP", unidad: "UND", stock: 15, precioUnitario: 4500.00, estado: "ACTIVO" },
+    { codigo: "ART-002", nombre: "Monitor Dell 27\" 4K", categoria: "Perifericos", marca: "Dell", unidad: "UND", stock: 32, precioUnitario: 1800.00, estado: "ACTIVO" },
+    { codigo: "ART-003", nombre: "Teclado mecanico Logitech MX", categoria: "Perifericos", marca: "Logitech", unidad: "UND", stock: 48, precioUnitario: 450.00, estado: "ACTIVO" },
+    { codigo: "ART-004", nombre: "Cable HDMI 2.1 3m", categoria: "Accesorios", marca: "Ugreen", unidad: "UND", stock: 120, precioUnitario: 35.00, estado: "ACTIVO" },
+    { codigo: "ART-005", nombre: "Disco SSD Samsung 1TB", categoria: "Almacenamiento", marca: "Samsung", unidad: "UND", stock: 25, precioUnitario: 380.00, estado: "ACTIVO" },
+    { codigo: "ART-006", nombre: "Impresora Epson L3250", categoria: "Equipos", marca: "Epson", unidad: "UND", stock: 0, precioUnitario: 1200.00, estado: "AGOTADO" },
+  ],
+};

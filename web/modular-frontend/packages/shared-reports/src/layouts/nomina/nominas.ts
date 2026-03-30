@@ -175,3 +175,18 @@ export const NOMINAS_LAYOUT = {
     },
   ],
 };
+
+export const NOMINAS_LAYOUT_SAMPLE = {
+  header: {
+    empresa: "Zentto Soluciones Tecnologicas S.L.",
+    totalNominas: 6,
+  },
+  nominas: [
+    { coNomina: "NOM-2026-01Q1", descripcion: "Nomina Quincenal 1ra Enero 2026", fechaDesde: "01/01/2026", fechaHasta: "15/01/2026", totalAsignaciones: 22400.00, totalDeducciones: 4200.00, neto: 18200.00, estado: "PAGADA" },
+    { coNomina: "NOM-2026-01Q2", descripcion: "Nomina Quincenal 2da Enero 2026", fechaDesde: "16/01/2026", fechaHasta: "31/01/2026", totalAsignaciones: 22400.00, totalDeducciones: 4200.00, neto: 18200.00, estado: "PAGADA" },
+    { coNomina: "NOM-2026-02Q1", descripcion: "Nomina Quincenal 1ra Febrero 2026", fechaDesde: "01/02/2026", fechaHasta: "15/02/2026", totalAsignaciones: 22400.00, totalDeducciones: 4200.00, neto: 18200.00, estado: "PAGADA" },
+    { coNomina: "NOM-2026-02Q2", descripcion: "Nomina Quincenal 2da Febrero 2026", fechaDesde: "16/02/2026", fechaHasta: "28/02/2026", totalAsignaciones: 22400.00, totalDeducciones: 4200.00, neto: 18200.00, estado: "PAGADA" },
+    { coNomina: "NOM-2026-03Q1", descripcion: "Nomina Quincenal 1ra Marzo 2026", fechaDesde: "01/03/2026", fechaHasta: "15/03/2026", totalAsignaciones: 22400.00, totalDeducciones: 4200.00, neto: 18200.00, estado: "PAGADA" },
+    { coNomina: "NOM-2026-03Q2", descripcion: "Nomina Quincenal 2da Marzo 2026", fechaDesde: "16/03/2026", fechaHasta: "31/03/2026", totalAsignaciones: 22400.00, totalDeducciones: 4200.00, neto: 18200.00, estado: "PROCESANDO" },
+  ],
+};

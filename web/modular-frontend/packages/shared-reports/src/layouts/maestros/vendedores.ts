@@ -172,3 +172,18 @@ export const VENDEDORES_LAYOUT = {
     },
   ],
 };
+
+export const VENDEDORES_LAYOUT_SAMPLE = {
+  header: {
+    empresa: "Zentto Soluciones Tecnologicas S.L.",
+    totalVendedores: 6,
+  },
+  vendedores: [
+    { codigo: "VND-001", nombre: "Juan Perez Gomez", zona: "Zona Central", comisionPct: 5.00, telefono: "0412-1234567", email: "jperez@zentto.net", estado: "ACTIVO" },
+    { codigo: "VND-002", nombre: "Maria Lopez Diaz", zona: "Zona Occidente", comisionPct: 4.50, telefono: "0414-2345678", email: "mlopez@zentto.net", estado: "ACTIVO" },
+    { codigo: "VND-003", nombre: "Carlos Ruiz Navarro", zona: "Zona Andes", comisionPct: 5.00, telefono: "0416-3456789", email: "cruiz@zentto.net", estado: "ACTIVO" },
+    { codigo: "VND-004", nombre: "Luis Torres Martinez", zona: "Zona Oriental", comisionPct: 4.00, telefono: "0424-4567890", email: "ltorres@zentto.net", estado: "ACTIVO" },
+    { codigo: "VND-005", nombre: "Patricia Herrera Blanco", zona: "Zona Capital", comisionPct: 6.00, telefono: "0412-5678901", email: "pherrera@zentto.net", estado: "ACTIVO" },
+    { codigo: "VND-006", nombre: "Roberto Sanchez Gil", zona: "Zona Sur", comisionPct: 4.50, telefono: "0414-6789012", email: "rsanchez@zentto.net", estado: "INACTIVO" },
+  ],
+};

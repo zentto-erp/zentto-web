@@ -214,3 +214,21 @@ export const LIBRO_DIARIO_LAYOUT = {
     },
   ],
 };
+
+export const LIBRO_DIARIO_LAYOUT_SAMPLE = {
+  header: {
+    empresa: "Zentto Soluciones Tecnologicas S.L.",
+    fechaDesde: "01/01/2026",
+    fechaHasta: "31/03/2026",
+  },
+  asientos: [
+    { fecha: "05/01/2026", numeroAsiento: 1, codCuenta: "1.1.01", descripcion: "Caja General", concepto: "Cobro factura FV-001", debe: 12500.00, haber: 0.00 },
+    { fecha: "05/01/2026", numeroAsiento: 1, codCuenta: "4.1.01", descripcion: "Ventas nacionales", concepto: "Cobro factura FV-001", debe: 0.00, haber: 12500.00 },
+    { fecha: "15/01/2026", numeroAsiento: 2, codCuenta: "1.1.02", descripcion: "Banesco Cta. Corriente", concepto: "Deposito cliente Martinez", debe: 28750.00, haber: 0.00 },
+    { fecha: "15/01/2026", numeroAsiento: 2, codCuenta: "1.1.01", descripcion: "Caja General", concepto: "Deposito cliente Martinez", debe: 0.00, haber: 28750.00 },
+    { fecha: "28/02/2026", numeroAsiento: 5, codCuenta: "6.1.03", descripcion: "Gastos de personal", concepto: "Nomina febrero 2026", debe: 18200.00, haber: 0.00 },
+    { fecha: "28/02/2026", numeroAsiento: 5, codCuenta: "1.1.02", descripcion: "Banesco Cta. Corriente", concepto: "Nomina febrero 2026", debe: 0.00, haber: 18200.00 },
+    { fecha: "15/03/2026", numeroAsiento: 8, codCuenta: "1.2.01", descripcion: "Inventario de mercancia", concepto: "Compra inventario a credito", debe: 22000.00, haber: 0.00 },
+    { fecha: "15/03/2026", numeroAsiento: 8, codCuenta: "2.1.01", descripcion: "Cuentas por pagar", concepto: "Compra inventario a credito", debe: 0.00, haber: 22000.00 },
+  ],
+};

@@ -215,3 +215,19 @@ export const DOCUMENTOS_VENTA_LAYOUT = {
     },
   ],
 };
+
+export const DOCUMENTOS_VENTA_LAYOUT_SAMPLE = {
+  header: {
+    empresa: "Zentto Soluciones Tecnologicas S.L.",
+    totalDocumentos: 6,
+    totalMonto: 187440.00,
+  },
+  documentos: [
+    { numero: "FV-0001", fecha: "08/01/2026", tipoOperacion: "FACTURA", codCliente: "CLI-001", nombreCliente: "Distribuidora Norte C.A.", subtotal: 25000.00, impuesto: 4000.00, total: 29000.00, estado: "PAGADA" },
+    { numero: "FV-0002", fecha: "15/01/2026", tipoOperacion: "FACTURA", codCliente: "CLI-003", nombreCliente: "Inversiones Oriente S.A.", subtotal: 18500.00, impuesto: 2960.00, total: 21460.00, estado: "PAGADA" },
+    { numero: "FV-0008", fecha: "10/02/2026", tipoOperacion: "FACTURA", codCliente: "CLI-002", nombreCliente: "Comercial Bolivar S.R.L.", subtotal: 38000.00, impuesto: 6080.00, total: 44080.00, estado: "PAGADA" },
+    { numero: "NC-0001", fecha: "12/02/2026", tipoOperacion: "NOTA_CREDITO", codCliente: "CLI-002", nombreCliente: "Comercial Bolivar S.R.L.", subtotal: 3000.00, impuesto: 480.00, total: 3480.00, estado: "APLICADA" },
+    { numero: "FV-0015", fecha: "05/03/2026", tipoOperacion: "FACTURA", codCliente: "CLI-005", nombreCliente: "Tecnologia Global C.A.", subtotal: 42000.00, impuesto: 6720.00, total: 48720.00, estado: "PENDIENTE" },
+    { numero: "FV-0018", fecha: "22/03/2026", tipoOperacion: "FACTURA", codCliente: "CLI-001", nombreCliente: "Distribuidora Norte C.A.", subtotal: 40000.00, impuesto: 6400.00, total: 46400.00, estado: "PENDIENTE" },
+  ],
+};

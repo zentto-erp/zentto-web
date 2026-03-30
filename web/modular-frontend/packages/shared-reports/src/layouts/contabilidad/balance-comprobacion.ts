@@ -265,3 +265,19 @@ export const BALANCE_COMPROBACION_LAYOUT = {
     },
   ],
 };
+
+export const BALANCE_COMPROBACION_LAYOUT_SAMPLE = {
+  header: {
+    empresa: "Zentto Soluciones Tecnologicas S.L.",
+    fechaDesde: "01/01/2026",
+    fechaHasta: "31/03/2026",
+  },
+  cuentas: [
+    { codCuenta: "1", descripcion: "Activo", tipo: "TITULO", nivel: 1, debitoAnterior: 250000.00, creditoAnterior: 0.00, debitoPeriodo: 85000.00, creditoPeriodo: 32000.00, debitoFinal: 303000.00, creditoFinal: 0.00 },
+    { codCuenta: "1.1", descripcion: "Activo Circulante", tipo: "TITULO", nivel: 2, debitoAnterior: 180000.00, creditoAnterior: 0.00, debitoPeriodo: 65000.00, creditoPeriodo: 28000.00, debitoFinal: 217000.00, creditoFinal: 0.00 },
+    { codCuenta: "1.1.01", descripcion: "Caja General", tipo: "DETALLE", nivel: 3, debitoAnterior: 15000.00, creditoAnterior: 0.00, debitoPeriodo: 12500.00, creditoPeriodo: 8200.00, debitoFinal: 19300.00, creditoFinal: 0.00 },
+    { codCuenta: "1.1.02", descripcion: "Banesco Cta. Corriente", tipo: "DETALLE", nivel: 3, debitoAnterior: 85000.00, creditoAnterior: 0.00, debitoPeriodo: 28750.00, creditoPeriodo: 12000.00, debitoFinal: 101750.00, creditoFinal: 0.00 },
+    { codCuenta: "2", descripcion: "Pasivo", tipo: "TITULO", nivel: 1, debitoAnterior: 0.00, creditoAnterior: 120000.00, debitoPeriodo: 15000.00, creditoPeriodo: 42000.00, debitoFinal: 0.00, creditoFinal: 147000.00 },
+    { codCuenta: "3", descripcion: "Patrimonio", tipo: "TITULO", nivel: 1, debitoAnterior: 0.00, creditoAnterior: 130000.00, debitoPeriodo: 0.00, creditoPeriodo: 26000.00, debitoFinal: 0.00, creditoFinal: 156000.00 },
+  ],
+};

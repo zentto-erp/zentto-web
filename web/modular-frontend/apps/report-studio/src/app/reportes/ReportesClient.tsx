@@ -78,6 +78,7 @@ import {
 } from "@mui/icons-material";
 import type { ReportLayout, DataSet } from "@zentto/report-core";
 import { listSavedReports, listPublicReports, getSavedReport, getPublicReport } from "@zentto/shared-api";
+import { zenttoDataFetchProvider } from "@zentto/shared-reports";
 import type { SavedReport } from "@zentto/shared-api";
 
 // ─── Safe imports from @zentto/report-core (pure functions) ─────────
@@ -620,6 +621,7 @@ export default function ReportStudio() {
 
     el.layout = layout;
     el.data = sampleData;
+    el.dataFetchProvider = zenttoDataFetchProvider;
   }, [registered, mode, layout, sampleData]);
 
   // ── Bind data to split viewer ──
@@ -630,6 +632,7 @@ export default function ReportStudio() {
 
     el.layout = layout;
     el.data = sampleData;
+    el.dataFetchProvider = zenttoDataFetchProvider;
   }, [registered, mode, layout, sampleData]);
 
   // ── Sync zoom to viewer ──
