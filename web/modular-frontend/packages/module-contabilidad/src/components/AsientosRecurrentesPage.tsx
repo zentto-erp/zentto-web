@@ -256,7 +256,16 @@ export default function AsientosRecurrentesPage() {
     const el = gridRef.current;
     if (!el || !registered) return;
     el.columns = COLUMNS;
-    el.rows = templates.map((r: any) => ({ ...r, id: r.RecurringEntryId ?? r.id, active: r.active ? "true" : "false" }));
+    el.rows = templates.map((r: any) => ({
+      ...r,
+      id: r.RecurringEntryId ?? r.id,
+      name: r.TemplateName ?? r.name,
+      frequency: r.Frequency ?? r.frequency,
+      concept: r.Concepto ?? r.concept,
+      nextExecution: r.NextExecutionDate ?? r.nextExecution,
+      timesExecuted: r.TimesExecuted ?? r.timesExecuted,
+      active: (r.IsActive ?? r.active) ? "true" : "false",
+    }));
     el.loading = isLoading;
   }, [templates, isLoading, registered]);
 
@@ -285,7 +294,7 @@ export default function AsientosRecurrentesPage() {
   const handleExecuteAllDue = async () => {
     setError(null); setSuccessMsg(null);
     try {
-      for (const t of dueTemplates) { await executeMutation.mutateAsync(t.id); }
+      for (const t of dueTemplates) { await executeMutation.mutateAsync((t as any).RecurringEntryId ?? t.id); }
       setSuccessMsg(`${dueTemplates.length} asientos recurrentes ejecutados`);
     } catch (err: any) { setError(err.message || "Error al ejecutar asientos vencidos"); }
   };
