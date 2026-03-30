@@ -33,7 +33,10 @@
 --    Genera (o regenera) las entradas del libro fiscal para un periodo dado,
 --    a partir de los documentos de venta o compra segun p_book_type.
 -- =============================================================================
+-- +goose StatementBegin
 DROP FUNCTION IF EXISTS usp_Fiscal_TaxBook_Populate(INTEGER, VARCHAR(10), VARCHAR(7), VARCHAR(2), VARCHAR(40), INTEGER, TEXT) CASCADE;
+-- +goose StatementEnd
+-- +goose StatementBegin
 CREATE OR REPLACE FUNCTION usp_Fiscal_TaxBook_Populate(
     p_company_id   INTEGER,
     p_book_type    VARCHAR(10),
@@ -168,12 +171,16 @@ BEGIN
     END;
 END;
 $$;
+-- +goose StatementEnd
 
 -- =============================================================================
 -- 2. usp_Fiscal_TaxBook_List
 --    Listado paginado de entradas del libro fiscal.
 -- =============================================================================
+-- +goose StatementBegin
 DROP FUNCTION IF EXISTS usp_Fiscal_TaxBook_List(INTEGER, VARCHAR(10), VARCHAR(7), VARCHAR(2), INTEGER, INTEGER) CASCADE;
+-- +goose StatementEnd
+-- +goose StatementBegin
 CREATE OR REPLACE FUNCTION usp_Fiscal_TaxBook_List(
     p_company_id   INTEGER,
     p_book_type    VARCHAR(10),
@@ -232,12 +239,16 @@ BEGIN
     LIMIT p_limit OFFSET (p_page - 1) * p_limit;
 END;
 $$;
+-- +goose StatementEnd
 
 -- =============================================================================
 -- 3. usp_Fiscal_TaxBook_Summary
 --    Resumen del libro fiscal agrupado por tasa impositiva.
 -- =============================================================================
+-- +goose StatementBegin
 DROP FUNCTION IF EXISTS usp_Fiscal_TaxBook_Summary(INTEGER, VARCHAR(10), VARCHAR(7), VARCHAR(2)) CASCADE;
+-- +goose StatementEnd
+-- +goose StatementBegin
 CREATE OR REPLACE FUNCTION usp_Fiscal_TaxBook_Summary(
     p_company_id   INTEGER,
     p_book_type    VARCHAR(10),
@@ -273,12 +284,16 @@ BEGIN
     ORDER BY "TaxRate";
 END;
 $$;
+-- +goose StatementEnd
 
 -- =============================================================================
 -- 4. usp_Fiscal_Declaration_Calculate
 --    Calcula una declaracion de impuestos (IVA/MODELO_303 o ISLR/IRPF).
 -- =============================================================================
+-- +goose StatementBegin
 DROP FUNCTION IF EXISTS usp_Fiscal_Declaration_Calculate(INTEGER, VARCHAR(30), VARCHAR(7), VARCHAR(2), VARCHAR(40), BIGINT, INTEGER, TEXT) CASCADE;
+-- +goose StatementEnd
+-- +goose StatementBegin
 CREATE OR REPLACE FUNCTION usp_Fiscal_Declaration_Calculate(
     p_company_id       INTEGER,
     p_declaration_type VARCHAR(30),
@@ -411,12 +426,16 @@ BEGIN
     END;
 END;
 $$;
+-- +goose StatementEnd
 
 -- =============================================================================
 -- 5. usp_Fiscal_Declaration_List
 --    Listado paginado de declaraciones fiscales.
 -- =============================================================================
+-- +goose StatementBegin
 DROP FUNCTION IF EXISTS usp_Fiscal_Declaration_List(INTEGER, VARCHAR(30), INTEGER, VARCHAR(20), INTEGER, INTEGER) CASCADE;
+-- +goose StatementEnd
+-- +goose StatementBegin
 CREATE OR REPLACE FUNCTION usp_Fiscal_Declaration_List(
     p_company_id       INTEGER,
     p_declaration_type VARCHAR(30) DEFAULT NULL,
@@ -483,12 +502,16 @@ BEGIN
     LIMIT p_limit OFFSET (p_page - 1) * p_limit;
 END;
 $$;
+-- +goose StatementEnd
 
 -- =============================================================================
 -- 6. usp_Fiscal_Declaration_Get
 --    Obtiene el detalle completo de una declaracion fiscal por su ID.
 -- =============================================================================
+-- +goose StatementBegin
 DROP FUNCTION IF EXISTS usp_Fiscal_Declaration_Get(INTEGER, BIGINT) CASCADE;
+-- +goose StatementEnd
+-- +goose StatementBegin
 CREATE OR REPLACE FUNCTION usp_Fiscal_Declaration_Get(
     p_company_id     INTEGER,
     p_declaration_id BIGINT
@@ -542,12 +565,16 @@ BEGIN
     LIMIT 1;
 END;
 $$;
+-- +goose StatementEnd
 
 -- =============================================================================
 -- 7. usp_Fiscal_Declaration_Submit
 --    Marca una declaracion como presentada (SUBMITTED).
 -- =============================================================================
+-- +goose StatementBegin
 DROP FUNCTION IF EXISTS usp_Fiscal_Declaration_Submit(INTEGER, BIGINT, VARCHAR(40), TEXT, INTEGER, TEXT) CASCADE;
+-- +goose StatementEnd
+-- +goose StatementBegin
 CREATE OR REPLACE FUNCTION usp_Fiscal_Declaration_Submit(
     p_company_id     INTEGER,
     p_declaration_id BIGINT,
@@ -592,12 +619,16 @@ BEGIN
     p_mensaje   := 'Declaracion presentada exitosamente';
 END;
 $$;
+-- +goose StatementEnd
 
 -- =============================================================================
 -- 8. usp_Fiscal_Declaration_Amend
 --    Marca una declaracion como enmendada (AMENDED).
 -- =============================================================================
+-- +goose StatementBegin
 DROP FUNCTION IF EXISTS usp_Fiscal_Declaration_Amend(INTEGER, BIGINT, VARCHAR(40), INTEGER, TEXT) CASCADE;
+-- +goose StatementEnd
+-- +goose StatementBegin
 CREATE OR REPLACE FUNCTION usp_Fiscal_Declaration_Amend(
     p_company_id     INTEGER,
     p_declaration_id BIGINT,
@@ -640,12 +671,16 @@ BEGIN
     p_mensaje   := 'Declaracion marcada como enmendada';
 END;
 $$;
+-- +goose StatementEnd
 
 -- =============================================================================
 -- 9. usp_Fiscal_Withholding_Generate
 --    Genera un comprobante de retencion a partir de un documento de compra.
 -- =============================================================================
+-- +goose StatementBegin
 DROP FUNCTION IF EXISTS usp_Fiscal_Withholding_Generate(INTEGER, BIGINT, VARCHAR(20), VARCHAR(2), VARCHAR(40), BIGINT, INTEGER, TEXT) CASCADE;
+-- +goose StatementEnd
+-- +goose StatementBegin
 CREATE OR REPLACE FUNCTION usp_Fiscal_Withholding_Generate(
     p_company_id       INTEGER,
     p_document_id      BIGINT,
@@ -742,12 +777,16 @@ BEGIN
     END;
 END;
 $$;
+-- +goose StatementEnd
 
 -- =============================================================================
 -- 10. usp_Fiscal_Withholding_List
 --     Listado paginado de comprobantes de retencion.
 -- =============================================================================
+-- +goose StatementBegin
 DROP FUNCTION IF EXISTS usp_Fiscal_Withholding_List(INTEGER, VARCHAR(20), VARCHAR(7), VARCHAR(2), INTEGER, INTEGER) CASCADE;
+-- +goose StatementEnd
+-- +goose StatementBegin
 CREATE OR REPLACE FUNCTION usp_Fiscal_Withholding_List(
     p_company_id       INTEGER,
     p_withholding_type VARCHAR(20) DEFAULT NULL,
@@ -801,12 +840,16 @@ BEGIN
     LIMIT p_limit OFFSET (p_page - 1) * p_limit;
 END;
 $$;
+-- +goose StatementEnd
 
 -- =============================================================================
 -- 11. usp_Fiscal_Withholding_Get
 --     Obtiene el detalle completo de un comprobante de retencion por su ID.
 -- =============================================================================
+-- +goose StatementBegin
 DROP FUNCTION IF EXISTS usp_Fiscal_Withholding_Get(INTEGER, BIGINT) CASCADE;
+-- +goose StatementEnd
+-- +goose StatementBegin
 CREATE OR REPLACE FUNCTION usp_Fiscal_Withholding_Get(
     p_company_id INTEGER,
     p_voucher_id BIGINT
@@ -847,12 +890,16 @@ BEGIN
     LIMIT 1;
 END;
 $$;
+-- +goose StatementEnd
 
 -- =============================================================================
 -- 12. usp_Fiscal_Export_TaxBook
 --     Exporta todas las entradas del libro fiscal para un periodo dado.
 -- =============================================================================
+-- +goose StatementBegin
 DROP FUNCTION IF EXISTS usp_Fiscal_Export_TaxBook(INTEGER, VARCHAR(10), VARCHAR(7), VARCHAR(2)) CASCADE;
+-- +goose StatementEnd
+-- +goose StatementBegin
 CREATE OR REPLACE FUNCTION usp_Fiscal_Export_TaxBook(
     p_company_id   INTEGER,
     p_book_type    VARCHAR(10),
@@ -902,12 +949,16 @@ BEGIN
     ORDER BY "EntryDate", "DocumentNumber";
 END;
 $$;
+-- +goose StatementEnd
 
 -- =============================================================================
 -- 13. usp_Fiscal_Export_Declaration
 --     Exporta el detalle completo de una declaracion para presentacion o archivo.
 -- =============================================================================
+-- +goose StatementBegin
 DROP FUNCTION IF EXISTS usp_Fiscal_Export_Declaration(INTEGER, BIGINT) CASCADE;
+-- +goose StatementEnd
+-- +goose StatementBegin
 CREATE OR REPLACE FUNCTION usp_Fiscal_Export_Declaration(
     p_company_id     INTEGER,
     p_declaration_id BIGINT
@@ -960,18 +1011,45 @@ BEGIN
       AND "DeclarationId" = p_declaration_id;
 END;
 $$;
+-- +goose StatementEnd
 
 -- +goose Down
+-- +goose StatementBegin
 DROP FUNCTION IF EXISTS usp_Fiscal_TaxBook_Populate(INTEGER, VARCHAR, VARCHAR, VARCHAR, VARCHAR, INTEGER, TEXT) CASCADE;
+-- +goose StatementEnd
+-- +goose StatementBegin
 DROP FUNCTION IF EXISTS usp_Fiscal_TaxBook_List(INTEGER, VARCHAR, VARCHAR, VARCHAR, INTEGER, INTEGER) CASCADE;
+-- +goose StatementEnd
+-- +goose StatementBegin
 DROP FUNCTION IF EXISTS usp_Fiscal_TaxBook_Summary(INTEGER, VARCHAR, VARCHAR, VARCHAR) CASCADE;
+-- +goose StatementEnd
+-- +goose StatementBegin
 DROP FUNCTION IF EXISTS usp_Fiscal_Declaration_Calculate(INTEGER, VARCHAR, VARCHAR, VARCHAR, VARCHAR, BIGINT, INTEGER, TEXT) CASCADE;
+-- +goose StatementEnd
+-- +goose StatementBegin
 DROP FUNCTION IF EXISTS usp_Fiscal_Declaration_List(INTEGER, VARCHAR, INTEGER, VARCHAR, INTEGER, INTEGER) CASCADE;
+-- +goose StatementEnd
+-- +goose StatementBegin
 DROP FUNCTION IF EXISTS usp_Fiscal_Declaration_Get(INTEGER, BIGINT) CASCADE;
+-- +goose StatementEnd
+-- +goose StatementBegin
 DROP FUNCTION IF EXISTS usp_Fiscal_Declaration_Submit(INTEGER, BIGINT, VARCHAR, TEXT, INTEGER, TEXT) CASCADE;
+-- +goose StatementEnd
+-- +goose StatementBegin
 DROP FUNCTION IF EXISTS usp_Fiscal_Declaration_Amend(INTEGER, BIGINT, VARCHAR, INTEGER, TEXT) CASCADE;
+-- +goose StatementEnd
+-- +goose StatementBegin
 DROP FUNCTION IF EXISTS usp_Fiscal_Withholding_Generate(INTEGER, BIGINT, VARCHAR, VARCHAR, VARCHAR, BIGINT, INTEGER, TEXT) CASCADE;
+-- +goose StatementEnd
+-- +goose StatementBegin
 DROP FUNCTION IF EXISTS usp_Fiscal_Withholding_List(INTEGER, VARCHAR, VARCHAR, VARCHAR, INTEGER, INTEGER) CASCADE;
+-- +goose StatementEnd
+-- +goose StatementBegin
 DROP FUNCTION IF EXISTS usp_Fiscal_Withholding_Get(INTEGER, BIGINT) CASCADE;
+-- +goose StatementEnd
+-- +goose StatementBegin
 DROP FUNCTION IF EXISTS usp_Fiscal_Export_TaxBook(INTEGER, VARCHAR, VARCHAR, VARCHAR) CASCADE;
+-- +goose StatementEnd
+-- +goose StatementBegin
 DROP FUNCTION IF EXISTS usp_Fiscal_Export_Declaration(INTEGER, BIGINT) CASCADE;
+-- +goose StatementEnd
