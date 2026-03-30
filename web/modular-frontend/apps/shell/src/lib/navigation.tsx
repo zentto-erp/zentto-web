@@ -115,13 +115,14 @@ export function buildNavigation(isAdmin: boolean, modulos: string[], pathname: s
         return nav;
     }
 
-    // ── App: Report Studio ──────────────────────────────────────────
-    if (isApp('/report-studio')) {
+    // ── App: Reportes / Report Studio ─────────────────────────────────
+    if (isApp('/reportes') || isApp('/report-studio')) {
+        const base = isApp('/reportes') ? 'reportes' : 'report-studio';
         nav.push({ kind: 'header', title: 'REPORTES' });
-        nav.push({ kind: 'page', segment: 'report-studio/designer', title: 'Designer', icon: <BarChartIcon /> });
-        nav.push({ kind: 'page', segment: 'report-studio/wizard', title: 'Wizard', icon: <SmartToyIcon /> });
+        nav.push({ kind: 'page', segment: `${base}/designer`, title: 'Designer', icon: <BarChartIcon /> });
+        nav.push({ kind: 'page', segment: `${base}/wizard`, title: 'Wizard', icon: <SmartToyIcon /> });
         nav.push({ kind: 'divider' });
-        nav.push({ kind: 'page', segment: 'report-studio', title: 'Mis Reportes', icon: <PrintIcon /> });
+        nav.push({ kind: 'page', segment: base, title: 'Mis Reportes', icon: <PrintIcon /> });
         nav.push({ kind: 'divider' });
         nav.push({ kind: 'page', segment: '', title: 'Volver al Inicio', icon: <DashboardIcon /> });
         return nav;

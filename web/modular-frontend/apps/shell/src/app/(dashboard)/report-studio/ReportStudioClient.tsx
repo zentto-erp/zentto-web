@@ -42,7 +42,11 @@ import type { SavedReport } from "@zentto/shared-api";
 /* ── Constants ────────────────────────────────────────────────── */
 const CONFIG_KEY = "zentto-report-studio-config";
 
-export default function ReportStudioClient() {
+interface Props {
+  basePath?: string;
+}
+
+export default function ReportStudioClient({ basePath = "/report-studio" }: Props) {
   const router = useRouter();
   const [reports, setReports] = useState<SavedReport[]>([]);
   const [deleteTarget, setDeleteTarget] = useState<SavedReport | null>(null);
@@ -69,27 +73,27 @@ export default function ReportStudioClient() {
 
   /* ── Actions ────────────────────────────────────────────────── */
   const handleCreateWizard = useCallback(() => {
-    router.push("/report-studio/wizard");
-  }, [router]);
+    router.push(`${basePath}/wizard`);
+  }, [router, basePath]);
 
   const handleCreateDesigner = useCallback(() => {
-    router.push("/report-studio/designer");
-  }, [router]);
+    router.push(`${basePath}/designer`);
+  }, [router, basePath]);
 
   const handleOpen = useCallback(
     (report: SavedReport) => {
       localStorage.setItem(CONFIG_KEY, JSON.stringify({ layout: report.layout, sampleData: report.sampleData }));
-      router.push("/report-studio/preview");
+      router.push(`${basePath}/preview`);
     },
-    [router]
+    [router, basePath]
   );
 
   const handleEdit = useCallback(
     (report: SavedReport) => {
       localStorage.setItem(CONFIG_KEY, JSON.stringify({ layout: report.layout, sampleData: report.sampleData }));
-      router.push("/report-studio/designer?id=" + report.id);
+      router.push(`${basePath}/designer?id=${report.id}`);
     },
-    [router]
+    [router, basePath]
   );
 
   const handleStartEditMeta = useCallback((report: SavedReport) => {

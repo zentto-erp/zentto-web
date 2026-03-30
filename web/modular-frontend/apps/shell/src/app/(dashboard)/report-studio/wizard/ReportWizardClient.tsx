@@ -62,7 +62,11 @@ const ENDPOINTS = [
 
 /* ── Component ─────────────────────────────────────────────────── */
 
-export default function ReportWizardClient() {
+interface Props {
+  basePath?: string;
+}
+
+export default function ReportWizardClient({ basePath = "/report-studio" }: Props) {
   const router = useRouter();
 
   // Stepper
@@ -174,7 +178,7 @@ export default function ReportWizardClient() {
         layout: selectedLayout,
         sampleData: buildSampleData(),
       });
-      router.push("/report-studio");
+      router.push(basePath);
     } catch (err) {
       setError(String(err));
     } finally {
@@ -189,7 +193,7 @@ export default function ReportWizardClient() {
       sampleData: buildSampleData(),
     };
     localStorage.setItem("zentto-report-studio-config", JSON.stringify(config));
-    router.push("/report-studio/preview");
+    router.push(`${basePath}/preview`);
   }, [selectedLayout, buildSampleData, router]);
 
   /* ── Step 1: Template selection ────────────────────────────────── */
@@ -489,8 +493,8 @@ export default function ReportWizardClient() {
           gap: 2,
         }}
       >
-        <Tooltip title="Volver a Report Studio">
-          <IconButton onClick={() => router.push("/report-studio")} size="small">
+        <Tooltip title="Volver a Reportes">
+          <IconButton onClick={() => router.push(basePath)} size="small">
             <ArrowBackIcon />
           </IconButton>
         </Tooltip>
@@ -499,9 +503,9 @@ export default function ReportWizardClient() {
             underline="hover"
             color="inherit"
             sx={{ cursor: "pointer" }}
-            onClick={() => router.push("/report-studio")}
+            onClick={() => router.push(basePath)}
           >
-            Report Studio
+            Reportes
           </Link>
           <Typography color="text.primary">Wizard</Typography>
         </Breadcrumbs>
