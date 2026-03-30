@@ -1,5 +1,0 @@
--- ============================================================
--- DatqBoxWeb PostgreSQL - 16_seed_nomina.sql
--- Tabla legacy Empleados eliminada: usar master."Employee"
--- Los datos de empleados vienen de seed_live_data.sql (exportado de SS)
--- ============================================================

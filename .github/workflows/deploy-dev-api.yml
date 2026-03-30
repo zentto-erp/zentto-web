@@ -50,6 +50,8 @@ jobs:
         working-directory: web/api
     steps:
       - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GHCR_PAT }}
       - uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -80,6 +82,8 @@ jobs:
         ports: ['5432:5432']
     steps:
       - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GHCR_PAT }}
       - uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -87,40 +91,29 @@ jobs:
           cache-dependency-path: web/api/package-lock.json
       - run: npm ci
 
-      - name: Bootstrap schema (goose-style cold bootstrap)
+      - name: Bootstrap schema from baseline
         env:
           PGPASSWORD: test_password
-          PG_HOST: 127.0.0.1
-          PG_PORT: 5432
-          PG_DATABASE: zentto_test
-          PG_USER: zentto_app
-          PG_PASSWORD: test_password
-          DB_TYPE: postgres
         run: |
-          psql -h 127.0.0.1 -U zentto_app -d zentto_test -v ON_ERROR_STOP=1 -c "CREATE EXTENSION IF NOT EXISTS pgcrypto;"
-          psql -h 127.0.0.1 -U zentto_app -d zentto_test -v ON_ERROR_STOP=1 -c "CREATE EXTENSION IF NOT EXISTS unaccent;"
-          psql -h 127.0.0.1 -U zentto_app -d zentto_test -v ON_ERROR_STOP=1 -c "CREATE EXTENSION IF NOT EXISTS pg_trgm;"
-          psql -h 127.0.0.1 -U zentto_app -d zentto_test -v ON_ERROR_STOP=1 -c 'CREATE EXTENSION IF NOT EXISTS "uuid-ossp";'
-          psql -h 127.0.0.1 -U zentto_app -d zentto_test -v ON_ERROR_STOP=1 -c "CREATE EXTENSION IF NOT EXISTS btree_gin;"
-          curl -fsSL -o /usr/local/bin/goose https://github.com/pressly/goose/releases/download/v3.24.1/goose_linux_x86_64
-          chmod +x /usr/local/bin/goose
-          bash ../../scripts/migrate.sh up
-          cd sqlweb-pg
-          psql -h 127.0.0.1 -U zentto_app -d zentto_test -v ON_ERROR_STOP=1 -f run-functions.sql
-          psql -h 127.0.0.1 -U zentto_app -d zentto_test -v ON_ERROR_STOP=1 -f run-seeds-config.sql
-          psql -h 127.0.0.1 -U zentto_app -d zentto_test -v ON_ERROR_STOP=1 -f run-seeds-starter.sql
-          # Limpiar overloads duplicados
-          psql -h 127.0.0.1 -U zentto_app -d zentto_test -v ON_ERROR_STOP=1 <<'CLEANUP'
-          DO $$ DECLARE fn_name TEXT; fn_oid OID; fn_args TEXT; keep_oid OID;
-          BEGIN
-            FOR fn_name IN SELECT p.proname FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='public' AND p.proname LIKE 'usp_%' GROUP BY p.proname HAVING COUNT(*)>1
-            LOOP
-              SELECT MAX(p.oid) INTO keep_oid FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='public' AND p.proname=fn_name;
-              FOR fn_oid, fn_args IN SELECT p.oid, pg_get_function_identity_arguments(p.oid) FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='public' AND p.proname=fn_name AND p.oid<>keep_oid
-              LOOP EXECUTE format('DROP FUNCTION IF EXISTS public.%I(%s) CASCADE', fn_name, fn_args); END LOOP;
-            END LOOP;
-          END $$;
-          CLEANUP
+          echo "==> Applying baseline layers..."
+          for f in sqlweb-pg/baseline/000_schemas.sql \
+                   sqlweb-pg/baseline/001_extensions.sql \
+                   sqlweb-pg/baseline/002_types.sql \
+                   sqlweb-pg/baseline/003_tables.sql \
+                   sqlweb-pg/baseline/004_sequences.sql \
+                   sqlweb-pg/baseline/005_functions.sql \
+                   sqlweb-pg/baseline/006_indexes.sql \
+                   sqlweb-pg/baseline/007_constraints.sql \
+                   sqlweb-pg/baseline/008_triggers.sql; do
+            echo "  $(basename $f)..."
+            psql -h 127.0.0.1 -U zentto_app -d zentto_test -v ON_ERROR_STOP=1 < "$f"
+          done
+          echo "==> Applying seeds..."
+          psql -h 127.0.0.1 -U zentto_app -d zentto_test -c "SET session_replication_role = 'replica';"
+          psql -h 127.0.0.1 -U zentto_app -d zentto_test < sqlweb-pg/seeds/001_seed_data.sql || true
+          psql -h 127.0.0.1 -U zentto_app -d zentto_test -c "SET session_replication_role = 'origin';"
+          echo "==> Verifying: zero overloads..."
+          psql -h 127.0.0.1 -U zentto_app -d zentto_test -c "SELECT proname, COUNT(*) FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='public' AND p.proname LIKE 'usp_%' GROUP BY proname HAVING COUNT(*)>1;"
 
       - name: Run schema contract tests
         env:
@@ -130,7 +123,7 @@ jobs:
           PG_PASSWORD: test_password
           PG_DATABASE: zentto_test
           DB_TYPE: postgres
-        run: npm run test:schema
+        run: npx vitest run tests/schema/sp-contracts.test.ts
 
   # ── 3. Build Docker image (:dev tag) ───────────────────────────────
   build:
@@ -140,6 +133,8 @@ jobs:
       packages: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GHCR_PAT }}
       - uses: docker/setup-buildx-action@v3
       - uses: docker/login-action@v3
         with:
@@ -161,6 +156,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GHCR_PAT }}
 
       - name: Setup dev environment (idempotent)
         uses: appleboy/ssh-action@v1.0.3
@@ -228,6 +225,8 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             set -e
+            # Clean old files and copy fresh from deploy
+            rm -rf /opt/zentto-dev/migrations/postgres /opt/zentto-dev/sqlweb-pg
             mkdir -p /opt/zentto-dev/migrations/postgres /opt/zentto-dev/sqlweb-pg
             cp -rf /opt/zentto-dev/_deploy_tmp/web/api/migrations/postgres/* /opt/zentto-dev/migrations/postgres/
             cp -rf /opt/zentto-dev/_deploy_tmp/web/api/sqlweb-pg/* /opt/zentto-dev/sqlweb-pg/
@@ -262,32 +261,45 @@ jobs:
 
             TABLE_COUNT=$(sudo -u postgres psql -d zentto_dev -tAc "SELECT count(*) FROM information_schema.tables WHERE table_schema NOT IN ('pg_catalog','information_schema')")
             if [ "$TABLE_COUNT" -lt "10" ]; then
-              echo "==> Fresh DB detected ($TABLE_COUNT tables) — running full bootstrap..."
+              echo "==> Fresh DB detected ($TABLE_COUNT tables) — running baseline bootstrap..."
               cd /opt/zentto-dev/sqlweb-pg
-              sudo -u postgres psql -d zentto_dev -f run_all.sql || true
-              sudo -u postgres psql -d zentto_dev -f run-functions.sql || true
-              sudo -u postgres psql -d zentto_dev -f run-seeds-config.sql || true
-              sudo -u postgres psql -d zentto_dev -f run-seeds-starter.sql || true
 
-              # Mark ALL existing goose migrations as applied (bootstrap already includes them)
+              # Apply baseline layers in order
+              for f in baseline/000_schemas.sql baseline/001_extensions.sql baseline/002_types.sql \
+                       baseline/003_tables.sql baseline/004_sequences.sql baseline/005_functions.sql \
+                       baseline/006_indexes.sql baseline/007_constraints.sql baseline/008_triggers.sql; do
+                echo "  $(basename $f)..."
+                sudo -u postgres psql -d zentto_dev -v ON_ERROR_STOP=1 < "$f"
+              done
+
+              # Seeds with FK disabled
+              echo "  seeds..."
+              sudo -u postgres psql -d zentto_dev -c "SET session_replication_role = 'replica';"
+              sudo -u postgres psql -d zentto_dev < seeds/001_seed_data.sql || true
+              sudo -u postgres psql -d zentto_dev -c "SET session_replication_role = 'origin';"
+
+              # Grants
+              for schema in acct ap ar audit cfg doc fin fiscal hr master pay pos public rest sec store inv logistics crm mfg fleet zsys; do
+                sudo -u postgres psql -d zentto_dev -c "GRANT ALL ON SCHEMA $schema TO zentto_app; GRANT ALL ON ALL TABLES IN SCHEMA $schema TO zentto_app; GRANT ALL ON ALL SEQUENCES IN SCHEMA $schema TO zentto_app;" 2>/dev/null || true
+              done
+
+              # Mark ALL goose migrations as applied
               echo "==> Marking all migrations as applied..."
               sudo -u postgres psql -d zentto_dev -c "
                 CREATE TABLE IF NOT EXISTS public.goose_db_version (
-                  id SERIAL PRIMARY KEY,
-                  version_id BIGINT NOT NULL,
-                  is_applied BOOLEAN NOT NULL,
-                  tstamp TIMESTAMP DEFAULT NOW()
+                  id SERIAL PRIMARY KEY, version_id BIGINT NOT NULL,
+                  is_applied BOOLEAN NOT NULL, tstamp TIMESTAMP DEFAULT NOW()
                 );
                 INSERT INTO public.goose_db_version (version_id, is_applied) VALUES (0, TRUE) ON CONFLICT DO NOTHING;
               "
               GOOSE_DIR=/opt/zentto-dev/migrations/postgres
               for f in $(ls "$GOOSE_DIR"/*.sql | sort); do
                 VER=$(basename "$f" | grep -o '^[0-9]*')
-                VER_INT=$((10#$VER))  # Remove leading zeros
+                VER_INT=$((10#$VER))
                 sudo -u postgres psql -d zentto_dev -c \
                   "INSERT INTO public.goose_db_version (version_id, is_applied) VALUES ($VER_INT, TRUE) ON CONFLICT DO NOTHING;" 2>/dev/null || true
               done
-              echo "==> Bootstrap + mark complete"
+              echo "==> Baseline bootstrap complete"
             fi
 
             # Run goose migrations on zentto_dev (only new ones after last marked)
@@ -306,6 +318,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GHCR_PAT }}
       - name: Copy compose file to server
         uses: appleboy/scp-action@v0.1.7
         with:
