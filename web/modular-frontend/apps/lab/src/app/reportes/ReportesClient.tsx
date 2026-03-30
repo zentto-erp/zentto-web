@@ -375,9 +375,13 @@ export default function ReportStudio() {
 
   // ── Register web components ──
   useEffect(() => {
-    import("./register-components").then(() => setRegistered(true)).catch((err) => {
+    let cancelled = false;
+    import("./register-components").then(() => {
+      if (!cancelled) setRegistered(true);
+    }).catch((err) => {
       console.error("Failed to register report components:", err);
     });
+    return () => { cancelled = true; };
   }, []);
 
   // ── Auto-recovery on load ──

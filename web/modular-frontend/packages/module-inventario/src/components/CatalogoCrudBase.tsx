@@ -10,6 +10,7 @@ import AddIcon from '@mui/icons-material/Add';
 import type { ColumnDef } from '@zentto/datagrid-core';
 import { ContextActionHeader } from '@zentto/shared-ui';
 import { useGridLayoutSync } from '@zentto/shared-api';
+import { useInventarioGridRegistration } from './zenttoGridPersistence';
 
 export type CatalogField = { name: string; label?: string; required?: boolean; hidden?: boolean; readOnly?: boolean; };
 export type CatalogRow = Record<string, unknown>;
@@ -79,7 +80,6 @@ function buildCatalogGridId(endpoint: string, tableName?: string, schema?: strin
 
 export default function CatalogoCrudBase({ endpoint, title, apiClient, fields, tableName, schema, timeZone }: CatalogoCrudBaseProps) {
   const gridRef = useRef<any>(null);
-  const [registered, setRegistered] = useState(false);
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
@@ -89,6 +89,7 @@ export default function CatalogoCrudBase({ endpoint, title, apiClient, fields, t
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const gridId = useMemo(() => buildCatalogGridId(endpoint, tableName, schema), [endpoint, tableName, schema]);
   const { ready: layoutReady } = useGridLayoutSync(gridId);
+  const { gridReady, registered } = useInventarioGridRegistration(layoutReady);
 
   const metadataQuery = useQuery<CatalogTableMetadata | null>({
     queryKey: [endpoint, 'catalog-meta', tableName || endpoint, schema || 'dbo'],
@@ -136,11 +137,6 @@ export default function CatalogoCrudBase({ endpoint, title, apiClient, fields, t
       ],
     } as ColumnDef,
   ], [keyField, metadataByColumn, resolvedFields]);
-
-  useEffect(() => {
-    if (!layoutReady) return;
-    import('@zentto/datagrid').then(() => setRegistered(true));
-  }, [layoutReady]);
 
   useEffect(() => {
     const el = gridRef.current; if (!el || !registered) return;

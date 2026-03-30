@@ -15,14 +15,14 @@ import {
     useProductosAdminQuery,
     useUpsertProductoAdminMutation,
 } from '@/hooks/useRestauranteAdmin';
-import { useScopedGridId } from '@/lib/zentto-grid';
+import { useScopedGridId, useGridRegistration } from '@/lib/zentto-grid';
 
 
 export default function AdminProductosPage() {
     const gridRef = useRef<any>(null);
-    const [registered, setRegistered] = useState(false);
     const gridId = useScopedGridId('productos-main');
     const { ready: layoutReady } = useGridLayoutSync(gridId);
+    const { registered } = useGridRegistration(layoutReady);
     const { data: productosData, isLoading: isLoadingProductos } = useProductosAdminQuery();
     const { data: categoriasData, isLoading: isLoadingCategorias } = useCategoriasAdminQuery();
     const upsertProductoMutation = useUpsertProductoAdminMutation();
@@ -32,11 +32,6 @@ export default function AdminProductosPage() {
     const productos = (productosData?.rows ?? []) as ProductoMenuAdmin[];
     const categorias = (categoriasData?.rows ?? []) as CategoriaMenu[];
     const loading = isLoadingProductos || isLoadingCategorias;
-
-    useEffect(() => {
-        if (!layoutReady) return;
-        import('@zentto/datagrid').then(() => setRegistered(true));
-    }, [layoutReady]);
 
     const columns = useMemo<ColumnDef[]>(() => [
         { field: 'codigo', header: 'Codigo', width: 130, sortable: true },

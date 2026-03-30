@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { Box, Paper, Typography, CircularProgress } from "@mui/material";
 import type { ColumnDef } from "@zentto/datagrid-core";
 import AccountBalanceIcon from "@mui/icons-material/AccountBalance";
 import { useGridLayoutSync } from "@zentto/shared-api";
+import { useBancosGridRegistration } from "../zenttoGridPersistence";
 
 const COLUMNS: ColumnDef[] = [
   { field: "Fecha", header: "Fecha", width: 100 },
@@ -26,13 +27,8 @@ const GRID_ID = "module-bancos:conciliacion:movimientos-sistema";
 
 export default function MovimientosSistemaGrid({ movimientos, isLoading, hasConciliacion, onSelectionChange }: MovimientosSistemaGridProps) {
   const gridRef = useRef<any>(null);
-  const [registered, setRegistered] = useState(false);
   const { ready: layoutReady } = useGridLayoutSync(GRID_ID);
-
-  useEffect(() => {
-    if (!layoutReady) return;
-    import("@zentto/datagrid").then(() => setRegistered(true));
-  }, [layoutReady]);
+  const { registered } = useBancosGridRegistration(layoutReady);
 
   useEffect(() => {
     const el = gridRef.current; if (!el || !registered) return;

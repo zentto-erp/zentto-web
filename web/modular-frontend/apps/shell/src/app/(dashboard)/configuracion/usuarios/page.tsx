@@ -22,7 +22,7 @@ import {
 import { useGridLayoutSync } from '@zentto/shared-api';
 import type { Usuario, CreateUsuarioInput, UpdateUsuarioInput } from '@zentto/shared-api';
 import type { ColumnDef } from '@zentto/datagrid-core';
-import { useScopedGridId } from '@/lib/zentto-grid';
+import { useScopedGridId, useGridRegistration } from '@/lib/zentto-grid';
 
 
 // ─── Module labels ──────────────────────────────────────────
@@ -56,9 +56,9 @@ const USER_TYPES = [
 // ─── Main page ──────────────────────────────────────────────
 export default function UsuariosPage() {
   const gridRef = useRef<any>(null);
-  const [registered, setRegistered] = useState(false);
   const gridId = useScopedGridId('usuarios-main');
   const { ready: layoutReady } = useGridLayoutSync(gridId);
+  const { registered } = useGridRegistration(layoutReady);
   const { isAdmin } = useAuth();
   const { showToast } = useToast();
   const [search, setSearch] = useState('');
@@ -71,11 +71,6 @@ export default function UsuariosPage() {
   const [resetPwdUser, setResetPwdUser] = useState<string | null>(null);
   const [modulosUser, setModulosUser] = useState<string | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!layoutReady) return;
-    import('@zentto/datagrid').then(() => setRegistered(true));
-  }, [layoutReady]);
 
   if (!isAdmin) {
     return (

@@ -22,6 +22,7 @@ import { DatePicker } from "@zentto/shared-ui";
 import dayjs from "dayjs";
 import CloseIcon from "@mui/icons-material/Close";
 import { formatCurrency, useGridLayoutSync } from "@zentto/shared-api";
+import { useFlotaGridRegistration } from "./zenttoGridPersistence";
 import {
   useMaintenanceOrdersList,
   useCreateMaintenanceOrder,
@@ -71,13 +72,8 @@ export default function MantenimientoPage() {
   const [actualCost, setActualCost] = useState("");
   const [completedDate, setCompletedDate] = useState("");
   const gridRef = useRef<any>(null);
-  const [registered, setRegistered] = useState(false);
   const { ready: layoutReady } = useGridLayoutSync(GRID_ID);
-
-  useEffect(() => {
-    if (!layoutReady) return;
-    import("@zentto/datagrid").then(() => setRegistered(true));
-  }, [layoutReady]);
+  const { gridReady, registered } = useFlotaGridRegistration(layoutReady);
 
   const { data, isLoading } = useMaintenanceOrdersList({
     ...filter,

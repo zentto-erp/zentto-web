@@ -31,6 +31,7 @@ import {
   Save as SaveIcon,
 } from "@mui/icons-material";
 import { createAddon } from "@zentto/shared-api";
+import { useStudioRegistration } from "@/lib/zentto-grid";
 
 /* ── Types ─────────────────────────────────────────────────────── */
 declare global {
@@ -66,7 +67,7 @@ const AVAILABLE_MODULES = [
 export default function StudioWizardClient() {
   const router = useRouter();
   const wizardRef = useRef<HTMLElement>(null);
-  const [registered, setRegistered] = useState(false);
+  const { registered } = useStudioRegistration();
   const [pendingConfig, setPendingConfig] = useState<Record<string, unknown> | null>(null);
 
   // Save dialog fields
@@ -74,11 +75,6 @@ export default function StudioWizardClient() {
   const [description, setDescription] = useState("");
   const [icon, setIcon] = useState("📦");
   const [modules, setModules] = useState<string[]>(["global"]);
-
-  /* ── Register web components ─────────────────────────────────── */
-  useEffect(() => {
-    import("@zentto/studio").then(() => setRegistered(true));
-  }, []);
 
   /* ── Listen wizard-complete ──────────────────────────────────── */
   useEffect(() => {

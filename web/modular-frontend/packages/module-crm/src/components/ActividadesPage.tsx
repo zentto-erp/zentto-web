@@ -25,6 +25,7 @@ import TaskIcon from "@mui/icons-material/Task";
 import { ContextActionHeader, DatePicker } from "@zentto/shared-ui";
 import dayjs from "dayjs";
 import { useGridLayoutSync } from "@zentto/shared-api";
+import { useCRMGridRegistration } from "./zenttoGridPersistence";
 import {
   useActivitiesList,
   useCreateActivity,
@@ -66,13 +67,8 @@ export default function ActividadesPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState(emptyActivity);
   const gridRef = useRef<any>(null);
-  const [registered, setRegistered] = useState(false);
-  const { ready: layoutReady } = useGridLayoutSync(GRID_ID);
-
-  useEffect(() => {
-    if (!layoutReady) return;
-    import("@zentto/datagrid").then(() => setRegistered(true));
-  }, [layoutReady]);
+  const { ready: gridLayoutReady } = useGridLayoutSync(GRID_ID);
+  const { registered } = useCRMGridRegistration(gridLayoutReady);
 
 const { data, isLoading } = useActivitiesList(filter);
   const createActivity = useCreateActivity();

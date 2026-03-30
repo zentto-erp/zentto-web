@@ -9,6 +9,7 @@ import { useToast } from "@zentto/shared-ui";
 import type { ColumnDef } from "@zentto/datagrid-core";
 import { useGridLayoutSync } from "@zentto/shared-api";
 import { useBancosList, useCreateBanco, useUpdateBanco, useDeleteBanco } from "../../hooks/useBancosAuxiliares";
+import { useBancosGridRegistration } from "../zenttoGridPersistence";
 
 const EMPTY_FORM = { Nombre: "", Contacto: "", Direccion: "", Telefonos: "", Co_Usuario: "SUP" };
 
@@ -31,7 +32,6 @@ const GRID_ID = "module-bancos:bancos:list";
 
 export default function BancosPage() {
   const gridRef = useRef<any>(null);
-  const [registered, setRegistered] = useState(false);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(50);
@@ -48,11 +48,7 @@ export default function BancosPage() {
   const saving = crear.isPending || actualizar.isPending;
   const rows = (data?.rows ?? data?.items ?? []) as Record<string, any>[];
   const { ready: layoutReady } = useGridLayoutSync(GRID_ID);
-
-  useEffect(() => {
-    if (!layoutReady) return;
-    import("@zentto/datagrid").then(() => setRegistered(true));
-  }, [layoutReady]);
+  const { registered } = useBancosGridRegistration(layoutReady);
 
   useEffect(() => {
     const el = gridRef.current; if (!el || !registered) return;

@@ -13,7 +13,7 @@ import { useCrudGeneric } from "../../../hooks/useCrudGeneric";
 import { Cliente } from "@zentto/shared-api/types";
 import type { ColumnDef } from "@zentto/datagrid-core";
 import { useGridLayoutSync } from "@zentto/shared-api";
-import { useScopedGridId } from "../../../lib/zentto-grid";
+import { useScopedGridId, useAdminGridRegistration } from "../../../lib/zentto-grid";
 
 
 const CLIENTE_FILTERS: FilterFieldDef[] = [
@@ -58,9 +58,9 @@ export default function ClientesTable() {
   const crud = useCrudGeneric<Cliente>("clientes");
   const { data, isLoading } = crud.list();
   const gridRef = useRef<any>(null);
-  const [registered, setRegistered] = useState(false);
   const gridId = useScopedGridId('clientes-main');
   const { ready: layoutReady } = useGridLayoutSync(gridId);
+  const { registered } = useAdminGridRegistration(layoutReady);
 
   const [search, setSearch] = useState("");
   const [filterValues, setFilterValues] = useState<Record<string, string>>({});
@@ -68,11 +68,6 @@ export default function ClientesTable() {
   const [selectedClient, setSelectedClient] = useState<Cliente | null>(null);
 
   const { mutate: deleteCliente, isPending: isDeleting } = crud.delete("");
-
-  useEffect(() => {
-    if (!layoutReady) return;
-    import("@zentto/datagrid").then(() => setRegistered(true));
-  }, [layoutReady]);
 
   // Filtrado local
   const filteredData = useMemo(() => {

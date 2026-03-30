@@ -35,6 +35,7 @@ import {
   NavigateNext as NavNextIcon,
 } from "@mui/icons-material";
 import type { StudioSchema } from "@zentto/studio-core";
+import { useStudioRegistration } from "@/lib/zentto-grid";
 
 /* ── JSX declarations for Lit web components ───────────────────── */
 declare global {
@@ -106,7 +107,7 @@ export default function StudioDesignerClient() {
   const designerRef = useRef<any>(null);
   const toastRef = useRef<any>(null);
 
-  const [registered, setRegistered] = useState(false);
+  const { registered } = useStudioRegistration();
   const [schema, setSchema] = useState<StudioSchema>(createEmptySchema);
   const [currentId, setCurrentId] = useState<string | null>(null);
   const [loadDialogOpen, setLoadDialogOpen] = useState(false);
@@ -116,11 +117,6 @@ export default function StudioDesignerClient() {
     message: "",
     severity: "info",
   });
-
-  /* ── Register web components ─────────────────────────────────── */
-  useEffect(() => {
-    import("@zentto/studio").then(() => setRegistered(true));
-  }, []);
 
   /* ── Push schema into <zs-page-designer> & listen events ────── */
   useEffect(() => {

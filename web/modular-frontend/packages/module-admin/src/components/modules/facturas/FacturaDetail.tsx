@@ -28,7 +28,7 @@ import { formatCurrency, toDateOnly, useGridLayoutSync } from "@zentto/shared-ap
 import { useTimezone } from "@zentto/shared-auth";
 import { useFacturaById, useDetalleFactura, useDeleteFactura } from "../../../hooks/useFacturas";
 import type { ColumnDef } from "@zentto/datagrid-core";
-import { useScopedGridId } from "../../../lib/zentto-grid";
+import { useScopedGridId, useAdminGridRegistration } from "../../../lib/zentto-grid";
 
 // ── Types ───────────────────────────────────────────────────────────────────
 interface FacturaDetailProps {
@@ -66,14 +66,9 @@ export default function FacturaDetail({ numeroFactura }: FacturaDetailProps) {
   const { timeZone } = useTimezone();
   const [anularOpen, setAnularOpen] = useState(false);
   const gridRef = useRef<any>(null);
-  const [registered, setRegistered] = useState(false);
   const gridId = useScopedGridId('factura-detail-lineas');
   const { ready: layoutReady } = useGridLayoutSync(gridId);
-
-  useEffect(() => {
-    if (!layoutReady) return;
-    import("@zentto/datagrid").then(() => setRegistered(true));
-  }, [layoutReady]);
+  const { registered } = useAdminGridRegistration(layoutReady);
 
   // Queries
   const {

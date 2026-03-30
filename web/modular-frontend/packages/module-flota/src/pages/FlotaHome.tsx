@@ -29,6 +29,7 @@ import { BarChart } from "@mui/x-charts/BarChart";
 import { LineChart } from "@mui/x-charts/LineChart";
 import { useRouter } from "next/navigation";
 import { formatCurrency, useGridLayoutSync } from "@zentto/shared-api";
+import { useFlotaGridRegistration } from "../components/zenttoGridPersistence";
 import {
   useFlotaDashboard,
   useFleetAlerts,
@@ -155,14 +156,8 @@ export default function FlotaHome({ basePath = "" }: { basePath?: string }) {
   const router = useRouter();
   const bp = basePath.replace(/\/+$/, "");
   const gridRef = useRef<any>(null);
-  const [registered, setRegistered] = useState(false);
   const { ready: layoutReady } = useGridLayoutSync(GRID_ID);
-
-  // Register zentto-grid web component
-  useEffect(() => {
-    if (!layoutReady) return;
-    import("@zentto/datagrid").then(() => setRegistered(true));
-  }, [layoutReady]);
+  const { gridReady, registered } = useFlotaGridRegistration(layoutReady);
 
   // Data hooks
   const { data: dashboard, isLoading: dashLoading } = useFlotaDashboard();

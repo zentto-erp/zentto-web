@@ -41,6 +41,7 @@ import OutputReportPanel from "./OutputReportPanel";
 import RoutingPage from "./RoutingPage";
 import type { ColumnDef } from "@zentto/datagrid-core";
 import { useGridLayoutSync } from "@zentto/shared-api";
+import { useManufacturaGridRegistration } from "./zenttoGridPersistence";
 
 
 /* ─── Tab Panel helper ────────────────────────────────────── */
@@ -212,8 +213,8 @@ export default function OrdenesProduccionPage() {
   const [priority, setPriority] = useState("MEDIUM");
   const [notes, setNotes] = useState("");
   const gridRef = useRef<any>(null);
-  const [registered, setRegistered] = useState(false);
   const { ready: layoutReady } = useGridLayoutSync(GRID_ID);
+  const { gridReady, registered } = useManufacturaGridRegistration(layoutReady);
 
   const handleFilterChange = (vals: Record<string, string>) => {
     setFilterValues(vals);
@@ -226,11 +227,6 @@ export default function OrdenesProduccionPage() {
     }));
     setPaginationModel((p) => ({ ...p, page: 0 }));
   };
-
-  useEffect(() => {
-    if (!layoutReady) return;
-    import("@zentto/datagrid").then(() => setRegistered(true));
-  }, [layoutReady]);
 
   const { data, isLoading } = useWorkOrdersList({
     ...filter,

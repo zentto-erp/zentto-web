@@ -29,6 +29,7 @@ import {
 } from "../hooks/useManufactura";
 import type { ColumnDef } from "@zentto/datagrid-core";
 import { useGridLayoutSync } from "@zentto/shared-api";
+import { useManufacturaGridRegistration } from "./zenttoGridPersistence";
 
 
 interface WorkCenterFormData {
@@ -72,13 +73,8 @@ export default function CentrosTrabajoPage() {
   const [search, setSearch] = useState("");
   const [filterValues, setFilterValues] = useState<Record<string, string>>({});
   const gridRef = useRef<any>(null);
-  const [registered, setRegistered] = useState(false);
   const { ready: layoutReady } = useGridLayoutSync(GRID_ID);
-
-  useEffect(() => {
-    if (!layoutReady) return;
-    import("@zentto/datagrid").then(() => setRegistered(true));
-  }, [layoutReady]);
+  const { gridReady, registered } = useManufacturaGridRegistration(layoutReady);
 
   const { data, isLoading } = useWorkCentersList({
     search,

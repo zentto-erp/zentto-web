@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { usePathname } from 'next/navigation';
 
 function normalizePart(value: string): string {
@@ -27,4 +27,26 @@ export function useScopedGridId(scope: string): string {
 
     return `restaurante:${normalizedPath}:${normalizePart(scope)}`;
   }, [pathname, scope]);
+}
+
+/**
+ * Hook that dynamically imports @zentto/datagrid once layoutReady is true.
+ * Returns { registered, gridReady } with proper cleanup on unmount.
+ */
+export function useGridRegistration(layoutReady: boolean) {
+  const [registered, setRegistered] = useState(false);
+
+  useEffect(() => {
+    if (!layoutReady) return;
+
+    let cancelled = false;
+
+    import('@zentto/datagrid').then(() => {
+      if (!cancelled) setRegistered(true);
+    });
+
+    return () => { cancelled = true; };
+  }, [layoutReady]);
+
+  return { registered, gridReady: layoutReady && registered };
 }

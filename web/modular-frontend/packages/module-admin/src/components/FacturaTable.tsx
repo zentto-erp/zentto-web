@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Box } from "@mui/material";
 import type { ColumnDef, GridRow } from "@zentto/datagrid-core";
 import { useGridLayoutSync } from "@zentto/shared-api";
-import { useScopedGridId } from "../lib/zentto-grid";
+import { useScopedGridId, useAdminGridRegistration } from "../lib/zentto-grid";
 
 
 type FacturaRow = {
@@ -35,14 +35,9 @@ const COLUMNS: ColumnDef[] = [
 export function FacturaTable({ rows }: { rows: FacturaRow[] }) {
   const gridRef = useRef<any>(null);
   const router = useRouter();
-  const [registered, setRegistered] = useState(false);
   const gridId = useScopedGridId('factura-table');
   const { ready: layoutReady } = useGridLayoutSync(gridId);
-
-  useEffect(() => {
-    if (!layoutReady) return;
-    import("@zentto/datagrid").then(() => setRegistered(true));
-  }, [layoutReady]);
+  const { registered } = useAdminGridRegistration(layoutReady);
 
   useEffect(() => {
     const el = gridRef.current;

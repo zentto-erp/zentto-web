@@ -33,14 +33,14 @@ import {
     useProductosAdminQuery,
     useUpsertRecetaItemMutation,
 } from '@/hooks/useRestauranteAdmin';
-import { useScopedGridId } from '@/lib/zentto-grid';
+import { useScopedGridId, useGridRegistration } from '@/lib/zentto-grid';
 
 
 export default function AdminRecetasPage() {
     const gridRef = useRef<any>(null);
-    const [registered, setRegistered] = useState(false);
     const gridId = useScopedGridId('recetas-main');
     const { ready: layoutReady } = useGridLayoutSync(gridId);
+    const { registered } = useGridRegistration(layoutReady);
     const { data: productosData, isLoading } = useProductosAdminQuery();
     const [productoSeleccionado, setProductoSeleccionado] = useState<ProductoMenuAdmin | null>(null);
     const [inventarioId, setInventarioId] = useState('');
@@ -61,11 +61,6 @@ export default function AdminRecetasPage() {
 
     const productos = (productosData?.rows ?? []) as ProductoMenuAdmin[];
     const loading = isLoading;
-
-    useEffect(() => {
-        if (!layoutReady) return;
-        import('@zentto/datagrid').then(() => setRegistered(true));
-    }, [layoutReady]);
 
     const columns = useMemo<ColumnDef[]>(() => [
         { field: 'nombre', header: 'Plato o Bebida', flex: 1, minWidth: 280, sortable: true },

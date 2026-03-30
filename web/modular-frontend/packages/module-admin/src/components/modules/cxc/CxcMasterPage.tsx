@@ -47,7 +47,7 @@ import {
 } from "../../../hooks/useCxcTx";
 import type { ColumnDef } from "@zentto/datagrid-core";
 import { useGridLayoutSync } from "@zentto/shared-api";
-import { useScopedGridId } from "../../../lib/zentto-grid";
+import { useScopedGridId, useAdminGridRegistration } from "../../../lib/zentto-grid";
 
 // ─── Tipos internos ───────────────────────────────────────────
 
@@ -94,14 +94,9 @@ export default function CxcMasterPage() {
   const [selectedNombre, setSelectedNombre] = useState("");
   const [tabValue, setTabValue] = useState(0);
   const clienteGridRef = useRef<any>(null);
-  const [registered, setRegistered] = useState(false);
   const clientesGridId = useScopedGridId('cxc-clientes');
   const { ready: clientesLayoutReady } = useGridLayoutSync(clientesGridId);
-
-  useEffect(() => {
-    if (!clientesLayoutReady) return;
-    import("@zentto/datagrid").then(() => setRegistered(true));
-  }, [clientesLayoutReady]);
+  const { registered } = useAdminGridRegistration(clientesLayoutReady);
 
   // ─── Datos de clientes ────────────────────────────────────
   const clientesQuery = useClientesList({ search, limit: 50 });
@@ -318,14 +313,9 @@ function EstadoCuentaTab({
   timeZone: string;
 }) {
   const gridRef = useRef<any>(null);
-  const [registered, setRegistered] = useState(false);
   const gridId = useScopedGridId('cxc-estado-cuenta');
   const { ready: layoutReady } = useGridLayoutSync(gridId);
-
-  useEffect(() => {
-    if (!layoutReady) return;
-    import("@zentto/datagrid").then(() => setRegistered(true));
-  }, [layoutReady]);
+  const { registered } = useAdminGridRegistration(layoutReady);
 
   const totalPendiente = useMemo(
     () => documentos.reduce((acc, d) => acc + Number(d.pendiente || 0), 0),

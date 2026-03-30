@@ -27,7 +27,7 @@ import type {
   TaskItem, TaskFilters,
   MessageItem, MessageFilters,
 } from '@zentto/shared-api';
-import { useScopedGridId } from '@/lib/zentto-grid';
+import { useScopedGridId, useGridRegistration } from '@/lib/zentto-grid';
 
 // ─── Tab mapping ──────────────────────────────────────────────
 
@@ -46,7 +46,6 @@ export default function NotificacionesPage() {
   const searchParams = useSearchParams();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const [registered, setRegistered] = useState(false);
   const notificationsGridId = useScopedGridId('notificaciones-grid');
   const tasksGridId = useScopedGridId('tareas-grid');
   const messagesGridId = useScopedGridId('mensajes-grid');
@@ -54,11 +53,7 @@ export default function NotificacionesPage() {
   const { ready: tasksReady } = useGridLayoutSync(tasksGridId);
   const { ready: messagesReady } = useGridLayoutSync(messagesGridId);
   const layoutReady = notificationsReady && tasksReady && messagesReady;
-
-  useEffect(() => {
-    if (!layoutReady) return;
-    import('@zentto/datagrid').then(() => setRegistered(true));
-  }, [layoutReady]);
+  const { registered } = useGridRegistration(layoutReady);
 
   const tabParam = searchParams.get('tab') ?? 'notificaciones';
   const [activeTab, setActiveTab] = useState(TAB_MAP[tabParam] ?? 0);

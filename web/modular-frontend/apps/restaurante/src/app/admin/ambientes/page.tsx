@@ -13,14 +13,14 @@ import {
     useAmbientesAdminQuery,
     useUpsertAmbienteAdminMutation,
 } from '@/hooks/useRestauranteAdmin';
-import { useScopedGridId } from '@/lib/zentto-grid';
+import { useScopedGridId, useGridRegistration } from '@/lib/zentto-grid';
 
 
 export default function AdminAmbientesPage() {
     const gridRef = useRef<any>(null);
-    const [registered, setRegistered] = useState(false);
     const gridId = useScopedGridId('ambientes-main');
     const { ready: layoutReady } = useGridLayoutSync(gridId);
+    const { registered } = useGridRegistration(layoutReady);
     const { data: ambientesData, isLoading } = useAmbientesAdminQuery();
     const upsertAmbienteMutation = useUpsertAmbienteAdminMutation();
     const [open, setOpen] = useState(false);
@@ -28,11 +28,6 @@ export default function AdminAmbientesPage() {
 
     const ambientes = (ambientesData?.rows ?? []) as AmbienteAdmin[];
     const loading = isLoading || upsertAmbienteMutation.isPending;
-
-    useEffect(() => {
-        if (!layoutReady) return;
-        import('@zentto/datagrid').then(() => setRegistered(true));
-    }, [layoutReady]);
 
     const columns = useMemo<ColumnDef[]>(() => [
         { field: 'id', header: 'ID', width: 90, sortable: true },
