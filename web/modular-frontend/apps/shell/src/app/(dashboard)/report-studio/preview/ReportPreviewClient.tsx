@@ -28,7 +28,11 @@ import { renderToFullHtml } from "@zentto/report-core";
 
 const CONFIG_KEY = "zentto-report-studio-config";
 
-export default function ReportPreviewClient() {
+interface Props {
+  basePath?: string;
+}
+
+export default function ReportPreviewClient({ basePath = "/report-studio" }: Props) {
   const router = useRouter();
   const [layout, setLayout] = useState<ReportLayout | null>(null);
   const [data, setData] = useState<DataSet | null>(null);
@@ -53,7 +57,7 @@ export default function ReportPreviewClient() {
 
   /* ── Actions ─────────────────────────────────────────────────── */
   const handleBack = useCallback(() => {
-    router.push("/report-studio/designer");
+    router.push(`${basePath}/designer`);
   }, [router]);
 
   const handlePrint = useCallback(() => {
@@ -74,7 +78,7 @@ export default function ReportPreviewClient() {
   }, [layout]);
 
   const handleEdit = useCallback(() => {
-    router.push("/report-studio/designer");
+    router.push(`${basePath}/designer`);
   }, [router]);
 
   /* ── No config state ─────────────────────────────────────────── */
@@ -102,8 +106,8 @@ export default function ReportPreviewClient() {
           </Button>
 
           <Breadcrumbs separator={<NavNextIcon fontSize="small" />} sx={{ ml: 2 }}>
-            <Link underline="hover" color="inherit" href="/report-studio" sx={{ cursor: "pointer" }}>
-              Report Studio
+            <Link underline="hover" color="inherit" href={basePath} sx={{ cursor: "pointer" }}>
+              Reportes
             </Link>
             <Typography color="text.primary" fontWeight={600}>
               Preview

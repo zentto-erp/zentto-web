@@ -50,7 +50,11 @@ const CONFIG_KEY = "zentto-report-studio-config";
 const AUTOSAVE_KEY = "zentto-report-designer:autosave";
 
 /* ── Component ─────────────────────────────────────────────────── */
-export default function ReportDesignerClient() {
+interface Props {
+  basePath?: string;
+}
+
+export default function ReportDesignerClient({ basePath = "/report-studio" }: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -208,11 +212,11 @@ export default function ReportDesignerClient() {
 
   const handlePreview = useCallback(() => {
     localStorage.setItem(CONFIG_KEY, JSON.stringify({ layout, sampleData }));
-    router.push("/report-studio/preview");
+    router.push(`${basePath}/preview`);
   }, [layout, sampleData, router]);
 
   const handleWizard = useCallback(() => {
-    router.push("/report-studio/wizard");
+    router.push(`${basePath}/wizard`);
   }, [router]);
 
   /* ── Loading state ───────────────────────────────────────────── */
@@ -232,8 +236,8 @@ export default function ReportDesignerClient() {
       <AppBar position="static" color="default" elevation={1} sx={{ zIndex: 1 }}>
         <Toolbar variant="dense" sx={{ gap: 1 }}>
           <Breadcrumbs separator={<NavNextIcon fontSize="small" />} sx={{ flexShrink: 0 }}>
-            <Link underline="hover" color="inherit" href="/report-studio" sx={{ cursor: "pointer" }}>
-              Report Studio
+            <Link underline="hover" color="inherit" href={basePath} sx={{ cursor: "pointer" }}>
+              Reportes
             </Link>
             <Typography color="text.primary" fontWeight={600}>
               Designer
