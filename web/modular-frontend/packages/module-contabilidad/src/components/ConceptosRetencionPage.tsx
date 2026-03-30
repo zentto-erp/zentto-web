@@ -6,7 +6,6 @@ import {
   DialogTitle, DialogContent, DialogActions, Alert, CircularProgress,
 } from "@mui/material";
 import type { ColumnDef } from "@zentto/datagrid-core";
-import { ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
 import { useGridLayoutSync, useCountries, useLookup } from "@zentto/shared-api";
 import { useConceptosList, useConceptoUpsert, type ConceptoFilter } from "../hooks/useFiscalTributaria";
 import { buildContabilidadGridId, useContabilidadGridId, useContabilidadGridRegistration } from "./zenttoGridPersistence";
@@ -49,9 +48,7 @@ export default function ConceptosRetencionPage() {
   const { data: countries = [] } = useCountries();
   const { data: retTypes = [] } = useLookup('RETENTION_TYPE');
   const { data: supplierTypes = [] } = useLookup('SUPPLIER_TYPE');
-  const [filter, setFilter] = useState<ConceptoFilter>({ page: 1, limit: 50 });
-  const [search, setSearch] = useState("");
-  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
+  const [filter] = useState<ConceptoFilter>({ page: 1, limit: 50 });
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState<Record<string, any>>({
     conceptCode: "", description: "", supplierType: "AMBOS", activityCode: "",
@@ -114,21 +111,6 @@ export default function ConceptosRetencionPage() {
   return (
     <Box>
       <Typography variant="h6" sx={{ mb: 2 }}>Conceptos de Retencion</Typography>
-
-      <ZenttoFilterPanel
-        filters={[
-          { field: "retentionType", label: "Tipo", type: "select", options: retTypes.map((t) => ({ value: t.Code, label: t.Label })) },
-          { field: "countryCode", label: "Pais", type: "select", options: countries.map((c) => ({ value: c.CountryCode, label: c.CountryName })) },
-        ] as FilterFieldDef[]}
-        values={filterValues}
-        onChange={(vals) => {
-          setFilterValues(vals);
-          setFilter((f) => ({ ...f, retentionType: vals.retentionType || undefined, countryCode: vals.countryCode || undefined }));
-        }}
-        searchPlaceholder="Buscar concepto..."
-        searchValue={search}
-        onSearchChange={(v) => { setSearch(v); setFilter((f) => ({ ...f, search: v || undefined })); }}
-      />
 
       <zentto-grid
         ref={gridRef}

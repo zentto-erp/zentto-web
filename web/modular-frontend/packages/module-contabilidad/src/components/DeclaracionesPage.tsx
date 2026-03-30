@@ -7,7 +7,7 @@ import {
 } from "@mui/material";
 import type { ColumnDef } from "@zentto/datagrid-core";
 import { useGridLayoutSync, useCountries } from "@zentto/shared-api";
-import { ContextActionHeader, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
+import { ContextActionHeader } from "@zentto/shared-ui";
 import {
   useDeclaracionesList, useCalcularDeclaracion, usePresentarDeclaracion, type DeclarationFilter,
 } from "../hooks/useFiscalTributaria";
@@ -65,9 +65,7 @@ export default function DeclaracionesPage() {
   const layoutReady = gridLayoutReady;
   const { registered } = useContabilidadGridRegistration(layoutReady);
   const { data: countries = [] } = useCountries();
-  const [filter, setFilter] = useState<DeclarationFilter>({ page: 1, limit: 25 });
-  const [search, setSearch] = useState("");
-  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
+  const [filter] = useState<DeclarationFilter>({ page: 1, limit: 25 });
   const [openCalc, setOpenCalc] = useState(false);
   const [calcForm, setCalcForm] = useState<CalcForm>({ declarationType: "IVA", periodCode: "", countryCode: "VE" });
 
@@ -115,22 +113,6 @@ export default function DeclaracionesPage() {
       <ContextActionHeader title="Declaraciones tributarias" primaryAction={{ label: "Calcular declaracion", onClick: () => setOpenCalc(true) }} />
 
       <Box sx={{ p: { xs: 2, md: 3 }, flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-        <ZenttoFilterPanel
-          filters={[
-            { field: "declarationType", label: "Tipo", type: "select", options: DECLARATION_TYPES.filter((t) => t.value).map((t) => ({ value: t.value, label: t.label })) },
-            { field: "year", label: "Periodo (ano)", type: "text", placeholder: "2026", minWidth: 120 },
-            { field: "status", label: "Estado", type: "select", options: STATUS_OPTIONS.filter((o) => o.value).map((o) => ({ value: o.value, label: o.label })) },
-          ] as FilterFieldDef[]}
-          values={filterValues}
-          onChange={(vals) => {
-            setFilterValues(vals);
-            setFilter((f) => ({ ...f, declarationType: vals.declarationType || undefined, year: vals.year ? Number(vals.year) : undefined, status: vals.status || undefined, page: 1 }));
-          }}
-          searchPlaceholder="Buscar declaracion..."
-          searchValue={search}
-          onSearchChange={setSearch}
-        />
-
         <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, width: "100%", elevation: 0, border: "1px solid #E5E7EB" }}>
           <zentto-grid
             ref={gridRef}

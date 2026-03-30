@@ -41,6 +41,10 @@ export type {
   ModuleReportConfig,
 } from './config/module-reports';
 
+// ─── Layouts de reportes por módulo ─────────────────────────────
+
+export { ASIENTOS_LIST_LAYOUT } from './layouts/contabilidad/asientos-list';
+
 // ─── Re-exports from report-core (convenience) ──────────────────────
 
 export {

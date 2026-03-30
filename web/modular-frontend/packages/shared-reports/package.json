@@ -8,7 +8,8 @@
     ".": "./src/index.tsx",
     "./components/*": "./src/components/*",
     "./hooks/*": "./src/hooks/*",
-    "./config/*": "./src/config/*"
+    "./config/*": "./src/config/*",
+    "./layouts/*": "./src/layouts/*"
   },
   "dependencies": {
     "@zentto/report-core": "^1.9.2",
