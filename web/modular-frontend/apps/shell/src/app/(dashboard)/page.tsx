@@ -86,17 +86,28 @@ export default function AppSelectorPage() {
     allApps.push({ id: 'auditoria', name: isSmall ? 'Audit.' : 'Auditoría', icon: <VerifiedUserIcon sx={{ fontSize: 'inherit', color: '#fff' }} />, path: '/auditoria', bgColor: '#2D3436' });
   }
 
-  // Nuevos módulos
-  allApps.push({ id: 'logistica', name: isSmall ? 'Logíst.' : 'Logística', icon: <LocalShippingIcon sx={{ fontSize: 'inherit', color: '#fff' }} />, path: '/logistica', bgColor: '#1ABC9C' });
-  allApps.push({ id: 'crm', name: 'CRM', icon: <GroupsIcon sx={{ fontSize: 'inherit', color: '#fff' }} />, path: '/crm', bgColor: '#E74C3C' });
-  allApps.push({ id: 'manufactura', name: isSmall ? 'Manuf.' : 'Manufactura', icon: <PrecisionManufacturingIcon sx={{ fontSize: 'inherit', color: '#fff' }} />, path: '/manufactura', bgColor: '#8E44AD' });
-  allApps.push({ id: 'flota', name: 'Flota', icon: <DirectionsCarIcon sx={{ fontSize: 'inherit', color: '#fff' }} />, path: '/flota', bgColor: '#2C3E50' });
-
-  allApps.push({ id: 'shipping', name: 'Shipping', icon: <LocalShippingIcon sx={{ fontSize: 'inherit', color: '#fff' }} />, path: '/shipping', bgColor: '#1565C0' });
-
-  allApps.push({ id: 'report-studio', name: isSmall ? 'Reportes' : 'Report Studio', icon: <DescriptionIcon sx={{ fontSize: 'inherit', color: '#fff' }} />, path: '/report-studio', bgColor: '#FF6F00' });
-
-  allApps.push({ id: 'apps-custom', name: isSmall ? 'Apps' : 'Aplicaciones', icon: <ExtensionIcon sx={{ fontSize: 'inherit', color: '#fff' }} />, path: '/addons', bgColor: '#546E7A' });
+  // Módulos avanzados (requieren licencia + acceso por usuario)
+  if (has('logistica')) {
+    allApps.push({ id: 'logistica', name: isSmall ? 'Logíst.' : 'Logística', icon: <LocalShippingIcon sx={{ fontSize: 'inherit', color: '#fff' }} />, path: '/logistica', bgColor: '#1ABC9C' });
+  }
+  if (has('crm')) {
+    allApps.push({ id: 'crm', name: 'CRM', icon: <GroupsIcon sx={{ fontSize: 'inherit', color: '#fff' }} />, path: '/crm', bgColor: '#E74C3C' });
+  }
+  if (has('manufactura')) {
+    allApps.push({ id: 'manufactura', name: isSmall ? 'Manuf.' : 'Manufactura', icon: <PrecisionManufacturingIcon sx={{ fontSize: 'inherit', color: '#fff' }} />, path: '/manufactura', bgColor: '#8E44AD' });
+  }
+  if (has('flota')) {
+    allApps.push({ id: 'flota', name: 'Flota', icon: <DirectionsCarIcon sx={{ fontSize: 'inherit', color: '#fff' }} />, path: '/flota', bgColor: '#2C3E50' });
+  }
+  if (has('shipping')) {
+    allApps.push({ id: 'shipping', name: 'Shipping', icon: <LocalShippingIcon sx={{ fontSize: 'inherit', color: '#fff' }} />, path: '/shipping', bgColor: '#1565C0' });
+  }
+  if (has('report-studio')) {
+    allApps.push({ id: 'report-studio', name: isSmall ? 'Reportes' : 'Report Studio', icon: <DescriptionIcon sx={{ fontSize: 'inherit', color: '#fff' }} />, path: '/report-studio', bgColor: '#FF6F00' });
+  }
+  if (has('addons')) {
+    allApps.push({ id: 'apps-custom', name: isSmall ? 'Apps' : 'Aplicaciones', icon: <ExtensionIcon sx={{ fontSize: 'inherit', color: '#fff' }} />, path: '/addons', bgColor: '#546E7A' });
+  }
   if (isAdmin) {
     allApps.push({ id: 'settings', name: 'Ajustes', icon: <SettingsIcon sx={{ fontSize: 'inherit', color: '#fff' }} />, path: '/configuracion', bgColor: '#7F8C8D' });
   }
