@@ -105,8 +105,9 @@ export default function AppSelectorPage() {
   if (has('report-studio')) {
     allApps.push({ id: 'report-studio', name: isSmall ? 'Reportes' : 'Report Studio', icon: <DescriptionIcon sx={{ fontSize: 'inherit', color: '#fff' }} />, path: '/report-studio', bgColor: '#FF6F00' });
   }
-  if (has('addons')) {
-    allApps.push({ id: 'apps-custom', name: isSmall ? 'Apps' : 'Aplicaciones', icon: <ExtensionIcon sx={{ fontSize: 'inherit', color: '#fff' }} />, path: '/addons', bgColor: '#546E7A' });
+  allApps.push({ id: 'aplicaciones', name: isSmall ? 'Apps' : 'Aplicaciones', icon: <AppsIcon sx={{ fontSize: 'inherit', color: '#fff' }} />, path: '/aplicaciones', bgColor: '#546E7A' });
+  if (isAdmin || has('addons')) {
+    allApps.push({ id: 'addons', name: 'Addons', icon: <ExtensionIcon sx={{ fontSize: 'inherit', color: '#fff' }} />, path: '/addons', bgColor: '#37474F' });
   }
   if (isAdmin) {
     allApps.push({ id: 'settings', name: 'Ajustes', icon: <SettingsIcon sx={{ fontSize: 'inherit', color: '#fff' }} />, path: '/configuracion', bgColor: '#7F8C8D' });

@@ -115,8 +115,19 @@ export async function updateSavedReport(id: string, input: SaveReportInput): Pro
 export async function listPublicReports(): Promise<SavedReport[]> {
   try {
     const res = await apiGet('/v1/reportes/public');
-    const data = (Array.isArray(res) ? res : res.data ?? res.rows ?? []) as Record<string, unknown>[];
-    return data.map(normalize);
+    // API returns { data: { ok, templates: [...] } } or { data: [...] }
+    const inner = res.data ?? res;
+    const list = Array.isArray(inner) ? inner : (inner.templates ?? inner.rows ?? []);
+    return (list as Record<string, unknown>[]).map((row) => ({
+      id: String(row.templateId ?? row.id ?? ''),
+      name: String(row.name ?? ''),
+      description: String(row.description ?? ''),
+      icon: String(row.icon ?? '📊'),
+      layout: (row.layout ?? {}) as Record<string, unknown>,
+      sampleData: (row.sampleData ?? {}) as Record<string, unknown>,
+      createdAt: String(row.createdAt ?? row.updatedAt ?? ''),
+      updatedAt: String(row.updatedAt ?? ''),
+    }));
   } catch {
     return [];
   }
