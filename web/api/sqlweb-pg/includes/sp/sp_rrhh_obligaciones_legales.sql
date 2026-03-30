@@ -129,13 +129,12 @@ CREATE TABLE IF NOT EXISTS hr."ObligationFilingDetail" (
 -- 1. usp_HR_Obligation_List
 -- =============================================================================
 DROP FUNCTION IF EXISTS public.usp_HR_Obligation_List(CHAR(2), VARCHAR(20), BOOLEAN, VARCHAR(100), INTEGER, INTEGER) CASCADE;
+DROP FUNCTION IF EXISTS public.usp_hr_obligation_list(character, character varying, boolean, character varying, integer, integer) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Obligation_List(
-    p_country_code      CHAR(2)         DEFAULT NULL,
-    p_obligation_type   VARCHAR(20)     DEFAULT NULL,
-    p_is_active         BOOLEAN         DEFAULT NULL,
-    p_search            VARCHAR(100)    DEFAULT NULL,
-    p_page              INTEGER         DEFAULT 1,
-    p_limit             INTEGER         DEFAULT 50
+    p_company_id    INT,
+    p_search        TEXT            DEFAULT NULL,
+    p_offset        INT             DEFAULT 0,
+    p_limit         INT             DEFAULT 50
 )
 RETURNS TABLE(
     p_total_count           BIGINT,
@@ -161,7 +160,6 @@ RETURNS TABLE(
 LANGUAGE plpgsql
 AS $$
 BEGIN
-    IF p_page  < 1   THEN p_page  := 1;   END IF;
     IF p_limit < 1   THEN p_limit := 50;  END IF;
     IF p_limit > 500 THEN p_limit := 500; END IF;
 
@@ -187,13 +185,10 @@ BEGIN
         "IsActive",
         "Notes"
     FROM hr."LegalObligation"
-    WHERE (p_country_code    IS NULL OR "CountryCode"    = p_country_code)
-      AND (p_obligation_type IS NULL OR "ObligationType" = p_obligation_type)
-      AND (p_is_active       IS NULL OR "IsActive"       = p_is_active)
-      AND (p_search          IS NULL OR "Name" ILIKE '%' || p_search || '%'
-                                     OR "Code" ILIKE '%' || p_search || '%')
+    WHERE (p_search IS NULL OR "Name" ILIKE '%' || p_search || '%'
+                             OR "Code" ILIKE '%' || p_search || '%')
     ORDER BY "CountryCode", "Code"
-    LIMIT p_limit OFFSET (p_page - 1) * p_limit;
+    LIMIT p_limit OFFSET p_offset;
 END;
 $$;
 
@@ -348,9 +343,10 @@ $$;
 -- 3. usp_HR_Obligation_GetByCountry
 -- =============================================================================
 DROP FUNCTION IF EXISTS public.usp_HR_Obligation_GetByCountry(CHAR(2), DATE) CASCADE;
+DROP FUNCTION IF EXISTS public.usp_hr_obligation_getbycountry(character, date) CASCADE;
 CREATE OR REPLACE FUNCTION public.usp_HR_Obligation_GetByCountry(
-    p_country_code  CHAR(2),
-    p_as_of_date    DATE DEFAULT NULL
+    p_country_code  CHARACTER       DEFAULT NULL,
+    p_ref_date      DATE            DEFAULT CURRENT_DATE
 )
 RETURNS TABLE (
     "LegalObligationId"     INTEGER,
@@ -374,10 +370,6 @@ RETURNS TABLE (
 LANGUAGE plpgsql
 AS $$
 BEGIN
-    IF p_as_of_date IS NULL THEN
-        p_as_of_date := CAST((NOW() AT TIME ZONE 'UTC') AS DATE);
-    END IF;
-
     RETURN QUERY
     SELECT
         o."LegalObligationId",
@@ -398,10 +390,10 @@ BEGIN
         o."EffectiveTo",
         o."Notes"
     FROM hr."LegalObligation" o
-    WHERE o."CountryCode" = p_country_code
+    WHERE (p_country_code IS NULL OR o."CountryCode" = p_country_code)
       AND o."IsActive" = TRUE
-      AND o."EffectiveFrom" <= p_as_of_date
-      AND (o."EffectiveTo" IS NULL OR o."EffectiveTo" >= p_as_of_date)
+      AND o."EffectiveFrom" <= p_ref_date
+      AND (o."EffectiveTo" IS NULL OR o."EffectiveTo" >= p_ref_date)
     ORDER BY o."Code";
 END;
 $$;
