@@ -51,21 +51,21 @@ AS $$
 BEGIN
     RETURN QUERY
     SELECT COUNT(*) OVER()          AS p_total_count,
-           "InflationIndexId",
-           "CountryCode",
-           "IndexName",
-           "PeriodCode",
-           "IndexValue",
-           "SourceReference",
-           "CreatedAt",
-           "UpdatedAt"
-    FROM acct."InflationIndex"
-    WHERE "CompanyId"   = p_company_id
-      AND "CountryCode" = p_country_code
-      AND "IndexName"   = p_index_name
-      AND (p_year_from IS NULL OR CAST(LEFT("PeriodCode", 4) AS SMALLINT) >= p_year_from)
-      AND (p_year_to   IS NULL OR CAST(LEFT("PeriodCode", 4) AS SMALLINT) <= p_year_to)
-    ORDER BY "PeriodCode";
+           i."InflationIndexId",
+           i."CountryCode",
+           i."IndexName",
+           i."PeriodCode",
+           i."IndexValue",
+           i."SourceReference",
+           i."CreatedAt",
+           i."UpdatedAt"
+    FROM acct."InflationIndex" i
+    WHERE i."CompanyId"   = p_company_id
+      AND i."CountryCode" = p_country_code
+      AND i."IndexName"   = p_index_name
+      AND (p_year_from IS NULL OR CAST(LEFT(i."PeriodCode", 4) AS SMALLINT) >= p_year_from)
+      AND (p_year_to   IS NULL OR CAST(LEFT(i."PeriodCode", 4) AS SMALLINT) <= p_year_to)
+    ORDER BY i."PeriodCode";
 END;
 $$;
 

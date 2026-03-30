@@ -497,7 +497,7 @@ CREATE OR REPLACE FUNCTION usp_Inv_Lot_List(
     p_limit      INT          DEFAULT 50
 )
 RETURNS TABLE (
-    "LotId"                 INT,
+    "LotId"                 BIGINT,
     "CompanyId"             INT,
     "ProductId"             BIGINT,
     "LotNumber"             VARCHAR,
@@ -516,10 +516,10 @@ DECLARE
     v_total BIGINT;
 BEGIN
     SELECT COUNT(*) INTO v_total
-    FROM inv."ProductLot"
-    WHERE "CompanyId" = p_company_id
-      AND (p_product_id IS NULL OR "ProductId" = p_product_id)
-      AND (p_status IS NULL OR "Status" = p_status);
+    FROM inv."ProductLot" pl
+    WHERE pl."CompanyId" = p_company_id
+      AND (p_product_id IS NULL OR pl."ProductId" = p_product_id)
+      AND (p_status IS NULL OR pl."Status" = p_status);
 
     RETURN QUERY
     SELECT l."LotId", l."CompanyId", l."ProductId", l."LotNumber",
@@ -541,10 +541,10 @@ $$;
 -- ============================================================================
 DROP FUNCTION IF EXISTS usp_Inv_Lot_Get(INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Inv_Lot_Get(
-    p_lot_id INT
+    p_lot_id BIGINT
 )
 RETURNS TABLE (
-    "LotId"                 INT,
+    "LotId"                 BIGINT,
     "CompanyId"             INT,
     "ProductId"             BIGINT,
     "LotNumber"             VARCHAR,
@@ -623,18 +623,17 @@ CREATE OR REPLACE FUNCTION usp_Inv_Serial_List(
     p_limit         INT             DEFAULT 50
 )
 RETURNS TABLE (
-    "SerialId"              INT,
+    "SerialId"              BIGINT,
     "CompanyId"             INT,
     "ProductId"             BIGINT,
     "SerialNumber"          VARCHAR,
-    "LotId"                 INT,
-    "WarehouseId"           INT,
-    "BinId"                 INT,
+    "LotId"                 BIGINT,
+    "WarehouseId"           BIGINT,
+    "BinId"                 BIGINT,
     "Status"                VARCHAR,
     "PurchaseDocumentNumber" VARCHAR,
     "SalesDocumentNumber"   VARCHAR,
     "CustomerId"            BIGINT,
-    "UnitCost"              DECIMAL,
     "CreatedAt"             TIMESTAMP,
     "UpdatedAt"             TIMESTAMP,
     "WarehouseName"         VARCHAR,
@@ -645,17 +644,17 @@ DECLARE
     v_total BIGINT;
 BEGIN
     SELECT COUNT(*) INTO v_total
-    FROM inv."ProductSerial"
-    WHERE "CompanyId" = p_company_id
-      AND (p_product_id IS NULL OR "ProductId" = p_product_id)
-      AND (p_status IS NULL OR "Status" = p_status)
-      AND (p_search IS NULL OR "SerialNumber" ILIKE '%' || p_search || '%');
+    FROM inv."ProductSerial" ps
+    WHERE ps."CompanyId" = p_company_id
+      AND (p_product_id IS NULL OR ps."ProductId" = p_product_id)
+      AND (p_status IS NULL OR ps."Status" = p_status)
+      AND (p_search IS NULL OR ps."SerialNumber" ILIKE '%' || p_search || '%');
 
     RETURN QUERY
     SELECT s."SerialId", s."CompanyId", s."ProductId", s."SerialNumber", s."LotId",
            s."WarehouseId", s."BinId", s."Status",
            s."PurchaseDocumentNumber", s."SalesDocumentNumber", s."CustomerId",
-           s."UnitCost", s."CreatedAt", s."UpdatedAt",
+           s."CreatedAt", s."UpdatedAt",
            w."WarehouseName", b."BinCode",
            v_total
     FROM inv."ProductSerial" s
@@ -675,23 +674,22 @@ $$;
 --  Nota: PG no soporta multiples resultsets. Se retorna el header.
 --  El historial se obtiene via usp_Inv_Movement_List filtrando por SerialId.
 -- ============================================================================
-DROP FUNCTION IF EXISTS usp_Inv_Serial_Get(INT) CASCADE;
+DROP FUNCTION IF EXISTS usp_Inv_Serial_Get(BIGINT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Inv_Serial_Get(
-    p_serial_id INT
+    p_serial_id BIGINT
 )
 RETURNS TABLE (
-    "SerialId"              INT,
+    "SerialId"              BIGINT,
     "CompanyId"             INT,
     "ProductId"             BIGINT,
     "SerialNumber"          VARCHAR,
-    "LotId"                 INT,
-    "WarehouseId"           INT,
-    "BinId"                 INT,
+    "LotId"                 BIGINT,
+    "WarehouseId"           BIGINT,
+    "BinId"                 BIGINT,
     "Status"                VARCHAR,
     "PurchaseDocumentNumber" VARCHAR,
     "SalesDocumentNumber"   VARCHAR,
     "CustomerId"            BIGINT,
-    "UnitCost"              DECIMAL,
     "CreatedAt"             TIMESTAMP,
     "UpdatedAt"             TIMESTAMP,
     "WarehouseName"         VARCHAR,
@@ -703,7 +701,7 @@ BEGIN
     SELECT s."SerialId", s."CompanyId", s."ProductId", s."SerialNumber", s."LotId",
            s."WarehouseId", s."BinId", s."Status",
            s."PurchaseDocumentNumber", s."SalesDocumentNumber", s."CustomerId",
-           s."UnitCost", s."CreatedAt", s."UpdatedAt",
+           s."CreatedAt", s."UpdatedAt",
            w."WarehouseName", b."BinCode", l."LotNumber"
     FROM inv."ProductSerial" s
     LEFT JOIN inv."Warehouse" w ON s."WarehouseId" = w."WarehouseId"
@@ -716,35 +714,34 @@ $$;
 -- ============================================================================
 --  SP: usp_Inv_Serial_Register
 -- ============================================================================
-DROP FUNCTION IF EXISTS usp_Inv_Serial_Register(INT, INT, VARCHAR, INT, INT, INT, VARCHAR, DECIMAL, INT) CASCADE;
+DROP FUNCTION IF EXISTS usp_Inv_Serial_Register(INT, BIGINT, VARCHAR, BIGINT, BIGINT, BIGINT, VARCHAR, INT) CASCADE;
 CREATE OR REPLACE FUNCTION usp_Inv_Serial_Register(
     p_company_id              INT,
     p_product_id              BIGINT,
     p_serial_number           VARCHAR(100),
-    p_lot_id                  INT             DEFAULT NULL,
-    p_warehouse_id            INT             DEFAULT NULL,
-    p_bin_id                  INT             DEFAULT NULL,
-    p_purchase_document_number VARCHAR(30)    DEFAULT NULL,
-    p_unit_cost               DECIMAL(18,4)   DEFAULT NULL,
+    p_lot_id                  BIGINT          DEFAULT NULL,
+    p_warehouse_id            BIGINT          DEFAULT NULL,
+    p_bin_id                  BIGINT          DEFAULT NULL,
+    p_purchase_document_number VARCHAR(60)    DEFAULT NULL,
     p_user_id                 INT             DEFAULT NULL
 )
-RETURNS TABLE ("ok" INT, "mensaje" VARCHAR, "SerialId" INT)
+RETURNS TABLE ("ok" INT, "mensaje" VARCHAR, "SerialId" BIGINT)
 LANGUAGE plpgsql AS $$
 DECLARE
-    v_id INT;
+    v_id BIGINT;
 BEGIN
     IF EXISTS (
         SELECT 1 FROM inv."ProductSerial"
         WHERE "CompanyId" = p_company_id AND "SerialNumber" = p_serial_number
     ) THEN
-        RETURN QUERY SELECT 0, 'El numero de serie ya existe'::VARCHAR, NULL::INT;
+        RETURN QUERY SELECT 0, 'El numero de serie ya existe'::VARCHAR, NULL::BIGINT;
         RETURN;
     END IF;
 
     INSERT INTO inv."ProductSerial" ("CompanyId", "ProductId", "SerialNumber", "LotId", "WarehouseId",
-        "BinId", "Status", "PurchaseDocumentNumber", "UnitCost", "CreatedBy", "CreatedAt")
+        "BinId", "Status", "PurchaseDocumentNumber", "CreatedByUserId", "CreatedAt")
     VALUES (p_company_id, p_product_id, p_serial_number, p_lot_id, p_warehouse_id,
-        p_bin_id, 'AVAILABLE', p_purchase_document_number, p_unit_cost, p_user_id, NOW() AT TIME ZONE 'UTC')
+        p_bin_id, 'AVAILABLE', p_purchase_document_number, p_user_id, NOW() AT TIME ZONE 'UTC')
     RETURNING "SerialId" INTO v_id;
 
     RETURN QUERY SELECT 1, 'Serial registrado'::VARCHAR, v_id;
