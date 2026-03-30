@@ -25,11 +25,15 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 
 /* ── Config ──────────────────────────────────────────────────── */
 const args = process.argv.slice(2);
-const baseUrlArg = args.find((a) => a.startsWith("--base-url="))?.split("=")[1]
-  || args[args.indexOf("--base-url") + 1];
-const BASE_URL = baseUrlArg || process.env.BASE_URL || "http://localhost:3001";
-const SEED_USER = process.env.SEED_USER || "SUP";
-const SEED_PASS = process.env.SEED_PASS || "SUP";
+function getArg(name) {
+  const eq = args.find((a) => a.startsWith(`--${name}=`));
+  if (eq) return eq.split("=").slice(1).join("=");
+  const idx = args.indexOf(`--${name}`);
+  return idx >= 0 ? args[idx + 1] : undefined;
+}
+const BASE_URL = getArg("base-url") || process.env.BASE_URL || "http://localhost:3001";
+const SEED_USER = getArg("user") || process.env.SEED_USER || "SUP";
+const SEED_PASS = getArg("pass") || process.env.SEED_PASS || "SUP";
 
 /* ── Layouts directory (monorepo) ────────────────────────────── */
 const LAYOUTS_DIR = join(__dirname, "../../modular-frontend/packages/shared-reports/src/layouts");
