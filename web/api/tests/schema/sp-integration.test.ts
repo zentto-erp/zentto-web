@@ -17,9 +17,12 @@
 import { describe, it, expect, beforeAll } from "vitest";
 import "dotenv/config";
 
-const BASE = process.env.API_BASE_URL || "https://apidev.zentto.net";
+// En CI no hay API Express corriendo — solo BD local. Skip si no hay URL.
+const BASE = process.env.API_BASE_URL || "";
 const USER = process.env.API_USER || "ADMIN";
 const PASS = process.env.API_PASSWORD || "Admin123!";
+const RUN = Boolean(BASE);
+const describeApi = RUN ? describe : describe.skip;
 
 let token = "";
 
@@ -180,7 +183,7 @@ async function apiGet(path: string): Promise<{ status: number; body: unknown }> 
 
 // ── Tests ───────────────────────────────────────────────────────────────
 
-describe("API Integration — login", () => {
+describeApi("API Integration — login", () => {
   it("debe autenticar y obtener JWT token", async () => {
     const res = await fetch(`${BASE}/v1/auth/login`, {
       method: "POST",
@@ -195,7 +198,7 @@ describe("API Integration — login", () => {
   });
 });
 
-describe("API Integration — TODOS los endpoints GET del contrato", () => {
+describeApi("API Integration — TODOS los endpoints GET del contrato", () => {
   // Códigos aceptables: 2xx (OK), 400 (params faltantes), 404 (dato no existe)
   // Códigos de fallo: 500, 502, 503, 504 (error del servidor / SP roto)
   const SERVER_ERROR_CODES = [500, 502, 503, 504];
@@ -222,7 +225,7 @@ describe("API Integration — TODOS los endpoints GET del contrato", () => {
   }
 });
 
-describe("API Integration — resumen", () => {
+describeApi("API Integration — resumen", () => {
   it("imprime resumen de resultados", async () => {
     // Este test solo existe para el reporte final
     console.log(`\n  Total endpoints testeados: ${GET_ENDPOINTS.length}`);
