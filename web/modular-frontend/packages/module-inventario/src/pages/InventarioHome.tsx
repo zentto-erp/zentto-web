@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useRef, useMemo } from "react";
 import {
   Box,
   Card,
@@ -9,12 +9,6 @@ import {
   Typography,
   IconButton,
   Skeleton,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
-  Chip,
 } from "@mui/material";
 import Grid from "@mui/material/Grid2";
 import InventoryIcon from "@mui/icons-material/Inventory";
@@ -34,14 +28,34 @@ import LocalOfferIcon from "@mui/icons-material/LocalOffer";
 import WarehouseIcon from "@mui/icons-material/Warehouse";
 import { useRouter } from "next/navigation";
 import { useInventarioDashboard, useMovimientosList } from "../hooks/useInventario";
-import { formatCurrency } from "@zentto/shared-api";
+import { formatCurrency, useGridLayoutSync } from "@zentto/shared-api";
 import { brandColors } from "@zentto/shared-ui";
+import { useInventarioGridRegistration } from "../components/zenttoGridPersistence";
+import type { ColumnDef } from "@zentto/datagrid-core";
+
+const MOVS_GRID_ID = "module-inventario:home:ultimos-movimientos";
+
+const MOVS_COLUMNS: ColumnDef[] = [
+  { field: "fecha", header: "Fecha", width: 100 },
+  { field: "articulo", header: "Articulo", flex: 1, minWidth: 140, sortable: true },
+  {
+    field: "tipo", header: "Tipo", width: 100,
+    statusColors: { ENTRADA: "success", SALIDA: "error", AJUSTE: "info", TRASLADO: "warning" },
+    statusVariant: "outlined",
+  },
+  { field: "cantidad", header: "Cantidad", width: 90, type: "number" },
+  { field: "referencia", header: "Referencia", width: 130 },
+];
 
 export default function InventarioHome({ basePath = "" }: { basePath?: string }) {
   const router = useRouter();
+  const gridRef = useRef<any>(null);
   const bp = basePath.replace(/\/+$/, "");
   const { data: dashboard, isLoading: dashLoading } = useInventarioDashboard();
   const { data: ultMovs } = useMovimientosList({ limit: 5 });
+
+  const { ready } = useGridLayoutSync(MOVS_GRID_ID);
+  const { registered } = useInventarioGridRegistration(ready);
 
   const statsCards = [
     {
@@ -91,15 +105,23 @@ export default function InventarioHome({ basePath = "" }: { basePath?: string })
 
   const movRows = (ultMovs?.rows ?? []) as Record<string, unknown>[];
 
-  const getTypeColor = (type: string) => {
-    switch (type) {
-      case "ENTRADA": return "success";
-      case "SALIDA": return "error";
-      case "AJUSTE": return "info";
-      case "TRASLADO": return "warning";
-      default: return "default";
-    }
-  };
+  const gridRows = useMemo(() => movRows.map((m, i) => ({
+    id: i,
+    fecha: String(m.MovementDate ?? "").slice(0, 10),
+    articulo: String(m.ProductName ?? m.ProductCode ?? ""),
+    tipo: String(m.MovementType ?? ""),
+    cantidad: Number(m.Quantity ?? 0),
+    referencia: String(m.DocumentRef ?? ""),
+  })), [movRows]);
+
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+    el.columns = MOVS_COLUMNS;
+    el.rows = gridRows;
+    el.loading = false;
+    el.getRowId = (r: any) => r.id;
+  }, [gridRows, registered]);
 
   return (
     <Box>
@@ -206,32 +228,12 @@ export default function InventarioHome({ basePath = "" }: { basePath?: string })
             <CardContent>
               <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>Ultimos Movimientos</Typography>
               {movRows.length > 0 ? (
-                <Table size="small">
-                  <TableHead>
-                    <TableRow>
-                      <TableCell sx={{ fontWeight: 600 }}>Fecha</TableCell>
-                      <TableCell sx={{ fontWeight: 600 }}>Articulo</TableCell>
-                      <TableCell sx={{ fontWeight: 600 }}>Tipo</TableCell>
-                      <TableCell align="right" sx={{ fontWeight: 600 }}>Cantidad</TableCell>
-                      <TableCell sx={{ fontWeight: 600 }}>Referencia</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {movRows.map((m, i) => (
-                      <TableRow key={i}>
-                        <TableCell>{String(m.MovementDate ?? "").slice(0, 10)}</TableCell>
-                        <TableCell>{String(m.ProductName ?? m.ProductCode ?? "")}</TableCell>
-                        <TableCell>
-                          <Chip label={String(m.MovementType)} size="small"
-                            color={getTypeColor(String(m.MovementType)) as "success" | "error" | "info" | "warning" | "default"}
-                            variant="outlined" />
-                        </TableCell>
-                        <TableCell align="right">{Number(m.Quantity ?? 0)}</TableCell>
-                        <TableCell>{String(m.DocumentRef ?? "")}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                <zentto-grid
+                  ref={gridRef}
+                  grid-id={MOVS_GRID_ID}
+                  height="250px"
+                  enable-status-bar
+                />
               ) : (
                 <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: 150, bgcolor: "#f8f9fa", borderRadius: 2 }}>
                   <Typography variant="body2" color="text.secondary" sx={{ display: "flex", alignItems: "center", gap: 1 }}>
@@ -245,4 +247,12 @@ export default function InventarioHome({ basePath = "" }: { basePath?: string })
       </Grid>
     </Box>
   );
+}
+
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'zentto-grid': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & Record<string, any>, HTMLElement>;
+    }
+  }
 }

@@ -3,26 +3,17 @@
 
 import { useState, useCallback, useEffect, useRef } from "react";
 import {
-  Box, TextField, Paper, Chip, InputAdornment, Typography, IconButton, Alert, Stack, Tooltip,
+  Box, TextField, Paper, InputAdornment, Typography, IconButton, Alert, Tooltip,
 } from "@mui/material";
 import Grid from "@mui/material/Grid2";
 import SearchIcon from "@mui/icons-material/Search";
 import ClearIcon from "@mui/icons-material/Clear";
 import { useMovimientosList, useInventarioList } from "../hooks/useInventario";
-import { ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
 import type { ColumnDef } from "@zentto/datagrid-core";
 import { formatCurrency, toDateOnly, useGridLayoutSync } from "@zentto/shared-api";
 import { useInventarioGridRegistration } from "./zenttoGridPersistence";
 import { useTimezone } from "@zentto/shared-auth";
 import { debounce } from "lodash";
-
-const MOVIMIENTOS_FILTERS: FilterFieldDef[] = [
-  { field: "tipo", label: "Tipo", type: "select", options: [
-    { value: "ENTRADA", label: "Entrada" }, { value: "SALIDA", label: "Salida" },
-    { value: "AJUSTE", label: "Ajuste" }, { value: "TRASLADO", label: "Traslado" },
-  ]},
-  { field: "from", label: "Fecha desde", type: "date" }, { field: "to", label: "Fecha hasta", type: "date" },
-];
 
 const ART_COLUMNS: ColumnDef[] = [
   { field: "codigo", header: "Código", width: 110, sortable: true },
@@ -74,7 +65,6 @@ export default function MovimientosTable() {
   const [rowsPerPage, setRowsPerPage] = useState(25);
   const [search, setSearch] = useState("");
   const [movementType, setMovementType] = useState("");
-  const [movFilterValues, setMovFilterValues] = useState<Record<string, string>>({});
   const [fechaDesde, setFechaDesde] = useState(() => { const d = new Date(); d.setDate(1); return toDateOnly(d, timeZone); });
   const [fechaHasta, setFechaHasta] = useState(() => toDateOnly(new Date(), timeZone));
 
@@ -169,13 +159,6 @@ export default function MovimientosTable() {
               Filtrando movimientos de: <strong>{selectedProductCode}</strong>
             </Alert>
           )}
-
-          <ZenttoFilterPanel filters={MOVIMIENTOS_FILTERS} values={movFilterValues}
-            onChange={(vals) => { setMovFilterValues(vals); setMovementType(vals.tipo || ""); if (vals.from !== undefined) setFechaDesde(vals.from); if (vals.to !== undefined) setFechaHasta(vals.to); setPage(0); }}
-            searchPlaceholder="Buscar por referencia, notas..." searchValue={search}
-            onSearchChange={(v) => { setSearch(v); setPage(0); }}
-            defaultOpen
-          />
 
           <zentto-grid ref={movGridRef} grid-id={MOVIMIENTOS_GRID_ID} height="500px" default-currency="VES" export-filename="movimientos-inventario" show-totals
             enable-toolbar enable-header-menu enable-header-filters enable-clipboard enable-quick-search enable-context-menu enable-status-bar enable-master-detail enable-configurator

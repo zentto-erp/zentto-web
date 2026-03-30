@@ -1,33 +1,24 @@
 // components/EtiquetasPage.tsx
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import {
   Box,
   Button,
   TextField,
   Paper,
   Typography,
-  IconButton,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Checkbox,
   InputAdornment,
   CircularProgress,
-  Tooltip,
 } from "@mui/material";
 import Grid from "@mui/material/Grid2";
 import LocalOfferIcon from "@mui/icons-material/LocalOffer";
 import PrintIcon from "@mui/icons-material/Print";
 import SearchIcon from "@mui/icons-material/Search";
-import DeleteIcon from "@mui/icons-material/Delete";
-import AddIcon from "@mui/icons-material/Add";
 import { useInventarioList } from "../hooks/useInventario";
-import { formatCurrency } from "@zentto/shared-api";
+import { formatCurrency, useGridLayoutSync } from "@zentto/shared-api";
+import { useInventarioGridRegistration } from "./zenttoGridPersistence";
+import type { ColumnDef } from "@zentto/datagrid-core";
 import { debounce } from "lodash";
 
 interface EtiquetaItem {
@@ -38,44 +29,129 @@ interface EtiquetaItem {
   cantidad: number;
 }
 
+const SEARCH_GRID_ID = "module-inventario:etiquetas:search";
+const SELECTED_GRID_ID = "module-inventario:etiquetas:selected";
+
+const SEARCH_COLUMNS: ColumnDef[] = [
+  { field: "codigo", header: "Codigo", width: 110, sortable: true },
+  { field: "articulo", header: "Articulo", flex: 1, minWidth: 150, sortable: true },
+  { field: "precio", header: "Precio", width: 100, type: "number", currency: "VES" },
+  {
+    field: "actions", header: "", type: "actions", width: 60,
+    actions: [
+      { icon: "add", label: "Agregar articulo", action: "add", color: "#1976d2" },
+    ],
+  },
+];
+
+const SELECTED_COLUMNS: ColumnDef[] = [
+  { field: "codigo", header: "Codigo", width: 100 },
+  { field: "descripcion", header: "Articulo", flex: 1, minWidth: 150 },
+  { field: "precio", header: "Precio", width: 100, type: "number", currency: "VES" },
+  { field: "cantidad", header: "Cant.", width: 80, type: "number" },
+  {
+    field: "actions", header: "", type: "actions", width: 60,
+    actions: [
+      { icon: "delete", label: "Quitar articulo", action: "remove", color: "#dc2626" },
+    ],
+  },
+];
+
 export default function EtiquetasPage() {
+  const searchGridRef = useRef<any>(null);
+  const selectedGridRef = useRef<any>(null);
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<EtiquetaItem[]>([]);
-  const [showPreview, setShowPreview] = useState(false);
 
   const { data: inventario, isLoading } = useInventarioList({ search, limit: 50 });
   const rows = (inventario?.rows ?? []) as Record<string, unknown>[];
+
+  const { ready: searchReady } = useGridLayoutSync(SEARCH_GRID_ID);
+  const { ready: selectedReady } = useGridLayoutSync(SELECTED_GRID_ID);
+  const layoutReady = searchReady && selectedReady;
+  const { registered } = useInventarioGridRegistration(layoutReady);
 
   const debouncedSearch = useCallback(
     debounce((value: string) => setSearch(value), 500),
     []
   );
 
-  const addItem = (item: Record<string, unknown>) => {
-    const codigo = String(item.CODIGO ?? item.ProductCode ?? "");
-    if (selected.some((s) => s.codigo === codigo)) return;
-    setSelected([
-      ...selected,
-      {
-        codigo,
-        descripcion: String(item.DescripcionCompleta ?? item.DESCRIPCION ?? ""),
-        precio: Number(item.PRECIO_VENTA ?? item.SalesPrice ?? 0),
-        barra: String(item.Barra ?? item.CODIGO ?? ""),
-        cantidad: 1,
-      },
-    ]);
-  };
+  const searchGridRows = useMemo(() => rows.map((item, i) => ({
+    id: i,
+    codigo: String(item.CODIGO ?? ""),
+    articulo: String(item.DescripcionCompleta ?? item.DESCRIPCION ?? ""),
+    precio: Number(item.PRECIO_VENTA ?? 0),
+    _alreadyAdded: selected.some((s) => s.codigo === String(item.CODIGO ?? "")),
+  })), [rows, selected]);
 
-  const removeItem = (codigo: string) => {
-    setSelected(selected.filter((s) => s.codigo !== codigo));
-  };
+  const selectedGridRows = useMemo(() => selected.map((s, i) => ({
+    id: i,
+    codigo: s.codigo,
+    descripcion: s.descripcion,
+    precio: s.precio,
+    cantidad: s.cantidad,
+  })), [selected]);
 
-  const updateCantidad = (codigo: string, cantidad: number) => {
-    setSelected(selected.map((s) => (s.codigo === codigo ? { ...s, cantidad: Math.max(1, cantidad) } : s)));
-  };
+  // Search grid
+  useEffect(() => {
+    const el = searchGridRef.current;
+    if (!el || !registered) return;
+    el.columns = SEARCH_COLUMNS;
+    el.rows = searchGridRows;
+    el.loading = isLoading;
+    el.getRowId = (r: any) => r.id;
+  }, [searchGridRows, isLoading, registered]);
+
+  useEffect(() => {
+    const el = searchGridRef.current;
+    if (!el || !registered) return;
+    const handler = (e: CustomEvent) => {
+      const { action, row } = e.detail;
+      if (action === "add" && row) {
+        const codigo = String(row.codigo ?? "");
+        if (selected.some((s) => s.codigo === codigo)) return;
+        const item = rows.find((r) => String(r.CODIGO ?? "") === codigo);
+        if (!item) return;
+        setSelected((prev) => [
+          ...prev,
+          {
+            codigo,
+            descripcion: String(item.DescripcionCompleta ?? item.DESCRIPCION ?? ""),
+            precio: Number(item.PRECIO_VENTA ?? item.SalesPrice ?? 0),
+            barra: String(item.Barra ?? item.CODIGO ?? ""),
+            cantidad: 1,
+          },
+        ]);
+      }
+    };
+    el.addEventListener("action-click", handler);
+    return () => el.removeEventListener("action-click", handler);
+  }, [registered, rows, selected]);
+
+  // Selected grid
+  useEffect(() => {
+    const el = selectedGridRef.current;
+    if (!el || !registered) return;
+    el.columns = SELECTED_COLUMNS;
+    el.rows = selectedGridRows;
+    el.loading = false;
+    el.getRowId = (r: any) => r.id;
+  }, [selectedGridRows, registered]);
+
+  useEffect(() => {
+    const el = selectedGridRef.current;
+    if (!el || !registered) return;
+    const handler = (e: CustomEvent) => {
+      const { action, row } = e.detail;
+      if (action === "remove" && row) {
+        setSelected((prev) => prev.filter((s) => s.codigo !== row.codigo));
+      }
+    };
+    el.addEventListener("action-click", handler);
+    return () => el.removeEventListener("action-click", handler);
+  }, [registered, selectedGridRows]);
 
   const handlePrint = () => {
-    setShowPreview(true);
     setTimeout(() => {
       window.print();
     }, 300);
@@ -105,40 +181,13 @@ export default function EtiquetasPage() {
               {isLoading && <CircularProgress size={24} />}
 
               {!isLoading && search && rows.length > 0 && (
-                <TableContainer sx={{ maxHeight: 300 }}>
-                  <Table size="small" stickyHeader>
-                    <TableHead>
-                      <TableRow>
-                        <TableCell sx={{ fontWeight: 600 }}>Codigo</TableCell>
-                        <TableCell sx={{ fontWeight: 600 }}>Articulo</TableCell>
-                        <TableCell align="right" sx={{ fontWeight: 600 }}>Precio</TableCell>
-                        <TableCell />
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {rows.map((item, i) => {
-                        const codigo = String(item.CODIGO ?? "");
-                        const alreadyAdded = selected.some((s) => s.codigo === codigo);
-                        return (
-                          <TableRow key={i} hover>
-                            <TableCell>{codigo}</TableCell>
-                            <TableCell>{String(item.DescripcionCompleta ?? item.DESCRIPCION ?? "")}</TableCell>
-                            <TableCell align="right">{formatCurrency(Number(item.PRECIO_VENTA ?? 0))}</TableCell>
-                            <TableCell align="center">
-                              <Tooltip title="Agregar articulo">
-                                <span>
-                                  <IconButton size="small" color="primary" onClick={() => addItem(item)} disabled={alreadyAdded}>
-                                    <AddIcon fontSize="small" />
-                                  </IconButton>
-                                </span>
-                              </Tooltip>
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
+                <zentto-grid
+                  ref={searchGridRef}
+                  grid-id={SEARCH_GRID_ID}
+                  height="300px"
+                  enable-header-filters
+                  enable-quick-search
+                />
               )}
             </Paper>
           </Grid>
@@ -166,42 +215,12 @@ export default function EtiquetasPage() {
                   Agregue articulos desde la busqueda para generar etiquetas
                 </Typography>
               ) : (
-                <Table size="small">
-                  <TableHead>
-                    <TableRow>
-                      <TableCell sx={{ fontWeight: 600 }}>Articulo</TableCell>
-                      <TableCell align="right" sx={{ fontWeight: 600 }}>Precio</TableCell>
-                      <TableCell align="center" sx={{ fontWeight: 600 }}>Cant.</TableCell>
-                      <TableCell />
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {selected.map((s) => (
-                      <TableRow key={s.codigo}>
-                        <TableCell>
-                          <Typography variant="body2" fontWeight={500}>{s.codigo}</Typography>
-                          <Typography variant="caption" color="text.secondary">{s.descripcion}</Typography>
-                        </TableCell>
-                        <TableCell align="right">{formatCurrency(s.precio)}</TableCell>
-                        <TableCell align="center">
-                          <TextField
-                            type="number"
-                            value={s.cantidad}
-                            onChange={(e) => updateCantidad(s.codigo, parseInt(e.target.value, 10))}
-                            inputProps={{ min: 1, style: { width: 50, textAlign: "center" } }}
-                          />
-                        </TableCell>
-                        <TableCell align="center">
-                          <Tooltip title="Quitar articulo">
-                            <IconButton size="small" color="error" onClick={() => removeItem(s.codigo)}>
-                              <DeleteIcon fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                <zentto-grid
+                  ref={selectedGridRef}
+                  grid-id={SELECTED_GRID_ID}
+                  height="300px"
+                  enable-status-bar
+                />
               )}
             </Paper>
           </Grid>
@@ -271,4 +290,12 @@ export default function EtiquetasPage() {
       `}</style>
     </Box>
   );
+}
+
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'zentto-grid': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & Record<string, any>, HTMLElement>;
+    }
+  }
 }
