@@ -225,6 +225,8 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             set -e
+            # Clean old files and copy fresh from deploy
+            rm -rf /opt/zentto-dev/migrations/postgres /opt/zentto-dev/sqlweb-pg
             mkdir -p /opt/zentto-dev/migrations/postgres /opt/zentto-dev/sqlweb-pg
             cp -rf /opt/zentto-dev/_deploy_tmp/web/api/migrations/postgres/* /opt/zentto-dev/migrations/postgres/
             cp -rf /opt/zentto-dev/_deploy_tmp/web/api/sqlweb-pg/* /opt/zentto-dev/sqlweb-pg/
