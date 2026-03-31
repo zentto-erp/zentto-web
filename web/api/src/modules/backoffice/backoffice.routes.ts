@@ -332,6 +332,16 @@ backofficeRouter.post("/cleanup/:queueId/action", async (req, res) => {
 
   const { action } = parsed.data;
 
+  // Protect DEMO company (CompanyId <= 1) from deletion
+  if (action === 'CONFIRM_DELETE') {
+    const preCheck = await callSp<CleanupRow>("usp_Sys_Cleanup_List", { Status: 'PENDING' });
+    const target = preCheck.find(r => r.QueueId === queueId);
+    if (target && target.CompanyId <= 1) {
+      res.status(403).json({ error: 'demo_protected', message: 'La empresa demo no puede ser eliminada' });
+      return;
+    }
+  }
+
   try {
     const rows = await callSp<CleanupProcessRow>(
       "usp_Sys_Cleanup_Process",
