@@ -13,7 +13,9 @@ import { useToast, FormGrid, FormField } from '@zentto/shared-ui';
 import {
   useUsuariosList, useCreateUsuario, useUpdateUsuario, useDeleteUsuario,
   useResetPassword, useUsuarioModulos, useSetUsuarioModulos, useSystemModules,
+  useRolesList, useUserRoles, useAssignUserRole,
 } from '@zentto/shared-api';
+import type { Role } from '@zentto/shared-api';
 import { useGridLayoutSync } from '@zentto/shared-api';
 import type { Usuario, CreateUsuarioInput, UpdateUsuarioInput } from '@zentto/shared-api';
 import type { ColumnDef } from '@zentto/datagrid-core';
@@ -60,10 +62,12 @@ export default function UsuariosPage() {
   const deleteMutation = useDeleteUsuario();
 
   // Dialogs
+  const { data: rolesData } = useRolesList();
   const [createOpen, setCreateOpen] = useState(false);
   const [editUser, setEditUser] = useState<Usuario | null>(null);
   const [resetPwdUser, setResetPwdUser] = useState<string | null>(null);
   const [modulosUser, setModulosUser] = useState<string | null>(null);
+  const [assignRoleUser, setAssignRoleUser] = useState<string | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
   if (!isAdmin) {
@@ -95,11 +99,13 @@ export default function UsuariosPage() {
       statusColors: { ADMIN: 'primary', SUP: 'primary', USER: 'default' },
       statusVariant: 'filled',
     },
+    { field: 'RoleName', header: 'Rol', width: 160, sortable: true, groupable: true },
     { field: 'permisosLabel', header: 'Permisos', width: 300, sortable: false },
     {
       field: 'actions', header: 'Acciones', type: 'actions', width: 100, pin: 'right',
       actions: [
         { icon: 'edit', label: 'Editar', action: 'edit', color: '#1976d2' },
+        { icon: 'security', label: 'Asignar Rol', action: 'assign-role', color: '#388e3c' },
         { icon: 'delete', label: 'Eliminar', action: 'delete', color: '#d32f2f' },
       ],
     },
@@ -120,6 +126,7 @@ export default function UsuariosPage() {
         Cod_Usuario: row.Cod_Usuario,
         Nombre: row.Nombre,
         Tipo: row.Tipo || 'USER',
+        RoleName: (row as any).RoleName || 'Sin rol',
         permisosLabel: flags.length > 0 ? flags.join(', ') : 'Sin permisos',
       };
     });
@@ -145,6 +152,8 @@ export default function UsuariosPage() {
       const usuario = rawRows.find((u: Usuario) => u.Cod_Usuario === row.Cod_Usuario);
       if (action === "edit" && usuario) {
         setEditUser(usuario);
+      } else if (action === "assign-role") {
+        setAssignRoleUser(row.Cod_Usuario);
       } else if (action === "delete") {
         setDeleteConfirm(row.Cod_Usuario);
       }
@@ -207,6 +216,14 @@ export default function UsuariosPage() {
 
       {/* Module Access Dialog */}
       <ModulosDialog codigo={modulosUser} onClose={() => setModulosUser(null)} onSuccess={() => showToast('Modulos actualizados correctamente', 'success')} />
+
+      {/* Assign Role Dialog */}
+      <AssignRoleDialog
+        codigo={assignRoleUser}
+        roles={rolesData?.rows || []}
+        onClose={() => setAssignRoleUser(null)}
+        onSuccess={() => showToast('Rol asignado correctamente', 'success')}
+      />
 
       {/* Reset Password Dialog */}
       <ResetPasswordDialog codigo={resetPwdUser} onClose={() => setResetPwdUser(null)} onSuccess={() => showToast('Contrasena reseteada correctamente', 'success')} />
@@ -518,6 +535,79 @@ function ResetPasswordDialog({ codigo, onClose, onSuccess }: { codigo: string | 
         <Button onClick={onClose}>Cancelar</Button>
         <Button variant="contained" onClick={handleSubmit} disabled={resetMutation.isPending}>
           {resetMutation.isPending ? <CircularProgress size={20} /> : 'Resetear'}
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+}
+
+// ─── Assign Role Dialog ────────────────────────────────────
+function AssignRoleDialog({ codigo, roles, onClose, onSuccess }: {
+  codigo: string | null;
+  roles: Role[];
+  onClose: () => void;
+  onSuccess: () => void;
+}) {
+  const { data: userRolesData, isLoading } = useUserRoles(codigo);
+  const assignMutation = useAssignUserRole(codigo || '');
+  const [selectedRoleId, setSelectedRoleId] = useState<number | ''>('');
+  const [err, setErr] = useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (userRolesData?.rows?.length) {
+      setSelectedRoleId(userRolesData.rows[0].RoleId);
+    } else {
+      setSelectedRoleId('');
+    }
+    setErr(null);
+  }, [userRolesData]);
+
+  const handleSave = async () => {
+    setErr(null);
+    if (!selectedRoleId) {
+      setErr('Seleccione un rol');
+      return;
+    }
+    try {
+      await assignMutation.mutateAsync(Number(selectedRoleId));
+      onClose();
+      onSuccess();
+    } catch (e: unknown) {
+      setErr(e instanceof Error ? e.message : 'Error al asignar rol');
+    }
+  };
+
+  return (
+    <Dialog open={!!codigo} onClose={onClose} maxWidth="xs" fullWidth>
+      <DialogTitle>Asignar Rol: {codigo}</DialogTitle>
+      <DialogContent>
+        {isLoading ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}><CircularProgress /></Box>
+        ) : (
+          <FormGrid spacing={2} sx={{ mt: 1 }}>
+            {err && <FormField xs={12}><Alert severity="error">{err}</Alert></FormField>}
+            <FormField xs={12}>
+              <TextField
+                label="Rol"
+                select
+                fullWidth
+                size="small"
+                value={selectedRoleId}
+                onChange={(e) => setSelectedRoleId(Number(e.target.value))}
+              >
+                <MenuItem value="">-- Sin rol --</MenuItem>
+                {roles.filter((r) => r.IsActive).map((r) => (
+                  <MenuItem key={r.RoleId} value={r.RoleId}>{r.RoleName} ({r.RoleCode})</MenuItem>
+                ))}
+              </TextField>
+            </FormField>
+          </FormGrid>
+        )}
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onClose}>Cancelar</Button>
+        <Button variant="contained" onClick={handleSave} disabled={assignMutation.isPending}>
+          {assignMutation.isPending ? <CircularProgress size={20} /> : 'Asignar'}
         </Button>
       </DialogActions>
     </Dialog>

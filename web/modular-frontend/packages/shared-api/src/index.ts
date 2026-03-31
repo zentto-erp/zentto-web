@@ -76,6 +76,18 @@ export {
 } from './useSettings';
 export type { SettingsModule, AllSettings, SettingMeta } from './useSettings';
 
+// Roles & Permissions hooks
+export {
+  useRolesList, useCreateRole, useDeleteRole,
+  useRolePermissions, useSaveRolePermissions,
+  useUserRoles, useAssignUserRole,
+  useLicenseLimits,
+} from './useRoles';
+export type {
+  Role, CreateRoleInput, RolePermission, BulkPermissionInput,
+  UserRole, LicenseLimits,
+} from './useRoles';
+
 // Notification Center hooks
 export {
   useNotificationsList, useMarkNotificationsRead,
