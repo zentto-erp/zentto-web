@@ -53,6 +53,7 @@ VALUES
     ('auditor.demo', 'Laura Fernandez',     '$2b$10$.Inu8RN2dH.Z7ZqAtK.9jOIVX5CwZasiq3ZNaf8aJR5sFclRDJNVS', 'laura@demo.zentto.net', FALSE, 'USER',  TRUE, 1, 'Laura Fernandez',  'user',       FALSE, FALSE, FALSE)
 ON CONFLICT ("UserCode") DO UPDATE SET
     "UserName"     = EXCLUDED."UserName",
+    "PasswordHash" = EXCLUDED."PasswordHash",
     "Email"        = EXCLUDED."Email",
     "IsAdmin"      = EXCLUDED."IsAdmin",
     "UserType"     = EXCLUDED."UserType",
