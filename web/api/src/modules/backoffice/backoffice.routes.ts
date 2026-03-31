@@ -437,6 +437,76 @@ backofficeRouter.get("/dashboard", async (_req, res) => {
   }
 });
 
+// ── GET /kafka/topics ──────────────────────────────────────────────────────
+// Returns Kafka topic activity metrics for the backoffice dashboard.
+
+backofficeRouter.get("/kafka/topics", async (_req, res) => {
+  try {
+    const KAFKA_BROKERS = process.env.KAFKA_BROKERS || "";
+    const KAFKA_ENABLED = process.env.KAFKA_ENABLED === "true";
+
+    const topics = [
+      "zentto.logs",
+      "zentto.errors",
+      "zentto.audit",
+      "zentto.performance",
+      "zentto.events",
+      "zentto-notifications",
+    ];
+
+    if (!KAFKA_ENABLED || !KAFKA_BROKERS) {
+      // Kafka not configured — return zeros
+      return res.json({
+        ok: true,
+        kafkaEnabled: false,
+        data: topics.map((t) => ({ topic: t, messageCount: 0 })),
+      });
+    }
+
+    // Try to get topic metrics from Kafka admin API
+    try {
+      const { Kafka } = await import("kafkajs");
+      const kafka = new Kafka({
+        clientId: "zentto-backoffice",
+        brokers: KAFKA_BROKERS.split(","),
+        connectionTimeout: 5000,
+        requestTimeout: 5000,
+      });
+      const admin = kafka.admin();
+      await admin.connect();
+
+      const topicOffsets = await Promise.all(
+        topics.map(async (topic) => {
+          try {
+            const offsets = await admin.fetchTopicOffsets(topic);
+            const total = offsets.reduce(
+              (sum, p) => sum + (Number(p.high) - Number(p.low)),
+              0
+            );
+            return { topic, messageCount: total };
+          } catch {
+            return { topic, messageCount: 0 };
+          }
+        })
+      );
+
+      await admin.disconnect();
+      return res.json({ ok: true, kafkaEnabled: true, data: topicOffsets });
+    } catch (kafkaErr) {
+      // Kafka connection failed — return zeros with status
+      return res.json({
+        ok: true,
+        kafkaEnabled: true,
+        kafkaError: String(kafkaErr instanceof Error ? kafkaErr.message : kafkaErr),
+        data: topics.map((t) => ({ topic: t, messageCount: 0 })),
+      });
+    }
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "internal_error";
+    res.status(500).json({ error: msg });
+  }
+});
+
 // ── GET /backups ───────────────────────────────────────────────────────────
 // Devuelve el último backup de cada tenant (para el dashboard de backoffice).
 
