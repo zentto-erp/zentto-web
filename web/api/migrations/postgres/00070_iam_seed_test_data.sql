@@ -239,17 +239,21 @@ ON CONFLICT DO NOTHING;
 -- =============================================================================
 -- 7. SEED: License for CompanyId=1 (PRO plan for testing)
 -- =============================================================================
+-- Upsert license: update if exists, insert if not (CompanyId is not UNIQUE)
+UPDATE sys."License"
+   SET "Plan"                = 'PRO',
+       "Status"              = 'ACTIVE',
+       "MaxUsers"            = 15,
+       "MaxBranches"         = 5,
+       "MaxCompanies"        = 3,
+       "MultiCompanyEnabled" = TRUE,
+       "ExpiresAt"           = (NOW() AT TIME ZONE 'UTC') + INTERVAL '365 days',
+       "UpdatedAt"           = NOW() AT TIME ZONE 'UTC'
+ WHERE "CompanyId" = 1;
+
 INSERT INTO sys."License" ("CompanyId", "Plan", "Status", "MaxUsers", "MaxBranches", "MaxCompanies", "MultiCompanyEnabled", "StartsAt", "ExpiresAt")
-VALUES (1, 'PRO', 'ACTIVE', 15, 5, 3, TRUE, NOW() AT TIME ZONE 'UTC', (NOW() AT TIME ZONE 'UTC') + INTERVAL '365 days')
-ON CONFLICT ("CompanyId") DO UPDATE SET
-    "Plan"                  = EXCLUDED."Plan",
-    "Status"                = EXCLUDED."Status",
-    "MaxUsers"              = EXCLUDED."MaxUsers",
-    "MaxBranches"           = EXCLUDED."MaxBranches",
-    "MaxCompanies"          = EXCLUDED."MaxCompanies",
-    "MultiCompanyEnabled"   = EXCLUDED."MultiCompanyEnabled",
-    "ExpiresAt"             = EXCLUDED."ExpiresAt",
-    "UpdatedAt"             = NOW() AT TIME ZONE 'UTC';
+SELECT 1, 'PRO', 'ACTIVE', 15, 5, 3, TRUE, NOW() AT TIME ZONE 'UTC', (NOW() AT TIME ZONE 'UTC') + INTERVAL '365 days'
+ WHERE NOT EXISTS (SELECT 1 FROM sys."License" WHERE "CompanyId" = 1);
 
 
 -- +goose Down
