@@ -481,6 +481,9 @@ backofficeRouter.post("/tenants/:companyId/backup", async (req, res) => {
       return;
     }
 
+    // Si la BD del tenant no existe como DB independiente, usar PG_DATABASE (shared DB en dev)
+    const dbName = tenant.DbName || process.env.PG_DATABASE || 'zentto_dev';
+
     // Responder inmediatamente — el backup corre en background
     res.status(202).json({ ok: true, message: "backup_queued" });
 
@@ -488,7 +491,7 @@ backofficeRouter.post("/tenants/:companyId/backup", async (req, res) => {
       await createTenantBackup(
         companyId,
         tenant.CompanyCode,
-        tenant.DbName,
+        dbName,
         "backoffice-manual"
       );
     });
