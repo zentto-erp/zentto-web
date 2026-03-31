@@ -251,8 +251,8 @@ UPDATE sys."License"
        "UpdatedAt"           = NOW() AT TIME ZONE 'UTC'
  WHERE "CompanyId" = 1;
 
-INSERT INTO sys."License" ("CompanyId", "Plan", "Status", "MaxUsers", "MaxBranches", "MaxCompanies", "MultiCompanyEnabled", "StartsAt", "ExpiresAt")
-SELECT 1, 'PRO', 'ACTIVE', 15, 5, 3, TRUE, NOW() AT TIME ZONE 'UTC', (NOW() AT TIME ZONE 'UTC') + INTERVAL '365 days'
+INSERT INTO sys."License" ("CompanyId", "LicenseKey", "LicenseType", "Plan", "Status", "MaxUsers", "MaxBranches", "MaxCompanies", "MultiCompanyEnabled", "StartsAt", "ExpiresAt")
+SELECT 1, 'ZENTTO-DEMO-PRO-' || md5(random()::text), 'SUBSCRIPTION', 'PRO', 'ACTIVE', 15, 5, 3, TRUE, NOW() AT TIME ZONE 'UTC', (NOW() AT TIME ZONE 'UTC') + INTERVAL '365 days'
  WHERE NOT EXISTS (SELECT 1 FROM sys."License" WHERE "CompanyId" = 1);
 
 
