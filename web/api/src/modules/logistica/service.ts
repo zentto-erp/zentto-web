@@ -163,7 +163,9 @@ export async function listGoodsReceipts(params: {
 }
 
 export async function getGoodsReceipt(goodsReceiptId: number) {
+  const { companyId } = requireScope();
   const rows = await callSp("usp_Logistics_GoodsReceipt_Get", {
+    CompanyId: companyId,
     GoodsReceiptId: goodsReceiptId,
   });
   return rows[0] || null;
@@ -214,7 +216,9 @@ export async function createGoodsReceipt(data: {
 }
 
 export async function approveGoodsReceipt(goodsReceiptId: number, userId?: number) {
+  const { companyId } = requireScope();
   const rows = await callSp("usp_Logistics_GoodsReceipt_Approve", {
+    CompanyId: companyId,
     GoodsReceiptId: goodsReceiptId,
     UserId: userId || null,
   });
@@ -284,7 +288,9 @@ export async function createGoodsReturn(data: {
 }
 
 export async function approveGoodsReturn(goodsReturnId: number, userId?: number) {
+  const { companyId } = requireScope();
   const rows = await callSp("usp_Logistics_GoodsReturn_Approve", {
+    CompanyId: companyId,
     GoodsReturnId: goodsReturnId,
     UserId: userId || null,
   });
@@ -324,7 +330,9 @@ export async function listDeliveryNotes(params: {
 }
 
 export async function getDeliveryNote(deliveryNoteId: number) {
+  const { companyId } = requireScope();
   const rows = await callSp("usp_Logistics_DeliveryNote_Get", {
+    CompanyId: companyId,
     DeliveryNoteId: deliveryNoteId,
   });
   return rows[0] || null;
@@ -378,7 +386,9 @@ export async function createDeliveryNote(data: {
 }
 
 export async function dispatchDeliveryNote(deliveryNoteId: number, userId?: number) {
+  const { companyId } = requireScope();
   const rows = await callSp("usp_Logistics_DeliveryNote_Dispatch", {
+    CompanyId: companyId,
     DeliveryNoteId: deliveryNoteId,
     UserId: userId || null,
   });
@@ -444,7 +454,9 @@ export async function deliverDeliveryNote(data: {
   deliverySignature?: string;
   userId?: number;
 }) {
+  const { companyId } = requireScope();
   const rows = await callSp("usp_Logistics_DeliveryNote_Deliver", {
+    CompanyId: companyId,
     DeliveryNoteId: data.deliveryNoteId,
     DeliveredToName: data.deliveredToName || null,
     DeliverySignature: data.deliverySignature || null,

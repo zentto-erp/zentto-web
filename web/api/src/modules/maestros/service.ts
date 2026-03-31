@@ -7,6 +7,7 @@ import {
   updateRow,
 } from "../crud/crud.service.js";
 import { getTableMetadata, type TableMetadata } from "../crud/metadata.js";
+import { getActiveScope } from "../_shared/scope.js";
 
 type MasterTableConfig = {
   schema: string;
@@ -84,6 +85,7 @@ export async function listMaestroRows(slug: string, params: { search?: string; p
   const { rows, output } = await callSpOut<any>(
     'usp_Master_Generic_List',
     {
+      CompanyId: getActiveScope()?.companyId ?? 1,
       SchemaName: config.schema,
       TableName: config.table,
       Search: params.search || null,

@@ -1,17 +1,21 @@
 -- +goose Up
--- Migration: Agregar CompanyId a tablas contabilidad legacy y filtrar en SPs de contabilidad/acct
--- Las tablas "AsientoContable", "AsientoContableDetalle" y "AjusteContable" son legacy (public schema)
--- y no tenían CompanyId. Se agrega la columna y se actualizan todas las funciones para filtrar por empresa.
+-- Migration: Rewrite contabilidad SPs to use canonical acct.* tables
+-- Legacy tables ("AsientoContable", "AsientoContableDetalle", "Cuentas", "AjusteContable")
+-- are replaced by acct."JournalEntry", acct."JournalEntryLine", acct."Account", acct."DocumentLink"
 
 -- ============================================================
 -- 1) ALTER TABLE: agregar CompanyId a tablas legacy contabilidad
+--    (mantenido por compatibilidad — entornos que aún tengan tablas legacy)
 -- ============================================================
 
 -- +goose StatementBegin
 DO $$
 BEGIN
-    -- AsientoContable
-    IF NOT EXISTS (
+    -- AsientoContable (tabla legacy, puede no existir en todos los entornos)
+    IF EXISTS (
+        SELECT 1 FROM information_schema.tables
+        WHERE table_schema = 'public' AND table_name = 'AsientoContable'
+    ) AND NOT EXISTS (
         SELECT 1 FROM information_schema.columns
         WHERE table_schema = 'public' AND table_name = 'AsientoContable' AND column_name = 'CompanyId'
     ) THEN
@@ -21,8 +25,11 @@ BEGIN
 
     -- AsientoContableDetalle (no necesita CompanyId propio, se filtra via JOIN con AsientoContable)
 
-    -- AjusteContable
-    IF NOT EXISTS (
+    -- AjusteContable (tabla legacy, puede no existir en todos los entornos)
+    IF EXISTS (
+        SELECT 1 FROM information_schema.tables
+        WHERE table_schema = 'public' AND table_name = 'AjusteContable'
+    ) AND NOT EXISTS (
         SELECT 1 FROM information_schema.columns
         WHERE table_schema = 'public' AND table_name = 'AjusteContable' AND column_name = 'CompanyId'
     ) THEN
@@ -135,7 +142,7 @@ $$;
 -- +goose StatementEnd
 
 -- ============================================================
--- 3) Contabilidad functions: agregar p_company_id como primer parametro
+-- 3) Contabilidad functions: reescritas sobre tablas canónicas acct.*
 -- ============================================================
 
 -- 3a) usp_contabilidad_asiento_get_header
@@ -156,14 +163,32 @@ CREATE OR REPLACE FUNCTION public.usp_contabilidad_asiento_get_header(
     AS $$
 BEGIN
     RETURN QUERY
-    SELECT a."Id", a."NumeroAsiento", a."Fecha", a."Periodo", a."TipoAsiento",
-           a."Referencia", a."Concepto", a."Moneda", a."Tasa",
-           a."TotalDebe", a."TotalHaber", a."Estado",
-           a."OrigenModulo", a."OrigenDocumento", a."CodUsuario",
-           a."FechaCreacion", a."FechaAnulacion", a."UsuarioAnulacion", a."MotivoAnulacion"
-    FROM "AsientoContable" a
-    WHERE a."Id" = p_asiento_id
-      AND (a."CompanyId" = p_company_id OR a."CompanyId" IS NULL);
+    SELECT a."JournalEntryId"                          AS "Id",
+           a."EntryNumber"::VARCHAR                    AS "NumeroAsiento",
+           a."EntryDate"                               AS "Fecha",
+           a."PeriodCode"::VARCHAR                     AS "Periodo",
+           a."EntryType"::VARCHAR                      AS "TipoAsiento",
+           a."ReferenceNumber"::VARCHAR                AS "Referencia",
+           a."Concept"::VARCHAR                        AS "Concepto",
+           a."CurrencyCode"::VARCHAR                   AS "Moneda",
+           a."ExchangeRate"::NUMERIC                   AS "Tasa",
+           a."TotalDebit"                              AS "TotalDebe",
+           a."TotalCredit"                             AS "TotalHaber",
+           CASE a."Status"
+               WHEN 'VOIDED' THEN 'ANULADO'::VARCHAR
+               WHEN 'APPROVED' THEN 'APROBADO'::VARCHAR
+               ELSE a."Status"::VARCHAR
+           END                                         AS "Estado",
+           a."SourceModule"::VARCHAR                   AS "OrigenModulo",
+           a."SourceDocumentNo"::VARCHAR               AS "OrigenDocumento",
+           a."CreatedByUserId"::VARCHAR                AS "CodUsuario",
+           a."CreatedAt"                               AS "FechaCreacion",
+           a."DeletedAt"                               AS "FechaAnulacion",
+           a."DeletedByUserId"::VARCHAR                AS "UsuarioAnulacion",
+           NULL::VARCHAR                               AS "MotivoAnulacion"
+    FROM acct."JournalEntry" a
+    WHERE a."JournalEntryId" = p_asiento_id
+      AND a."CompanyId" = p_company_id;
 END;
 $$;
 -- +goose StatementEnd
@@ -184,14 +209,22 @@ CREATE OR REPLACE FUNCTION public.usp_contabilidad_asiento_get_detalle(
     AS $$
 BEGIN
     RETURN QUERY
-    SELECT d."Id", d."AsientoId", d."Renglon", d."CodCuenta", d."Descripcion",
-           d."CentroCosto", d."AuxiliarTipo", d."AuxiliarCodigo", d."Documento",
-           d."Debe", d."Haber"
-    FROM "AsientoContableDetalle" d
-    INNER JOIN "AsientoContable" a ON a."Id" = d."AsientoId"
-    WHERE d."AsientoId" = p_asiento_id
-      AND (a."CompanyId" = p_company_id OR a."CompanyId" IS NULL)
-    ORDER BY d."Renglon", d."Id";
+    SELECT d."JournalEntryLineId"      AS "Id",
+           d."JournalEntryId"          AS "AsientoId",
+           d."LineNumber"              AS "Renglon",
+           d."AccountCodeSnapshot"     AS "CodCuenta",
+           d."Description"::VARCHAR    AS "Descripcion",
+           d."CostCenterCode"::VARCHAR AS "CentroCosto",
+           d."AuxiliaryType"::VARCHAR  AS "AuxiliarTipo",
+           d."AuxiliaryCode"::VARCHAR  AS "AuxiliarCodigo",
+           d."SourceDocumentNo"::VARCHAR AS "Documento",
+           d."DebitAmount"             AS "Debe",
+           d."CreditAmount"            AS "Haber"
+    FROM acct."JournalEntryLine" d
+    INNER JOIN acct."JournalEntry" a ON a."JournalEntryId" = d."JournalEntryId"
+    WHERE d."JournalEntryId" = p_asiento_id
+      AND a."CompanyId" = p_company_id
+    ORDER BY d."LineNumber", d."JournalEntryLineId";
 END;
 $$;
 -- +goose StatementEnd
@@ -224,52 +257,67 @@ DECLARE
     v_offset INT;
     v_limit  INT;
     v_total  BIGINT;
+    v_status VARCHAR;
 BEGIN
     v_limit := CASE WHEN p_limit IS NULL OR p_limit < 1 THEN 50 ELSE p_limit END;
     IF v_limit > 500 THEN v_limit := 500; END IF;
     v_offset := (CASE WHEN p_page IS NULL OR p_page < 1 THEN 1 ELSE p_page END - 1) * v_limit;
 
+    -- Traducir estado español → canónico para el filtro
+    v_status := CASE p_estado
+        WHEN 'ANULADO' THEN 'VOIDED'
+        WHEN 'APROBADO' THEN 'APPROVED'
+        WHEN 'BORRADOR' THEN 'DRAFT'
+        ELSE p_estado  -- acepta valores canónicos directamente
+    END;
+
     SELECT COUNT(1) INTO v_total
-    FROM "AsientoContable" a
-    WHERE (a."CompanyId" = p_company_id OR a."CompanyId" IS NULL)
-      AND (p_fecha_desde IS NULL OR a."Fecha" >= p_fecha_desde)
-      AND (p_fecha_hasta IS NULL OR a."Fecha" <= p_fecha_hasta)
-      AND (p_tipo_asiento IS NULL OR a."TipoAsiento" = p_tipo_asiento)
-      AND (p_estado IS NULL OR a."Estado" = p_estado)
-      AND (p_origen_modulo IS NULL OR a."OrigenModulo" = p_origen_modulo)
-      AND (p_origen_documento IS NULL OR a."OrigenDocumento" = p_origen_documento);
+    FROM acct."JournalEntry" a
+    WHERE a."CompanyId" = p_company_id
+      AND COALESCE(a."IsDeleted", FALSE) = FALSE
+      AND (p_fecha_desde IS NULL OR a."EntryDate" >= p_fecha_desde)
+      AND (p_fecha_hasta IS NULL OR a."EntryDate" <= p_fecha_hasta)
+      AND (p_tipo_asiento IS NULL OR a."EntryType" = p_tipo_asiento)
+      AND (v_status IS NULL OR a."Status" = v_status)
+      AND (p_origen_modulo IS NULL OR a."SourceModule" = p_origen_modulo)
+      AND (p_origen_documento IS NULL OR a."SourceDocumentNo" = p_origen_documento);
 
     RETURN QUERY
     SELECT
         v_total,
-        a."Id",
-        a."NumeroAsiento",
-        a."Fecha",
-        a."Periodo",
-        a."TipoAsiento",
-        a."Referencia",
-        a."Concepto",
-        a."Moneda",
-        a."Tasa",
-        a."TotalDebe",
-        a."TotalHaber",
-        a."Estado",
-        a."OrigenModulo",
-        a."OrigenDocumento",
-        a."CodUsuario",
-        a."FechaCreacion",
-        a."FechaAnulacion",
-        a."UsuarioAnulacion",
-        a."MotivoAnulacion"
-    FROM "AsientoContable" a
-    WHERE (a."CompanyId" = p_company_id OR a."CompanyId" IS NULL)
-      AND (p_fecha_desde IS NULL OR a."Fecha" >= p_fecha_desde)
-      AND (p_fecha_hasta IS NULL OR a."Fecha" <= p_fecha_hasta)
-      AND (p_tipo_asiento IS NULL OR a."TipoAsiento" = p_tipo_asiento)
-      AND (p_estado IS NULL OR a."Estado" = p_estado)
-      AND (p_origen_modulo IS NULL OR a."OrigenModulo" = p_origen_modulo)
-      AND (p_origen_documento IS NULL OR a."OrigenDocumento" = p_origen_documento)
-    ORDER BY a."Id" DESC
+        a."JournalEntryId"                          AS "Id",
+        a."EntryNumber"::VARCHAR                    AS "NumeroAsiento",
+        a."EntryDate"                               AS "Fecha",
+        a."PeriodCode"::VARCHAR                     AS "Periodo",
+        a."EntryType"::VARCHAR                      AS "TipoAsiento",
+        a."ReferenceNumber"::VARCHAR                AS "Referencia",
+        a."Concept"::VARCHAR                        AS "Concepto",
+        a."CurrencyCode"::VARCHAR                   AS "Moneda",
+        a."ExchangeRate"::NUMERIC                   AS "Tasa",
+        a."TotalDebit"                              AS "TotalDebe",
+        a."TotalCredit"                             AS "TotalHaber",
+        CASE a."Status"
+            WHEN 'VOIDED' THEN 'ANULADO'::VARCHAR
+            WHEN 'APPROVED' THEN 'APROBADO'::VARCHAR
+            ELSE a."Status"::VARCHAR
+        END                                         AS "Estado",
+        a."SourceModule"::VARCHAR                   AS "OrigenModulo",
+        a."SourceDocumentNo"::VARCHAR               AS "OrigenDocumento",
+        a."CreatedByUserId"::VARCHAR                AS "CodUsuario",
+        a."CreatedAt"                               AS "FechaCreacion",
+        a."DeletedAt"                               AS "FechaAnulacion",
+        a."DeletedByUserId"::VARCHAR                AS "UsuarioAnulacion",
+        NULL::VARCHAR                               AS "MotivoAnulacion"
+    FROM acct."JournalEntry" a
+    WHERE a."CompanyId" = p_company_id
+      AND COALESCE(a."IsDeleted", FALSE) = FALSE
+      AND (p_fecha_desde IS NULL OR a."EntryDate" >= p_fecha_desde)
+      AND (p_fecha_hasta IS NULL OR a."EntryDate" <= p_fecha_hasta)
+      AND (p_tipo_asiento IS NULL OR a."EntryType" = p_tipo_asiento)
+      AND (v_status IS NULL OR a."Status" = v_status)
+      AND (p_origen_modulo IS NULL OR a."SourceModule" = p_origen_modulo)
+      AND (p_origen_documento IS NULL OR a."SourceDocumentNo" = p_origen_documento)
+    ORDER BY a."JournalEntryId" DESC
     LIMIT v_limit OFFSET v_offset;
 END;
 $$;
@@ -291,26 +339,29 @@ CREATE OR REPLACE FUNCTION public.usp_contabilidad_balance_comprobacion(
 BEGIN
     RETURN QUERY
     SELECT
-        d."CodCuenta",
-        c."DESCRIPCION",
-        SUM(d."Debe"),
-        SUM(d."Haber"),
+        d."AccountCodeSnapshot"                     AS "CodCuenta",
+        c."AccountName"::VARCHAR                    AS "CuentaDescripcion",
+        SUM(d."DebitAmount")                        AS "TotalDebe",
+        SUM(d."CreditAmount")                       AS "TotalHaber",
         CASE
-            WHEN SUM(d."Debe" - d."Haber") > 0 THEN SUM(d."Debe" - d."Haber")
+            WHEN SUM(d."DebitAmount" - d."CreditAmount") > 0 THEN SUM(d."DebitAmount" - d."CreditAmount")
             ELSE 0::NUMERIC
-        END,
+        END                                         AS "SaldoDeudor",
         CASE
-            WHEN SUM(d."Debe" - d."Haber") < 0 THEN ABS(SUM(d."Debe" - d."Haber"))
+            WHEN SUM(d."DebitAmount" - d."CreditAmount") < 0 THEN ABS(SUM(d."DebitAmount" - d."CreditAmount"))
             ELSE 0::NUMERIC
-        END
-    FROM "AsientoContableDetalle" d
-    INNER JOIN "AsientoContable" a ON a."Id" = d."AsientoId"
-    LEFT JOIN "Cuentas" c ON c."COD_CUENTA" = d."CodCuenta"
-    WHERE a."Estado" <> 'ANULADO'
-      AND (a."CompanyId" = p_company_id OR a."CompanyId" IS NULL)
-      AND a."Fecha" BETWEEN p_fecha_desde AND p_fecha_hasta
-    GROUP BY d."CodCuenta", c."DESCRIPCION"
-    ORDER BY d."CodCuenta";
+        END                                         AS "SaldoAcreedor"
+    FROM acct."JournalEntryLine" d
+    INNER JOIN acct."JournalEntry" a ON a."JournalEntryId" = d."JournalEntryId"
+    LEFT JOIN acct."Account" c ON c."AccountCode" = d."AccountCodeSnapshot"
+                               AND c."CompanyId" = p_company_id
+                               AND COALESCE(c."IsDeleted", FALSE) = FALSE
+    WHERE a."Status" <> 'VOIDED'
+      AND a."CompanyId" = p_company_id
+      AND COALESCE(a."IsDeleted", FALSE) = FALSE
+      AND a."EntryDate" BETWEEN p_fecha_desde AND p_fecha_hasta
+    GROUP BY d."AccountCodeSnapshot", c."AccountName"
+    ORDER BY d."AccountCodeSnapshot";
 END;
 $$;
 -- +goose StatementEnd
@@ -330,17 +381,20 @@ BEGIN
     RETURN QUERY
     WITH base AS (
         SELECT
-            d."CodCuenta",
-            c."DESCRIPCION" AS "CuentaDescripcion",
-            SUM(d."Debe" - d."Haber") AS "Saldo"
-        FROM "AsientoContableDetalle" d
-        INNER JOIN "AsientoContable" a ON a."Id" = d."AsientoId"
-        LEFT JOIN "Cuentas" c ON c."COD_CUENTA" = d."CodCuenta"
-        WHERE a."Estado" <> 'ANULADO'
-          AND (a."CompanyId" = p_company_id OR a."CompanyId" IS NULL)
-          AND a."Fecha" <= p_fecha_corte
-          AND (d."CodCuenta" LIKE '1%' OR d."CodCuenta" LIKE '2%' OR d."CodCuenta" LIKE '3%')
-        GROUP BY d."CodCuenta", c."DESCRIPCION"
+            d."AccountCodeSnapshot"                 AS "CodCuenta",
+            c."AccountName"::VARCHAR                AS "CuentaDescripcion",
+            SUM(d."DebitAmount" - d."CreditAmount") AS "Saldo"
+        FROM acct."JournalEntryLine" d
+        INNER JOIN acct."JournalEntry" a ON a."JournalEntryId" = d."JournalEntryId"
+        LEFT JOIN acct."Account" c ON c."AccountCode" = d."AccountCodeSnapshot"
+                                   AND c."CompanyId" = p_company_id
+                                   AND COALESCE(c."IsDeleted", FALSE) = FALSE
+        WHERE a."Status" <> 'VOIDED'
+          AND a."CompanyId" = p_company_id
+          AND COALESCE(a."IsDeleted", FALSE) = FALSE
+          AND a."EntryDate" <= p_fecha_corte
+          AND (d."AccountCodeSnapshot" LIKE '1%' OR d."AccountCodeSnapshot" LIKE '2%' OR d."AccountCodeSnapshot" LIKE '3%')
+        GROUP BY d."AccountCodeSnapshot", c."AccountName"
     )
     SELECT
         CASE
@@ -369,14 +423,15 @@ CREATE OR REPLACE FUNCTION public.usp_contabilidad_balance_general_resumen(
 BEGIN
     RETURN QUERY
     SELECT
-        SUM(CASE WHEN d."CodCuenta" LIKE '1%' THEN (d."Debe" - d."Haber") ELSE 0 END),
-        SUM(CASE WHEN d."CodCuenta" LIKE '2%' THEN (d."Haber" - d."Debe") ELSE 0 END),
-        SUM(CASE WHEN d."CodCuenta" LIKE '3%' THEN (d."Haber" - d."Debe") ELSE 0 END)
-    FROM "AsientoContableDetalle" d
-    INNER JOIN "AsientoContable" a ON a."Id" = d."AsientoId"
-    WHERE a."Estado" <> 'ANULADO'
-      AND (a."CompanyId" = p_company_id OR a."CompanyId" IS NULL)
-      AND a."Fecha" <= p_fecha_corte;
+        SUM(CASE WHEN d."AccountCodeSnapshot" LIKE '1%' THEN (d."DebitAmount" - d."CreditAmount") ELSE 0 END) AS "TotalActivos",
+        SUM(CASE WHEN d."AccountCodeSnapshot" LIKE '2%' THEN (d."CreditAmount" - d."DebitAmount") ELSE 0 END) AS "TotalPasivos",
+        SUM(CASE WHEN d."AccountCodeSnapshot" LIKE '3%' THEN (d."CreditAmount" - d."DebitAmount") ELSE 0 END) AS "TotalPatrimonio"
+    FROM acct."JournalEntryLine" d
+    INNER JOIN acct."JournalEntry" a ON a."JournalEntryId" = d."JournalEntryId"
+    WHERE a."Status" <> 'VOIDED'
+      AND a."CompanyId" = p_company_id
+      AND COALESCE(a."IsDeleted", FALSE) = FALSE
+      AND a."EntryDate" <= p_fecha_corte;
 END;
 $$;
 -- +goose StatementEnd
@@ -397,20 +452,23 @@ BEGIN
     RETURN QUERY
     WITH base AS (
         SELECT
-            d."CodCuenta",
-            c."DESCRIPCION" AS "CuentaDescripcion",
-            SUM(d."Debe") AS "Debe",
-            SUM(d."Haber") AS "Haber",
-            SUM(d."Haber" - d."Debe") AS "Neto"
-        FROM "AsientoContableDetalle" d
-        INNER JOIN "AsientoContable" a ON a."Id" = d."AsientoId"
-        LEFT JOIN "Cuentas" c ON c."COD_CUENTA" = d."CodCuenta"
-        WHERE a."Estado" <> 'ANULADO'
-          AND (a."CompanyId" = p_company_id OR a."CompanyId" IS NULL)
-          AND a."Fecha" BETWEEN p_fecha_desde AND p_fecha_hasta
-          AND (d."CodCuenta" LIKE '4%' OR d."CodCuenta" LIKE '5%'
-               OR d."CodCuenta" LIKE '6%' OR d."CodCuenta" LIKE '7%')
-        GROUP BY d."CodCuenta", c."DESCRIPCION"
+            d."AccountCodeSnapshot"                     AS "CodCuenta",
+            c."AccountName"::VARCHAR                    AS "CuentaDescripcion",
+            SUM(d."DebitAmount")                        AS "Debe",
+            SUM(d."CreditAmount")                       AS "Haber",
+            SUM(d."CreditAmount" - d."DebitAmount")     AS "Neto"
+        FROM acct."JournalEntryLine" d
+        INNER JOIN acct."JournalEntry" a ON a."JournalEntryId" = d."JournalEntryId"
+        LEFT JOIN acct."Account" c ON c."AccountCode" = d."AccountCodeSnapshot"
+                                   AND c."CompanyId" = p_company_id
+                                   AND COALESCE(c."IsDeleted", FALSE) = FALSE
+        WHERE a."Status" <> 'VOIDED'
+          AND a."CompanyId" = p_company_id
+          AND COALESCE(a."IsDeleted", FALSE) = FALSE
+          AND a."EntryDate" BETWEEN p_fecha_desde AND p_fecha_hasta
+          AND (d."AccountCodeSnapshot" LIKE '4%' OR d."AccountCodeSnapshot" LIKE '5%'
+               OR d."AccountCodeSnapshot" LIKE '6%' OR d."AccountCodeSnapshot" LIKE '7%')
+        GROUP BY d."AccountCodeSnapshot", c."AccountName"
     )
     SELECT
         CASE
@@ -443,19 +501,20 @@ CREATE OR REPLACE FUNCTION public.usp_contabilidad_estado_resultados_resumen(
 BEGIN
     RETURN QUERY
     SELECT
-        SUM(CASE WHEN d."CodCuenta" LIKE '4%' THEN (d."Haber" - d."Debe") ELSE 0 END),
-        SUM(CASE WHEN d."CodCuenta" LIKE '5%' THEN (d."Debe" - d."Haber") ELSE 0 END),
-        SUM(CASE WHEN d."CodCuenta" LIKE '6%' THEN (d."Debe" - d."Haber") ELSE 0 END),
+        SUM(CASE WHEN d."AccountCodeSnapshot" LIKE '4%' THEN (d."CreditAmount" - d."DebitAmount") ELSE 0 END) AS "TotalIngresos",
+        SUM(CASE WHEN d."AccountCodeSnapshot" LIKE '5%' THEN (d."DebitAmount" - d."CreditAmount") ELSE 0 END) AS "TotalCostos",
+        SUM(CASE WHEN d."AccountCodeSnapshot" LIKE '6%' THEN (d."DebitAmount" - d."CreditAmount") ELSE 0 END) AS "TotalGastos",
         SUM(CASE
-            WHEN d."CodCuenta" LIKE '4%' THEN (d."Haber" - d."Debe")
-            WHEN d."CodCuenta" LIKE '5%' OR d."CodCuenta" LIKE '6%' THEN -(d."Debe" - d."Haber")
+            WHEN d."AccountCodeSnapshot" LIKE '4%' THEN (d."CreditAmount" - d."DebitAmount")
+            WHEN d."AccountCodeSnapshot" LIKE '5%' OR d."AccountCodeSnapshot" LIKE '6%' THEN -(d."DebitAmount" - d."CreditAmount")
             ELSE 0
-        END)
-    FROM "AsientoContableDetalle" d
-    INNER JOIN "AsientoContable" a ON a."Id" = d."AsientoId"
-    WHERE a."Estado" <> 'ANULADO'
-      AND (a."CompanyId" = p_company_id OR a."CompanyId" IS NULL)
-      AND a."Fecha" BETWEEN p_fecha_desde AND p_fecha_hasta;
+        END) AS "ResultadoNeto"
+    FROM acct."JournalEntryLine" d
+    INNER JOIN acct."JournalEntry" a ON a."JournalEntryId" = d."JournalEntryId"
+    WHERE a."Status" <> 'VOIDED'
+      AND a."CompanyId" = p_company_id
+      AND COALESCE(a."IsDeleted", FALSE) = FALSE
+      AND a."EntryDate" BETWEEN p_fecha_desde AND p_fecha_hasta;
 END;
 $$;
 -- +goose StatementEnd
@@ -475,19 +534,22 @@ CREATE OR REPLACE FUNCTION public.usp_contabilidad_libro_mayor(
 BEGIN
     RETURN QUERY
     SELECT
-        d."CodCuenta",
-        c."DESCRIPCION",
-        SUM(d."Debe"),
-        SUM(d."Haber"),
-        SUM(d."Debe" - d."Haber")
-    FROM "AsientoContableDetalle" d
-    INNER JOIN "AsientoContable" a ON a."Id" = d."AsientoId"
-    LEFT JOIN "Cuentas" c ON c."COD_CUENTA" = d."CodCuenta"
-    WHERE a."Estado" <> 'ANULADO'
-      AND (a."CompanyId" = p_company_id OR a."CompanyId" IS NULL)
-      AND a."Fecha" BETWEEN p_fecha_desde AND p_fecha_hasta
-    GROUP BY d."CodCuenta", c."DESCRIPCION"
-    ORDER BY d."CodCuenta";
+        d."AccountCodeSnapshot"                     AS "CodCuenta",
+        c."AccountName"::VARCHAR                    AS "CuentaDescripcion",
+        SUM(d."DebitAmount")                        AS "Debe",
+        SUM(d."CreditAmount")                       AS "Haber",
+        SUM(d."DebitAmount" - d."CreditAmount")     AS "Saldo"
+    FROM acct."JournalEntryLine" d
+    INNER JOIN acct."JournalEntry" a ON a."JournalEntryId" = d."JournalEntryId"
+    LEFT JOIN acct."Account" c ON c."AccountCode" = d."AccountCodeSnapshot"
+                               AND c."CompanyId" = p_company_id
+                               AND COALESCE(c."IsDeleted", FALSE) = FALSE
+    WHERE a."Status" <> 'VOIDED'
+      AND a."CompanyId" = p_company_id
+      AND COALESCE(a."IsDeleted", FALSE) = FALSE
+      AND a."EntryDate" BETWEEN p_fecha_desde AND p_fecha_hasta
+    GROUP BY d."AccountCodeSnapshot", c."AccountName"
+    ORDER BY d."AccountCodeSnapshot";
 END;
 $$;
 -- +goose StatementEnd
@@ -511,32 +573,35 @@ CREATE OR REPLACE FUNCTION public.usp_contabilidad_mayor_analitico(
 BEGIN
     RETURN QUERY
     SELECT
-        a."Fecha",
-        a."NumeroAsiento",
-        a."Referencia",
-        a."Concepto",
-        d."Renglon",
-        d."CodCuenta",
-        c."DESCRIPCION",
-        d."CentroCosto",
-        d."AuxiliarTipo",
-        d."AuxiliarCodigo",
-        d."Documento",
-        d."Debe",
-        d."Haber"
-    FROM "AsientoContableDetalle" d
-    INNER JOIN "AsientoContable" a ON a."Id" = d."AsientoId"
-    LEFT JOIN "Cuentas" c ON c."COD_CUENTA" = d."CodCuenta"
-    WHERE d."CodCuenta" = p_cod_cuenta
-      AND a."Estado" <> 'ANULADO'
-      AND (a."CompanyId" = p_company_id OR a."CompanyId" IS NULL)
-      AND a."Fecha" BETWEEN p_fecha_desde AND p_fecha_hasta
-    ORDER BY a."Fecha", a."Id", d."Renglon";
+        a."EntryDate"                               AS "Fecha",
+        a."EntryNumber"::VARCHAR                    AS "NumeroAsiento",
+        a."ReferenceNumber"::VARCHAR                AS "Referencia",
+        a."Concept"::VARCHAR                        AS "Concepto",
+        d."LineNumber"                              AS "Renglon",
+        d."AccountCodeSnapshot"                     AS "CodCuenta",
+        c."AccountName"::VARCHAR                    AS "CuentaDescripcion",
+        d."CostCenterCode"::VARCHAR                 AS "CentroCosto",
+        d."AuxiliaryType"::VARCHAR                  AS "AuxiliarTipo",
+        d."AuxiliaryCode"::VARCHAR                  AS "AuxiliarCodigo",
+        d."SourceDocumentNo"::VARCHAR               AS "Documento",
+        d."DebitAmount"                             AS "Debe",
+        d."CreditAmount"                            AS "Haber"
+    FROM acct."JournalEntryLine" d
+    INNER JOIN acct."JournalEntry" a ON a."JournalEntryId" = d."JournalEntryId"
+    LEFT JOIN acct."Account" c ON c."AccountCode" = d."AccountCodeSnapshot"
+                               AND c."CompanyId" = p_company_id
+                               AND COALESCE(c."IsDeleted", FALSE) = FALSE
+    WHERE d."AccountCodeSnapshot" = p_cod_cuenta
+      AND a."Status" <> 'VOIDED'
+      AND a."CompanyId" = p_company_id
+      AND COALESCE(a."IsDeleted", FALSE) = FALSE
+      AND a."EntryDate" BETWEEN p_fecha_desde AND p_fecha_hasta
+    ORDER BY a."EntryDate", a."JournalEntryId", d."LineNumber";
 END;
 $$;
 -- +goose StatementEnd
 
--- 3k) usp_contabilidad_asiento_crear — INSERT: guarda CompanyId en AsientoContable
+-- 3k) usp_contabilidad_asiento_crear — INSERT: crea JournalEntry + JournalEntryLine canónicos
 -- +goose StatementBegin
 CREATE OR REPLACE FUNCTION public.usp_contabilidad_asiento_crear(
     p_company_id integer,
@@ -560,8 +625,19 @@ DECLARE
     v_debe            NUMERIC(18,2);
     v_haber           NUMERIC(18,2);
     v_next            INT;
+    v_branch_id       INT;
+    v_user_id         INT;
 BEGIN
     v_periodo := TO_CHAR(p_fecha, 'YYYY-MM');
+
+    -- Resolver BranchId (default 1)
+    v_branch_id := 1;
+
+    -- Resolver UserId desde código de usuario (si es numérico)
+    v_user_id := NULL;
+    IF p_cod_usuario IS NOT NULL AND p_cod_usuario ~ '^\d+$' THEN
+        v_user_id := p_cod_usuario::INT;
+    END IF;
 
     -- Crear tabla temporal con el detalle parseado del JSONB
     CREATE TEMP TABLE _det_asiento (
@@ -599,13 +675,16 @@ BEGIN
         RETURN;
     END IF;
 
+    -- Validar que todas las cuentas existan en acct."Account"
     IF EXISTS (
         SELECT 1
-        FROM _det_asiento d
-        LEFT JOIN "Cuentas" c ON c."COD_CUENTA" = d."CodCuenta"
-        WHERE c."COD_CUENTA" IS NULL
+        FROM _det_asiento dt
+        LEFT JOIN acct."Account" ac ON ac."AccountCode" = dt."CodCuenta"
+                                    AND ac."CompanyId" = p_company_id
+                                    AND COALESCE(ac."IsDeleted", FALSE) = FALSE
+        WHERE ac."AccountId" IS NULL
     ) THEN
-        RETURN QUERY SELECT NULL::BIGINT, NULL::VARCHAR, -3, 'Existe detalle con cuenta no registrada en Cuentas'::TEXT;
+        RETURN QUERY SELECT NULL::BIGINT, NULL::VARCHAR, -3, 'Existe detalle con cuenta no registrada en Account'::TEXT;
         RETURN;
     END IF;
 
@@ -620,48 +699,70 @@ BEGIN
 
     -- Generar numero secuencial (filtrado por company)
     SELECT COALESCE(MAX(
-        CASE WHEN RIGHT("NumeroAsiento", 8) ~ '^\d+$'
-             THEN RIGHT("NumeroAsiento", 8)::INT
+        CASE WHEN RIGHT("EntryNumber", 8) ~ '^\d+$'
+             THEN RIGHT("EntryNumber", 8)::INT
              ELSE 0 END
     ), 0) + 1
     INTO v_next
-    FROM "AsientoContable"
-    WHERE "CompanyId" = p_company_id OR "CompanyId" IS NULL;
+    FROM acct."JournalEntry"
+    WHERE "CompanyId" = p_company_id;
 
     v_numero_asiento := 'AST-' || LPAD(v_next::TEXT, 8, '0');
 
-    INSERT INTO "AsientoContable" (
-        "CompanyId", "NumeroAsiento", "Fecha", "Periodo", "TipoAsiento", "Referencia", "Concepto", "Moneda", "Tasa",
-        "TotalDebe", "TotalHaber", "Estado", "OrigenModulo", "OrigenDocumento", "CodUsuario", "FechaCreacion"
+    INSERT INTO acct."JournalEntry" (
+        "CompanyId", "BranchId", "EntryNumber", "EntryDate", "PeriodCode",
+        "EntryType", "ReferenceNumber", "Concept", "CurrencyCode", "ExchangeRate",
+        "TotalDebit", "TotalCredit", "Status",
+        "SourceModule", "SourceDocumentNo",
+        "CreatedByUserId", "CreatedAt"
     )
     VALUES (
-        p_company_id, v_numero_asiento, p_fecha, v_periodo, p_tipo_asiento, p_referencia, p_concepto, p_moneda, p_tasa,
-        v_debe, v_haber, 'APROBADO', p_origen_modulo, p_origen_documento, p_cod_usuario, NOW() AT TIME ZONE 'UTC'
+        p_company_id, v_branch_id, v_numero_asiento, p_fecha, v_periodo,
+        p_tipo_asiento, p_referencia, p_concepto, p_moneda, p_tasa,
+        v_debe, v_haber, 'APPROVED',
+        p_origen_modulo, p_origen_documento,
+        v_user_id, NOW() AT TIME ZONE 'UTC'
     )
-    RETURNING "Id" INTO v_asiento_id;
+    RETURNING "JournalEntryId" INTO v_asiento_id;
 
-    INSERT INTO "AsientoContableDetalle" (
-        "AsientoId", "Renglon", "CodCuenta", "Descripcion", "CentroCosto",
-        "AuxiliarTipo", "AuxiliarCodigo", "Documento", "Debe", "Haber"
+    -- Insertar líneas resolviendo AccountId desde AccountCode
+    INSERT INTO acct."JournalEntryLine" (
+        "JournalEntryId", "LineNumber", "AccountId", "AccountCodeSnapshot",
+        "Description", "DebitAmount", "CreditAmount",
+        "AuxiliaryType", "AuxiliaryCode", "CostCenterCode", "SourceDocumentNo"
     )
     SELECT
-        v_asiento_id, "Renglon", "CodCuenta", "Descripcion", "CentroCosto",
-        "AuxiliarTipo", "AuxiliarCodigo", "Documento", "Debe", "Haber"
-    FROM _det_asiento
-    ORDER BY "Renglon";
+        v_asiento_id,
+        dt."Renglon",
+        ac."AccountId",
+        dt."CodCuenta",
+        dt."Descripcion",
+        dt."Debe",
+        dt."Haber",
+        dt."AuxiliarTipo",
+        dt."AuxiliarCodigo",
+        dt."CentroCosto",
+        dt."Documento"
+    FROM _det_asiento dt
+    INNER JOIN acct."Account" ac ON ac."AccountCode" = dt."CodCuenta"
+                                 AND ac."CompanyId" = p_company_id
+                                 AND COALESCE(ac."IsDeleted", FALSE) = FALSE
+    ORDER BY dt."Renglon";
 
+    -- Insertar link de documento origen en acct."DocumentLink"
     IF p_origen_modulo IS NOT NULL AND p_origen_documento IS NOT NULL THEN
-        INSERT INTO "AsientoOrigenAuxiliar" (
-            "OrigenModulo", "TipoDocumento", "NumeroDocumento", "TablaOrigen", "LlaveOrigen", "AsientoId", "Estado"
+        INSERT INTO acct."DocumentLink" (
+            "CompanyId", "BranchId", "ModuleCode", "DocumentType",
+            "DocumentNumber", "JournalEntryId", "CreatedAt"
         )
         VALUES (
+            p_company_id,
+            v_branch_id,
             p_origen_modulo,
             p_tipo_asiento,
             p_origen_documento,
-            NULL,
-            p_origen_documento,
             v_asiento_id,
-            'APLICADO'
+            NOW() AT TIME ZONE 'UTC'
         );
     END IF;
 
@@ -673,7 +774,7 @@ END;
 $_$;
 -- +goose StatementEnd
 
--- 3l) usp_contabilidad_asiento_anular — UPDATE: valida CompanyId
+-- 3l) usp_contabilidad_asiento_anular — UPDATE: soft-delete en JournalEntry canónico
 -- +goose StatementBegin
 CREATE OR REPLACE FUNCTION public.usp_contabilidad_asiento_anular(
     p_company_id integer,
@@ -683,23 +784,33 @@ CREATE OR REPLACE FUNCTION public.usp_contabilidad_asiento_anular(
 ) RETURNS TABLE("Resultado" integer, "Mensaje" text)
     LANGUAGE plpgsql
     AS $$
+DECLARE
+    v_user_id INT;
 BEGIN
     IF NOT EXISTS (
-        SELECT 1 FROM "AsientoContable"
-        WHERE "Id" = p_asiento_id
-          AND ("CompanyId" = p_company_id OR "CompanyId" IS NULL)
+        SELECT 1 FROM acct."JournalEntry"
+        WHERE "JournalEntryId" = p_asiento_id
+          AND "CompanyId" = p_company_id
     ) THEN
         RETURN QUERY SELECT -1, 'Asiento no encontrado'::TEXT;
         RETURN;
     END IF;
 
-    UPDATE "AsientoContable"
-    SET "Estado" = 'ANULADO',
-        "FechaAnulacion" = NOW() AT TIME ZONE 'UTC',
-        "UsuarioAnulacion" = p_cod_usuario,
-        "MotivoAnulacion" = p_motivo
-    WHERE "Id" = p_asiento_id
-      AND ("CompanyId" = p_company_id OR "CompanyId" IS NULL);
+    -- Resolver UserId
+    v_user_id := NULL;
+    IF p_cod_usuario IS NOT NULL AND p_cod_usuario ~ '^\d+$' THEN
+        v_user_id := p_cod_usuario::INT;
+    END IF;
+
+    UPDATE acct."JournalEntry"
+    SET "Status"          = 'VOIDED',
+        "IsDeleted"       = TRUE,
+        "DeletedAt"       = NOW() AT TIME ZONE 'UTC',
+        "DeletedByUserId" = v_user_id,
+        "UpdatedAt"       = NOW() AT TIME ZONE 'UTC',
+        "UpdatedByUserId" = v_user_id
+    WHERE "JournalEntryId" = p_asiento_id
+      AND "CompanyId" = p_company_id;
 
     RETURN QUERY SELECT 1, 'OK'::TEXT;
 
@@ -709,7 +820,7 @@ END;
 $$;
 -- +goose StatementEnd
 
--- 3m) usp_contabilidad_ajuste_crear — INSERT: pasa CompanyId a asiento_crear y guarda en AjusteContable
+-- 3m) usp_contabilidad_ajuste_crear — wrapper: crea asiento tipo AJU + DocumentLink
 -- +goose StatementBegin
 CREATE OR REPLACE FUNCTION public.usp_contabilidad_ajuste_crear(
     p_company_id integer,
@@ -729,6 +840,7 @@ DECLARE
     v_mensaje        TEXT;
     rec              RECORD;
 BEGIN
+    -- Delegar creación del asiento contable
     SELECT * INTO rec
     FROM usp_contabilidad_asiento_crear(
         p_company_id,
@@ -748,9 +860,21 @@ BEGIN
     v_resultado  := rec."Resultado";
     v_mensaje    := rec."Mensaje";
 
+    -- Si el asiento se creó exitosamente, registrar como ajuste en DocumentLink
     IF v_resultado = 1 THEN
-        INSERT INTO "AjusteContable" ("AsientoId", "TipoAjuste", "Motivo", "Fecha", "Estado", "CodUsuario", "CompanyId")
-        VALUES (v_asiento_id, p_tipo_ajuste, p_motivo, p_fecha, 'APROBADO', p_cod_usuario, p_company_id);
+        INSERT INTO acct."DocumentLink" (
+            "CompanyId", "BranchId", "ModuleCode", "DocumentType",
+            "DocumentNumber", "JournalEntryId", "CreatedAt"
+        )
+        VALUES (
+            p_company_id,
+            1,
+            'CONTABILIDAD',
+            p_tipo_ajuste,
+            COALESCE(p_referencia, 'AJU-' || v_asiento_id::TEXT),
+            v_asiento_id,
+            NOW() AT TIME ZONE 'UTC'
+        );
     END IF;
 
     RETURN QUERY SELECT v_asiento_id, v_resultado, v_mensaje;
@@ -760,5 +884,5 @@ $$;
 
 -- +goose Down
 -- Revert: solo comentarios — no se eliminan columnas CompanyId para no perder datos
--- Las funciones antiguas sin p_company_id quedarían desactualizadas; un rollback completo
--- requeriría recrearlas con las firmas originales, lo cual es destructivo.
+-- Las funciones antiguas sin tablas canónicas quedarían desactualizadas; un rollback completo
+-- requeriría recrearlas con las firmas originales apuntando a tablas legacy, lo cual es destructivo.

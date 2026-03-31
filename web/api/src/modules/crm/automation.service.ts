@@ -70,9 +70,10 @@ export async function upsertRule(data: {
 }
 
 export async function deleteRule(ruleId: number, userId: number): Promise<SpResult> {
+  const s = scope();
   const { output } = await callSpOut(
     "usp_CRM_Automation_Delete",
-    { RuleId: ruleId, UserId: userId },
+    { CompanyId: s.companyId, RuleId: ruleId, UserId: userId },
     { Resultado: sql.Int, Mensaje: sql.NVarChar(500) },
   );
   return parseSpResult(output);
