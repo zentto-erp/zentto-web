@@ -612,6 +612,7 @@ export default function OrdenDetalleDialog({ open, onClose, workOrderId }: Orden
         enable-context-menu
         enable-status-bar
         enable-configurator
+        enable-header-filters
       ></zentto-grid>
               {materials.length === 0 && !isLoading && (
                 <Typography variant="body2" color="text.secondary" sx={{ textAlign: "center", py: 3 }}>
@@ -651,6 +652,7 @@ export default function OrdenDetalleDialog({ open, onClose, workOrderId }: Orden
         enable-context-menu
         enable-status-bar
         enable-configurator
+        enable-header-filters
       ></zentto-grid>
               {outputs.length === 0 && !isLoading && (
                 <Typography variant="body2" color="text.secondary" sx={{ textAlign: "center", py: 3 }}>

@@ -6,7 +6,6 @@ import {
   Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle,
   Paper, Stack, TextField, Typography,
 } from '@mui/material';
-import AddIcon from '@mui/icons-material/Add';
 import type { ColumnDef } from '@zentto/datagrid-core';
 import { ContextActionHeader } from '@zentto/shared-ui';
 import { useGridLayoutSync } from '@zentto/shared-api';
@@ -81,7 +80,6 @@ function buildCatalogGridId(endpoint: string, tableName?: string, schema?: strin
 export default function CatalogoCrudBase({ endpoint, title, apiClient, fields, tableName, schema, timeZone }: CatalogoCrudBaseProps) {
   const gridRef = useRef<any>(null);
   const queryClient = useQueryClient();
-  const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editKey, setEditKey] = useState<string | number | null>(null);
@@ -98,8 +96,8 @@ export default function CatalogoCrudBase({ endpoint, title, apiClient, fields, t
   });
 
   const listQuery = useQuery<CatalogResponse>({
-    queryKey: [endpoint, 'catalog-list', search, page, PAGE_SIZE],
-    queryFn: async () => apiClient.list(endpoint, { page, limit: PAGE_SIZE, search: search.trim() || undefined }),
+    queryKey: [endpoint, 'catalog-list', page, PAGE_SIZE],
+    queryFn: async () => apiClient.list(endpoint, { page, limit: PAGE_SIZE }),
     placeholderData: (previous) => previous,
   });
 
@@ -195,32 +193,32 @@ export default function CatalogoCrudBase({ endpoint, title, apiClient, fields, t
     return () => el.removeEventListener('action-click', handler);
   }, [registered, gridRows, handleEdit, handleDelete]);
 
+  useEffect(() => {
+    const el = gridRef.current; if (!el || !registered) return;
+    const handler = () => { setFormValues({}); setEditKey(null); setDialogOpen(true); };
+    el.addEventListener('create-click', handler);
+    return () => el.removeEventListener('create-click', handler);
+  }, [registered]);
+
   const isFormDisabled = resolvedFields.some((f) => f.required && !asString(formValues[f.name]).trim());
 
   return (
     <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
       <ContextActionHeader title={title}
         primaryAction={{ label: 'Nuevo', onClick: () => { setFormValues({}); setEditKey(null); setDialogOpen(true); } }}
-        onSearch={(v) => { setSearch(v); setPage(1); }}
-        searchPlaceholder="Buscar registros..."
       />
 
       <Box sx={{ p: { xs: 1, md: 3 }, flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
         {feedback && <Alert severity={feedback.type} sx={{ mb: 2 }}>{feedback.message}</Alert>}
 
         <Box sx={{ mt: 0, flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-          <Stack spacing={1.5}>
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-              <Button variant="contained" startIcon={<AddIcon />} onClick={() => { setFormValues({}); setEditKey(null); setDialogOpen(true); }}>Nuevo</Button>
-            </Box>
-
-            <Box sx={{ width: '100%', minHeight: 420 }}>
-              <zentto-grid ref={gridRef} grid-id={gridId} height="420px"
-                enable-toolbar enable-header-menu enable-header-filters enable-clipboard
-                enable-quick-search enable-context-menu enable-status-bar enable-configurator
-              />
-            </Box>
-          </Stack>
+          <Box sx={{ width: '100%', minHeight: 420 }}>
+            <zentto-grid ref={gridRef} grid-id={gridId} height="420px"
+              enable-toolbar enable-header-menu enable-header-filters enable-clipboard
+              enable-quick-search enable-context-menu enable-status-bar enable-configurator
+              enable-create create-label="Nuevo"
+            />
+          </Box>
         </Box>
       </Box>
 

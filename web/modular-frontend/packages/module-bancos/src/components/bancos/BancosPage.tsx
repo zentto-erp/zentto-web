@@ -1,10 +1,8 @@
 "use client";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Stack, TextField, Typography,
 } from "@mui/material";
-import SearchIcon from "@mui/icons-material/Search";
-import InputAdornment from "@mui/material/InputAdornment";
 import { useToast } from "@zentto/shared-ui";
 import type { ColumnDef } from "@zentto/datagrid-core";
 import { useGridLayoutSync } from "@zentto/shared-api";
@@ -32,7 +30,6 @@ const GRID_ID = "module-bancos:bancos:list";
 
 export default function BancosPage() {
   const gridRef = useRef<any>(null);
-  const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(50);
   const [formOpen, setFormOpen] = useState(false);
@@ -40,7 +37,7 @@ export default function BancosPage() {
   const [form, setForm] = useState({ ...EMPTY_FORM });
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
 
-  const { data, isLoading } = useBancosList({ search, page, limit });
+  const { data, isLoading } = useBancosList({ page, limit });
   const crear = useCreateBanco();
   const actualizar = useUpdateBanco();
   const eliminar = useDeleteBanco();
@@ -91,12 +88,6 @@ export default function BancosPage() {
   return (
     <Box>
       <Typography variant="h5" fontWeight={600} mb={2}>Entidades</Typography>
-
-      <TextField placeholder="Buscar banco..." size="small" value={search}
-        onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-        sx={{ mb: 2, maxWidth: 360 }}
-        InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon fontSize="small" /></InputAdornment> }}
-      />
 
       <Box sx={{ minHeight: 400 }}>
         <zentto-grid ref={gridRef} grid-id={GRID_ID} height="400px" enable-create create-label="Nuevo Banco" enable-toolbar enable-header-menu enable-header-filters enable-clipboard enable-quick-search enable-context-menu enable-status-bar enable-configurator />

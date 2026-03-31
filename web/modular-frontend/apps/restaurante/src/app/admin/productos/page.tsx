@@ -5,7 +5,6 @@ import {
     Box, Typography, Button, Dialog, DialogTitle, DialogContent, DialogActions,
     TextField, CircularProgress, Switch, FormControlLabel, Select, MenuItem, InputLabel, FormControl
 } from '@mui/material';
-import AddIcon from '@mui/icons-material/Add';
 import type { ColumnDef } from '@zentto/datagrid-core';
 import { useGridLayoutSync } from '@zentto/shared-api';
 import {
@@ -92,6 +91,14 @@ export default function AdminProductosPage() {
         return () => el.removeEventListener("action-click", handler);
     }, [registered, productos]);
 
+    useEffect(() => {
+        const el = gridRef.current;
+        if (!el || !registered) return;
+        const handler = () => { setEditing({ disponible: true }); setOpen(true); };
+        el.addEventListener("create-click", handler);
+        return () => el.removeEventListener("create-click", handler);
+    }, [registered]);
+
     const handleSave = async () => {
         try {
             await upsertProductoMutation.mutateAsync({
@@ -119,13 +126,6 @@ export default function AdminProductosPage() {
         <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', height: '100%' }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
                 <Typography variant="h4" fontWeight="bold">Platos y Bebidas</Typography>
-                <Button
-                    variant="contained"
-                    startIcon={<AddIcon />}
-                    onClick={() => { setEditing({ disponible: true }); setOpen(true); }}
-                >
-                    Nuevo Producto
-                </Button>
             </Box>
 
             {loading && !rows.length ? (
@@ -145,6 +145,8 @@ export default function AdminProductosPage() {
                     enable-context-menu
                     enable-status-bar
                     enable-configurator
+                    enable-create
+                    create-label="Nuevo Producto"
                 />
             )}
 

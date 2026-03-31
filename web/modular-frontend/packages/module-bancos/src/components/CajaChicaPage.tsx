@@ -11,7 +11,7 @@ import LockIcon from "@mui/icons-material/Lock";
 import ReceiptIcon from "@mui/icons-material/Receipt";
 import LocalAtmIcon from "@mui/icons-material/LocalAtm";
 import { formatCurrency, useGridLayoutSync } from "@zentto/shared-api";
-import { useToast, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
+import { useToast } from "@zentto/shared-ui";
 import type { ColumnDef } from "@zentto/datagrid-core";
 import {
   useCajaChicaBoxes, useCreateCajaChicaBox, useOpenSession, useCloseSession,
@@ -24,11 +24,6 @@ const CATEGORIAS = [
   { value: "TRANSPORTE", label: "Transporte" }, { value: "MATERIAL_OFICINA", label: "Material de Oficina" },
   { value: "LIMPIEZA", label: "Limpieza" }, { value: "ALIMENTACION", label: "Alimentación" },
   { value: "MANTENIMIENTO", label: "Mantenimiento" }, { value: "MENSAJERIA", label: "Mensajería" }, { value: "OTROS", label: "Otros" },
-];
-
-const CAJA_CHICA_FILTERS: FilterFieldDef[] = [
-  { field: "estado", label: "Estado", type: "select", options: [{ value: "ACTIVE", label: "Activa" }, { value: "INACTIVE", label: "Inactiva" }] },
-  { field: "from", label: "Fecha desde", type: "date" }, { field: "to", label: "Fecha hasta", type: "date" },
 ];
 
 const COLS_BOXES: ColumnDef[] = [
@@ -67,8 +62,6 @@ export default function CajaChicaPage() {
   const boxesGridRef = useRef<any>(null);
   const expensesGridRef = useRef<any>(null);
   const { showToast } = useToast();
-  const [cajaSearch, setCajaSearch] = useState("");
-  const [cajaFilterValues, setCajaFilterValues] = useState<Record<string, string>>({});
   const [selectedBoxId, setSelectedBoxId] = useState<number | null>(null);
   const [showCreateBox, setShowCreateBox] = useState(false);
   const [showOpenSession, setShowOpenSession] = useState(false);
@@ -142,7 +135,6 @@ export default function CajaChicaPage() {
         <Grid size={{ xs: 12, lg: 4 }}>
           <Paper sx={{ p: 2 }}>
             <Typography variant="subtitle1" fontWeight="bold" mb={1}><LocalAtmIcon sx={{ mr: 1, verticalAlign: "middle", fontSize: 20 }} />Cajas Chicas</Typography>
-            <ZenttoFilterPanel filters={CAJA_CHICA_FILTERS} values={cajaFilterValues} onChange={setCajaFilterValues} searchPlaceholder="Buscar caja chica..." searchValue={cajaSearch} onSearchChange={setCajaSearch} />
             <zentto-grid ref={boxesGridRef} grid-id={BOXES_GRID_ID} height="350px" show-totals enable-create create-label="Nueva Caja" enable-toolbar enable-header-menu enable-header-filters enable-clipboard enable-quick-search enable-context-menu enable-status-bar enable-configurator />
           </Paper>
         </Grid>

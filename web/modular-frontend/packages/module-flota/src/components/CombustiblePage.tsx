@@ -10,7 +10,6 @@ import {
   DialogContent,
   DialogTitle,
   IconButton,
-  Stack,
   TextField,
   Toolbar,
   Typography,
@@ -19,7 +18,7 @@ import {
   CircularProgress,
 } from "@mui/material";
 import Grid from "@mui/material/Grid";
-import {  DatePicker, FormGrid, FormField, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
+import {  DatePicker, FormGrid, FormField } from "@zentto/shared-ui";
 import dayjs from "dayjs";
 import CloseIcon from "@mui/icons-material/Close";
 import { formatCurrency, useGridLayoutSync } from "@zentto/shared-api";
@@ -32,11 +31,6 @@ import {
 import type { ColumnDef } from "@zentto/datagrid-core";
 
 
-const COMBUSTIBLE_FILTERS: FilterFieldDef[] = [
-  { field: "from", label: "Fecha desde", type: "date" },
-  { field: "to", label: "Fecha hasta", type: "date" },
-];
-
 const GRID_ID = "module-flota:combustible:list";
 
 export default function CombustiblePage() {
@@ -44,7 +38,6 @@ export default function CombustiblePage() {
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   const [filter, setFilter] = useState<FuelFilter>({ page: 1, limit: 25 });
-  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
   const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 25 });
   const [dialogOpen, setDialogOpen] = useState(false);
 
@@ -195,24 +188,6 @@ export default function CombustiblePage() {
           Control de Combustible
         </Typography>
       </Box>
-
-      {/* Filters */}
-      <ZenttoFilterPanel
-        filters={COMBUSTIBLE_FILTERS}
-        values={filterValues}
-        onChange={(vals) => {
-          setFilterValues(vals);
-          setFilter((f) => ({
-            ...f,
-            fechaDesde: vals.from || undefined,
-            fechaHasta: vals.to || undefined,
-          }));
-          setPaginationModel((p) => ({ ...p, page: 0 }));
-        }}
-        searchPlaceholder="Buscar registros..."
-        searchValue=""
-        onSearchChange={() => {}}
-      />
 
       {/* DataGrid */}
       <zentto-grid

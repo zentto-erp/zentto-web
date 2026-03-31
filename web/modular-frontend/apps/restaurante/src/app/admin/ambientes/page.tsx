@@ -5,7 +5,6 @@ import {
     Box, Typography, Button, Dialog, DialogTitle, DialogContent, DialogActions,
     TextField, CircularProgress
 } from '@mui/material';
-import AddIcon from '@mui/icons-material/Add';
 import type { ColumnDef } from '@zentto/datagrid-core';
 import { useGridLayoutSync } from '@zentto/shared-api';
 import {
@@ -77,6 +76,14 @@ export default function AdminAmbientesPage() {
         return () => el.removeEventListener("action-click", handler);
     }, [registered, ambientes]);
 
+    useEffect(() => {
+        const el = gridRef.current;
+        if (!el || !registered) return;
+        const handler = () => { setEditing({}); setOpen(true); };
+        el.addEventListener("create-click", handler);
+        return () => el.removeEventListener("create-click", handler);
+    }, [registered]);
+
     const handleSave = async () => {
         try {
             await upsertAmbienteMutation.mutateAsync({
@@ -100,13 +107,6 @@ export default function AdminAmbientesPage() {
         <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', height: '100%' }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
                 <Typography variant="h4" fontWeight="bold">Configurar Salones y Mesas</Typography>
-                <Button
-                    variant="contained"
-                    startIcon={<AddIcon />}
-                    onClick={() => { setEditing({}); setOpen(true); }}
-                >
-                    Nuevo Ambiente
-                </Button>
             </Box>
 
             {loading && !rows.length ? (
@@ -126,6 +126,8 @@ export default function AdminAmbientesPage() {
                     enable-context-menu
                     enable-status-bar
                     enable-configurator
+                    enable-create
+                    create-label="Nuevo Ambiente"
                 />
             )}
 

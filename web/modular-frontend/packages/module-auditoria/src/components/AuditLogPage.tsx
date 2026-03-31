@@ -15,7 +15,7 @@ import {
   Alert,
   CircularProgress,
 } from "@mui/material";
-import { ContextActionHeader, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
+import { ContextActionHeader } from "@zentto/shared-ui";
 import { formatDateTime, useGridLayoutSync } from "@zentto/shared-api";
 import { useTimezone } from "@zentto/shared-auth";
 import { useAuditLogs, useAuditLogDetail, type AuditLogFilter } from "../hooks/useAuditoria";
@@ -31,29 +31,12 @@ const ACTION_COLORS: Record<string, "success" | "info" | "warning" | "error" | "
   LOGIN: "default",
 };
 
-const AUDIT_FILTERS: FilterFieldDef[] = [
-  {
-    field: "actionType", label: "Accion", type: "select",
-    options: [
-      { value: "CREATE", label: "CREATE" },
-      { value: "UPDATE", label: "UPDATE" },
-      { value: "DELETE", label: "DELETE" },
-      { value: "VOID", label: "VOID" },
-      { value: "LOGIN", label: "LOGIN" },
-    ],
-  },
-  { field: "userName", label: "Usuario", type: "text" },
-  { field: "fechaDesde", label: "Fecha desde", type: "date" },
-  { field: "fechaHasta", label: "Fecha hasta", type: "date" },
-];
-
 const GRID_ID = buildAuditoriaGridId("audit-log", "list");
 
 export default function AuditLogPage() {
   const { timeZone } = useTimezone();
-  const [filter, setFilter] = useState<AuditLogFilter>({ page: 1, limit: 25 });
+  const [filter] = useState<AuditLogFilter>({ page: 1, limit: 25 });
   const [selectedId, setSelectedId] = useState<number | null>(null);
-  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
   const gridRef = useRef<any>(null);
   const { ready: layoutReady } = useGridLayoutSync(GRID_ID);
   const { registered } = useAuditoriaGridRegistration(layoutReady);
@@ -102,10 +85,6 @@ const { data, isLoading } = useAuditLogs(filter);
     },
   ];
 
-  const updateFilter = (key: string, value: string) => {
-    setFilter((f) => ({ ...f, [key]: value || undefined, page: 1 }));
-  };
-
   // Bind data to zentto-grid web component
   useEffect(() => {
     const el = gridRef.current;
@@ -131,27 +110,6 @@ const { data, isLoading } = useAuditLogs(filter);
       <ContextActionHeader title="Bitácora de Auditoría" />
 
       <Box sx={{ p: { xs: 2, md: 3 }, flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-        {/* Filters */}
-        <ZenttoFilterPanel
-          filters={AUDIT_FILTERS}
-          values={filterValues}
-          onChange={(vals) => {
-            setFilterValues(vals);
-            setFilter((f) => ({
-              ...f,
-              actionType: vals.actionType || undefined,
-              userName: vals.userName || undefined,
-              fechaDesde: vals.fechaDesde || undefined,
-              fechaHasta: vals.fechaHasta || undefined,
-              page: 1,
-            }));
-          }}
-          searchPlaceholder="Buscar por modulo, entidad..."
-          searchValue={filter.search || ""}
-          onSearchChange={(v) => updateFilter("search", v)}
-          defaultOpen
-        />
-
         {/* Grid */}
         <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, border: "1px solid #E5E7EB" }}>
           <zentto-grid

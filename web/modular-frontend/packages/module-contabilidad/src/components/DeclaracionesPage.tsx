@@ -98,6 +98,14 @@ export default function DeclaracionesPage() {
     return () => el.removeEventListener('action-click', handler);
   }, [registered, presentarMutation]);
 
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+    const handler = () => setOpenCalc(true);
+    el.addEventListener('create-click', handler);
+    return () => el.removeEventListener('create-click', handler);
+  }, [registered]);
+
   const handleCalcular = async () => {
     await calcularMutation.mutateAsync(calcForm);
     setOpenCalc(false);
@@ -127,6 +135,8 @@ export default function DeclaracionesPage() {
             enable-context-menu
             enable-status-bar
             enable-configurator
+            enable-create
+            create-label="Nueva Declaracion"
           ></zentto-grid>
         </Paper>
       </Box>
