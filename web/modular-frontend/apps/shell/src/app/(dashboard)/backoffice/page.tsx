@@ -1116,6 +1116,7 @@ function RespaldosTab({ gridId, masterKey }: { gridId: string; masterKey: string
   const [backupConfirmOpen, setBackupConfirmOpen] = useState(false);
   const [backupLoading, setBackupLoading] = useState(false);
   const [runningIds, setRunningIds] = useState<Set<number>>(new Set());
+  const [progressMap, setProgressMap] = useState<Map<number, { phase: string; percent: number; detail: string; elapsedSeconds: number }>>(new Map());
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const load = useCallback(async () => {
@@ -1161,16 +1162,37 @@ function RespaldosTab({ gridId, masterKey }: { gridId: string; masterKey: string
 
   useEffect(() => { load(); }, [load]);
 
-  // Poll cada 5s mientras haya backups en progreso
+  // Poll progreso cada 3s mientras haya backups en progreso
+  const pollProgress = useCallback(async () => {
+    if (runningIds.size === 0) return;
+    const newMap = new Map(progressMap);
+    let anyRunning = false;
+    for (const cid of runningIds) {
+      try {
+        const res = await apiFetch<{ ok: boolean; running: boolean; phase?: string; percent?: number; detail?: string; elapsedSeconds?: number }>(
+          `/v1/backoffice/tenants/${cid}/backup/progress`, masterKey
+        );
+        if (res.running) {
+          anyRunning = true;
+          newMap.set(cid, { phase: res.phase ?? "", percent: res.percent ?? 0, detail: res.detail ?? "", elapsedSeconds: res.elapsedSeconds ?? 0 });
+        } else {
+          newMap.delete(cid);
+        }
+      } catch { /* ignore */ }
+    }
+    setProgressMap(newMap);
+    if (!anyRunning) { setRunningIds(new Set()); load(); }
+  }, [runningIds, masterKey, progressMap, load]);
+
   useEffect(() => {
     if (runningIds.size > 0) {
-      pollRef.current = setInterval(load, 5000);
+      pollRef.current = setInterval(pollProgress, 3000);
     } else if (pollRef.current) {
       clearInterval(pollRef.current);
       pollRef.current = null;
     }
     return () => { if (pollRef.current) clearInterval(pollRef.current); };
-  }, [runningIds.size, load]);
+  }, [runningIds.size, pollProgress]);
 
   const handleBackup = async () => {
     if (!backupTarget) return;
@@ -1274,12 +1296,29 @@ function RespaldosTab({ gridId, masterKey }: { gridId: string; masterKey: string
       {error && (
         <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>
       )}
-      {runningIds.size > 0 && (
-        <Alert severity="info" sx={{ mb: 2 }}>
-          Respaldo en progreso... actualizando automaticamente.
-          <LinearProgress sx={{ mt: 1 }} />
-        </Alert>
-      )}
+      {runningIds.size > 0 && Array.from(runningIds).map(cid => {
+        const p = progressMap.get(cid);
+        const row = rows.find(r => r.CompanyId === cid);
+        return (
+          <Alert key={cid} severity="info" sx={{ mb: 2 }}>
+            <Typography variant="subtitle2" fontWeight={600}>
+              Respaldo: {row?.LegalName ?? `Tenant #${cid}`}
+            </Typography>
+            <Typography variant="body2" sx={{ mt: 0.5 }}>
+              {p?.detail || "Iniciando..."}
+              {p?.elapsedSeconds ? ` (${p.elapsedSeconds}s)` : ""}
+            </Typography>
+            <LinearProgress
+              variant={p?.percent ? "determinate" : "indeterminate"}
+              value={p?.percent ?? 0}
+              sx={{ mt: 1, height: 8, borderRadius: 4 }}
+            />
+            {p?.percent != null && (
+              <Typography variant="caption" color="text.secondary">{p.percent}%</Typography>
+            )}
+          </Alert>
+        );
+      })}
       <Stack direction="row" justifyContent="flex-end" mb={1}>
         <Button startIcon={<RefreshIcon />} onClick={load} disabled={loading}>
           Actualizar
