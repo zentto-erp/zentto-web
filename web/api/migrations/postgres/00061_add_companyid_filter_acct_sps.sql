@@ -10,8 +10,11 @@
 -- +goose StatementBegin
 DO $$
 BEGIN
-    -- AsientoContable
-    IF NOT EXISTS (
+    -- AsientoContable (tabla legacy, puede no existir en todos los entornos)
+    IF EXISTS (
+        SELECT 1 FROM information_schema.tables
+        WHERE table_schema = 'public' AND table_name = 'AsientoContable'
+    ) AND NOT EXISTS (
         SELECT 1 FROM information_schema.columns
         WHERE table_schema = 'public' AND table_name = 'AsientoContable' AND column_name = 'CompanyId'
     ) THEN
@@ -21,8 +24,11 @@ BEGIN
 
     -- AsientoContableDetalle (no necesita CompanyId propio, se filtra via JOIN con AsientoContable)
 
-    -- AjusteContable
-    IF NOT EXISTS (
+    -- AjusteContable (tabla legacy, puede no existir en todos los entornos)
+    IF EXISTS (
+        SELECT 1 FROM information_schema.tables
+        WHERE table_schema = 'public' AND table_name = 'AjusteContable'
+    ) AND NOT EXISTS (
         SELECT 1 FROM information_schema.columns
         WHERE table_schema = 'public' AND table_name = 'AjusteContable' AND column_name = 'CompanyId'
     ) THEN
