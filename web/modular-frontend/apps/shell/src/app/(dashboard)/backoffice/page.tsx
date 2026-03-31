@@ -1149,10 +1149,25 @@ function RespaldosTab({ gridId, masterKey }: { gridId: string; masterKey: string
         };
       });
       setRows(mapped);
-      // Track running backups for polling
+
+      // Detectar backups en progreso — consultar /progress de cada tenant
       const running = new Set<number>();
-      mapped.forEach(r => { if (r.BackupStatus === "RUNNING") running.add(r.CompanyId); });
+      const newProgress = new Map(progressMap);
+      await Promise.all(mapped.map(async (r) => {
+        try {
+          const p = await apiFetch<{ ok: boolean; running: boolean; phase?: string; percent?: number; detail?: string; elapsedSeconds?: number }>(
+            `/v1/backoffice/tenants/${r.CompanyId}/backup/progress`, masterKey
+          );
+          if (p.running) {
+            running.add(r.CompanyId);
+            newProgress.set(r.CompanyId, { phase: p.phase ?? "", percent: p.percent ?? 0, detail: p.detail ?? "", elapsedSeconds: p.elapsedSeconds ?? 0 });
+          } else {
+            newProgress.delete(r.CompanyId);
+          }
+        } catch { /* ignore */ }
+      }));
       setRunningIds(running);
+      setProgressMap(newProgress);
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -1280,6 +1295,7 @@ function RespaldosTab({ gridId, masterKey }: { gridId: string; masterKey: string
       const target = rows.find((r) => r.CompanyCode === row.CompanyCode);
       if (!target) return;
       if (action === "backup") {
+        if (runningIds.has(target.CompanyId)) return; // Bloqueado mientras hay backup en curso
         setBackupTarget(target);
         setBackupConfirmOpen(true);
       } else if (action === "view") {
@@ -1289,7 +1305,7 @@ function RespaldosTab({ gridId, masterKey }: { gridId: string; masterKey: string
     };
     el.addEventListener("action-click", handler);
     return () => el.removeEventListener("action-click", handler);
-  }, [rows, loadHistory]);
+  }, [rows, runningIds, loadHistory]);
 
   return (
     <Box>
