@@ -62,7 +62,7 @@ jobs:
             NEXT_PUBLIC_API_URL=https://apidev.zentto.net
             NEXT_PUBLIC_BACKEND_URL=https://apidev.zentto.net
             NEXT_PUBLIC_SHELL_URL=https://appdev.zentto.net
-            NEXT_PUBLIC_TURNSTILE_SITE_KEY=0x4AAAAAACsUe-s-UNo9WDiI
+            NEXT_PUBLIC_TURNSTILE_SITE_KEY=1x00000000000000000000AA
             NEXT_PUBLIC_PADDLE_CLIENT_TOKEN=live_8c250213a8ec06eb59974f48296
 
   # ── 2. Deploy DEV container ────────────────────────────────────────
