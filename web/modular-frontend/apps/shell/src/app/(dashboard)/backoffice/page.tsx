@@ -834,8 +834,8 @@ function RecursosTab({ gridId, masterKey }: { gridId: string; masterKey: string 
         CompanyId: r.CompanyId as number,
         CompanyCode: r.CompanyCode as string,
         LegalName: r.LegalName as string,
-        DbSizeMB: Number(r.DbSizeMB ?? 0),
-        LastLoginAt: (r.LastLoginAt as string) ?? null,
+        DbSizeMB: r.DbSizeMB != null && r.DbSizeMB !== "" ? Number(r.DbSizeMB) || 0 : 0,
+        LastLoginAt: r.LastLoginAt && r.LastLoginAt !== "null" ? String(r.LastLoginAt) : null,
         Status: r.Status as string,
       }));
       setRows(mapped);
