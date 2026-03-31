@@ -116,7 +116,7 @@ export function useAssignUserRole(userId: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (roleId: number) =>
-      apiPost(`/v1/roles/usuarios/${userId}`, { roleId }),
+      apiPost(`/v1/roles/usuarios/${userId}`, { roleIds: [roleId] }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: [QK_USER_ROLES, userId] });
       qc.invalidateQueries({ queryKey: [QK_ROLES] });
