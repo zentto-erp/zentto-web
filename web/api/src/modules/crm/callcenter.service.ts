@@ -136,9 +136,10 @@ export async function updateAgentStatus(
   agentId: number,
   status: string,
 ): Promise<SpResult> {
+  const s = scope();
   const { output } = await callSpOut(
     "usp_CRM_Agent_UpdateStatus",
-    { AgentId: agentId, Status: status },
+    { CompanyId: s.companyId, AgentId: agentId, Status: status },
     { Resultado: sql.Int, Mensaje: sql.NVarChar(500) },
   );
   return parseSpResult(output);
@@ -191,7 +192,8 @@ export async function listCalls(params: ListCallsParams) {
 }
 
 export async function getCall(callLogId: number) {
-  const rows = await callSp("usp_CRM_CallLog_Get", { CallLogId: callLogId });
+  const s = scope();
+  const rows = await callSp("usp_CRM_CallLog_Get", { CompanyId: s.companyId, CallLogId: callLogId });
   return rows[0] || null;
 }
 
@@ -331,7 +333,8 @@ export async function listCampaigns(params: {
 }
 
 export async function getCampaign(campaignId: number) {
-  const rows = await callSp("usp_CRM_Campaign_Get", { CampaignId: campaignId });
+  const s = scope();
+  const rows = await callSp("usp_CRM_Campaign_Get", { CompanyId: s.companyId, CampaignId: campaignId });
   return rows[0] || null;
 }
 
@@ -379,16 +382,19 @@ export async function updateCampaignStatus(
   status: string,
   userId: number,
 ): Promise<SpResult> {
+  const s = scope();
   const { output } = await callSpOut(
     "usp_CRM_Campaign_UpdateStatus",
-    { CampaignId: campaignId, Status: status, UserId: userId },
+    { CompanyId: s.companyId, CampaignId: campaignId, Status: status, UserId: userId },
     { Resultado: sql.Int, Mensaje: sql.NVarChar(500) },
   );
   return parseSpResult(output);
 }
 
 export async function getNextContact(campaignId: number, agentId: number) {
+  const s = scope();
   const rows = await callSp("usp_CRM_Campaign_GetNextContact", {
+    CompanyId: s.companyId,
     CampaignId: campaignId,
     AgentId: agentId,
   });
@@ -402,9 +408,11 @@ export async function logAttempt(data: {
   notes?: string | null;
   userId: number;
 }): Promise<SpResult> {
+  const s = scope();
   const { output } = await callSpOut(
     "usp_CRM_Campaign_LogAttempt",
     {
+      CompanyId: s.companyId,
       CampaignContactId: data.campaignContactId,
       Result: data.result,
       CallbackDate: data.callbackDate ?? null,

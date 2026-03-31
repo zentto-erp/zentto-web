@@ -121,13 +121,14 @@ export async function getCustomerProfile(customerId: number) {
 // ─── Addresses ───────────────────────────────────────────────
 
 export async function listAddresses(customerId: number) {
-  return callSp("usp_Shipping_Address_List", { ShippingCustomerId: customerId });
+  return callSp("usp_Shipping_Address_List", { CompanyId: scope().companyId, ShippingCustomerId: customerId });
 }
 
 export async function upsertAddress(customerId: number, data: any) {
   const { output } = await callSpOut(
     "usp_Shipping_Address_Upsert",
     {
+      CompanyId: scope().companyId,
       ShippingAddressId: data.shippingAddressId || null,
       ShippingCustomerId: customerId,
       Label: data.label || "Principal",
@@ -252,6 +253,7 @@ export async function createShipment(customerId: number, data: any) {
           await callSpOut(
             "usp_Shipping_Shipment_UpdateStatus",
             {
+              CompanyId: scope().companyId,
               ShipmentId: shipmentId,
               NewStatus: "LABEL_READY",
               EventDescription: `Guía generada: ${label.trackingNumber}`,
@@ -280,6 +282,7 @@ export async function createShipment(customerId: number, data: any) {
 
 export async function listShipments(customerId: number, filters: { status?: string; search?: string; page?: number; limit?: number }) {
   const params: any = {
+    CompanyId: scope().companyId,
     ShippingCustomerId: customerId,
     Status: filters.status || null,
     Search: filters.search || null,
@@ -297,14 +300,16 @@ export async function listShipments(customerId: number, filters: { status?: stri
 }
 
 export async function getShipment(shipmentId: number, customerId?: number) {
+  const cid = scope().companyId;
   const shipment = await callSp("usp_Shipping_Shipment_Get", {
+    CompanyId: cid,
     ShipmentId: shipmentId,
     ShippingCustomerId: customerId || null,
   });
 
   // For PG we need separate calls for related data
-  const events = await callSp("usp_Shipping_Shipment_Events", { ShipmentId: shipmentId }).catch(() => []);
-  const packages = await callSp("usp_Shipping_Shipment_Packages", { ShipmentId: shipmentId }).catch(() => []);
+  const events = await callSp("usp_Shipping_Shipment_Events", { CompanyId: cid, ShipmentId: shipmentId }).catch(() => []);
+  const packages = await callSp("usp_Shipping_Shipment_Packages", { CompanyId: cid, ShipmentId: shipmentId }).catch(() => []);
 
   return {
     shipment: shipment[0] || null,
@@ -322,6 +327,7 @@ export async function updateShipmentStatus(
   const { output } = await callSpOut(
     "usp_Shipping_Shipment_UpdateStatus",
     {
+      CompanyId: scope().companyId,
       ShipmentId: shipmentId,
       NewStatus: status,
       EventDescription: description,
@@ -337,7 +343,7 @@ export async function updateShipmentStatus(
   // Get shipment to notify customer
   if (output.Resultado === 1) {
     try {
-      const shipment = (await callSp("usp_Shipping_Shipment_Get", { ShipmentId: shipmentId }))[0] as any;
+      const shipment = (await callSp("usp_Shipping_Shipment_Get", { CompanyId: scope().companyId, ShipmentId: shipmentId }))[0] as any;
       if (shipment?.ShippingCustomerId) {
         const profile = await getCustomerProfile(shipment.ShippingCustomerId);
         if (profile?.Email) {
@@ -365,8 +371,9 @@ interface ShipmentTrackRow {
 
 export async function trackPublic(trackingNumber: string) {
   // 1. Buscar en nuestra BD
-  const [shipment] = await callSp<ShipmentTrackRow>("usp_Shipping_Track", { TrackingNumber: trackingNumber });
-  const storedEvents = await callSp("usp_Shipping_Track_Events", { TrackingNumber: trackingNumber }).catch(() => []);
+  const cid = scope().companyId;
+  const [shipment] = await callSp<ShipmentTrackRow>("usp_Shipping_Track", { CompanyId: cid, TrackingNumber: trackingNumber });
+  const storedEvents = await callSp("usp_Shipping_Track_Events", { CompanyId: cid, TrackingNumber: trackingNumber }).catch(() => []);
 
   // 2. Si el envío tiene un carrier conocido (ZOOM, MRW, LIBERTY), consultar su API
   if (shipment?.CarrierCode && shipment.CarrierCode !== "MANUAL") {
@@ -389,7 +396,7 @@ export async function trackPublic(trackingNumber: string) {
             }).catch(() => {});
           }
           // Devolver los eventos frescos del carrier
-          const refreshed = await callSp("usp_Shipping_Track_Events", { TrackingNumber: trackingNumber }).catch(() => storedEvents);
+          const refreshed = await callSp("usp_Shipping_Track_Events", { CompanyId: cid, TrackingNumber: trackingNumber }).catch(() => storedEvents);
           return { shipment, events: refreshed };
         }
       }
@@ -438,6 +445,7 @@ export async function upsertCustoms(shipmentId: number, data: any) {
   const { output } = await callSpOut(
     "usp_Shipping_Customs_Upsert",
     {
+      CompanyId: scope().companyId,
       ShipmentId: shipmentId,
       ContentType: data.contentType || "MERCHANDISE",
       TotalDeclaredValue: data.totalDeclaredValue,
@@ -462,7 +470,7 @@ export async function upsertCustoms(shipmentId: number, data: any) {
 // ─── Dashboard ───────────────────────────────────────────────
 
 export async function getDashboard(customerId: number) {
-  const rows = await callSp("usp_Shipping_Dashboard", { ShippingCustomerId: customerId });
+  const rows = await callSp("usp_Shipping_Dashboard", { CompanyId: scope().companyId, ShippingCustomerId: customerId });
   return rows[0] || null;
 }
 

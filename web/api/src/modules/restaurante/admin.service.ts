@@ -84,21 +84,25 @@ async function resolveInventoryProductId(value?: string) {
 
 async function resolveMenuCategoryId(value?: number) {
   if (!value || value <= 0) return null;
+  const scope = await getDefaultScope();
   const rows = await callSp<{ id: number }>(
     "usp_Rest_Admin_ResolveMenuCategory",
-    { MenuCategoryId: value }
+    { CompanyId: scope.companyId, MenuCategoryId: value }
   );
   return rows[0]?.id == null ? null : Number(rows[0].id);
 }
 
 async function recalcPurchaseTotals(purchaseId: number) {
-  await callSp("usp_Rest_Admin_Compra_RecalcTotals", { PurchaseId: purchaseId });
+  const scope = await getDefaultScope();
+  await callSp("usp_Rest_Admin_Compra_RecalcTotals", { CompanyId: scope.companyId, PurchaseId: purchaseId });
 }
 
 async function adjustStock(inventoryProductId: number | null, deltaQty: number) {
   if (!inventoryProductId || !Number.isFinite(deltaQty) || deltaQty === 0) return;
 
+  const scope = await getDefaultScope();
   await callSp("usp_Rest_Admin_AdjustStock", {
+    CompanyId: scope.companyId,
     ProductId: inventoryProductId,
     DeltaQty: deltaQty,
   });
@@ -234,9 +238,9 @@ export async function getProductoMenu(id: number) {
   let receta: any[];
 
   if (env.dbType === "postgres") {
-    productoRows = await callSp<any>("usp_Rest_Admin_Producto_Get", { Id: id, BranchId: scope.branchId });
-    componentRows = await callSp<any>("usp_Rest_Admin_Producto_Get_Componentes", { Id: id });
-    receta = await callSp<any>("usp_Rest_Admin_Producto_Get_Receta", { Id: id, BranchId: scope.branchId });
+    productoRows = await callSp<any>("usp_Rest_Admin_Producto_Get", { CompanyId: scope.companyId, Id: id, BranchId: scope.branchId });
+    componentRows = await callSp<any>("usp_Rest_Admin_Producto_Get_Componentes", { CompanyId: scope.companyId, Id: id });
+    receta = await callSp<any>("usp_Rest_Admin_Producto_Get_Receta", { CompanyId: scope.companyId, Id: id, BranchId: scope.branchId });
   } else {
     const pool = await getPool();
     const request = pool.request();
@@ -340,7 +344,8 @@ export async function upsertProductoMenu(data: {
 }
 
 export async function deleteProductoMenu(id: number) {
-  await callSp("usp_Rest_Admin_Producto_Delete", { Id: id });
+  const scope = await getDefaultScope();
+  await callSp("usp_Rest_Admin_Producto_Delete", { CompanyId: scope.companyId, Id: id });
   return { ok: true };
 }
 
@@ -348,9 +353,11 @@ export async function upsertComponente(data: { id?: number; productoId: number; 
   const nombre = String(data.nombre ?? "").trim();
   if (!nombre) throw new Error("nombre obligatorio");
 
+  const scope = await getDefaultScope();
   const rows = await callSp<{ id: number }>(
     "usp_Rest_Admin_Componente_Upsert",
     {
+      CompanyId: scope.companyId,
       Id: data.id && data.id > 0 ? data.id : 0,
       ProductoId: data.productoId,
       Nombre: nombre,
@@ -366,9 +373,11 @@ export async function upsertOpcion(data: { id?: number; componenteId: number; no
   const nombre = String(data.nombre ?? "").trim();
   if (!nombre) throw new Error("nombre obligatorio");
 
+  const scope = await getDefaultScope();
   const rows = await callSp<{ id: number }>(
     "usp_Rest_Admin_Opcion_Upsert",
     {
+      CompanyId: scope.companyId,
       Id: data.id && data.id > 0 ? data.id : 0,
       ComponenteId: data.componenteId,
       Nombre: nombre,
@@ -386,9 +395,11 @@ export async function upsertRecetaItem(data: { id?: number; productoId: number; 
     throw new Error("Insumo no encontrado");
   }
 
+  const scope = await getDefaultScope();
   const rows = await callSp<{ id: number }>(
     "usp_Rest_Admin_Receta_Upsert",
     {
+      CompanyId: scope.companyId,
       Id: data.id && data.id > 0 ? data.id : 0,
       ProductoId: data.productoId,
       IngredientProductId: ingredientProductId,
@@ -402,7 +413,8 @@ export async function upsertRecetaItem(data: { id?: number; productoId: number; 
 }
 
 export async function deleteRecetaItem(id: number) {
-  await callSp("usp_Rest_Admin_Receta_Delete", { Id: id });
+  const scope = await getDefaultScope();
+  await callSp("usp_Rest_Admin_Receta_Delete", { CompanyId: scope.companyId, Id: id });
   return { ok: true };
 }
 
@@ -436,8 +448,9 @@ export async function listCompras(params: { estado?: string; from?: string; to?:
 
 export async function getCompraDetalle(compraId: number) {
   if (env.dbType === "postgres") {
-    const headerRows = await callSp<any>("usp_Rest_Admin_Compra_GetDetalle_Header", { CompraId: compraId });
-    const detalle = await callSp<any>("usp_Rest_Admin_Compra_GetDetalle_Lines", { CompraId: compraId });
+    const scope = await getDefaultScope();
+    const headerRows = await callSp<any>("usp_Rest_Admin_Compra_GetDetalle_Header", { CompanyId: scope.companyId, CompraId: compraId });
+    const detalle = await callSp<any>("usp_Rest_Admin_Compra_GetDetalle_Lines", { CompanyId: scope.companyId, CompraId: compraId });
     return { compra: headerRows[0] ?? null, detalle };
   }
 
@@ -465,6 +478,7 @@ export async function upsertCompraDetalle(data: {
   precioUnit: number;
   iva?: number;
 }) {
+  const scope = await getDefaultScope();
   const ingredientProductId = await resolveInventoryProductId(data.inventarioId);
   const quantity = Number(data.cantidad ?? 0);
   const unitPrice = Number(data.precioUnit ?? 0);
@@ -474,12 +488,13 @@ export async function upsertCompraDetalle(data: {
   if (data.id && data.id > 0) {
     const prev = await callSp<{ ingredientProductId: number | null; quantity: number }>(
       "usp_Rest_Admin_CompraLinea_GetPrev",
-      { Id: data.id, CompraId: data.compraId }
+      { CompanyId: scope.companyId, Id: data.id, CompraId: data.compraId }
     );
 
     const rows = await callSp<{ id: number }>(
       "usp_Rest_Admin_CompraLinea_Upsert",
       {
+        CompanyId: scope.companyId,
         Id: data.id,
         CompraId: data.compraId,
         IngredientProductId: ingredientProductId,
@@ -508,6 +523,7 @@ export async function upsertCompraDetalle(data: {
   const inserted = await callSp<{ id: number }>(
     "usp_Rest_Admin_CompraLinea_Upsert",
     {
+      CompanyId: scope.companyId,
       Id: 0,
       CompraId: data.compraId,
       IngredientProductId: ingredientProductId,
@@ -530,9 +546,10 @@ export async function upsertCompraDetalle(data: {
 }
 
 export async function deleteCompraDetalle(compraId: number, detalleId: number) {
+  const scope = await getDefaultScope();
   const prev = await callSp<{ ingredientProductId: number | null; quantity: number }>(
     "usp_Rest_Admin_CompraLinea_Delete",
-    { CompraId: compraId, DetalleId: detalleId }
+    { CompanyId: scope.companyId, CompraId: compraId, DetalleId: detalleId }
   );
 
   const prevProductId = prev[0]?.ingredientProductId == null ? null : Number(prev[0].ingredientProductId);
@@ -595,11 +612,13 @@ export async function updateCompra(
   compraId: number,
   data: { proveedorId?: string; estado?: string; observaciones?: string }
 ) {
+  const scope = await getDefaultScope();
   const supplierId = await resolveSupplierId(data.proveedorId);
 
   await callSp(
     "usp_Rest_Admin_Compra_Update",
     {
+      CompanyId: scope.companyId,
       CompraId: compraId,
       SupplierId: supplierId,
       Status: data.estado ? String(data.estado).trim().toUpperCase() : null,
