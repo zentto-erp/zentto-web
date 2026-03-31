@@ -154,7 +154,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     error: '/authentication/login',
   },
   callbacks: {
-    async jwt({ token, user, account }) {
+    async jwt({ token, user, account, trigger, session: updateData }) {
+      // Switch company: actualizar token con nuevos datos de empresa
+      if (trigger === 'update' && updateData?.accessToken) {
+        token.accessToken = updateData.accessToken;
+        token.accessTokenExpires = getJwtExpMs(updateData.accessToken);
+        if (updateData.company) token.company = updateData.company;
+        if (updateData.companyAccesses) token.companyAccesses = updateData.companyAccesses;
+        return token;
+      }
+
       // Google OAuth: intercambiar token de Google por token del backend
       if (account?.provider === 'google' && account.id_token) {
         try {
