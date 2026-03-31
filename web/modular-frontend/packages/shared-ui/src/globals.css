@@ -26,41 +26,42 @@ html, body {
   }
 }
 
-/* ScrollBar personalizado — light */
+/* ScrollBar — same style as zentto.net landing */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f1f1;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #9CA3AF;
-  border-radius: 4px;
+  background: rgba(108, 99, 255, 0.3);
+  border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #6B7280;
-}
-
-/* ScrollBar — dark */
-[data-toolpad-color-scheme="dark"] ::-webkit-scrollbar-track {
-  background: #1a2332;
-}
-
-[data-toolpad-color-scheme="dark"] ::-webkit-scrollbar-thumb {
-  background: #37475a;
-}
-
-[data-toolpad-color-scheme="dark"] ::-webkit-scrollbar-thumb:hover {
-  background: #485769;
+  background: #6C63FF;
 }
 
 /* Smooth scroll */
 html {
   scroll-behavior: smooth;
+}
+
+/* Theme transition — mirrors zentto.net landing */
+*,
+*::before,
+*::after {
+  transition-property: background-color, border-color, color;
+  transition-duration: 0ms;
+}
+
+html.theme-transitioning *,
+html.theme-transitioning *::before,
+html.theme-transitioning *::after {
+  transition-duration: 300ms !important;
 }
 
 /* Celdas no editables DataGrid */
@@ -72,6 +73,27 @@ html {
 [data-toolpad-color-scheme="dark"] .non-editable-cell {
   background-color: #1a2332 !important;
   color: #9CA3AF !important;
+}
+
+/* Autofill — indigo background */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px #3b3699 inset !important;
+  -webkit-text-fill-color: #fff !important;
+  caret-color: #fff !important;
+}
+
+/* Hide native password reveal (Edge/Chrome) */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear,
+input::-ms-reveal,
+input::-ms-clear {
+  display: none !important;
+  pointer-events: none !important;
+  visibility: hidden !important;
+  width: 0 !important;
+  height: 0 !important;
 }
 
 /* Otros */

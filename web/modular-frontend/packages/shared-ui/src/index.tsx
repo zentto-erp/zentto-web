@@ -26,6 +26,7 @@ export { default as AppBarWrapper } from './components/AppBarWrapper';
 export { default as SidebarFooterAccount, ToolbarAccountOverride } from './components/SidebarFooterAccount';
 export { default as PerfilDrawer } from './components/PerfilDrawer';
 export { LoadingFallback } from './components/LoadingFallback';
+export { default as ThemeToggle, EyeIcon, EyeOffIcon } from './components/ThemeToggle';
 export { default as CustomStepper } from './components/CustomStepper';
 export type { CustomStepperProps, StepDef } from './components/CustomStepper';
 export { default as ContextActionHeader } from './components/ContextActionHeader';
