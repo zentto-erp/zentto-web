@@ -39,6 +39,7 @@ import useMediaQuery from '@mui/material/useMediaQuery';
 import { useColorScheme } from '@mui/material/styles';
 import { brandColors } from '../theme';
 import { useBranding } from '../hooks/useBranding';
+import { apiPost } from '@zentto/shared-api';
 
 // Type definition for our custom navigation (ignoring toolpad core for this specific top nav)
 interface NavItem {
@@ -57,7 +58,7 @@ export default function OdooLayout({
     const router = useRouter();
     const pathname = usePathname();
     const theme = useTheme();
-    const { data: session } = useSession();
+    const { data: session, update: updateSession } = useSession();
     const { dynamicBrandColors: bc } = useBranding();
 
     const { mode, setMode, systemMode } = useColorScheme();
@@ -296,11 +297,22 @@ export default function OdooLayout({
                                     <MenuItem
                                         key={idx}
                                         selected={access.companyId === activeCompany?.companyCode && access.branchCode === activeCompany?.branchCode}
-                                        onClick={() => {
+                                        onClick={async () => {
                                             setCompanyMenuAnchor(null);
-                                            // Recargar con nueva empresa activa
-                                            const params = new URLSearchParams({ companyId: String(access.companyId), branchId: String(access.branchId) });
-                                            window.location.href = `/api/auth/switch-company?${params.toString()}`;
+                                            try {
+                                                const data = await apiPost('/v1/auth/switch-company', {
+                                                    companyId: Number(access.companyId),
+                                                    branchId: Number(access.branchId),
+                                                });
+                                                await updateSession({
+                                                    accessToken: data.token,
+                                                    company: data.company,
+                                                    companyAccesses: data.companyAccesses,
+                                                });
+                                                window.location.reload();
+                                            } catch (err) {
+                                                console.error('Error al cambiar empresa:', err);
+                                            }
                                         }}
                                     >
                                         <Box>
