@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import {
   Box, Paper, Typography, Button, Stack, CircularProgress, Divider,
+  FormControl, InputLabel, Select, MenuItem, TextField,
 } from "@mui/material";
 import type { ColumnDef } from "@zentto/datagrid-core";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
@@ -55,7 +56,12 @@ export default function LibroFiscalPage() {
   useContabilidadGridId(resumenGridRef, GRID_IDS.resumenGridRef);
   const layoutReady = gridLayoutReady && resumenGridLayoutReady;
   const { registered } = useContabilidadGridRegistration(layoutReady);
-  const [filter] = useState<TaxBookFilter>({ bookType: "PURCHASE", periodCode: "", countryCode: "VE", page: 1, limit: 50 });
+  const now = new Date();
+  const [bookType, setBookType] = useState("PURCHASE");
+  const [year, setYear] = useState(now.getFullYear());
+  const [month, setMonth] = useState(now.getMonth() + 1);
+  const periodCode = `${year}-${String(month).padStart(2, "0")}`;
+  const filter: TaxBookFilter = { bookType, periodCode, countryCode: "VE", page: 1, limit: 50 };
 
   const generarMutation = useGenerarLibroFiscal();
   const { data: libroData, isLoading } = useLibroFiscal(filter.periodCode ? filter : null);
@@ -94,8 +100,28 @@ export default function LibroFiscalPage() {
       <ContextActionHeader title="Libro fiscal de compras / ventas" />
 
       <Box sx={{ p: { xs: 2, md: 3 }, flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-        <Stack direction="row" spacing={2} mb={2} alignItems="center">
-          <Button variant="contained" onClick={handleGenerar} disabled={!filter.periodCode || generarMutation.isPending}
+        <Stack direction="row" spacing={2} mb={2} alignItems="center" flexWrap="wrap">
+          <FormControl size="small" sx={{ minWidth: 160 }}>
+            <InputLabel>Tipo de libro</InputLabel>
+            <Select label="Tipo de libro" value={bookType} onChange={(e) => setBookType(e.target.value)}>
+              {BOOK_TYPES.map((bt) => (
+                <MenuItem key={bt.value} value={bt.value}>{bt.label}</MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <TextField label="Año" type="number" size="small" sx={{ width: 100 }}
+            value={year} onChange={(e) => setYear(Number(e.target.value))} inputProps={{ min: 2000, max: 2099 }} />
+          <FormControl size="small" sx={{ minWidth: 140 }}>
+            <InputLabel>Mes</InputLabel>
+            <Select label="Mes" value={month} onChange={(e) => setMonth(Number(e.target.value))}>
+              {Array.from({ length: 12 }, (_, i) => (
+                <MenuItem key={i + 1} value={i + 1}>
+                  {new Date(2000, i).toLocaleString("es", { month: "long" })}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <Button variant="contained" onClick={handleGenerar} disabled={generarMutation.isPending}
             startIcon={generarMutation.isPending ? <CircularProgress size={16} /> : <AutorenewIcon />}>Generar libro</Button>
           <Button variant="outlined" startIcon={<FileDownloadIcon />} disabled={rows.length === 0}>Exportar</Button>
         </Stack>
