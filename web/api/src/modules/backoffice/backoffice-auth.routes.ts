@@ -27,7 +27,6 @@ import {
   NobleCryptoPlugin,
   ScureBase32Plugin,
   generateSecret,
-  generateURI,
   verifySync,
 } from "otplib";
 import QRCode from "qrcode";
@@ -45,7 +44,7 @@ const TOTP_ACCOUNT   = process.env.BACKOFFICE_ADMIN_EMAIL ?? "admin@zentto.net";
 // TOTP plugins (otplib v13)
 const otpCrypto = new NobleCryptoPlugin();
 const otpBase32 = new ScureBase32Plugin();
-const TOTP_OPTS = { crypto: otpCrypto, base32: otpBase32, period: 30, digits: 6 as const, algorithm: "sha1" as const, window: 1 };
+const TOTP_OPTS = { crypto: otpCrypto, base32: otpBase32, period: 30, digits: 6 as const, algorithm: "sha1" as const, window: 2 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -127,7 +126,7 @@ router.post("/setup", async (req: Request, res: Response) => {
 
   // Generar nuevo secret base32
   const secret = generateSecret(); // 20 bytes (160 bits) base32
-  const otpAuthUrl = generateURI({ secret, label: TOTP_ACCOUNT, issuer: TOTP_ISSUER, algorithm: "sha1", digits: 6, period: 30 });
+  const otpAuthUrl = `otpauth://totp/${encodeURIComponent(TOTP_ISSUER)}:${encodeURIComponent(TOTP_ACCOUNT)}?secret=${secret}&issuer=${encodeURIComponent(TOTP_ISSUER)}&algorithm=SHA1&digits=6&period=30`;
 
   // Generar QR code como data URL (base64 PNG)
   const qrDataUrl = await QRCode.toDataURL(otpAuthUrl, {
@@ -293,7 +292,7 @@ router.post("/setup/regenerate", async (req: Request, res: Response) => {
 
   // Generar nuevo secret
   const secret = generateSecret();
-  const otpAuthUrl = generateURI({ secret, label: TOTP_ACCOUNT, issuer: TOTP_ISSUER, algorithm: "sha1", digits: 6, period: 30 });
+  const otpAuthUrl = `otpauth://totp/${encodeURIComponent(TOTP_ISSUER)}:${encodeURIComponent(TOTP_ACCOUNT)}?secret=${secret}&issuer=${encodeURIComponent(TOTP_ISSUER)}&algorithm=SHA1&digits=6&period=30`;
   const qrDataUrl = await QRCode.toDataURL(otpAuthUrl, {
     width: 256,
     margin: 2,
