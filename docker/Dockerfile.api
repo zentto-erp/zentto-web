@@ -24,6 +24,7 @@ COPY --from=builder /app/.npmrc ./
 
 # Contrato OpenAPI para Swagger UI
 COPY web/contracts/openapi.yaml ./contracts/openapi.yaml
+# Migraciones goose (00053 eliminada, reemplazada por 00054)
 COPY web/api/migrations/postgres ./migrations/postgres
 COPY web/api/sqlweb-pg ./sqlweb-pg
 COPY scripts/bootstrap-db.sh ./scripts/bootstrap-db.sh
