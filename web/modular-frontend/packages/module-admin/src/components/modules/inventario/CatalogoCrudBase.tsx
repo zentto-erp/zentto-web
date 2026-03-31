@@ -199,7 +199,6 @@ export default function CatalogoCrudBase({ endpoint, title, apiClient, fields, t
   const gridId = useScopedGridId(`${endpoint || title}-catalogo`);
   const { ready: layoutReady } = useGridLayoutSync(gridId);
   const { registered } = useAdminGridRegistration(layoutReady);
-  const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [createValues, setCreateValues] = useState<Record<string, string>>({});
@@ -220,12 +219,11 @@ export default function CatalogoCrudBase({ endpoint, title, apiClient, fields, t
   });
 
   const listQuery = useQuery<CatalogResponse>({
-    queryKey: [endpoint, 'catalog-list', search, page, PAGE_SIZE],
+    queryKey: [endpoint, 'catalog-list', page, PAGE_SIZE],
     queryFn: async () =>
       apiClient.list(endpoint, {
         page,
         limit: PAGE_SIZE,
-        search: search.trim() || undefined,
       }),
     placeholderData: (previous) => previous,
   });
@@ -402,11 +400,6 @@ export default function CatalogoCrudBase({ endpoint, title, apiClient, fields, t
     <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
       <ContextActionHeader
         title={title}
-        onSearch={(v) => {
-          setSearch(v);
-          setPage(1);
-        }}
-        searchPlaceholder="Buscar registros..."
       />
 
       <Box sx={{ p: { xs: 1, md: 3 }, flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>

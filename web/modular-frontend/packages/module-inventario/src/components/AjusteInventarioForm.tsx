@@ -201,6 +201,11 @@ export default function AjusteInventarioForm() {
               enable-header-filters
               enable-quick-search
               enable-status-bar
+              enable-configurator
+              enable-toolbar
+              enable-header-menu
+              enable-clipboard
+              enable-context-menu
             />
 
             {errors.articulo && (

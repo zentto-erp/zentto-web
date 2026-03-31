@@ -4,30 +4,13 @@
 import React, { useState, useMemo, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Box, Typography } from "@mui/material";
-import {
-  DeleteDialog,
-  ZenttoFilterPanel,
-  type FilterFieldDef,
-} from "@zentto/shared-ui";
+import { DeleteDialog } from "@zentto/shared-ui";
 import { useCrudGeneric } from "../../../hooks/useCrudGeneric";
 import { Cliente } from "@zentto/shared-api/types";
 import type { ColumnDef } from "@zentto/datagrid-core";
 import { useGridLayoutSync } from "@zentto/shared-api";
 import { useScopedGridId, useAdminGridRegistration } from "../../../lib/zentto-grid";
 
-
-const CLIENTE_FILTERS: FilterFieldDef[] = [
-  {
-    field: "estado",
-    label: "Estado",
-    type: "select",
-    options: [
-      { value: "Activo", label: "Activo" },
-      { value: "Inactivo", label: "Inactivo" },
-      { value: "Suspendido", label: "Suspendido" },
-    ],
-  },
-];
 
 const COLUMNS: ColumnDef[] = [
   { field: "codigo", header: "Codigo", width: 100, sortable: true },
@@ -62,40 +45,19 @@ export default function ClientesTable() {
   const { ready: layoutReady } = useGridLayoutSync(gridId);
   const { registered } = useAdminGridRegistration(layoutReady);
 
-  const [search, setSearch] = useState("");
-  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Cliente | null>(null);
 
   const { mutate: deleteCliente, isPending: isDeleting } = crud.delete("");
 
-  // Filtrado local
-  const filteredData = useMemo(() => {
-    const items = data?.items || data?.data || [];
-    let filtered = items;
-    if (search) {
-      const term = search.toLowerCase();
-      filtered = filtered.filter(
-        (client: Cliente) =>
-          client.nombre.toLowerCase().includes(term) ||
-          client.rif.includes(search)
-      );
-    }
-    if (filterValues.estado) {
-      filtered = filtered.filter(
-        (client: Cliente) => client.estado === filterValues.estado
-      );
-    }
-    return filtered;
-  }, [data, search, filterValues]);
-
+  const allItems = data?.items || data?.data || [];
   const rows = useMemo(
     () =>
-      filteredData.map((client: Cliente, idx: number) => ({
+      allItems.map((client: Cliente, idx: number) => ({
         id: client.codigo || idx,
         ...client,
       })),
-    [filteredData]
+    [allItems]
   );
 
   // Bind data to web component
@@ -118,7 +80,7 @@ export default function ClientesTable() {
       if (action === "view") router.push(`/clientes/${row.codigo}`);
       if (action === "edit") router.push(`/clientes/${row.codigo}/edit`);
       if (action === "delete") {
-        const client = filteredData.find((c: Cliente) => c.codigo === row.codigo);
+        const client = allItems.find((c: Cliente) => c.codigo === row.codigo);
         if (client) {
           setSelectedClient(client);
           setDeleteOpen(true);
@@ -133,7 +95,7 @@ export default function ClientesTable() {
       el.removeEventListener("action-click", actionHandler);
       el.removeEventListener("create-click", createHandler);
     };
-  }, [registered, router, filteredData]);
+  }, [registered, router, allItems]);
 
   const handleDeleteConfirm = () => {
     if (selectedClient) {
@@ -151,16 +113,6 @@ export default function ClientesTable() {
       <Typography variant="h5" fontWeight={600} sx={{ mb: 3 }}>
         Gestion de Clientes
       </Typography>
-
-      {/* Filtros */}
-      <ZenttoFilterPanel
-        filters={CLIENTE_FILTERS}
-        values={filterValues}
-        onChange={setFilterValues}
-        searchPlaceholder="Buscar por nombre o RIF..."
-        searchValue={search}
-        onSearchChange={setSearch}
-      />
 
       {/* zentto-grid */}
       <Box sx={{ flex: 1, minHeight: 400 }}>

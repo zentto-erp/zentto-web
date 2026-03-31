@@ -4,14 +4,9 @@ import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react'
 import {
   Box, Typography, Button, IconButton, Chip, Dialog, DialogTitle,
   DialogContent, DialogActions, TextField, FormControlLabel, Switch,
-  Alert, CircularProgress, Tooltip, MenuItem, Card, CardContent,
-  Checkbox, FormGroup, Divider, InputAdornment, Stack,
+  Alert, CircularProgress, Tooltip, MenuItem,
+  Checkbox, FormGroup, Divider, Stack,
 } from '@mui/material';
-import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
-import LockResetIcon from '@mui/icons-material/LockReset';
-import SecurityIcon from '@mui/icons-material/Security';
-import SearchIcon from '@mui/icons-material/Search';
 import { useAuth } from '@zentto/shared-auth';
 import { SYSTEM_MODULES } from '@zentto/shared-auth';
 import { useToast, FormGrid, FormField } from '@zentto/shared-ui';
@@ -61,8 +56,7 @@ export default function UsuariosPage() {
   const { registered } = useGridRegistration(layoutReady);
   const { isAdmin } = useAuth();
   const { showToast } = useToast();
-  const [search, setSearch] = useState('');
-  const { data, isLoading, error } = useUsuariosList(search || undefined);
+  const { data, isLoading, error } = useUsuariosList();
   const deleteMutation = useDeleteUsuario();
 
   // Dialogs
@@ -181,16 +175,6 @@ export default function UsuariosPage() {
 
   return (
     <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-      <Card sx={{ mb: 2 }}>
-        <CardContent sx={{ py: 1.5, '&:last-child': { pb: 1.5 } }}>
-          <TextField
-            size="small" placeholder="Buscar por codigo o nombre..." fullWidth
-            value={search} onChange={(e) => setSearch(e.target.value)}
-            InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon fontSize="small" /></InputAdornment> }}
-          />
-        </CardContent>
-      </Card>
-
       {error && <Alert severity="error" sx={{ mb: 2 }}>Error al cargar usuarios</Alert>}
 
       {!layoutReady || !registered ? (

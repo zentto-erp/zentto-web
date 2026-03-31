@@ -85,12 +85,11 @@ const GRID_IDS = {
 
 export default function PlanCuentasPageMejorado() {
   const router = useRouter();
-  const [search, setSearch] = useState("");
   const [tabValue, setTabValue] = useState(0);
   const [cuentaMayor, setCuentaMayor] = useState<CuentaContable | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const { data, isLoading, refetch } = usePlanCuentas({ search });
+  const { data, isLoading, refetch } = usePlanCuentas({});
   const seedMutation = useSeedPlanCuentas();
   const createMutation = useCreateCuenta();
   const updateMutation = useUpdateCuenta();
@@ -144,8 +143,6 @@ export default function PlanCuentasPageMejorado() {
           { label: seedMutation.isPending ? "Creando..." : "Crear datos ejemplo", onClick: handleSeedData, disabled: seedMutation.isPending },
           { label: "Nuevo asiento", onClick: () => router.push("/asientos/new") },
         ]}
-        onSearch={setSearch}
-        searchPlaceholder="Buscar por codigo o descripcion..."
       />
       {error && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>{error}</Alert>}
       <Paper sx={{ mb: 2 }}>

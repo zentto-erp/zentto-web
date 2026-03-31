@@ -177,6 +177,7 @@ export default function MaterialConsumptionPanel({ workOrderId }: MaterialConsum
         enable-context-menu
         enable-status-bar
         enable-configurator
+        enable-header-filters
       ></zentto-grid>
 
       {rows.length === 0 && (

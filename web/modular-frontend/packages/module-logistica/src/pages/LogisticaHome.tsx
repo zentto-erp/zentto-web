@@ -496,6 +496,7 @@ const { data: dashboard, isLoading: dashLoading } = useLogisticaDashboard();
         enable-context-menu
         enable-status-bar
         enable-configurator
+        enable-header-filters
       ></zentto-grid>
         ) : (
           <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: 150, bgcolor: "#f8f9fa", borderRadius: 2 }}>
@@ -524,6 +525,7 @@ const { data: dashboard, isLoading: dashLoading } = useLogisticaDashboard();
         enable-context-menu
         enable-status-bar
         enable-configurator
+        enable-header-filters
       ></zentto-grid>
             ) : (
               <Typography variant="body2" color="text.secondary" sx={{ textAlign: "center", py: 3 }}>
@@ -547,6 +549,7 @@ const { data: dashboard, isLoading: dashLoading } = useLogisticaDashboard();
         enable-quick-search
         enable-context-menu
         enable-status-bar
+        enable-header-filters
         enable-configurator
       ></zentto-grid>
             ) : (

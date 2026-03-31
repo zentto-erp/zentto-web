@@ -7,7 +7,7 @@ import {
   Chip,
   CircularProgress,
 } from "@mui/material";
-import { ContextActionHeader, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
+import { ContextActionHeader } from "@zentto/shared-ui";
 import { formatDateTime, useGridLayoutSync } from "@zentto/shared-api";
 import { useTimezone } from "@zentto/shared-auth";
 import { useFiscalRecords, type FiscalRecordFilter } from "../hooks/useAuditoria";
@@ -15,17 +15,11 @@ import type { ColumnDef } from "@zentto/datagrid-core";
 import { buildAuditoriaGridId, useAuditoriaGridRegistration } from "./zenttoGridPersistence";
 
 
-const FISCAL_FILTERS: FilterFieldDef[] = [
-  { field: "fechaDesde", label: "Fecha desde", type: "date" },
-  { field: "fechaHasta", label: "Fecha hasta", type: "date" },
-];
-
 const GRID_ID = buildAuditoriaGridId("fiscal-records", "list");
 
 export default function FiscalRecordsPage() {
   const { timeZone } = useTimezone();
-  const [filter, setFilter] = useState<FiscalRecordFilter>({ page: 1, limit: 25 });
-  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
+  const [filter] = useState<FiscalRecordFilter>({ page: 1, limit: 25 });
   const gridRef = useRef<any>(null);
   const { ready: layoutReady } = useGridLayoutSync(GRID_ID);
   const { registered } = useAuditoriaGridRegistration(layoutReady);
@@ -119,23 +113,6 @@ const { data, isLoading } = useFiscalRecords(filter);
       <ContextActionHeader title="Registros Fiscales" />
 
       <Box sx={{ p: { xs: 2, md: 3 }, flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-        <ZenttoFilterPanel
-          filters={FISCAL_FILTERS}
-          values={filterValues}
-          onChange={(vals) => {
-            setFilterValues(vals);
-            setFilter((f) => ({
-              ...f,
-              fechaDesde: vals.fechaDesde || undefined,
-              fechaHasta: vals.fechaHasta || undefined,
-              page: 1,
-            }));
-          }}
-          searchPlaceholder="Buscar registros fiscales..."
-          searchValue=""
-          onSearchChange={() => {}}
-        />
-
         <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, border: "1px solid #E5E7EB" }}>
           <zentto-grid
         grid-id={GRID_ID}

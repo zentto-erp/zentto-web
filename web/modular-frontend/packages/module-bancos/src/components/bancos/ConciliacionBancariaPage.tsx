@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  Alert, Box, Button, Chip, Dialog, DialogActions, DialogContent, DialogTitle,
+  Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle,
   Paper, Stack, TextField, Typography,
 } from "@mui/material";
 import Grid from "@mui/material/Grid2";
@@ -11,11 +11,11 @@ import UploadFileIcon from "@mui/icons-material/UploadFile";
 import { useRouter } from "next/navigation";
 import { formatCurrency, toDateOnly, useGridLayoutSync } from "@zentto/shared-api";
 import { useTimezone } from "@zentto/shared-auth";
-import { useToast, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
+import { useToast } from "@zentto/shared-ui";
 import type { ColumnDef } from "@zentto/datagrid-core";
 import {
   useCerrarConciliacion, useConciliacionDetalle, useConciliaciones, useConciliarMovimiento,
-  useCuentasBank, useGenerarAjuste, useImportarExtracto, useAsientosVinculados,
+  useGenerarAjuste, useImportarExtracto, useAsientosVinculados,
 } from "../../hooks/useConciliacionBancaria";
 import { useAuth } from "@zentto/shared-auth";
 import { useBancosGridRegistration } from "../zenttoGridPersistence";
@@ -39,12 +39,8 @@ export default function ConciliacionBancariaPage() {
   const { hasModule } = useAuth();
   const showAsientos = hasModule("contabilidad");
 
-  const [search, setSearch] = useState("");
-  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
   const [page, setPage] = useState(1);
   const [limit] = useState(50);
-  const nroCta = filterValues.cuenta ?? "";
-  const estado = filterValues.estado ?? "";
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [importOpen, setImportOpen] = useState(false);
   const [importText, setImportText] = useState(JSON.stringify([{ Fecha: toDateOnly(new Date(), timeZone), Descripcion: "Deposito", Referencia: "DEP-001", Tipo: "CREDITO", Monto: 100, Saldo: 100 }], null, 2));
@@ -52,8 +48,7 @@ export default function ConciliacionBancariaPage() {
   const [saldoFinalBanco, setSaldoFinalBanco] = useState("");
   const [obsCierre, setObsCierre] = useState("");
 
-  const { data: cuentasData } = useCuentasBank();
-  const filter = useMemo(() => ({ Nro_Cta: nroCta || undefined, Estado: estado || undefined, page, limit }), [nroCta, estado, page, limit]);
+  const filter = useMemo(() => ({ page, limit }), [page, limit]);
   const { data: listData, isLoading } = useConciliaciones(filter);
   const { data: detalleData, refetch: refetchDetalle } = useConciliacionDetalle(selectedId ?? undefined);
   const { data: asientosVinculadosData } = useAsientosVinculados(showAsientos ? (selectedId ?? undefined) : undefined);
@@ -68,12 +63,6 @@ export default function ConciliacionBancariaPage() {
   const { registered } = useBancosGridRegistration(layoutReady);
 
   const rows = (listData?.rows ?? []) as ConciliacionRow[];
-  const cuentas = (cuentasData?.rows ?? []) as Record<string, any>[];
-
-  const conciliacionFilters = useMemo<FilterFieldDef[]>(() => [
-    { field: "cuenta", label: "Cuenta", type: "select", options: cuentas.map((c) => ({ value: String(c.Nro_Cta), label: `${String(c.Nro_Cta)} - ${String(c.BancoNombre ?? c.Banco ?? "")}` })), minWidth: 220 },
-    { field: "estado", label: "Estado", type: "select", options: [{ value: "ABIERTA", label: "Abierta" }, { value: "EN_PROCESO", label: "En Proceso" }, { value: "CERRADA", label: "Cerrada" }] },
-  ], [cuentas]);
 
   const movSistema = (detalleData?.movimientosSistema ?? []) as Record<string, any>[];
   const extractoPendiente = (detalleData?.extractoPendiente ?? []) as Record<string, any>[];
@@ -161,8 +150,6 @@ export default function ConciliacionBancariaPage() {
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
       <Typography variant="h5" fontWeight={600}>Conciliaciones</Typography>
-
-      <ZenttoFilterPanel filters={conciliacionFilters} values={filterValues} onChange={(v) => { setFilterValues(v); setPage(1); }} searchPlaceholder="Buscar conciliaciÃ³n..." searchValue={search} onSearchChange={(v) => { setSearch(v); setPage(1); }} />
 
       <Paper sx={{ p: 0 }}>
         <zentto-grid ref={gridRef} grid-id={LIST_GRID_ID} height="400px" enable-create create-label="Nueva ConciliaciÃ³n" enable-toolbar enable-header-menu enable-header-filters enable-clipboard enable-quick-search enable-context-menu enable-status-bar enable-configurator />

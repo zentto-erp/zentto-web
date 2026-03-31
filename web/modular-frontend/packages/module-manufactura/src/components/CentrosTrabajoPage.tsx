@@ -20,7 +20,8 @@ import {
   useTheme,
   CircularProgress,
 } from "@mui/material";
-import {  ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
+
+
 import CloseIcon from "@mui/icons-material/Close";
 import {
   useWorkCentersList,
@@ -50,16 +51,6 @@ const emptyForm = (): WorkCenterFormData => ({
   isActive: true,
 });
 
-const CENTROS_FILTERS: FilterFieldDef[] = [
-  {
-    field: "estado", label: "Estado", type: "select",
-    options: [
-      { value: "true", label: "Activo" },
-      { value: "false", label: "Inactivo" },
-    ],
-  },
-];
-
 const GRID_ID = "module-manufactura:centros-trabajo:list";
 
 export default function CentrosTrabajoPage() {
@@ -70,14 +61,11 @@ export default function CentrosTrabajoPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [formData, setFormData] = useState<WorkCenterFormData>(emptyForm());
   const [isEditing, setIsEditing] = useState(false);
-  const [search, setSearch] = useState("");
-  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
   const gridRef = useRef<any>(null);
   const { ready: layoutReady } = useGridLayoutSync(GRID_ID);
   const { gridReady, registered } = useManufacturaGridRegistration(layoutReady);
 
   const { data, isLoading } = useWorkCentersList({
-    search,
     page: paginationModel.page + 1,
     limit: paginationModel.pageSize,
   });
@@ -189,19 +177,6 @@ export default function CentrosTrabajoPage() {
       <Typography variant="h5" fontWeight={600} sx={{ mb: 3 }}>
         Centros de Trabajo
       </Typography>
-
-      {/* Filter */}
-      <ZenttoFilterPanel
-        filters={CENTROS_FILTERS}
-        values={filterValues}
-        onChange={(vals) => {
-          setFilterValues(vals);
-          setPaginationModel((p) => ({ ...p, page: 0 }));
-        }}
-        searchPlaceholder="Buscar por codigo, nombre..."
-        searchValue={search}
-        onSearchChange={(v) => { setSearch(v); setPaginationModel((p) => ({ ...p, page: 0 })); }}
-      />
 
       {/* DataGrid */}
       <zentto-grid

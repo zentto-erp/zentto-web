@@ -403,6 +403,7 @@ export default function CRMSettingsPage() {
         enable-context-menu
         enable-status-bar
         enable-configurator
+        enable-header-filters
         enable-grouping
         enable-pivot
       ></zentto-grid>
