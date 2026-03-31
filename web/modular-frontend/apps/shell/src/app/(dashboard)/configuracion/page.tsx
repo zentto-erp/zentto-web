@@ -16,6 +16,8 @@ import {
   Switch,
   TextField,
   Typography,
+  LinearProgress,
+  Chip,
 } from '@mui/material';
 import { useRouter } from 'next/navigation';
 import BusinessIcon from '@mui/icons-material/Business';
@@ -31,7 +33,7 @@ import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium';
 import PaletteIcon from '@mui/icons-material/Palette';
 
 import { useAuth } from '@zentto/shared-auth';
-import { apiPut, useAllSettings, useCountries } from '@zentto/shared-api';
+import { apiPut, useAllSettings, useCountries, useLicenseLimits } from '@zentto/shared-api';
 import {
   FormGrid,
   FormField,
@@ -57,6 +59,7 @@ export default function ConfiguracionPage() {
 
   const { data, isLoading, error, refetch } = useAllSettings(companyId);
   const { data: countries = [] } = useCountries();
+  const { data: licenseLimits } = useLicenseLimits();
 
   const [original, setOriginal] = useState<LocalSettings>({});
   const [draft, setDraft] = useState<LocalSettings>({});
@@ -707,6 +710,73 @@ export default function ConfiguracionPage() {
               </Button>
             </Stack>
           </Paper>
+
+          {/* License limits display */}
+          {licenseLimits && (
+            <Paper variant="outlined" sx={{ p: 3, borderRadius: 2, mt: 2 }}>
+              <Stack spacing={2.5}>
+                <Stack direction="row" alignItems="center" spacing={1.5}>
+                  <Typography variant="subtitle1" fontWeight={700}>Plan actual:</Typography>
+                  <Chip
+                    label={licenseLimits.plan || 'FREE'}
+                    color={
+                      licenseLimits.plan === 'ENTERPRISE' ? 'secondary'
+                        : licenseLimits.plan === 'PRO' ? 'primary'
+                        : licenseLimits.plan === 'STARTER' ? 'info'
+                        : 'default'
+                    }
+                    sx={{ fontWeight: 700 }}
+                  />
+                </Stack>
+
+                <Box>
+                  <Stack direction="row" justifyContent="space-between" sx={{ mb: 0.5 }}>
+                    <Typography variant="body2" fontWeight={600}>Usuarios</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {licenseLimits.currentUsers} de {licenseLimits.maxUsers === -1 ? 'Ilimitados' : licenseLimits.maxUsers}
+                    </Typography>
+                  </Stack>
+                  <LinearProgress
+                    variant="determinate"
+                    value={licenseLimits.maxUsers === -1 ? 0 : Math.min((licenseLimits.currentUsers / licenseLimits.maxUsers) * 100, 100)}
+                    sx={{ height: 8, borderRadius: 4 }}
+                    color={
+                      licenseLimits.maxUsers !== -1 && (licenseLimits.currentUsers / licenseLimits.maxUsers) > 0.9
+                        ? 'error' : 'primary'
+                    }
+                  />
+                </Box>
+
+                <Box>
+                  <Stack direction="row" justifyContent="space-between" sx={{ mb: 0.5 }}>
+                    <Typography variant="body2" fontWeight={600}>Empresas</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {licenseLimits.currentCompanies} de {licenseLimits.maxCompanies === -1 ? 'Ilimitadas' : licenseLimits.maxCompanies}
+                    </Typography>
+                  </Stack>
+                  <LinearProgress
+                    variant="determinate"
+                    value={licenseLimits.maxCompanies === -1 ? 0 : Math.min((licenseLimits.currentCompanies / licenseLimits.maxCompanies) * 100, 100)}
+                    sx={{ height: 8, borderRadius: 4 }}
+                    color={
+                      licenseLimits.maxCompanies !== -1 && (licenseLimits.currentCompanies / licenseLimits.maxCompanies) > 0.9
+                        ? 'error' : 'primary'
+                    }
+                  />
+                </Box>
+
+                <Stack direction="row" alignItems="center" spacing={1}>
+                  <Typography variant="body2" fontWeight={600}>Multi-empresa:</Typography>
+                  <Chip
+                    label={licenseLimits.multiCompany ? 'Si' : 'No'}
+                    size="small"
+                    color={licenseLimits.multiCompany ? 'success' : 'default'}
+                    variant="outlined"
+                  />
+                </Stack>
+              </Stack>
+            </Paper>
+          )}
         </Box>
       </SettingsSection>
 

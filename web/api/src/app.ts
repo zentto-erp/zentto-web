@@ -85,6 +85,7 @@ import licenseRouter from "./modules/license/license.routes.js";
 import backofficeRouter from "./modules/backoffice/backoffice.routes.js";
 import backofficeAuthRouter from "./modules/backoffice/backoffice-auth.routes.js";
 import { studioRouter } from "./modules/studio/routes.js";
+import { rolesRouter } from "./modules/roles/roles.routes.js";
 import { startResourceCleanupJob } from "./jobs/resource-cleanup.job.js";
 import { requireJwt } from "./middleware/auth.js";
 import {
@@ -422,6 +423,7 @@ export async function createApp() {
   app.use("/v1/grupos", gruposRouter);
   app.use("/v1/tipos", tiposRouter);
   app.use("/v1/usuarios", usuariosRouter);
+  app.use("/v1/roles", rolesRouter);
   app.use("/v1/empresa", empresaRouter);
   app.use("/v1/maestros", maestrosRouter);
 
@@ -511,6 +513,7 @@ export async function createApp() {
   app.use("/api/v1/grupos", gruposRouter);
   app.use("/api/v1/tipos", tiposRouter);
   app.use("/api/v1/usuarios", usuariosRouter);
+  app.use("/api/v1/roles", rolesRouter);
   app.use("/api/v1/empresa", empresaRouter);
   app.use("/api/v1/maestros", maestrosRouter);
   app.use("/api/v1/clientes", clientesRouter);
