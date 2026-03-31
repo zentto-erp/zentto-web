@@ -522,7 +522,7 @@ function DashboardCards({
     },
     {
       label: "MRR Estimado",
-      value: data ? `$${Number(data.MRR).toLocaleString("es-VE")}` : "—",
+      value: data ? `$${(Number(data.MRR) || 0).toLocaleString("es-VE")}` : "—",
       icon: <MoneyIcon fontSize="large" color="success" />,
     },
     {
@@ -945,11 +945,11 @@ function CleanupTab({ gridId, masterKey }: { gridId: string; masterKey: string }
     setLoading(true);
     setError("");
     try {
-      const res = await apiFetch<Record<string, unknown>[]>(
+      const res = await apiFetch<{ ok: boolean; data: Record<string, unknown>[] }>(
         "/v1/backoffice/cleanup?status=PENDING",
         masterKey
       );
-      const mapped: CleanupRow[] = (res ?? []).map((r, i) => ({
+      const mapped: CleanupRow[] = (Array.isArray(res) ? res : res?.data ?? []).map((r, i) => ({
         id: i,
         QueueId: r.QueueId as number,
         CompanyCode: r.CompanyCode as string,
