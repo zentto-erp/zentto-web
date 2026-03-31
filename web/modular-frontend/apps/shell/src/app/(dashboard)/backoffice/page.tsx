@@ -1143,9 +1143,9 @@ function RespaldosTab({ gridId, masterKey }: { gridId: string; masterKey: string
           CompanyId: r.CompanyId as number,
           CompanyCode: r.CompanyCode as string,
           LegalName: r.LegalName as string,
-          LastBackupAt: (bk?.CompletedAt as string) ?? (bk?.StartedAt as string) ?? null,
-          BackupSizeMB: bk?.SizeBytes != null ? Number(bk.SizeBytes) / (1024 * 1024) : null,
-          BackupStatus: (bk?.Status as string) ?? "UNKNOWN",
+          LastBackupAt: (bk?.LastBackupAt as string) ?? (bk?.CompletedAt as string) ?? (bk?.StartedAt as string) ?? null,
+          BackupSizeMB: bk?.LastBackupSizeMB != null ? Number(bk.LastBackupSizeMB) : bk?.SizeBytes != null ? Number(bk.SizeBytes) / (1024 * 1024) : null,
+          BackupStatus: (bk?.LastBackupStatus as string) ?? (bk?.Status as string) ?? "UNKNOWN",
         };
       });
       setRows(mapped);
