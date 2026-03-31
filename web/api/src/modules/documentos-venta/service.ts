@@ -1,6 +1,7 @@
 import { callSp, callSpOut, callSpTx, sql } from "../../db/query.js";
 import { getPool } from "../../db/mssql.js";
 import mssql from "mssql";
+import { getActiveScope } from "../_shared/scope.js";
 
 export type TipoOperacionVenta = "FACT" | "PRESUP" | "PEDIDO" | "COTIZ" | "NOTACRED" | "NOTADEB" | "NOTA_ENT";
 
@@ -219,9 +220,11 @@ export async function listDocumentosVenta(input: {
   const page = Math.max(Number(input.page || 1), 1);
   const limit = Math.min(Math.max(Number(input.limit || 50), 1), 500);
 
+  const scope = getActiveScope();
   const { rows, output } = await callSpOut<any>(
     "usp_Doc_SalesDocument_List",
     {
+      CompanyId: scope?.companyId ?? 1,
       TipoOperacion: input.tipoOperacion,
       Search: input.search || null,
       Codigo: input.codigo || null,
@@ -244,7 +247,9 @@ export async function listDocumentosVenta(input: {
 }
 
 export async function getDocumentoVenta(tipoOperacion: TipoOperacionVenta, numFact: string) {
+  const scope = getActiveScope();
   const rows = await callSp<any>("usp_Doc_SalesDocument_Get", {
+    CompanyId: scope?.companyId ?? 1,
     TipoOperacion: tipoOperacion,
     NumDoc: numFact
   });
@@ -256,7 +261,9 @@ export async function getDocumentoVenta(tipoOperacion: TipoOperacionVenta, numFa
 }
 
 export async function getDetalleDocumentoVenta(tipoOperacion: TipoOperacionVenta, numFact: string) {
+  const scope = getActiveScope();
   return callSp<any>("usp_Doc_SalesDocument_GetDetail", {
+    CompanyId: scope?.companyId ?? 1,
     TipoOperacion: tipoOperacion,
     NumDoc: numFact
   });
@@ -286,6 +293,7 @@ export async function emitirDocumentoVentaTx(payload: {
   const detailJson = JSON.stringify(detail);
   const paymentsJson = payments.length > 0 ? JSON.stringify(payments) : null;
 
+  const scope = getActiveScope();
   const rows = await callSp<{
     ok: boolean;
     numDoc: string;
@@ -293,6 +301,7 @@ export async function emitirDocumentoVentaTx(payload: {
     formasPagoRows: number;
     pendingAmount: number;
   }>("usp_Doc_SalesDocument_Upsert", {
+    CompanyId: scope?.companyId ?? 1,
     TipoOperacion: payload.tipoOperacion,
     HeaderJson: headerJson,
     DetailJson: detailJson,
@@ -317,12 +326,14 @@ export async function anularDocumentoVentaTx(payload: {
   codUsuario?: string;
   motivo?: string;
 }) {
+  const scope = getActiveScope();
   const rows = await callSp<{
     ok: boolean;
     numFact: string;
     codCliente: string | null;
     mensaje: string;
   }>("usp_Doc_SalesDocument_Void", {
+    CompanyId: scope?.companyId ?? 1,
     TipoOperacion: payload.tipoOperacion,
     NumDoc: payload.numFact,
     CodUsuario: payload.codUsuario ?? "API",
@@ -356,12 +367,14 @@ export async function facturarDesdePedidoTx(payload: {
   const payments = mapPagosUnified("FACT", numFactFactura, payload.formasPago ?? []);
   const paymentsJson = payments.length > 0 ? JSON.stringify(payments) : null;
 
+  const scope = getActiveScope();
   const rows = await callSp<{
     ok: boolean;
     pedido: string;
     factura: string;
     mensaje: string;
   }>("usp_Doc_SalesDocument_InvoiceFromOrder", {
+    CompanyId: scope?.companyId ?? 1,
     NumDocPedido: numFactPedido,
     NumDocFactura: numFactFactura,
     FormasPagoJson: paymentsJson,

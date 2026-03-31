@@ -298,12 +298,12 @@ export async function getConciliacion(
 
   const movimientosSistema = await callSp<any>(
     "usp_Bank_Reconciliation_GetSystemMovements",
-    { Id: Conciliacion_ID }
+    { CompanyId: scope.companyId, Id: Conciliacion_ID }
   );
 
   const extractoPendiente = await callSp<any>(
     "usp_Bank_Reconciliation_GetPendingStatements",
-    { Id: Conciliacion_ID }
+    { CompanyId: scope.companyId, Id: Conciliacion_ID }
   );
 
   return {
@@ -367,6 +367,7 @@ export async function importarExtracto(
       await callSpOut(
         "usp_Bank_StatementLine_Insert",
         {
+          CompanyId: scope.companyId,
           ReconciliationId: reconciliationId,
           StatementDate: toSqlDate(row.Fecha) ?? new Date(),
           DescriptionText: String(row.Descripcion ?? "").trim() || null,
@@ -395,9 +396,11 @@ export async function conciliarMovimientos(
   const userId = await resolveUserId(codUsuario);
 
   try {
+    const scope = await getScope();
     const { output } = await callSpOut(
       "usp_Bank_Reconciliation_MatchMovement",
       {
+        CompanyId: scope.companyId,
         ReconciliationId: Conciliacion_ID,
         MovementId: MovimientoSistema_ID,
         StatementId: Number(Extracto_ID ?? 0) > 0 ? Number(Extracto_ID) : null,
@@ -425,7 +428,7 @@ export async function generarAjusteBancario(
 ): Promise<{ ok: boolean; mensaje?: string }> {
   const rows = await callSp<{ accountNo: string }>(
     "usp_Bank_Reconciliation_GetAccountNoById",
-    { Id: payload.Conciliacion_ID }
+    { CompanyId: (await getScope()).companyId, Id: payload.Conciliacion_ID }
   );
 
   const accountNo = String(rows[0]?.accountNo ?? "").trim();
@@ -481,9 +484,11 @@ export async function cerrarConciliacion(
   const userId = await resolveUserId(codUsuario);
 
   try {
+    const scope = await getScope();
     const { rows, output } = await callSpOut<{ diferencia: number; estado: string }>(
       "usp_Bank_Reconciliation_Close",
       {
+        CompanyId: scope.companyId,
         Id: Conciliacion_ID,
         BankClosing: Number(Saldo_Final_Banco ?? 0),
         Notes: String(Observaciones ?? "").trim() || null,
