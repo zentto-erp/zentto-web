@@ -1134,10 +1134,10 @@ function RespaldosTab({ gridId, masterKey }: { gridId: string; masterKey: string
       ]);
       const backupMap = new Map<number, Record<string, unknown>>();
       for (const b of backupsRes.data ?? []) {
-        backupMap.set(b.CompanyId as number, b);
+        backupMap.set(Number(b.CompanyId), b);
       }
       const mapped: BackupRow[] = (tenantsRes.data ?? []).map((r, i) => {
-        const bk = backupMap.get(r.CompanyId as number);
+        const bk = backupMap.get(Number(r.CompanyId));
         return {
           id: i,
           CompanyId: r.CompanyId as number,
