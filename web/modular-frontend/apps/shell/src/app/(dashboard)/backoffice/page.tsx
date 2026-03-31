@@ -1115,25 +1115,43 @@ function RespaldosTab({ gridId, masterKey }: { gridId: string; masterKey: string
   const [backupTarget, setBackupTarget] = useState<BackupRow | null>(null);
   const [backupConfirmOpen, setBackupConfirmOpen] = useState(false);
   const [backupLoading, setBackupLoading] = useState(false);
+  const [runningIds, setRunningIds] = useState<Set<number>>(new Set());
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
-      const res = await apiFetch<{ ok: boolean; data: Record<string, unknown>[] }>(
-        "/v1/backoffice/tenants?page=1&pageSize=100",
-        masterKey
-      );
-      const mapped: BackupRow[] = (res.data ?? []).map((r, i) => ({
-        id: i,
-        CompanyId: r.CompanyId as number,
-        CompanyCode: r.CompanyCode as string,
-        LegalName: r.LegalName as string,
-        LastBackupAt: (r.LastBackupAt as string) ?? null,
-        BackupSizeMB: r.BackupSizeMB != null ? Number(r.BackupSizeMB) : null,
-        BackupStatus: (r.BackupStatus as string) ?? "UNKNOWN",
-      }));
+      // Cargar tenants + backups en paralelo
+      const [tenantsRes, backupsRes] = await Promise.all([
+        apiFetch<{ ok: boolean; data: Record<string, unknown>[] }>(
+          "/v1/backoffice/tenants?page=1&pageSize=100", masterKey
+        ),
+        apiFetch<{ ok: boolean; data: Record<string, unknown>[] }>(
+          "/v1/backoffice/backups", masterKey
+        ).catch(() => ({ ok: true, data: [] as Record<string, unknown>[] })),
+      ]);
+      const backupMap = new Map<number, Record<string, unknown>>();
+      for (const b of backupsRes.data ?? []) {
+        backupMap.set(b.CompanyId as number, b);
+      }
+      const mapped: BackupRow[] = (tenantsRes.data ?? []).map((r, i) => {
+        const bk = backupMap.get(r.CompanyId as number);
+        return {
+          id: i,
+          CompanyId: r.CompanyId as number,
+          CompanyCode: r.CompanyCode as string,
+          LegalName: r.LegalName as string,
+          LastBackupAt: (bk?.CompletedAt as string) ?? (bk?.StartedAt as string) ?? null,
+          BackupSizeMB: bk?.SizeBytes != null ? Number(bk.SizeBytes) / (1024 * 1024) : null,
+          BackupStatus: (bk?.Status as string) ?? "UNKNOWN",
+        };
+      });
       setRows(mapped);
+      // Track running backups for polling
+      const running = new Set<number>();
+      mapped.forEach(r => { if (r.BackupStatus === "RUNNING") running.add(r.CompanyId); });
+      setRunningIds(running);
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -1141,9 +1159,18 @@ function RespaldosTab({ gridId, masterKey }: { gridId: string; masterKey: string
     }
   }, [masterKey]);
 
+  useEffect(() => { load(); }, [load]);
+
+  // Poll cada 5s mientras haya backups en progreso
   useEffect(() => {
-    load();
-  }, [load]);
+    if (runningIds.size > 0) {
+      pollRef.current = setInterval(load, 5000);
+    } else if (pollRef.current) {
+      clearInterval(pollRef.current);
+      pollRef.current = null;
+    }
+    return () => { if (pollRef.current) clearInterval(pollRef.current); };
+  }, [runningIds.size, load]);
 
   const handleBackup = async () => {
     if (!backupTarget) return;
@@ -1155,7 +1182,11 @@ function RespaldosTab({ gridId, masterKey }: { gridId: string; masterKey: string
         { method: "POST" }
       );
       setBackupConfirmOpen(false);
-      await load();
+      // Marcar como running inmediatamente para feedback visual
+      setRows(prev => prev.map(r =>
+        r.CompanyId === backupTarget.CompanyId ? { ...r, BackupStatus: "RUNNING" } : r
+      ));
+      setRunningIds(prev => new Set([...prev, backupTarget.CompanyId]));
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : String(e));
       setBackupConfirmOpen(false);
@@ -1181,9 +1212,10 @@ function RespaldosTab({ gridId, masterKey }: { gridId: string; masterKey: string
       statusVariant: "filled",
     },
     {
-      field: 'actions', header: 'Acciones', type: 'actions', width: 80, pin: 'right',
+      field: 'actions', header: 'Acciones', type: 'actions', width: 120, pin: 'right',
       actions: [
-        { icon: 'view', label: 'Ver', action: 'view', color: '#1976d2' },
+        { icon: 'backup', label: 'Crear respaldo', action: 'backup', color: '#ed6c02' },
+        { icon: 'view', label: 'Ver historial', action: 'view', color: '#1976d2' },
       ],
     },
   ];
@@ -1202,25 +1234,50 @@ function RespaldosTab({ gridId, masterKey }: { gridId: string; masterKey: string
     el.loading = loading;
   }, [mappedRows, loading]);
 
+  // Historial dialog
+  const [historyTarget, setHistoryTarget] = useState<BackupRow | null>(null);
+  const [historyRows, setHistoryRows] = useState<Record<string, unknown>[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+
+  const loadHistory = useCallback(async (companyId: number) => {
+    setHistoryLoading(true);
+    try {
+      const res = await apiFetch<{ ok: boolean; data: Record<string, unknown>[] }>(
+        `/v1/backoffice/tenants/${companyId}/backups`, masterKey
+      );
+      setHistoryRows(res.data ?? []);
+    } catch { setHistoryRows([]); }
+    finally { setHistoryLoading(false); }
+  }, [masterKey]);
+
   useEffect(() => {
     const el = gridRef.current;
     if (!el) return;
     const handler = (e: CustomEvent) => {
       const { action, row } = e.detail;
-      if (action === "view") {
-        const target = rows.find((r) => r.CompanyCode === row.CompanyCode);
-        if (target) { setBackupTarget(target); setBackupConfirmOpen(true); }
+      const target = rows.find((r) => r.CompanyCode === row.CompanyCode);
+      if (!target) return;
+      if (action === "backup") {
+        setBackupTarget(target);
+        setBackupConfirmOpen(true);
+      } else if (action === "view") {
+        setHistoryTarget(target);
+        loadHistory(target.CompanyId);
       }
     };
     el.addEventListener("action-click", handler);
     return () => el.removeEventListener("action-click", handler);
-  }, [rows]);
+  }, [rows, loadHistory]);
 
   return (
     <Box>
       {error && (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {error}
+        <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>
+      )}
+      {runningIds.size > 0 && (
+        <Alert severity="info" sx={{ mb: 2 }}>
+          Respaldo en progreso... actualizando automaticamente.
+          <LinearProgress sx={{ mt: 1 }} />
         </Alert>
       )}
       <Stack direction="row" justifyContent="flex-end" mb={1}>
@@ -1249,6 +1306,43 @@ function RespaldosTab({ gridId, masterKey }: { gridId: string; masterKey: string
         onClose={() => setBackupConfirmOpen(false)}
         confirmLabel={backupLoading ? "Creando..." : "Crear respaldo"}
       />
+      {/* Dialog historial de backups */}
+      <Dialog open={!!historyTarget} onClose={() => setHistoryTarget(null)} maxWidth="md" fullWidth>
+        <DialogTitle>
+          Historial de respaldos — {historyTarget?.LegalName}
+        </DialogTitle>
+        <DialogContent>
+          {historyLoading ? (
+            <Box py={2}>
+              <LinearProgress />
+            </Box>
+          ) : historyRows.length === 0 ? (
+            <Typography color="text.secondary" py={2}>No hay respaldos registrados.</Typography>
+          ) : (
+            <Box sx={{ maxHeight: 400, overflow: "auto" }}>
+              {historyRows.map((h, i) => (
+                <Box key={i} sx={{ py: 1, px: 2, borderBottom: "1px solid #eee", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <Box>
+                    <Typography variant="body2" fontWeight={600}>
+                      {h.Status === "OK" ? "Completado" : h.Status === "FAILED" ? "Fallido" : h.Status === "RUNNING" ? "En progreso..." : String(h.Status)}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {h.CompletedAt ? new Date(h.CompletedAt as string).toLocaleString("es-VE") : h.StartedAt ? new Date(h.StartedAt as string).toLocaleString("es-VE") : "—"}
+                      {h.SizeBytes ? ` — ${(Number(h.SizeBytes) / (1024 * 1024)).toFixed(1)} MB` : ""}
+                      {h.RequestedBy ? ` — por ${h.RequestedBy}` : ""}
+                    </Typography>
+                  </Box>
+                  <Chip
+                    label={String(h.Status)}
+                    size="small"
+                    color={h.Status === "OK" ? "success" : h.Status === "FAILED" ? "error" : h.Status === "RUNNING" ? "info" : "default"}
+                  />
+                </Box>
+              ))}
+            </Box>
+          )}
+        </DialogContent>
+      </Dialog>
     </Box>
   );
 }
