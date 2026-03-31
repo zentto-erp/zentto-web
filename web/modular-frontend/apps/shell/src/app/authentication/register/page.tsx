@@ -6,7 +6,6 @@ import {
   Alert,
   Box,
   Button,
-  Card,
   CircularProgress,
   FormControl,
   FormHelperText,
@@ -17,13 +16,12 @@ import {
   Typography,
   Tooltip,
 } from '@mui/material';
-import { Visibility, VisibilityOff } from '@mui/icons-material';
-import Grid from '@mui/material/Grid2';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Logo } from '@zentto/shared-ui';
+import { Logo, ThemeToggle, EyeIcon, EyeOffIcon } from '@zentto/shared-ui';
 import { TurnstileCaptcha } from '@zentto/shared-auth';
+import BrandPanel from '../BrandPanel';
 
 const registerSchema = z
   .object({
@@ -118,246 +116,281 @@ export default function RegisterPage() {
   };
 
   return (
-    <Box
-      sx={{
-        position: 'relative',
-        width: '100%',
-        height: '100vh',
-        '&:before': {
-          content: '""',
-          background: 'radial-gradient(#d2f1df, #d3d7fa, #bad8f4)',
-          backgroundSize: '400% 400%',
-          animation: 'gradient 15s ease infinite',
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          opacity: 0.3,
-        },
-      }}
-    >
-      <Grid container spacing={0} sx={{ width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center' }}>
-        <Grid size={{ xs: 12, sm: 12, lg: 5, xl: 4 }} sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-          <Card elevation={9} sx={{ p: 4, zIndex: 1, width: '100%', maxWidth: '560px', mx: 2 }}>
-            <Box display="flex" alignItems="center" justifyContent="center" mb={2}>
-              <Logo />
-            </Box>
+    <Box sx={{ display: 'flex', minHeight: '100vh', width: '100%' }}>
+      {/* Left panel — register form */}
+      <Box
+        sx={{
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'center',
+          p: { xs: 3, sm: 5 },
+          bgcolor: 'background.default',
+          position: 'relative',
+        }}
+      >
+        <ThemeToggle sx={{ position: 'absolute', top: 16, right: 16 }} />
 
-            {registeredEmail ? (
-              /* ── Pantalla de confirmación de email ── */
-              <Stack spacing={3} alignItems="center" textAlign="center">
-                <Box sx={{ fontSize: 56, lineHeight: 1 }}>&#9993;</Box>
-                <Typography variant="h5" fontWeight={700}>
-                  Revisa tu correo
+        <Box sx={{ width: '100%', maxWidth: 440 }}>
+          {/* Logo for mobile */}
+          <Box sx={{ display: { xs: 'flex', md: 'none' }, justifyContent: 'center', mb: 3 }}>
+            <Logo />
+          </Box>
+
+          {registeredEmail ? (
+            <Stack spacing={3} alignItems="center" textAlign="center">
+              <Box sx={{ fontSize: 56, lineHeight: 1 }}>&#9993;</Box>
+              <Typography
+                sx={{ fontFamily: "'Inter', system-ui, sans-serif", fontWeight: 700, fontSize: '1.25rem' }}
+              >
+                Revisa tu correo
+              </Typography>
+              <Typography sx={{ fontFamily: "'Inter', system-ui, sans-serif", color: 'text.secondary', fontSize: '0.875rem' }}>
+                Enviamos un enlace de confirmacion a:
+              </Typography>
+              <Typography sx={{ fontFamily: "'Inter', system-ui, sans-serif", fontWeight: 600, fontSize: '1rem' }}>
+                {registeredEmail}
+              </Typography>
+              <Typography sx={{ fontFamily: "'Inter', system-ui, sans-serif", color: 'text.secondary', fontSize: '0.75rem', maxWidth: 360 }}>
+                Haz clic en el enlace del email para activar tu cuenta.
+                Si no lo ves, revisa la carpeta de spam o correo no deseado.
+              </Typography>
+              <Button
+                component={Link}
+                href="/authentication/login"
+                variant="contained"
+                sx={{ py: 1.5, px: 6 }}
+              >
+                Ir al login
+              </Button>
+              <Typography sx={{ fontFamily: "'Inter', system-ui, sans-serif", color: 'text.secondary', fontSize: '0.75rem' }}>
+                No recibiste el email?{' '}
+                <Typography
+                  component="span"
+                  sx={{
+                    fontFamily: "'Inter', system-ui, sans-serif",
+                    fontSize: '0.75rem',
+                    color: 'primary.main',
+                    cursor: 'pointer',
+                    '&:hover': { textDecoration: 'underline' },
+                  }}
+                  onClick={() => { setRegisteredEmail(null); setSuccess(null); }}
+                >
+                  Intentar de nuevo
                 </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Enviamos un enlace de confirmacion a:
+              </Typography>
+            </Stack>
+          ) : (
+            <>
+              <Typography
+                sx={{
+                  fontFamily: "'Inter', system-ui, sans-serif",
+                  fontWeight: 700,
+                  fontSize: '1.25rem',
+                  letterSpacing: '-0.025em',
+                  mb: 0.5,
+                }}
+              >
+                Crear cuenta
+              </Typography>
+              <Typography
+                sx={{
+                  fontFamily: "'Inter', system-ui, sans-serif",
+                  color: 'text.secondary',
+                  fontSize: '0.875rem',
+                  mb: 3,
+                }}
+              >
+                Completa tus datos para comenzar
+              </Typography>
+
+              {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+              {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
+
+              <form onSubmit={handleSubmit(onSubmit)}>
+                <Stack spacing={2}>
+                  <Controller
+                    name="usuario"
+                    control={control}
+                    render={({ field }) => (
+                      <FormControl error={!!errors.usuario} fullWidth>
+                        <Typography variant="body2" fontWeight={600} component="label" sx={{ mb: 1, color: 'text.primary', fontFamily: "'Inter', system-ui, sans-serif" }}>
+                          Usuario
+                        </Typography>
+                        <OutlinedInput
+                          {...field}
+                          placeholder="Nombre de usuario"
+                          sx={{
+                            '& .MuiOutlinedInput-input': { py: 1.75, px: 2 },
+                            '& .MuiOutlinedInput-notchedOutline': { borderRadius: 2 },
+                          }}
+                        />
+                        {errors.usuario && <FormHelperText>{errors.usuario.message}</FormHelperText>}
+                      </FormControl>
+                    )}
+                  />
+
+                  <Controller
+                    name="nombre"
+                    control={control}
+                    render={({ field }) => (
+                      <FormControl error={!!errors.nombre} fullWidth>
+                        <Typography variant="body2" fontWeight={600} component="label" sx={{ mb: 1, color: 'text.primary', fontFamily: "'Inter', system-ui, sans-serif" }}>
+                          Nombre completo
+                        </Typography>
+                        <OutlinedInput
+                          {...field}
+                          placeholder="Tu nombre completo"
+                          sx={{
+                            '& .MuiOutlinedInput-input': { py: 1.75, px: 2 },
+                            '& .MuiOutlinedInput-notchedOutline': { borderRadius: 2 },
+                          }}
+                        />
+                        {errors.nombre && <FormHelperText>{errors.nombre.message}</FormHelperText>}
+                      </FormControl>
+                    )}
+                  />
+
+                  <Controller
+                    name="email"
+                    control={control}
+                    render={({ field }) => (
+                      <FormControl error={!!errors.email} fullWidth>
+                        <Typography variant="body2" fontWeight={600} component="label" sx={{ mb: 1, color: 'text.primary', fontFamily: "'Inter', system-ui, sans-serif" }}>
+                          Correo electrónico
+                        </Typography>
+                        <OutlinedInput
+                          {...field}
+                          type="email"
+                          placeholder="tu@correo.com"
+                          sx={{
+                            '& .MuiOutlinedInput-input': { py: 1.75, px: 2 },
+                            '& .MuiOutlinedInput-notchedOutline': { borderRadius: 2 },
+                          }}
+                        />
+                        {errors.email && <FormHelperText>{errors.email.message}</FormHelperText>}
+                      </FormControl>
+                    )}
+                  />
+
+                  <Controller
+                    name="password"
+                    control={control}
+                    render={({ field }) => (
+                      <FormControl error={!!errors.password} fullWidth>
+                        <Typography variant="body2" fontWeight={600} component="label" sx={{ mb: 1, color: 'text.primary', fontFamily: "'Inter', system-ui, sans-serif" }}>
+                          Contraseña
+                        </Typography>
+                        <OutlinedInput
+                          {...field}
+                          type="text"
+                          placeholder="Contraseña"
+                          autoComplete="new-password"
+                          sx={{
+                            '& .MuiOutlinedInput-input': {
+                              py: 1.75, px: 2,
+                              ...(!showPassword && { WebkitTextSecurity: 'disc', textSecurity: 'disc' }),
+                            },
+                            '& .MuiOutlinedInput-notchedOutline': { borderRadius: 2 },
+                          }}
+                          endAdornment={field.value ? (
+                            <InputAdornment position="end">
+                              <Tooltip title={showPassword ? "Ocultar contrasena" : "Mostrar contrasena"}>
+                                <IconButton onClick={() => setShowPassword(!showPassword)} edge="end" size="small" sx={{ p: 0.5 }}>
+                                  {showPassword ? <EyeOffIcon /> : <EyeIcon />}
+                                </IconButton>
+                              </Tooltip>
+                            </InputAdornment>
+                          ) : null}
+                        />
+                        {errors.password && <FormHelperText>{errors.password.message}</FormHelperText>}
+                      </FormControl>
+                    )}
+                  />
+
+                  <Controller
+                    name="confirmPassword"
+                    control={control}
+                    render={({ field }) => (
+                      <FormControl error={!!errors.confirmPassword} fullWidth>
+                        <Typography variant="body2" fontWeight={600} component="label" sx={{ mb: 1, color: 'text.primary', fontFamily: "'Inter', system-ui, sans-serif" }}>
+                          Confirmar contraseña
+                        </Typography>
+                        <OutlinedInput
+                          {...field}
+                          type="text"
+                          placeholder="Repite la contraseña"
+                          autoComplete="new-password"
+                          sx={{
+                            '& .MuiOutlinedInput-input': {
+                              py: 1.75, px: 2,
+                              ...(!showConfirmPassword && { WebkitTextSecurity: 'disc', textSecurity: 'disc' }),
+                            },
+                            '& .MuiOutlinedInput-notchedOutline': { borderRadius: 2 },
+                          }}
+                          endAdornment={
+                            field.value ? (
+                              <InputAdornment position="end">
+                                <Tooltip title={showConfirmPassword ? "Ocultar contrasena" : "Mostrar contrasena"}>
+                                  <IconButton onClick={() => setShowConfirmPassword(!showConfirmPassword)} edge="end" size="small" sx={{ p: 0.5 }}>
+                                    {showConfirmPassword ? <EyeOffIcon /> : <EyeIcon />}
+                                  </IconButton>
+                                </Tooltip>
+                              </InputAdornment>
+                            ) : null
+                          }
+                        />
+                        {errors.confirmPassword && <FormHelperText>{errors.confirmPassword.message}</FormHelperText>}
+                      </FormControl>
+                    )}
+                  />
+
+                  <TurnstileCaptcha onTokenChange={setCaptchaToken} />
+                  <Button
+                    type="submit"
+                    variant="contained"
+                    size="large"
+                    disabled={isSubmitting}
+                    fullWidth
+                    sx={{
+                      py: 1.75,
+                      fontWeight: 600,
+                      textTransform: 'none',
+                      fontSize: '1rem',
+                      borderRadius: 2,
+                      mt: 1,
+                    }}
+                  >
+                    {isSubmitting ? <CircularProgress size={24} color="inherit" /> : 'Registrar'}
+                  </Button>
+                </Stack>
+              </form>
+
+              <Stack direction="row" spacing={1} justifyContent="center" mt={3}>
+                <Typography variant="body2" color="textSecondary" fontWeight="500" sx={{ fontFamily: "'Inter', system-ui, sans-serif" }}>
+                  ¿Ya tienes cuenta?
                 </Typography>
-                <Typography variant="body1" fontWeight={600}>
-                  {registeredEmail}
-                </Typography>
-                <Typography variant="caption" color="text.secondary" sx={{ maxWidth: 360 }}>
-                  Haz clic en el enlace del email para activar tu cuenta.
-                  Si no lo ves, revisa la carpeta de spam o correo no deseado.
-                </Typography>
-                <Button
+                <Typography
                   component={Link}
                   href="/authentication/login"
-                  variant="contained"
-                  sx={{ py: 1.5, px: 6 }}
+                  variant="body2"
+                  fontWeight="500"
+                  sx={{ fontFamily: "'Inter', system-ui, sans-serif", textDecoration: 'none', color: 'primary.main', '&:hover': { textDecoration: 'underline' } }}
                 >
-                  Ir al login
-                </Button>
-                <Typography variant="caption" color="text.secondary">
-                  No recibiste el email?{' '}
-                  <Typography
-                    component="span"
-                    variant="caption"
-                    sx={{ color: 'primary.main', cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}
-                    onClick={() => { setRegisteredEmail(null); setSuccess(null); }}
-                  >
-                    Intentar de nuevo
-                  </Typography>
+                  Iniciar sesión
                 </Typography>
               </Stack>
-            ) : (
-              /* ── Formulario de registro ── */
-              <>
-                <Typography variant="subtitle1" textAlign="center" color="textSecondary" mb={1}>
-                  Crea tu cuenta para comenzar
-                </Typography>
+            </>
+          )}
+        </Box>
+      </Box>
 
-                {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-                {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
-
-                <form onSubmit={handleSubmit(onSubmit)}>
-                  <Stack spacing={2}>
-                    <Controller
-                      name="usuario"
-                      control={control}
-                      render={({ field }) => (
-                        <FormControl error={!!errors.usuario} fullWidth>
-                          <Typography variant="body2" fontWeight={600} component="label" sx={{ mb: 1, color: 'text.primary' }}>
-                            Usuario
-                          </Typography>
-                          <OutlinedInput
-                            {...field}
-                            placeholder="Nombre de usuario"
-                            sx={{
-                              '& .MuiOutlinedInput-input': { py: 1.75, px: 2 },
-                              '& .MuiOutlinedInput-notchedOutline': { borderRadius: 2 },
-                            }}
-                          />
-                          {errors.usuario && <FormHelperText>{errors.usuario.message}</FormHelperText>}
-                        </FormControl>
-                      )}
-                    />
-
-                    <Controller
-                      name="nombre"
-                      control={control}
-                      render={({ field }) => (
-                        <FormControl error={!!errors.nombre} fullWidth>
-                          <Typography variant="body2" fontWeight={600} component="label" sx={{ mb: 1, color: 'text.primary' }}>
-                            Nombre completo
-                          </Typography>
-                          <OutlinedInput
-                            {...field}
-                            placeholder="Tu nombre completo"
-                            sx={{
-                              '& .MuiOutlinedInput-input': { py: 1.75, px: 2 },
-                              '& .MuiOutlinedInput-notchedOutline': { borderRadius: 2 },
-                            }}
-                          />
-                          {errors.nombre && <FormHelperText>{errors.nombre.message}</FormHelperText>}
-                        </FormControl>
-                      )}
-                    />
-
-                    <Controller
-                      name="email"
-                      control={control}
-                      render={({ field }) => (
-                        <FormControl error={!!errors.email} fullWidth>
-                          <Typography variant="body2" fontWeight={600} component="label" sx={{ mb: 1, color: 'text.primary' }}>
-                            Correo electrónico
-                          </Typography>
-                          <OutlinedInput
-                            {...field}
-                            type="email"
-                            placeholder="tu@correo.com"
-                            sx={{
-                              '& .MuiOutlinedInput-input': { py: 1.75, px: 2 },
-                              '& .MuiOutlinedInput-notchedOutline': { borderRadius: 2 },
-                            }}
-                          />
-                          {errors.email && <FormHelperText>{errors.email.message}</FormHelperText>}
-                        </FormControl>
-                      )}
-                    />
-
-                    <Controller
-                      name="password"
-                      control={control}
-                      render={({ field }) => (
-                        <FormControl error={!!errors.password} fullWidth>
-                          <Typography variant="body2" fontWeight={600} component="label" sx={{ mb: 1, color: 'text.primary' }}>
-                            Contraseña
-                          </Typography>
-                          <OutlinedInput
-                            {...field}
-                            type={showPassword ? 'text' : 'password'}
-                            placeholder="Contraseña"
-                            sx={{
-                              '& .MuiOutlinedInput-input': {
-                                py: 1.75, px: 2,
-                                '&::-ms-reveal, &::-ms-clear': { display: 'none' },
-                                '&::-webkit-credentials-auto-fill-button, &::-webkit-clear-button, &::-webkit-textfield-decoration-container': { display: 'none' },
-                              },
-                              '& .MuiOutlinedInput-notchedOutline': { borderRadius: 2 },
-                            }}
-                            endAdornment={
-                              field.value ? (
-                                <InputAdornment position="end">
-                                  <Tooltip title={showPassword ? "Ocultar contrasena" : "Mostrar contrasena"}>
-                                    <IconButton onClick={() => setShowPassword(!showPassword)} edge="end" size="small" sx={{ p: 0.5 }}>
-                                      {showPassword ? <VisibilityOff sx={{ fontSize: 18 }} /> : <Visibility sx={{ fontSize: 18 }} />}
-                                    </IconButton>
-                                  </Tooltip>
-                                </InputAdornment>
-                              ) : null
-                            }
-                          />
-                          {errors.password && <FormHelperText>{errors.password.message}</FormHelperText>}
-                        </FormControl>
-                      )}
-                    />
-
-                    <Controller
-                      name="confirmPassword"
-                      control={control}
-                      render={({ field }) => (
-                        <FormControl error={!!errors.confirmPassword} fullWidth>
-                          <Typography variant="body2" fontWeight={600} component="label" sx={{ mb: 1, color: 'text.primary' }}>
-                            Confirmar contraseña
-                          </Typography>
-                          <OutlinedInput
-                            {...field}
-                            type={showConfirmPassword ? 'text' : 'password'}
-                            placeholder="Repite la contraseña"
-                            sx={{
-                              '& .MuiOutlinedInput-input': {
-                                py: 1.75, px: 2,
-                                '&::-ms-reveal, &::-ms-clear': { display: 'none' },
-                                '&::-webkit-credentials-auto-fill-button, &::-webkit-clear-button, &::-webkit-textfield-decoration-container': { display: 'none' },
-                              },
-                              '& .MuiOutlinedInput-notchedOutline': { borderRadius: 2 },
-                            }}
-                            endAdornment={
-                              field.value ? (
-                                <InputAdornment position="end">
-                                  <Tooltip title={showConfirmPassword ? "Ocultar contrasena" : "Mostrar contrasena"}>
-                                    <IconButton onClick={() => setShowConfirmPassword(!showConfirmPassword)} edge="end" size="small" sx={{ p: 0.5 }}>
-                                      {showConfirmPassword ? <VisibilityOff sx={{ fontSize: 18 }} /> : <Visibility sx={{ fontSize: 18 }} />}
-                                    </IconButton>
-                                  </Tooltip>
-                                </InputAdornment>
-                              ) : null
-                            }
-                          />
-                          {errors.confirmPassword && <FormHelperText>{errors.confirmPassword.message}</FormHelperText>}
-                        </FormControl>
-                      )}
-                    />
-
-                    <TurnstileCaptcha onTokenChange={setCaptchaToken} />
-                    <Button type="submit" variant="contained" disabled={isSubmitting} sx={{ py: 1.5 }}>
-                      {isSubmitting ? <CircularProgress size={22} color="inherit" /> : 'Registrar'}
-                    </Button>
-                  </Stack>
-                </form>
-
-                <Stack direction="row" spacing={1} justifyContent="center" mt={3}>
-                  <Typography variant="body2" color="textSecondary" fontWeight="500">
-                    ¿Ya tienes cuenta?
-                  </Typography>
-                  <Typography
-                    component={Link}
-                    href="/authentication/login"
-                    variant="body2"
-                    fontWeight="500"
-                    sx={{ textDecoration: 'none', color: 'primary.main', '&:hover': { textDecoration: 'underline' } }}
-                  >
-                    Iniciar sesión
-                  </Typography>
-                </Stack>
-              </>
-            )}
-          </Card>
-        </Grid>
-      </Grid>
+      <BrandPanel
+        side="right"
+        title={<>Únete a{' '}<Box component="span" sx={{ color: '#FFB547' }}>Zentto</Box></>}
+        description="Gestiona tu empresa con una plataforma moderna, simple y poderosa."
+      />
     </Box>
   );
 }
-

@@ -22,11 +22,10 @@ import {
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { signIn } from 'next-auth/react';
-import { useToast } from '@zentto/shared-ui';
+import { useToast, EyeIcon, EyeOffIcon } from '@zentto/shared-ui';
 import TurnstileCaptcha from './TurnstileCaptcha';
 
 interface loginType {
@@ -301,13 +300,18 @@ const AuthLogin = ({ title, subtitle, subtext }: loginType) => {
                 {...field}
                 id="password"
                 label="Contraseña"
-                type={showPassword ? 'text' : 'password'}
+                type="text"
                 placeholder="Contraseña"
                 autoComplete="current-password"
                 disabled={isSubmitting}
                 fullWidth
                 error={!!errors.password}
                 helperText={errors.password?.message}
+                sx={{
+                  '& input': {
+                    ...(!showPassword && { WebkitTextSecurity: 'disc', textSecurity: 'disc' }),
+                  },
+                }}
                 slotProps={{
                   input: {
                     endAdornment: field.value ? (
@@ -321,7 +325,7 @@ const AuthLogin = ({ title, subtitle, subtext }: loginType) => {
                               size="small"
                               sx={{ p: 0.5 }}
                             >
-                              {showPassword ? <VisibilityOff sx={{ fontSize: 18 }} /> : <Visibility sx={{ fontSize: 18 }} />}
+                              {showPassword ? <EyeOffIcon /> : <EyeIcon />}
                             </IconButton>
                           </span>
                         </Tooltip>
