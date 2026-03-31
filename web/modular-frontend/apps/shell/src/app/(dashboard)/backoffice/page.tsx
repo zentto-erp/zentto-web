@@ -825,11 +825,11 @@ function RecursosTab({ gridId, masterKey }: { gridId: string; masterKey: string 
     setLoading(true);
     setError("");
     try {
-      const res = await apiFetch<Record<string, unknown>[]>(
+      const res = await apiFetch<{ ok: boolean; data: Record<string, unknown>[] }>(
         "/v1/backoffice/resources",
         masterKey
       );
-      const mapped: ResourceRow[] = (res ?? []).map((r, i) => ({
+      const mapped: ResourceRow[] = (Array.isArray(res) ? res : res?.data ?? []).map((r, i) => ({
         id: i,
         CompanyId: r.CompanyId as number,
         CompanyCode: r.CompanyCode as string,
