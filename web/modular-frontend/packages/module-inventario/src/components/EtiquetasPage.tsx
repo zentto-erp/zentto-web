@@ -187,6 +187,12 @@ export default function EtiquetasPage() {
                   height="300px"
                   enable-header-filters
                   enable-quick-search
+                  enable-toolbar
+                  enable-header-menu
+                  enable-clipboard
+                  enable-context-menu
+                  enable-status-bar
+                  enable-configurator
                 />
               )}
             </Paper>
@@ -220,6 +226,13 @@ export default function EtiquetasPage() {
                   grid-id={SELECTED_GRID_ID}
                   height="300px"
                   enable-status-bar
+                  enable-quick-search
+                  enable-header-filters
+                  enable-configurator
+                  enable-toolbar
+                  enable-header-menu
+                  enable-clipboard
+                  enable-context-menu
                 />
               )}
             </Paper>

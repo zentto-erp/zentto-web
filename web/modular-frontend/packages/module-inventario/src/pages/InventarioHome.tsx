@@ -233,6 +233,13 @@ export default function InventarioHome({ basePath = "" }: { basePath?: string })
                   grid-id={MOVS_GRID_ID}
                   height="250px"
                   enable-status-bar
+                  enable-quick-search
+                  enable-header-filters
+                  enable-configurator
+                  enable-toolbar
+                  enable-header-menu
+                  enable-clipboard
+                  enable-context-menu
                 />
               ) : (
                 <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: 150, bgcolor: "#f8f9fa", borderRadius: 2 }}>

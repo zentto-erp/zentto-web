@@ -22,7 +22,7 @@ import { requireMasterKey } from "../../middleware/master-key.js";
 import { callSp } from "../../db/query.js";
 import { applyPlanModules, getLicenseByCompany } from "../license/license.service.js";
 import { dropTenantDatabase } from "./resource.service.js";
-import { createTenantBackup, listTenantBackups, getLatestBackupsPerTenant, restoreTenantBackup, verifyStorageConnection } from "./backup.service.js";
+import { createTenantBackup, listTenantBackups, getLatestBackupsPerTenant, restoreTenantBackup, verifyStorageConnection, getBackupProgress } from "./backup.service.js";
 import { obs } from "../integrations/observability.js";
 
 const backofficeRouter = Router();
@@ -481,6 +481,9 @@ backofficeRouter.post("/tenants/:companyId/backup", async (req, res) => {
       return;
     }
 
+    // Si la BD del tenant no existe como DB independiente, usar PG_DATABASE (shared DB en dev)
+    const dbName = tenant.DbName || process.env.PG_DATABASE || 'zentto_dev';
+
     // Responder inmediatamente — el backup corre en background
     res.status(202).json({ ok: true, message: "backup_queued" });
 
@@ -488,7 +491,7 @@ backofficeRouter.post("/tenants/:companyId/backup", async (req, res) => {
       await createTenantBackup(
         companyId,
         tenant.CompanyCode,
-        tenant.DbName,
+        dbName,
         "backoffice-manual"
       );
     });
@@ -497,6 +500,27 @@ backofficeRouter.post("/tenants/:companyId/backup", async (req, res) => {
     obs.error(`backoffice.backup.trigger.failed: ${msg}`, { module: "backup", companyId });
     res.status(500).json({ error: msg });
   }
+});
+
+// ── GET /tenants/:companyId/backup/progress ────────────────────────────────
+// Progreso en tiempo real de un backup en curso.
+
+backofficeRouter.get("/tenants/:companyId/backup/progress", (req, res) => {
+  const companyId = Number(req.params.companyId);
+  const progress = getBackupProgress(companyId);
+  if (!progress) {
+    res.json({ ok: true, running: false });
+    return;
+  }
+  const elapsedMs = Date.now() - progress.startedAt;
+  res.json({
+    ok: true,
+    running: progress.phase !== "DONE" && progress.phase !== "FAILED",
+    phase: progress.phase,
+    percent: progress.percent,
+    detail: progress.detail,
+    elapsedSeconds: Math.round(elapsedMs / 1000),
+  });
 });
 
 // ── GET /storage/status ────────────────────────────────────────────────────

@@ -94,12 +94,25 @@ interface BackupCreateRow {
  * 3. Elimina archivo local si el upload fue OK
  * 4. Registra resultado en sys."TenantBackup"
  */
+// In-memory progress tracker for running backups
+const backupProgress = new Map<number, { phase: string; percent: number; detail: string; startedAt: number }>();
+
+export function getBackupProgress(companyId: number) {
+  return backupProgress.get(companyId) ?? null;
+}
+
 export async function createTenantBackup(
   companyId: number,
   companyCode: string,
   dbName: string,
   requestedBy: string = "backoffice"
 ): Promise<{ ok: boolean; backupId?: number; message: string }> {
+  function setPhase(phase: string, percent: number, detail: string) {
+    backupProgress.set(companyId, { phase, percent, detail, startedAt: backupProgress.get(companyId)?.startedAt ?? Date.now() });
+  }
+
+  setPhase("INIT", 5, "Registrando backup...");
+
   // 1. Registrar backup en BD (Status=RUNNING)
   const rows = await callSp<BackupCreateRow>("usp_Sys_Backup_Create", {
     CompanyId: companyId,
@@ -107,7 +120,7 @@ export async function createTenantBackup(
     CreatedBy: requestedBy,
   });
   const backupId = Number(rows[0]?.BackupId);
-  if (!backupId) throw new Error("No se pudo crear registro de backup");
+  if (!backupId) { backupProgress.delete(companyId); throw new Error("No se pudo crear registro de backup"); }
 
   // 2. Directorio local temporal
   const tenantBackupDir = path.join(BACKUP_DIR, companyCode.toLowerCase());
@@ -127,6 +140,7 @@ export async function createTenantBackup(
     obs.audit("backup.start", { module: "backup", companyId, dbName, backupId });
 
     // 3. pg_dump → archivo local
+    setPhase("PG_DUMP", 15, `Exportando base de datos ${dbName}...`);
     const pgDumpStart = Date.now();
     execSync(
       `PGPASSWORD="${pgPassword}" pg_dump -h ${pgHost} -p ${pgPort} -U ${pgUser} -Fc -f "${filePath}" "${dbName}"`,
@@ -137,8 +151,11 @@ export async function createTenantBackup(
 
     const stats         = fs.statSync(filePath);
     const fileSizeBytes = stats.size;
+    const sizeMB = (fileSizeBytes / 1048576).toFixed(1);
 
-    obs.log("info", `[backup] pg_dump completado: ${fileName} (${(fileSizeBytes / 1048576).toFixed(1)} MB) en ${(pgDumpMs / 1000).toFixed(1)}s`, {
+    setPhase("PG_DUMP_DONE", 50, `pg_dump completado: ${sizeMB} MB en ${(pgDumpMs / 1000).toFixed(1)}s`);
+
+    obs.log("info", `[backup] pg_dump completado: ${fileName} (${sizeMB} MB) en ${(pgDumpMs / 1000).toFixed(1)}s`, {
       module: "backup", companyId, backupId,
     });
 
@@ -147,29 +164,34 @@ export async function createTenantBackup(
     let uploadedKey: string | null = null;
 
     if (getS3Client()) {
+      setPhase("UPLOADING", 60, `Subiendo ${sizeMB} MB a Object Storage...`);
       obs.log("info", `[backup] Subiendo a Object Storage: ${storageKey}`, { module: "backup", companyId });
       const uploadResult = await uploadToStorage(filePath, storageKey);
 
       if (uploadResult.ok) {
         storageStatus = "UPLOADED";
         uploadedKey   = storageKey;
+        setPhase("UPLOADED", 85, "Archivo subido a Object Storage");
         obs.audit("backup.storage.upload", { module: "backup", companyId, backupId, storageKey });
 
-        // Eliminar archivo local tras upload exitoso para ahorrar espacio en disco
+        // Eliminar archivo local tras upload exitoso
         try {
           fs.unlinkSync(filePath);
           obs.log("info", `[backup] Archivo local eliminado tras upload: ${filePath}`, { module: "backup" });
         } catch {
-          // No crítico — el archivo en Storage ya es la fuente de verdad
+          // No crítico
         }
       } else {
         storageStatus = "UPLOAD_FAILED";
+        setPhase("UPLOAD_FAILED", 85, `Upload falló: ${uploadResult.message}`);
         obs.error(`backup.storage.upload.failed: ${uploadResult.message}`, { module: "backup", companyId, backupId });
-        // El archivo local se conserva como fallback
       }
+    } else {
+      setPhase("LOCAL_ONLY", 85, `Guardado local: ${sizeMB} MB (S3 no configurado)`);
     }
 
     // 5. Marcar como DONE
+    setPhase("FINALIZING", 90, "Registrando resultado en base de datos...");
     await callSp("usp_Sys_Backup_Complete", {
       BackupId:       backupId,
       FilePath:       storageStatus === "UPLOADED" ? null : filePath,
@@ -179,28 +201,33 @@ export async function createTenantBackup(
       StorageStatus:  storageStatus,
     });
 
+    setPhase("DONE", 100, `Respaldo completado: ${sizeMB} MB [${storageStatus}]`);
     obs.audit("backup.complete", { module: "backup", companyId, dbName, backupId, fileSizeBytes, storageStatus });
-    obs.event("backup.complete", { companyId, dbName, backupId, fileSizeMB: +(fileSizeBytes / 1048576).toFixed(1), storageStatus });
+    obs.event("backup.complete", { companyId, dbName, backupId, fileSizeMB: +sizeMB, storageStatus });
 
-    // Alertar si el Object Storage estaba configurado pero el upload falló
     if (storageStatus === "UPLOAD_FAILED") {
       obs.event("backup.storage.offline", { companyId, dbName, backupId });
     }
+
+    // Limpiar progreso después de 30s
+    setTimeout(() => backupProgress.delete(companyId), 30_000);
 
     return { ok: true, backupId, message: `backup_created: ${fileName} [${storageStatus}]` };
 
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : "pg_dump_failed";
+    setPhase("FAILED", 0, msg.substring(0, 200));
     obs.error(`backup.failed: ${msg}`, { module: "backup", companyId, dbName, backupId });
     obs.event("backup.failed", { companyId, dbName, backupId, error: msg.substring(0, 200) });
 
-    // Limpiar archivo parcial si existe
     try { if (fs.existsSync(filePath)) fs.unlinkSync(filePath); } catch { /* ignorar */ }
 
     await callSp("usp_Sys_Backup_Fail", {
       BackupId:     backupId,
       ErrorMessage: msg.substring(0, 500),
     });
+
+    setTimeout(() => backupProgress.delete(companyId), 30_000);
     return { ok: false, backupId, message: msg };
   }
 }

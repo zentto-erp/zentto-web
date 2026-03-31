@@ -522,7 +522,7 @@ function DashboardCards({
     },
     {
       label: "MRR Estimado",
-      value: data ? `$${Number(data.MRR).toLocaleString("es-VE")}` : "—",
+      value: data ? `$${(Number(data.MRR) || 0).toLocaleString("es-VE")}` : "—",
       icon: <MoneyIcon fontSize="large" color="success" />,
     },
     {
@@ -825,17 +825,17 @@ function RecursosTab({ gridId, masterKey }: { gridId: string; masterKey: string 
     setLoading(true);
     setError("");
     try {
-      const res = await apiFetch<Record<string, unknown>[]>(
+      const res = await apiFetch<{ ok: boolean; data: Record<string, unknown>[] }>(
         "/v1/backoffice/resources",
         masterKey
       );
-      const mapped: ResourceRow[] = (res ?? []).map((r, i) => ({
+      const mapped: ResourceRow[] = (Array.isArray(res) ? res : res?.data ?? []).map((r, i) => ({
         id: i,
         CompanyId: r.CompanyId as number,
         CompanyCode: r.CompanyCode as string,
         LegalName: r.LegalName as string,
-        DbSizeMB: Number(r.DbSizeMB ?? 0),
-        LastLoginAt: (r.LastLoginAt as string) ?? null,
+        DbSizeMB: r.DbSizeMB != null && r.DbSizeMB !== "" ? Number(r.DbSizeMB) || 0 : 0,
+        LastLoginAt: r.LastLoginAt && r.LastLoginAt !== "null" ? String(r.LastLoginAt) : null,
         Status: r.Status as string,
       }));
       setRows(mapped);
@@ -945,11 +945,11 @@ function CleanupTab({ gridId, masterKey }: { gridId: string; masterKey: string }
     setLoading(true);
     setError("");
     try {
-      const res = await apiFetch<Record<string, unknown>[]>(
+      const res = await apiFetch<{ ok: boolean; data: Record<string, unknown>[] }>(
         "/v1/backoffice/cleanup?status=PENDING",
         masterKey
       );
-      const mapped: CleanupRow[] = (res ?? []).map((r, i) => ({
+      const mapped: CleanupRow[] = (Array.isArray(res) ? res : res?.data ?? []).map((r, i) => ({
         id: i,
         QueueId: r.QueueId as number,
         CompanyCode: r.CompanyCode as string,
@@ -1115,25 +1115,59 @@ function RespaldosTab({ gridId, masterKey }: { gridId: string; masterKey: string
   const [backupTarget, setBackupTarget] = useState<BackupRow | null>(null);
   const [backupConfirmOpen, setBackupConfirmOpen] = useState(false);
   const [backupLoading, setBackupLoading] = useState(false);
+  const [runningIds, setRunningIds] = useState<Set<number>>(new Set());
+  const [progressMap, setProgressMap] = useState<Map<number, { phase: string; percent: number; detail: string; elapsedSeconds: number }>>(new Map());
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
-      const res = await apiFetch<{ ok: boolean; data: Record<string, unknown>[] }>(
-        "/v1/backoffice/tenants?page=1&pageSize=100",
-        masterKey
-      );
-      const mapped: BackupRow[] = (res.data ?? []).map((r, i) => ({
-        id: i,
-        CompanyId: r.CompanyId as number,
-        CompanyCode: r.CompanyCode as string,
-        LegalName: r.LegalName as string,
-        LastBackupAt: (r.LastBackupAt as string) ?? null,
-        BackupSizeMB: r.BackupSizeMB != null ? Number(r.BackupSizeMB) : null,
-        BackupStatus: (r.BackupStatus as string) ?? "UNKNOWN",
-      }));
+      // Cargar tenants + backups en paralelo
+      const [tenantsRes, backupsRes] = await Promise.all([
+        apiFetch<{ ok: boolean; data: Record<string, unknown>[] }>(
+          "/v1/backoffice/tenants?page=1&pageSize=100", masterKey
+        ),
+        apiFetch<{ ok: boolean; data: Record<string, unknown>[] }>(
+          "/v1/backoffice/backups", masterKey
+        ).catch(() => ({ ok: true, data: [] as Record<string, unknown>[] })),
+      ]);
+      const backupMap = new Map<number, Record<string, unknown>>();
+      for (const b of backupsRes.data ?? []) {
+        backupMap.set(Number(b.CompanyId), b);
+      }
+      const mapped: BackupRow[] = (tenantsRes.data ?? []).map((r, i) => {
+        const bk = backupMap.get(Number(r.CompanyId));
+        return {
+          id: i,
+          CompanyId: r.CompanyId as number,
+          CompanyCode: r.CompanyCode as string,
+          LegalName: r.LegalName as string,
+          LastBackupAt: (bk?.LastBackupAt as string) ?? (bk?.CompletedAt as string) ?? (bk?.StartedAt as string) ?? null,
+          BackupSizeMB: bk?.LastBackupSizeMB != null ? Number(bk.LastBackupSizeMB) : bk?.SizeBytes != null ? Number(bk.SizeBytes) / (1024 * 1024) : null,
+          BackupStatus: (bk?.LastBackupStatus as string) ?? (bk?.Status as string) ?? "UNKNOWN",
+        };
+      });
       setRows(mapped);
+
+      // Detectar backups en progreso — consultar /progress de cada tenant
+      const running = new Set<number>();
+      const newProgress = new Map(progressMap);
+      await Promise.all(mapped.map(async (r) => {
+        try {
+          const p = await apiFetch<{ ok: boolean; running: boolean; phase?: string; percent?: number; detail?: string; elapsedSeconds?: number }>(
+            `/v1/backoffice/tenants/${r.CompanyId}/backup/progress`, masterKey
+          );
+          if (p.running) {
+            running.add(r.CompanyId);
+            newProgress.set(r.CompanyId, { phase: p.phase ?? "", percent: p.percent ?? 0, detail: p.detail ?? "", elapsedSeconds: p.elapsedSeconds ?? 0 });
+          } else {
+            newProgress.delete(r.CompanyId);
+          }
+        } catch { /* ignore */ }
+      }));
+      setRunningIds(running);
+      setProgressMap(newProgress);
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -1141,9 +1175,39 @@ function RespaldosTab({ gridId, masterKey }: { gridId: string; masterKey: string
     }
   }, [masterKey]);
 
+  useEffect(() => { load(); }, [load]);
+
+  // Poll progreso cada 3s mientras haya backups en progreso
+  const pollProgress = useCallback(async () => {
+    if (runningIds.size === 0) return;
+    const newMap = new Map(progressMap);
+    let anyRunning = false;
+    for (const cid of runningIds) {
+      try {
+        const res = await apiFetch<{ ok: boolean; running: boolean; phase?: string; percent?: number; detail?: string; elapsedSeconds?: number }>(
+          `/v1/backoffice/tenants/${cid}/backup/progress`, masterKey
+        );
+        if (res.running) {
+          anyRunning = true;
+          newMap.set(cid, { phase: res.phase ?? "", percent: res.percent ?? 0, detail: res.detail ?? "", elapsedSeconds: res.elapsedSeconds ?? 0 });
+        } else {
+          newMap.delete(cid);
+        }
+      } catch { /* ignore */ }
+    }
+    setProgressMap(newMap);
+    if (!anyRunning) { setRunningIds(new Set()); load(); }
+  }, [runningIds, masterKey, progressMap, load]);
+
   useEffect(() => {
-    load();
-  }, [load]);
+    if (runningIds.size > 0) {
+      pollRef.current = setInterval(pollProgress, 3000);
+    } else if (pollRef.current) {
+      clearInterval(pollRef.current);
+      pollRef.current = null;
+    }
+    return () => { if (pollRef.current) clearInterval(pollRef.current); };
+  }, [runningIds.size, pollProgress]);
 
   const handleBackup = async () => {
     if (!backupTarget) return;
@@ -1155,7 +1219,11 @@ function RespaldosTab({ gridId, masterKey }: { gridId: string; masterKey: string
         { method: "POST" }
       );
       setBackupConfirmOpen(false);
-      await load();
+      // Marcar como running inmediatamente para feedback visual
+      setRows(prev => prev.map(r =>
+        r.CompanyId === backupTarget.CompanyId ? { ...r, BackupStatus: "RUNNING" } : r
+      ));
+      setRunningIds(prev => new Set([...prev, backupTarget.CompanyId]));
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : String(e));
       setBackupConfirmOpen(false);
@@ -1181,9 +1249,10 @@ function RespaldosTab({ gridId, masterKey }: { gridId: string; masterKey: string
       statusVariant: "filled",
     },
     {
-      field: 'actions', header: 'Acciones', type: 'actions', width: 80, pin: 'right',
+      field: 'actions', header: 'Acciones', type: 'actions', width: 120, pin: 'right',
       actions: [
-        { icon: 'view', label: 'Ver', action: 'view', color: '#1976d2' },
+        { icon: 'backup', label: 'Crear respaldo', action: 'backup', color: '#ed6c02' },
+        { icon: 'view', label: 'Ver historial', action: 'view', color: '#1976d2' },
       ],
     },
   ];
@@ -1202,27 +1271,70 @@ function RespaldosTab({ gridId, masterKey }: { gridId: string; masterKey: string
     el.loading = loading;
   }, [mappedRows, loading]);
 
+  // Historial dialog
+  const [historyTarget, setHistoryTarget] = useState<BackupRow | null>(null);
+  const [historyRows, setHistoryRows] = useState<Record<string, unknown>[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+
+  const loadHistory = useCallback(async (companyId: number) => {
+    setHistoryLoading(true);
+    try {
+      const res = await apiFetch<{ ok: boolean; data: Record<string, unknown>[] }>(
+        `/v1/backoffice/tenants/${companyId}/backups`, masterKey
+      );
+      setHistoryRows(res.data ?? []);
+    } catch { setHistoryRows([]); }
+    finally { setHistoryLoading(false); }
+  }, [masterKey]);
+
   useEffect(() => {
     const el = gridRef.current;
     if (!el) return;
     const handler = (e: CustomEvent) => {
       const { action, row } = e.detail;
-      if (action === "view") {
-        const target = rows.find((r) => r.CompanyCode === row.CompanyCode);
-        if (target) { setBackupTarget(target); setBackupConfirmOpen(true); }
+      const target = rows.find((r) => r.CompanyCode === row.CompanyCode);
+      if (!target) return;
+      if (action === "backup") {
+        if (runningIds.has(target.CompanyId)) return; // Bloqueado mientras hay backup en curso
+        setBackupTarget(target);
+        setBackupConfirmOpen(true);
+      } else if (action === "view") {
+        setHistoryTarget(target);
+        loadHistory(target.CompanyId);
       }
     };
     el.addEventListener("action-click", handler);
     return () => el.removeEventListener("action-click", handler);
-  }, [rows]);
+  }, [rows, runningIds, loadHistory]);
 
   return (
     <Box>
       {error && (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {error}
-        </Alert>
+        <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>
       )}
+      {runningIds.size > 0 && Array.from(runningIds).map(cid => {
+        const p = progressMap.get(cid);
+        const row = rows.find(r => r.CompanyId === cid);
+        return (
+          <Alert key={cid} severity="info" sx={{ mb: 2 }}>
+            <Typography variant="subtitle2" fontWeight={600}>
+              Respaldo: {row?.LegalName ?? `Tenant #${cid}`}
+            </Typography>
+            <Typography variant="body2" sx={{ mt: 0.5 }}>
+              {p?.detail || "Iniciando..."}
+              {p?.elapsedSeconds ? ` (${p.elapsedSeconds}s)` : ""}
+            </Typography>
+            <LinearProgress
+              variant={p?.percent ? "determinate" : "indeterminate"}
+              value={p?.percent ?? 0}
+              sx={{ mt: 1, height: 8, borderRadius: 4 }}
+            />
+            {p?.percent != null && (
+              <Typography variant="caption" color="text.secondary">{p.percent}%</Typography>
+            )}
+          </Alert>
+        );
+      })}
       <Stack direction="row" justifyContent="flex-end" mb={1}>
         <Button startIcon={<RefreshIcon />} onClick={load} disabled={loading}>
           Actualizar
@@ -1249,6 +1361,43 @@ function RespaldosTab({ gridId, masterKey }: { gridId: string; masterKey: string
         onClose={() => setBackupConfirmOpen(false)}
         confirmLabel={backupLoading ? "Creando..." : "Crear respaldo"}
       />
+      {/* Dialog historial de backups */}
+      <Dialog open={!!historyTarget} onClose={() => setHistoryTarget(null)} maxWidth="md" fullWidth>
+        <DialogTitle>
+          Historial de respaldos — {historyTarget?.LegalName}
+        </DialogTitle>
+        <DialogContent>
+          {historyLoading ? (
+            <Box py={2}>
+              <LinearProgress />
+            </Box>
+          ) : historyRows.length === 0 ? (
+            <Typography color="text.secondary" py={2}>No hay respaldos registrados.</Typography>
+          ) : (
+            <Box sx={{ maxHeight: 400, overflow: "auto" }}>
+              {historyRows.map((h, i) => (
+                <Box key={i} sx={{ py: 1, px: 2, borderBottom: "1px solid #eee", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <Box>
+                    <Typography variant="body2" fontWeight={600}>
+                      {h.Status === "OK" ? "Completado" : h.Status === "FAILED" ? "Fallido" : h.Status === "RUNNING" ? "En progreso..." : String(h.Status)}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {h.CompletedAt ? new Date(h.CompletedAt as string).toLocaleString("es-VE") : h.StartedAt ? new Date(h.StartedAt as string).toLocaleString("es-VE") : "—"}
+                      {h.SizeBytes ? ` — ${(Number(h.SizeBytes) / (1024 * 1024)).toFixed(1)} MB` : ""}
+                      {h.RequestedBy ? ` — por ${h.RequestedBy}` : ""}
+                    </Typography>
+                  </Box>
+                  <Chip
+                    label={String(h.Status)}
+                    size="small"
+                    color={h.Status === "OK" ? "success" : h.Status === "FAILED" ? "error" : h.Status === "RUNNING" ? "info" : "default"}
+                  />
+                </Box>
+              ))}
+            </Box>
+          )}
+        </DialogContent>
+      </Dialog>
     </Box>
   );
 }

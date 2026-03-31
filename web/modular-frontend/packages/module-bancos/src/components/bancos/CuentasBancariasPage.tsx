@@ -7,24 +7,14 @@ import {
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import Grid from "@mui/material/Grid2";
-import dayjs from "dayjs";
-import { formatCurrency, toDateOnly, useGridLayoutSync } from "@zentto/shared-api";
-import { useTimezone } from "@zentto/shared-auth";
-import { useToast, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
+import { formatCurrency, useGridLayoutSync } from "@zentto/shared-api";
+import { useToast } from "@zentto/shared-ui";
 import type { ColumnDef } from "@zentto/datagrid-core";
 import {
   useBancosList, useCuentasBancarias, useMovimientosCuenta,
   useCreateCuentaBancaria, useUpdateCuentaBancaria, useDeleteCuentaBancaria,
 } from "../../hooks/useBancosAuxiliares";
 import { useBancosGridRegistration } from "../zenttoGridPersistence";
-
-const MOVIMIENTOS_FILTERS: FilterFieldDef[] = [
-  { field: "tipo", label: "Tipo", type: "select", options: [
-    { value: "DEP", label: "Depósito" }, { value: "PCH", label: "Cheque" },
-    { value: "NCR", label: "Nota Crédito" }, { value: "NDB", label: "Nota Débito" }, { value: "IDB", label: "Int. Débito" },
-  ]},
-  { field: "from", label: "Fecha desde", type: "date" }, { field: "to", label: "Fecha hasta", type: "date" },
-];
 
 const COLS_CUENTAS: ColumnDef[] = [
   { field: "Nro_Cta", header: "Nro Cuenta", width: 130, sortable: true },
@@ -57,7 +47,6 @@ export default function CuentasBancariasPage() {
   const ctasGridRef = useRef<any>(null);
   const movsGridRef = useRef<any>(null);
   const router = useRouter();
-  const { timeZone } = useTimezone();
   const { showToast } = useToast();
 
   const [formOpen, setFormOpen] = useState(false);
@@ -73,16 +62,11 @@ export default function CuentasBancariasPage() {
   const saving = crear.isPending || actualizar.isPending;
 
   const [nroCta, setNroCta] = useState<string>("");
-  const [movSearch, setMovSearch] = useState("");
-  const [movFilterValues, setMovFilterValues] = useState<Record<string, string>>({
-    from: dayjs().tz(timeZone).startOf("month").format("YYYY-MM-DD"),
-    to: dayjs().tz(timeZone).format("YYYY-MM-DD"),
-  });
   const [page, setPage] = useState<number>(1);
   const [limit] = useState<number>(50);
 
   const { data: cuentasData, isLoading: loadingCtas } = useCuentasBancarias();
-  const input = useMemo(() => ({ nroCta: nroCta || undefined, desde: movFilterValues.from, hasta: movFilterValues.to, page, limit }), [nroCta, movFilterValues, page, limit]);
+  const input = useMemo(() => ({ nroCta: nroCta || undefined, page, limit }), [nroCta, page, limit]);
   const { data: movsData, isLoading: loadingMovs } = useMovimientosCuenta(input);
 
   const cuentas = (cuentasData?.rows ?? []) as Record<string, any>[];
@@ -159,7 +143,6 @@ export default function CuentasBancariasPage() {
               <Typography variant="subtitle1" fontWeight="bold">Movimientos</Typography>
               <Button variant="contained" size="small" startIcon={<AddIcon />} disabled={!nroCta} onClick={() => router.push(`/bancos/movimientos/generar?cuenta=${nroCta}`)}>Agregar Movimiento</Button>
             </Stack>
-            <ZenttoFilterPanel filters={MOVIMIENTOS_FILTERS} values={movFilterValues} onChange={(v) => { setMovFilterValues(v); setPage(1); }} searchPlaceholder="Buscar movimiento..." searchValue={movSearch} onSearchChange={(v) => { setMovSearch(v); setPage(1); }} />
             {nroCta && <Chip label={`Cuenta: ${nroCta}`} onDelete={() => setNroCta("")} color="primary" sx={{ mb: 1 }} />}
             <zentto-grid ref={movsGridRef} grid-id={MOVIMIENTOS_GRID_ID} height="400px" show-totals enable-toolbar enable-header-menu enable-header-filters enable-clipboard enable-quick-search enable-context-menu enable-status-bar enable-configurator />
           </Paper>

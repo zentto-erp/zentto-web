@@ -5,7 +5,7 @@ import {
   Box, Paper, Typography, Button, Stack, Tab, Tabs, CircularProgress, Alert, Divider, IconButton, Tooltip,
 } from "@mui/material";
 import type { ColumnDef } from "@zentto/datagrid-core";
-import { DatePicker, FormGrid, FormField, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
+import { DatePicker, FormGrid, FormField } from "@zentto/shared-ui";
 import dayjs from "dayjs";
 import PrintIcon from "@mui/icons-material/Print";
 import { useGridLayoutSync, formatCurrency, toDateOnly } from "@zentto/shared-api";
@@ -62,7 +62,6 @@ const GRID_IDS = {
 export default function ReportesContablesPage() {
   const { timeZone } = useTimezone();
   const [tab, setTab] = useState(0);
-  const [reportSearch, setReportSearch] = useState("");
   const today = toDateOnly(new Date(), timeZone);
   const firstDay = toDateOnly(new Date(new Date().getFullYear(), 0, 1), timeZone);
   const printRef = useRef<HTMLDivElement>(null);
@@ -122,7 +121,6 @@ export default function ReportesContablesPage() {
 
   return (
     <Box ref={printRef} sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-      <ZenttoFilterPanel filters={[] as FilterFieldDef[]} values={{}} onChange={() => {}} searchPlaceholder="Buscar en reportes..." searchValue={reportSearch} onSearchChange={setReportSearch} />
       <Stack direction="row" alignItems="center" justifyContent="space-between" mb={1}>
         <Tabs value={tab} onChange={(_, v) => { setTab(v); setRun(false); }} variant="scrollable" scrollButtons="auto">
           <Tab label="Libro diario" /><Tab label="Libro mayor" /><Tab label="Balance comprobacion" /><Tab label="Estado de resultados" /><Tab label="Balance general" />

@@ -1,22 +1,16 @@
 // components/modules/abonos/AbonosaTable.tsx
 "use client";
 
-import { useState, useMemo, useEffect, useRef, useCallback } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Box, Typography } from "@mui/material";
-import { ConfirmDialog, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
+import { ConfirmDialog } from "@zentto/shared-ui";
 import { useAbonosList, useDeleteAbono } from "../../../hooks/useAbonos";
 import { useTimezone } from "@zentto/shared-auth";
 import { toDateOnly, useGridLayoutSync } from "@zentto/shared-api";
 import type { ColumnDef } from "@zentto/datagrid-core";
 import { useScopedGridId, useAdminGridRegistration } from "../../../lib/zentto-grid";
 
-
-const ABONO_FILTERS: FilterFieldDef[] = [
-  { field: "cliente", label: "Cliente", type: "text", placeholder: "Nombre del cliente..." },
-  { field: "from", label: "Fecha desde", type: "date" },
-  { field: "to", label: "Fecha hasta", type: "date" },
-];
 
 export default function AbonosTable() {
   const router = useRouter();
@@ -30,22 +24,7 @@ export default function AbonosTable() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedAbono, setSelectedAbono] = useState<string | null>(null);
 
-  // Filtros
-  const [search, setSearch] = useState("");
-  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
-
-  const handleFilterChange = (vals: Record<string, string>) => {
-    setFilterValues(vals);
-    setPage(0);
-  };
-
-  const handleSearchChange = (val: string) => {
-    setSearch(val);
-    setPage(0);
-  };
-
   const { data: abonos, isLoading } = useAbonosList({
-    search: search || undefined,
     page: page + 1,
     limit: pageSize,
   });
@@ -134,16 +113,6 @@ export default function AbonosTable() {
       <Typography variant="h5" fontWeight={600} sx={{ mb: 3 }}>
         Abonos
       </Typography>
-
-      {/* Filtros */}
-      <ZenttoFilterPanel
-        filters={ABONO_FILTERS}
-        values={filterValues}
-        onChange={handleFilterChange}
-        searchPlaceholder="Buscar por numero, cliente o factura..."
-        searchValue={search}
-        onSearchChange={handleSearchChange}
-      />
 
       {/* zentto-grid */}
       <Box sx={{ flex: 1, minHeight: 400 }}>

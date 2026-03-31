@@ -11,7 +11,6 @@ import {
   DialogTitle,
   Grid,
   IconButton,
-  Stack,
   TextField,
   Toolbar,
   Typography,
@@ -20,7 +19,8 @@ import {
   useTheme,
   CircularProgress,
 } from "@mui/material";
-import {  ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
+
+
 import AddIcon from "@mui/icons-material/Add";
 import CloseIcon from "@mui/icons-material/Close";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -58,17 +58,6 @@ const emptyLine = (): BOMLine => ({
   unitCost: 0,
 });
 
-const BOM_FILTERS: FilterFieldDef[] = [
-  {
-    field: "estado", label: "Estado", type: "select",
-    options: [
-      { value: "DRAFT", label: "Borrador" },
-      { value: "ACTIVE", label: "Activa" },
-      { value: "OBSOLETE", label: "Obsoleta" },
-    ],
-  },
-];
-
 const GRID_ID = "module-manufactura:bom:list";
 
 export default function BOMPage() {
@@ -78,8 +67,6 @@ export default function BOMPage() {
   const [filter, setFilter] = useState<BOMFilter>({ page: 1, limit: 25 });
   const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 25 });
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [search, setSearch] = useState("");
-  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
 
   // Form state
   const [productId, setProductId] = useState("");
@@ -93,7 +80,6 @@ export default function BOMPage() {
 
   const { data, isLoading } = useBOMList({
     ...filter,
-    search,
     page: paginationModel.page + 1,
     limit: paginationModel.pageSize,
   });
@@ -220,20 +206,6 @@ export default function BOMPage() {
       <Typography variant="h5" fontWeight={600} sx={{ mb: 3 }}>
         Lista de Materiales (BOM)
       </Typography>
-
-      {/* Filters */}
-      <ZenttoFilterPanel
-        filters={BOM_FILTERS}
-        values={filterValues}
-        onChange={(vals) => {
-          setFilterValues(vals);
-          setFilter((f) => ({ ...f, status: vals.estado || undefined }));
-          setPaginationModel((p) => ({ ...p, page: 0 }));
-        }}
-        searchPlaceholder="Buscar por codigo, nombre..."
-        searchValue={search}
-        onSearchChange={(v) => { setSearch(v); setPaginationModel((p) => ({ ...p, page: 0 })); }}
-      />
 
       {/* DataGrid */}
       <zentto-grid

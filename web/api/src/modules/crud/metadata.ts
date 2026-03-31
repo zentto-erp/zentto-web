@@ -105,11 +105,12 @@ export async function getMetadata(force = false): Promise<TableMetadata[]> {
 // Legacy Spanish names → PG table names (used by CatalogoCrudPage from frontend)
 const TABLE_ALIASES: Record<string, string> = {
   categorias: "Category", marcas: "Brand", clases: "ProductClass",
-  tipos: "ProductType", lineas: "SupplierLine", unidades: "Unit",
+  tipos: "ProductType", lineas: "ProductLine", unidades: "UnitOfMeasure",
   almacenes: "Warehouse", monedas: "Currency", moneda: "Currency",
   empresa: "CompanyProfile", feriados: "Holiday", correlativo: "DocumentSequence",
   reportes: "ReportTemplate", "tasa-moneda": "ExchangeRateDaily",
-  "linea-proveedores": "SupplierLine",
+  "linea-proveedores": "SupplierLine", grupos: "ProductGroup",
+  "centro-costo": "CostCenter", vendedores: "Seller", vehiculos: "Vehicle",
 };
 
 export async function getTableMetadata(schema: string, table: string) {

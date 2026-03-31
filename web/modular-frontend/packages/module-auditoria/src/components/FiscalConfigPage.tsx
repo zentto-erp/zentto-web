@@ -191,6 +191,8 @@ export default function FiscalConfigPage() {
         enable-context-menu
         enable-status-bar
         enable-configurator
+        enable-header-filters
+        enable-toolbar
       ></zentto-grid>
               </Paper>
             )}

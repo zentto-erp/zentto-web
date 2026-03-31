@@ -102,7 +102,6 @@ export default function NominasPage() {
       <ContextActionHeader title="Procesos de Nómina"
         primaryAction={{ label: "Nómina Masiva", onClick: () => setView("batch") }}
         secondaryActions={[{ label: "Procesar Individual", onClick: () => setProcesarOpen(true) }]}
-        searchPlaceholder="Buscar nóminas..."
       />
 
       <Box sx={{ p: { xs: 2, md: 3 }, flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>

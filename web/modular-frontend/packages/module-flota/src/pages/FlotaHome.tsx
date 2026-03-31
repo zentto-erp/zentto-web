@@ -401,6 +401,7 @@ export default function FlotaHome({ basePath = "" }: { basePath?: string }) {
         enable-context-menu
         enable-status-bar
         enable-configurator
+        enable-header-filters
       ></zentto-grid>
         ) : (
           <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: 150, bgcolor: "#f8f9fa", borderRadius: 2 }}>
