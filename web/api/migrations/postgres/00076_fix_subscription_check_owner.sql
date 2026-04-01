@@ -8,6 +8,7 @@ DROP FUNCTION IF EXISTS public.usp_sys_subscription_checkaccess(integer);
 DROP FUNCTION IF EXISTS public.usp_sys_subscription_checkaccess(integer, varchar);
 DROP FUNCTION IF EXISTS public.usp_sys_subscription_checkaccess(varchar);
 
+-- +goose StatementBegin
 CREATE OR REPLACE FUNCTION public.usp_sys_subscription_checkaccess(
   p_user_code varchar
 )
@@ -159,9 +160,11 @@ BEGIN
                       v_sub."CurrentPeriodEnd", 0;
 END;
 $function$;
+-- +goose StatementEnd
 
 -- +goose Down
 DROP FUNCTION IF EXISTS public.usp_sys_subscription_checkaccess(varchar);
+-- +goose StatementBegin
 CREATE OR REPLACE FUNCTION public.usp_sys_subscription_checkaccess(p_company_id integer)
 RETURNS TABLE(ok boolean, reason character varying, plan character varying, status character varying, "expiresAt" timestamp without time zone, "daysRemaining" integer)
 LANGUAGE plpgsql AS $function$
@@ -180,3 +183,4 @@ BEGIN
   RETURN QUERY SELECT TRUE,'UNKNOWN_STATUS'::VARCHAR,v_company."Plan"::VARCHAR,v_sub."Status"::VARCHAR,v_sub."CurrentPeriodEnd",0;
 END;
 $function$;
+-- +goose StatementEnd
