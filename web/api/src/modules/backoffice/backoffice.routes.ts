@@ -507,6 +507,198 @@ backofficeRouter.get("/kafka/topics", async (_req, res) => {
   }
 });
 
+// ═══════════════════════════════════════════════════════════════════════════
+// ANALYTICS — Cross-tenant observability (Elasticsearch queries)
+// ═══════════════════════════════════════════════════════════════════════════
+
+const ES_HOST = process.env.ELASTICSEARCH_HOST || 'http://172.18.0.1:9200';
+
+async function esQuery(index: string, body: any): Promise<any> {
+  const res = await fetch(`${ES_HOST}/${index}/_search`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) return { aggregations: {}, hits: { total: { value: 0 }, hits: [] } };
+  return res.json();
+}
+
+function esRange(range: string) {
+  const map: Record<string, string> = {
+    '1h': 'now-1h', '24h': 'now-24h', '7d': 'now-7d', '30d': 'now-30d', '90d': 'now-90d',
+  };
+  return map[range] || 'now-24h';
+}
+
+function esInterval(range: string) {
+  return range === '1h' ? '5m' : range === '24h' ? '1h' : '1d';
+}
+
+// GET /analytics/overview — KPIs + charts (cross-tenant, no companyId filter)
+backofficeRouter.get("/analytics/overview", async (req, res) => {
+  try {
+    const range = (req.query.range as string) || '24h';
+    const gte = esRange(range);
+    const interval = esInterval(range);
+
+    const result = await esQuery('zentto-api-logs-*,zentto-api-events-*', {
+      size: 0,
+      query: { range: { '@timestamp': { gte } } },
+      aggs: {
+        total_requests: { value_count: { field: 'method' } },
+        unique_users: { cardinality: { field: 'userId' } },
+        avg_latency: { avg: { field: 'durationMs' } },
+        error_count: { filter: { range: { statusCode: { gte: 500 } } } },
+        requests_over_time: { date_histogram: { field: '@timestamp', fixed_interval: interval } },
+        status_codes: { terms: { field: 'statusCode', size: 10 } },
+        top_endpoints: { terms: { field: 'path', size: 15 } },
+        events_by_type: { terms: { field: 'event', size: 20 } },
+        by_company: { terms: { field: 'companyId', size: 50 } },
+      },
+    });
+
+    const aggs = result.aggregations || {};
+    const totalReqs = aggs.total_requests?.value || 0;
+    res.json({
+      ok: true, range,
+      kpis: {
+        totalRequests: totalReqs,
+        uniqueUsers: aggs.unique_users?.value || 0,
+        avgLatencyMs: Math.round(aggs.avg_latency?.value || 0),
+        errorCount: aggs.error_count?.doc_count || 0,
+        errorRate: totalReqs ? ((aggs.error_count?.doc_count || 0) / totalReqs * 100).toFixed(2) : '0',
+      },
+      charts: {
+        requestsOverTime: (aggs.requests_over_time?.buckets || []).map((b: any) => ({
+          date: b.key_as_string, count: b.doc_count,
+        })),
+        statusCodes: (aggs.status_codes?.buckets || []).map((b: any) => ({
+          code: String(b.key), count: b.doc_count,
+        })),
+        topEndpoints: (aggs.top_endpoints?.buckets || []).map((b: any) => ({
+          path: b.key, count: b.doc_count,
+        })),
+        eventsByType: (aggs.events_by_type?.buckets || []).map((b: any) => ({
+          event: b.key, count: b.doc_count,
+        })),
+        byCompany: (aggs.by_company?.buckets || []).map((b: any) => ({
+          companyId: b.key, count: b.doc_count,
+        })),
+      },
+    });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : 'internal_error';
+    res.status(500).json({ error: msg });
+  }
+});
+
+// GET /analytics/performance — Latency, percentiles, slowest endpoints (cross-tenant)
+backofficeRouter.get("/analytics/performance", async (req, res) => {
+  try {
+    const range = (req.query.range as string) || '24h';
+    const gte = esRange(range);
+    const interval = esInterval(range);
+
+    const result = await esQuery('zentto-api-logs-*,zentto-api-performance-*', {
+      size: 0,
+      query: { range: { '@timestamp': { gte } } },
+      aggs: {
+        latency_percentiles: { percentiles: { field: 'durationMs', percents: [50, 75, 90, 95, 99] } },
+        latency_over_time: {
+          date_histogram: { field: '@timestamp', fixed_interval: interval },
+          aggs: {
+            avg_latency: { avg: { field: 'durationMs' } },
+            p95: { percentiles: { field: 'durationMs', percents: [95] } },
+          },
+        },
+        slowest_endpoints: {
+          terms: { field: 'path', size: 10, order: { avg_duration: 'desc' } },
+          aggs: {
+            avg_duration: { avg: { field: 'durationMs' } },
+            max_duration: { max: { field: 'durationMs' } },
+          },
+        },
+        errors_by_path: {
+          filter: { range: { statusCode: { gte: 400 } } },
+          aggs: { paths: { terms: { field: 'path', size: 10 } } },
+        },
+      },
+    });
+
+    const aggs = result.aggregations || {};
+    const pcts = aggs.latency_percentiles?.values || {};
+    res.json({
+      ok: true,
+      percentiles: {
+        p50: Math.round(pcts['50.0'] || 0), p75: Math.round(pcts['75.0'] || 0),
+        p90: Math.round(pcts['90.0'] || 0), p95: Math.round(pcts['95.0'] || 0),
+        p99: Math.round(pcts['99.0'] || 0),
+      },
+      latencyTrend: (aggs.latency_over_time?.buckets || []).map((b: any) => ({
+        date: b.key_as_string,
+        avgMs: Math.round(b.avg_latency?.value || 0),
+        p95Ms: Math.round(b.p95?.values?.['95.0'] || 0),
+      })),
+      slowestEndpoints: (aggs.slowest_endpoints?.buckets || []).map((b: any) => ({
+        path: b.key,
+        avgMs: Math.round(b.avg_duration?.value || 0),
+        maxMs: Math.round(b.max_duration?.value || 0),
+        count: b.doc_count,
+      })),
+      errorsByPath: (aggs.errors_by_path?.paths?.buckets || []).map((b: any) => ({
+        path: b.key, count: b.doc_count,
+      })),
+    });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : 'internal_error';
+    res.status(500).json({ error: msg });
+  }
+});
+
+// GET /analytics/business — Business events cross-tenant
+backofficeRouter.get("/analytics/business", async (req, res) => {
+  try {
+    const range = (req.query.range as string) || '30d';
+    const gte = esRange(range);
+
+    const result = await esQuery('zentto-api-events-*', {
+      size: 0,
+      query: { range: { '@timestamp': { gte } } },
+      aggs: {
+        invoices: { filter: { term: { event: 'invoice.created' } }, aggs: { trend: { date_histogram: { field: '@timestamp', fixed_interval: '1d' } } } },
+        purchases: { filter: { term: { event: 'purchase.created' } } },
+        payments: { filter: { term: { event: 'payment.created' } } },
+        customers: { filter: { term: { event: 'customer.created' } } },
+        pos_sales: { filter: { term: { event: 'pos.sale' } } },
+        leads: { filter: { term: { event: 'crm.lead.created' } } },
+        all_events: { terms: { field: 'event', size: 30 } },
+      },
+    });
+
+    const aggs = result.aggregations || {};
+    res.json({
+      ok: true,
+      summary: {
+        invoices: aggs.invoices?.doc_count || 0,
+        purchases: aggs.purchases?.doc_count || 0,
+        payments: aggs.payments?.doc_count || 0,
+        newCustomers: aggs.customers?.doc_count || 0,
+        posSales: aggs.pos_sales?.doc_count || 0,
+        leadsCreated: aggs.leads?.doc_count || 0,
+      },
+      invoicesTrend: (aggs.invoices?.trend?.buckets || []).map((b: any) => ({
+        date: b.key_as_string, count: b.doc_count,
+      })),
+      allEvents: (aggs.all_events?.buckets || []).map((b: any) => ({
+        event: b.key, total: b.doc_count,
+      })),
+    });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : 'internal_error';
+    res.status(500).json({ error: msg });
+  }
+});
+
 // ── GET /backups ───────────────────────────────────────────────────────────
 // Devuelve el último backup de cada tenant (para el dashboard de backoffice).
 
