@@ -2,7 +2,7 @@
 import Credentials from 'next-auth/providers/credentials';
 import Google from 'next-auth/providers/google';
 import type { Provider } from 'next-auth/providers';
-import { AuthError } from 'next-auth';
+import { AuthError, CredentialsSignin } from 'next-auth';
 
 function getJwtExpMs(jwtToken: string | null | undefined): number | null {
   if (!jwtToken) return null;
@@ -36,6 +36,7 @@ const PUBLIC_ROUTES = [
   '/authentication/forgot-password',
   '/authentication/reset-password',
   '/authentication/verify-email',
+  '/api/auth',
   '/api/register',
   '/api/auth-test',
 ];
@@ -102,28 +103,13 @@ const providers: Provider[] = [
         });
 
         if (!response.ok) {
-          let backendErrorCode = response.status.toString();
-          let backendErrorMessage = 'Error de autenticacion';
-
-          try {
-            const payload = (await response.json()) as { error?: string; message?: string };
-            backendErrorCode = String(payload?.error || backendErrorCode);
-            backendErrorMessage = String(payload?.message || backendErrorMessage);
-          } catch {
-            const errorText = await response.text();
-            backendErrorMessage = errorText || backendErrorMessage;
-          }
-
-          throw new CustomAuthError(
-            backendErrorCode,
-            `Error de autenticacion: ${backendErrorMessage}`
-          );
+          throw new CredentialsSignin();
         }
 
         const data = await response.json();
 
         if (!data || !data.token) {
-          throw new CustomAuthError('no_token', 'No se recibio un token valido');
+          throw new CredentialsSignin();
         }
 
         return {
@@ -140,8 +126,8 @@ const providers: Provider[] = [
           companyAccesses: data.companyAccesses || [],
         };
       } catch (error: unknown) {
-        if (error instanceof CustomAuthError) throw error;
-        throw new CustomAuthError('unknown_error', 'Error en la autenticacion');
+        if (error instanceof CredentialsSignin) throw error;
+        throw new CredentialsSignin();
       }
     },
   }),
