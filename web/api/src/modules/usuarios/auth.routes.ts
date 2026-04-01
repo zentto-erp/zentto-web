@@ -351,6 +351,20 @@ authRouter.post("/login", loginLimiter, async (req, res) => {
   }
 
   const companyAccesses = await getUserCompanyAccesses(record.Cod_Usuario, isAdmin);
+
+  // ── Verificar suscripción del usuario (se valida en login, no por request) ──
+  const { checkUserSubscription } = await import("../../middleware/subscription.js");
+  const subCheck = await checkUserSubscription(record.Cod_Usuario);
+  if (!subCheck.ok) {
+    return res.status(403).json({
+      error: "subscription_required",
+      reason: subCheck.reason,
+      plan: subCheck.plan,
+      status: subCheck.status,
+      expiresAt: subCheck.expiresAt,
+    });
+  }
+
   const activeCompany = resolveActiveCompanyAccess(companyAccesses, companyId, branchId);
 
   if (!activeCompany) {
