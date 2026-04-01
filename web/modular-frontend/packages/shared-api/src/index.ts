@@ -1,6 +1,6 @@
 'use client';
 
-export { apiGet, apiPost, apiPut, apiPatch, apiDelete, resolveAssetUrl } from './api';
+export { apiGet, apiPost, apiPut, apiPatch, apiDelete, resolveAssetUrl, setActiveCompanyForApi } from './api';
 export {
   isWebAuthnSupported,
   listSupervisorBiometricCredentials,
@@ -75,6 +75,18 @@ export {
   useSaveModuleSettings, useSettingModules,
 } from './useSettings';
 export type { SettingsModule, AllSettings, SettingMeta } from './useSettings';
+
+// Roles & Permissions hooks
+export {
+  useRolesList, useCreateRole, useDeleteRole,
+  useRolePermissions, useSaveRolePermissions,
+  useUserRoles, useAssignUserRole,
+  useLicenseLimits,
+} from './useRoles';
+export type {
+  Role, CreateRoleInput, RolePermission, BulkPermissionInput,
+  UserRole, LicenseLimits,
+} from './useRoles';
 
 // Notification Center hooks
 export {

@@ -3,6 +3,7 @@
  * Usa SPs: usp_Usuarios_List, GetByCodigo, Insert, Update, Delete
  */
 import { callSp, callSpOut, sql } from "../../db/query.js";
+import { checkUserLimit } from "../license/license-enforcement.service.js";
 
 export interface UsuarioRow {
   Cod_Usuario?: string;
@@ -86,6 +87,15 @@ export async function getUsuarioByCodigoSP(codigo: string): Promise<UsuarioRow |
 }
 
 export async function insertUsuarioSP(row: UsuarioRow): Promise<SpResult> {
+  // Validar límite de usuarios según licencia
+  const limit = await checkUserLimit();
+  if (!limit.allowed) {
+    return {
+      success: false,
+      message: `Límite de usuarios alcanzado (plan ${limit.plan}: máx ${limit.max} usuarios)`,
+    };
+  }
+
   const { output } = await callSpOut<never>(
     "usp_Usuarios_Insert",
     { RowXml: rowToXml(row) },

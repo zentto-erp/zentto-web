@@ -232,7 +232,7 @@ export async function registerCustomer(data: {
 export async function loginCustomer(email: string, password: string) {
   const rows = await callSp<CustomerLoginRow>(
     "usp_Store_Customer_Login",
-    { Email: email.toLowerCase().trim() }
+    { CompanyId: scope().companyId, Email: email.toLowerCase().trim() }
   );
 
   const user = rows[0];
@@ -298,7 +298,7 @@ export async function googleAuthCustomer(idToken: string) {
   // Buscar si ya existe
   const existing = await callSp<CustomerLoginRow>(
     "usp_Store_Customer_Login",
-    { Email: email }
+    { CompanyId: scope().companyId, Email: email }
   );
 
   if (existing[0]) {
@@ -358,7 +358,7 @@ export async function googleAuthCustomer(idToken: string) {
   // Buscar el recién creado para obtener userId
   const newRows = await callSp<CustomerLoginRow>(
     "usp_Store_Customer_Login",
-    { Email: email }
+    { CompanyId: scope().companyId, Email: email }
   );
   const newUser = newRows[0];
   if (!newUser) return { ok: false, error: "Error al crear cuenta" };
@@ -506,7 +506,7 @@ export async function getOrderByToken(token: string) {
 
   // Obtener líneas usando el número de orden del header
   const lines = header.orderNumber
-    ? await callSp<any>("usp_Store_Order_GetByNumber_Lines", { OrderNumber: header.orderNumber })
+    ? await callSp<any>("usp_Store_Order_GetByNumber_Lines", { CompanyId: scope().companyId, OrderNumber: header.orderNumber })
     : [];
 
   return { ...header, lines };
@@ -630,7 +630,7 @@ export async function upsertAddress(customerCode: string, data: {
 export async function deleteAddress(customerCode: string, addressId: number) {
   const { output } = await callSpOut(
     "usp_Store_Address_Delete",
-    { AddressId: addressId, CustomerCode: customerCode },
+    { CompanyId: scope().companyId, AddressId: addressId, CustomerCode: customerCode },
     { Resultado: sql.Int, Mensaje: sql.NVarChar(500) }
   );
   const resultado = output.Resultado as number;
@@ -692,7 +692,7 @@ export async function upsertPaymentMethod(customerCode: string, data: {
 export async function deletePaymentMethod(customerCode: string, paymentMethodId: number) {
   const { output } = await callSpOut(
     "usp_Store_PaymentMethod_Delete",
-    { PaymentMethodId: paymentMethodId, CustomerCode: customerCode },
+    { CompanyId: scope().companyId, PaymentMethodId: paymentMethodId, CustomerCode: customerCode },
     { Resultado: sql.Int, Mensaje: sql.NVarChar(500) }
   );
   const resultado = output.Resultado as number;
@@ -703,7 +703,7 @@ export async function deletePaymentMethod(customerCode: string, paymentMethodId:
 export async function getOrderByNumber(orderNumber: string) {
   const [headers, lines] = await Promise.all([
     callSp<any>("usp_Store_Order_GetByNumber", { CompanyId: scope().companyId, OrderNumber: orderNumber }),
-    callSp<any>("usp_Store_Order_GetByNumber_Lines", { OrderNumber: orderNumber }),
+    callSp<any>("usp_Store_Order_GetByNumber_Lines", { CompanyId: scope().companyId, OrderNumber: orderNumber }),
   ]);
 
   const header = headers[0] ?? null;

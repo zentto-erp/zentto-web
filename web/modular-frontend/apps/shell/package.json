@@ -27,6 +27,7 @@
     "@zentto/shared-auth": "*",
     "@zentto/shared-reports": "*",
     "@zentto/shared-ui": "*",
+    "@mui/x-charts": "^8.28.0",
     "@zentto/studio": "^0.6.0",
     "@zentto/studio-core": "^0.6.0",
     "@zentto/studio-react": "^0.6.0",

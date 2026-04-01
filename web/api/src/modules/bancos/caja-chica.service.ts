@@ -45,9 +45,11 @@ export async function createCajaChicaBox(data: {
 }
 
 export async function openSession(boxId: number, openingAmount: number, codUsuario?: string) {
+  const companyId = await getCompanyId();
   const { output } = await callSpOut(
     "fin.usp_Fin_PettyCash_Session_Open",
     {
+      CompanyId: companyId,
       BoxId: boxId,
       OpeningAmount: Number(openingAmount ?? 0),
       OpenedByUserId: null
@@ -63,9 +65,11 @@ export async function openSession(boxId: number, openingAmount: number, codUsuar
 }
 
 export async function closeSession(boxId: number, notes?: string, codUsuario?: string) {
+  const companyId = await getCompanyId();
   const { output } = await callSpOut(
     "fin.usp_Fin_PettyCash_Session_Close",
     {
+      CompanyId: companyId,
       BoxId: boxId,
       ClosedByUserId: null,
       Notes: notes || null
@@ -80,9 +84,10 @@ export async function closeSession(boxId: number, notes?: string, codUsuario?: s
 }
 
 export async function getActiveSession(boxId: number) {
+  const companyId = await getCompanyId();
   const rows = await callSp<any>(
     "fin.usp_Fin_PettyCash_Session_GetActive",
-    { BoxId: boxId }
+    { CompanyId: companyId, BoxId: boxId }
   );
   return rows[0] ?? null;
 }
@@ -97,9 +102,11 @@ export async function addExpense(data: {
   receiptNumber?: string;
   accountCode?: string;
 }, codUsuario?: string) {
+  const companyId = await getCompanyId();
   const { output } = await callSpOut(
     "fin.usp_Fin_PettyCash_Expense_Add",
     {
+      CompanyId: companyId,
       SessionId: data.sessionId,
       BoxId: data.boxId,
       Category: data.category,
@@ -167,9 +174,11 @@ export async function addExpense(data: {
 }
 
 export async function listExpenses(boxId: number, sessionId?: number) {
+  const companyId = await getCompanyId();
   return callSp<any>(
     "fin.usp_Fin_PettyCash_Expense_List",
     {
+      CompanyId: companyId,
       BoxId: boxId,
       SessionId: sessionId ?? null
     }
@@ -177,8 +186,9 @@ export async function listExpenses(boxId: number, sessionId?: number) {
 }
 
 export async function getCajaChicaSummary(boxId: number) {
+  const companyId = await getCompanyId();
   return callSp<any>(
     "fin.usp_Fin_PettyCash_Summary",
-    { BoxId: boxId }
+    { CompanyId: companyId, BoxId: boxId }
   );
 }

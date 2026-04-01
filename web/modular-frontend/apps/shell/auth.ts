@@ -2,7 +2,7 @@
 import Credentials from 'next-auth/providers/credentials';
 import Google from 'next-auth/providers/google';
 import type { Provider } from 'next-auth/providers';
-import { AuthError } from 'next-auth';
+import { AuthError, CredentialsSignin } from 'next-auth';
 
 function getJwtExpMs(jwtToken: string | null | undefined): number | null {
   if (!jwtToken) return null;
@@ -36,6 +36,7 @@ const PUBLIC_ROUTES = [
   '/authentication/forgot-password',
   '/authentication/reset-password',
   '/authentication/verify-email',
+  '/api/auth',
   '/api/register',
   '/api/auth-test',
 ];
@@ -102,28 +103,13 @@ const providers: Provider[] = [
         });
 
         if (!response.ok) {
-          let backendErrorCode = response.status.toString();
-          let backendErrorMessage = 'Error de autenticacion';
-
-          try {
-            const payload = (await response.json()) as { error?: string; message?: string };
-            backendErrorCode = String(payload?.error || backendErrorCode);
-            backendErrorMessage = String(payload?.message || backendErrorMessage);
-          } catch {
-            const errorText = await response.text();
-            backendErrorMessage = errorText || backendErrorMessage;
-          }
-
-          throw new CustomAuthError(
-            backendErrorCode,
-            `Error de autenticacion: ${backendErrorMessage}`
-          );
+          throw new CredentialsSignin();
         }
 
         const data = await response.json();
 
         if (!data || !data.token) {
-          throw new CustomAuthError('no_token', 'No se recibio un token valido');
+          throw new CredentialsSignin();
         }
 
         return {
@@ -135,12 +121,13 @@ const providers: Provider[] = [
           tipo: data.usuario?.tipo || null,
           permisos: data.permisos || null,
           modulos: data.modulos || [],
-          company: data.company || null,
+          company: data.defaultCompany || data.company || null,
+          defaultCompany: data.defaultCompany || data.company || null,
           companyAccesses: data.companyAccesses || [],
         };
       } catch (error: unknown) {
-        if (error instanceof CustomAuthError) throw error;
-        throw new CustomAuthError('unknown_error', 'Error en la autenticacion');
+        if (error instanceof CredentialsSignin) throw error;
+        throw new CredentialsSignin();
       }
     },
   }),
@@ -154,7 +141,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     error: '/authentication/login',
   },
   callbacks: {
-    async jwt({ token, user, account }) {
+    async jwt({ token, user, account, trigger, session: updateData }) {
+      // Switch company: actualizar token con nuevos datos de empresa
+      if (trigger === 'update' && updateData?.accessToken) {
+        token.accessToken = updateData.accessToken;
+        token.accessTokenExpires = getJwtExpMs(updateData.accessToken);
+        if (updateData.company) token.company = updateData.company;
+        if (updateData.companyAccesses) token.companyAccesses = updateData.companyAccesses;
+        return token;
+      }
+
       // Google OAuth: intercambiar token de Google por token del backend
       if (account?.provider === 'google' && account.id_token) {
         try {
@@ -200,6 +196,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         // @ts-ignore
         token.company = user.company;
         // @ts-ignore
+        token.defaultCompany = user.defaultCompany;
+        // @ts-ignore
         token.companyAccesses = user.companyAccesses;
       }
 
@@ -227,6 +225,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       session.modulos = token.modulos;
       // @ts-ignore
       session.company = token.company;
+      // @ts-ignore
+      session.defaultCompany = token.defaultCompany;
       // @ts-ignore
       session.companyAccesses = token.companyAccesses;
       return session;

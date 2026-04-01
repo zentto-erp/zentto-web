@@ -66,7 +66,8 @@ export async function listBOMs(params: ListBOMsParams = {}) {
 }
 
 export async function getBOM(bomId: number) {
-  const rows = await callSp("usp_Mfg_BOM_Get", { BOMId: bomId });
+  const { companyId } = scope();
+  const rows = await callSp("usp_Mfg_BOM_Get", { CompanyId: companyId, BOMId: bomId });
   return rows[0] || null;
 }
 
@@ -102,7 +103,7 @@ export async function createBOM(data: {
 export async function activateBOM(bomId: number, userId: number): Promise<SpResult> {
   const { output } = await callSpOut(
     "usp_Mfg_BOM_Activate",
-    { BOMId: bomId, UserId: userId },
+    { CompanyId: scope().companyId, BOMId: bomId, UserId: userId },
     { Resultado: sql.Int, Mensaje: sql.NVarChar(500) },
   );
   return parseSpResult(output);
@@ -111,7 +112,7 @@ export async function activateBOM(bomId: number, userId: number): Promise<SpResu
 export async function obsoleteBOM(bomId: number, userId: number): Promise<SpResult> {
   const { output } = await callSpOut(
     "usp_Mfg_BOM_Obsolete",
-    { BOMId: bomId, UserId: userId },
+    { CompanyId: scope().companyId, BOMId: bomId, UserId: userId },
     { Resultado: sql.Int, Mensaje: sql.NVarChar(500) },
   );
   return parseSpResult(output);
@@ -179,7 +180,8 @@ export async function upsertWorkCenter(data: {
 // ── Routing ──────────────────────────────────────────────────────────────────
 
 export async function listRouting(bomId: number) {
-  return callSp("usp_Mfg_Routing_List", { BOMId: bomId });
+  const { companyId } = scope();
+  return callSp("usp_Mfg_Routing_List", { CompanyId: companyId, BOMId: bomId });
 }
 
 export async function upsertRouting(
@@ -198,6 +200,7 @@ export async function upsertRouting(
   const { output } = await callSpOut(
     "usp_Mfg_Routing_Upsert",
     {
+      CompanyId: scope().companyId,
       BOMId: bomId,
       RoutingId: data.routingId ?? null,
       OperationNumber: data.operationNumber,
@@ -250,7 +253,8 @@ export async function listWorkOrders(params: ListWorkOrdersParams = {}) {
 }
 
 export async function getWorkOrder(workOrderId: number) {
-  const rows = await callSp("usp_Mfg_WorkOrder_Get", { WorkOrderId: workOrderId });
+  const { companyId } = scope();
+  const rows = await callSp("usp_Mfg_WorkOrder_Get", { CompanyId: companyId, WorkOrderId: workOrderId });
   return rows[0] || null;
 }
 
@@ -296,7 +300,7 @@ export async function createWorkOrder(data: {
 export async function startWorkOrder(workOrderId: number, userId: number): Promise<SpResult> {
   const { output } = await callSpOut(
     "usp_Mfg_WorkOrder_Start",
-    { WorkOrderId: workOrderId, UserId: userId },
+    { CompanyId: scope().companyId, WorkOrderId: workOrderId, UserId: userId },
     { Resultado: sql.Int, Mensaje: sql.NVarChar(500) },
   );
   return parseSpResult(output);
@@ -315,6 +319,7 @@ export async function consumeMaterial(
   const { output } = await callSpOut(
     "usp_Mfg_WorkOrder_ConsumeMaterial",
     {
+      CompanyId: scope().companyId,
       WorkOrderId: workOrderId,
       ProductId: data.productId,
       Quantity: data.quantity,
@@ -340,6 +345,7 @@ export async function reportOutput(
   const { output } = await callSpOut(
     "usp_Mfg_WorkOrder_ReportOutput",
     {
+      CompanyId: scope().companyId,
       WorkOrderId: workOrderId,
       Quantity: data.quantity,
       LotNumber: data.lotNumber ?? null,
@@ -359,7 +365,7 @@ export async function reportOutput(
 export async function completeWorkOrder(workOrderId: number, userId: number): Promise<SpResult> {
   const { output } = await callSpOut(
     "usp_Mfg_WorkOrder_Complete",
-    { WorkOrderId: workOrderId, UserId: userId },
+    { CompanyId: scope().companyId, WorkOrderId: workOrderId, UserId: userId },
     { Resultado: sql.Int, Mensaje: sql.NVarChar(500) },
   );
   return parseSpResult(output);
@@ -368,7 +374,7 @@ export async function completeWorkOrder(workOrderId: number, userId: number): Pr
 export async function cancelWorkOrder(workOrderId: number, userId: number): Promise<SpResult> {
   const { output } = await callSpOut(
     "usp_Mfg_WorkOrder_Cancel",
-    { WorkOrderId: workOrderId, UserId: userId },
+    { CompanyId: scope().companyId, WorkOrderId: workOrderId, UserId: userId },
     { Resultado: sql.Int, Mensaje: sql.NVarChar(500) },
   );
   return parseSpResult(output);
