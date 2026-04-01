@@ -8,6 +8,7 @@ import {
   Extension as StudioIcon,
   AutoFixHigh as WizardIcon,
   Apps as AddonsIcon,
+  RocketLaunch as LandingIcon,
 } from "@mui/icons-material";
 import { useRouter } from "next/navigation";
 
@@ -39,6 +40,13 @@ const PAGES = [
     href: "/studio-designer/wizard",
     icon: <WizardIcon sx={{ fontSize: 48 }} />,
     color: "#00bcd4",
+  },
+  {
+    title: "Landing Designer",
+    description: "Disenador visual de landing pages con 15 templates y 14 tipos de seccion",
+    href: "/landing-designer",
+    icon: <LandingIcon sx={{ fontSize: 48 }} />,
+    color: "#e91e63",
   },
   {
     title: "Addons",
