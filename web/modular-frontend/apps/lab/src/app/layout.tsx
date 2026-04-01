@@ -29,6 +29,7 @@ import {
   Description as ReportIcon,
   Menu as MenuIcon,
   Close as CloseIcon,
+  RocketLaunch as RocketLaunchIcon,
 } from "@mui/icons-material";
 import { ThemeProvider, createTheme } from "@mui/material/styles";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -41,6 +42,7 @@ const NAV_ITEMS = [
   { label: "Nativo: Facturas", href: "/nativo-facturas", icon: <ScienceIcon fontSize="small" /> },
   { label: "Showcase v1.0", href: "/showcase", icon: <ShowcaseIcon fontSize="small" />, color: "#7c3aed" },
   { label: "Report Designer", href: "/reportes", icon: <ReportIcon fontSize="small" />, color: "#0d9488" },
+  { label: "Landing Designer", href: "/landing-designer", icon: <RocketLaunchIcon fontSize="small" />, color: "#e91e63" },
 ];
 
 // Tema minimo — sin depender de shared-ui theme
