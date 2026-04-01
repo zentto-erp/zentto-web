@@ -21,6 +21,7 @@ import {
   Visibility as PreviewIcon,
   OpenInNew as LiveIcon,
   AutoAwesome as WizardIcon,
+  Rocket as DeployIcon,
 } from "@mui/icons-material";
 
 import {
@@ -279,6 +280,11 @@ export default function LandingDesignerPage() {
 
           <Button size="small" startIcon={<LiveIcon />} variant="contained" color="success" onClick={handleLive}>
             Ver Sitio
+          </Button>
+
+          <Button size="small" startIcon={<DeployIcon />} variant="contained" color="secondary"
+            onClick={() => { if (config) { localStorage.setItem(STORAGE_KEY, JSON.stringify(config)); router.push("/landing-designer/export"); } }}>
+            Exportar
           </Button>
         </Toolbar>
       </AppBar>

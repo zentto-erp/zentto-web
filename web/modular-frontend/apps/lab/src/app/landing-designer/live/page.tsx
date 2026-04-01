@@ -21,6 +21,19 @@ export default function LandingLivePage() {
   const [ready, setReady] = useState(false);
   const [config, setConfig] = useState<any>(null);
 
+  /* Hide lab shell chrome — full-screen landing */
+  useEffect(() => {
+    const orig = document.body.style.cssText;
+    document.body.style.margin = "0";
+    document.body.style.padding = "0";
+    document.body.style.overflow = "auto";
+    // Hide any parent lab wrapper
+    const el = document.body.firstElementChild as HTMLElement | null;
+    const prevDisplay = el?.style.display ?? "";
+    // We don't hide the root — Next hydration needs it. Instead we style it fullscreen.
+    return () => { document.body.style.cssText = orig; };
+  }, []);
+
   useEffect(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
