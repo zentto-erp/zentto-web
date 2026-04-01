@@ -512,11 +512,19 @@ backofficeRouter.get("/kafka/topics", async (_req, res) => {
 // ═══════════════════════════════════════════════════════════════════════════
 
 const ES_HOST = process.env.ELASTICSEARCH_HOST || 'http://172.18.0.1:9200';
+const ES_USER = process.env.ELASTICSEARCH_USER || 'elastic';
+const ES_PASS = process.env.ELASTICSEARCH_PASSWORD || '';
+
+function esHeaders(): Record<string, string> {
+  const h: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (ES_PASS) h['Authorization'] = 'Basic ' + Buffer.from(`${ES_USER}:${ES_PASS}`).toString('base64');
+  return h;
+}
 
 async function esQuery(index: string, body: any): Promise<any> {
   const res = await fetch(`${ES_HOST}/${index}/_search`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: esHeaders(),
     body: JSON.stringify(body),
   });
   if (!res.ok) return { aggregations: {}, hits: { total: { value: 0 }, hits: [] } };

@@ -3,11 +3,19 @@ import { Router, Request, Response, NextFunction } from 'express';
 const router = Router();
 
 const ES_HOST = process.env.ELASTICSEARCH_HOST || 'http://172.18.0.1:9200';
+const ES_USER = process.env.ELASTICSEARCH_USER || 'elastic';
+const ES_PASS = process.env.ELASTICSEARCH_PASSWORD || '';
+
+function esHeaders(): Record<string, string> {
+  const h: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (ES_PASS) h['Authorization'] = 'Basic ' + Buffer.from(`${ES_USER}:${ES_PASS}`).toString('base64');
+  return h;
+}
 
 async function esQuery(index: string, body: any): Promise<any> {
   const res = await fetch(`${ES_HOST}/${index}/_search`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: esHeaders(),
     body: JSON.stringify(body),
   });
   return res.json();
@@ -20,7 +28,7 @@ router.get('/debug', async (req: Request, res: Response) => {
     if (!user?.isAdmin) return res.status(403).json({ error: 'forbidden' });
 
     // 1. Listar índices zentto-*
-    const catRes = await fetch(`${ES_HOST}/_cat/indices/zentto-*?format=json&h=index,docs.count,store.size,status`);
+    const catRes = await fetch(`${ES_HOST}/_cat/indices/zentto-*?format=json&h=index,docs.count,store.size,status`, { headers: esHeaders() });
     const indices = catRes.ok ? await catRes.json() : [];
 
     // 2. Muestra de un documento de cada índice (sin filtro de companyId)
@@ -31,7 +39,7 @@ router.get('/debug', async (req: Request, res: Response) => {
     }
 
     // 3. Verificar conectividad ES
-    const pingRes = await fetch(`${ES_HOST}/_cluster/health`);
+    const pingRes = await fetch(`${ES_HOST}/_cluster/health`, { headers: esHeaders() });
     const health = pingRes.ok ? await pingRes.json() : { error: 'ES no disponible' };
 
     res.json({
