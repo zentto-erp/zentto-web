@@ -105,10 +105,9 @@ export default function LandingDesignerPage() {
     }
   }, [ready, view, config]);
 
-  /* ---- escuchar eventos del wizard ---------------------------------- */
+  /* ---- escuchar eventos del wizard (en document para cruzar Shadow DOM) */
   useEffect(() => {
-    if (!ready || !wizardRef.current) return;
-    const el = wizardRef.current;
+    if (!ready || view !== "wizard") return;
 
     const handleComplete = (e: Event) => {
       const detail = (e as CustomEvent).detail;
@@ -129,19 +128,20 @@ export default function LandingDesignerPage() {
 
     const handleChange = (e: Event) => {
       const detail = (e as CustomEvent).detail;
-      setConfig(detail.config);
+      if (detail?.config) setConfig(detail.config);
     };
 
-    el.addEventListener("wizard-complete", handleComplete);
-    el.addEventListener("wizard-open-designer", handleOpenDesigner);
-    el.addEventListener("config-change", handleChange);
+    // Listen on document — CustomEvents with composed:true bubble up from Shadow DOM
+    document.addEventListener("wizard-complete", handleComplete);
+    document.addEventListener("wizard-open-designer", handleOpenDesigner);
+    document.addEventListener("config-change", handleChange);
 
     return () => {
-      el.removeEventListener("wizard-complete", handleComplete);
-      el.removeEventListener("wizard-open-designer", handleOpenDesigner);
-      el.removeEventListener("config-change", handleChange);
+      document.removeEventListener("wizard-complete", handleComplete);
+      document.removeEventListener("wizard-open-designer", handleOpenDesigner);
+      document.removeEventListener("config-change", handleChange);
     };
-  }, [ready, toast]);
+  }, [ready, view, toast]);
 
   /* ---- escuchar eventos del designer -------------------------------- */
   useEffect(() => {
