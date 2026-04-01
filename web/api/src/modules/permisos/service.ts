@@ -72,7 +72,17 @@ export async function setRolePermission(params: {
 
 export async function bulkSetRolePermissions(params: {
   roleId: number;
-  permissions: Array<{ permissionId: number; branchId?: number; isGranted: boolean }>;
+  permissions: Array<{
+    permissionId: number;
+    branchId?: number;
+    isGranted: boolean;
+    canCreate?: boolean;
+    canRead?: boolean;
+    canUpdate?: boolean;
+    canDelete?: boolean;
+    canExport?: boolean;
+    canApprove?: boolean;
+  }>;
   userId: number;
 }) {
   const { output } = await callSpOut(

@@ -78,11 +78,20 @@ permisosRouter.post("/roles/:roleId/permisos", async (req: Request, res: Respons
 });
 
 // POST /v1/permisos/roles/:roleId/permisos/bulk
+// Accepts both formats:
+//   Legacy:  { permissionId, isGranted }
+//   CRUD:    { permissionId, canCreate, canRead, canUpdate, canDelete, canExport, canApprove }
 const bulkPermissionSchema = z.object({
   permissions: z.array(z.object({
     permissionId: z.number().int(),
     branchId: z.number().int().optional(),
-    isGranted: z.boolean(),
+    isGranted: z.boolean().optional(),
+    canCreate: z.boolean().optional(),
+    canRead: z.boolean().optional(),
+    canUpdate: z.boolean().optional(),
+    canDelete: z.boolean().optional(),
+    canExport: z.boolean().optional(),
+    canApprove: z.boolean().optional(),
   })),
 });
 
@@ -92,9 +101,22 @@ permisosRouter.post("/roles/:roleId/permisos/bulk", async (req: Request, res: Re
     return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
   }
   try {
+    // Normalize: if CRUD fields present, derive isGranted from any true field
+    const normalized = parsed.data.permissions.map((p) => ({
+      permissionId: p.permissionId,
+      branchId: p.branchId,
+      isGranted: p.isGranted ?? (p.canCreate || p.canRead || p.canUpdate || p.canDelete || p.canExport || p.canApprove || false),
+      canCreate: p.canCreate ?? false,
+      canRead: p.canRead ?? false,
+      canUpdate: p.canUpdate ?? false,
+      canDelete: p.canDelete ?? false,
+      canExport: p.canExport ?? false,
+      canApprove: p.canApprove ?? false,
+    }));
+
     const result = await svc.bulkSetRolePermissions({
       roleId: Number(req.params.roleId),
-      ...parsed.data,
+      permissions: normalized,
       userId: getUserId(req),
     });
     res.status(result.success ? 200 : 400).json(result);
