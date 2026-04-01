@@ -44,6 +44,7 @@ function resolveScope(payload: JwtPayload, req: Request): RequestScope | null {
   const requestedCompanyId = parseIntHeader(req.headers["x-company-id"] as string | string[] | undefined);
   const requestedBranchId = parseIntHeader(req.headers["x-branch-id"] as string | string[] | undefined);
 
+  // V1 backward compat: tokens viejos con companyId embebido — remover tras migración
   const defaultScopeFromToken = (
     payload.companyId && payload.branchId
       ? {

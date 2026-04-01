@@ -367,14 +367,6 @@ authRouter.post("/login", loginLimiter, async (req, res) => {
     isAdmin,
     permisos,
     modulos: allowedModules,
-    companyId: activeCompany.companyId,
-    companyCode: activeCompany.companyCode,
-    companyName: activeCompany.companyName,
-    branchId: activeCompany.branchId,
-    branchCode: activeCompany.branchCode,
-    branchName: activeCompany.branchName,
-    countryCode: activeCompany.countryCode,
-    timeZone: activeCompany.timeZone,
     companyAccesses,
   });
 
@@ -388,7 +380,8 @@ authRouter.post("/login", loginLimiter, async (req, res) => {
     isAdmin,
     permisos,
     modulos: allowedModules,
-    company: activeCompany,
+    defaultCompany: activeCompany,
+    company: activeCompany, // backward compat — usar defaultCompany
     companyAccesses,
     usuario: {
       codUsuario: record.Cod_Usuario,
@@ -415,10 +408,11 @@ authRouter.get("/companies", async (req, res) => {
       ? user.companyAccesses
       : await getUserCompanyAccesses(user.sub, Boolean(user.isAdmin));
 
+  const scope = (req as any).scope as { companyId?: number; branchId?: number } | undefined;
   const activeCompany = resolveActiveCompanyAccess(
     companyAccesses,
-    user.companyId,
-    user.branchId
+    scope?.companyId ?? user.companyId,
+    scope?.branchId ?? user.branchId
   );
 
   return res.json({
@@ -427,7 +421,9 @@ authRouter.get("/companies", async (req, res) => {
   });
 });
 
-// --- POST /v1/auth/switch-company -----------------------------
+// --- POST /v1/auth/switch-company (DEPRECATED) ----------------
+// El frontend ahora cambia empresa via headers x-company-id/x-branch-id.
+// Este endpoint solo valida acceso — NO genera JWT nuevo.
 authRouter.post("/switch-company", async (req, res) => {
   const user = (req as Request & { user?: JwtPayload }).user;
   if (!user?.sub) {
@@ -453,25 +449,7 @@ authRouter.post("/switch-company", async (req, res) => {
     });
   }
 
-  const token = signJwt({
-    sub: user.sub,
-    name: user.name,
-    tipo: user.tipo,
-    isAdmin: user.isAdmin,
-    permisos: user.permisos,
-    modulos: user.modulos,
-    companyId: activeCompany.companyId,
-    companyCode: activeCompany.companyCode,
-    companyName: activeCompany.companyName,
-    branchId: activeCompany.branchId,
-    branchCode: activeCompany.branchCode,
-    branchName: activeCompany.branchName,
-    countryCode: activeCompany.countryCode,
-    timeZone: activeCompany.timeZone,
-    companyAccesses,
-  });
-
-  return res.json({ token, company: activeCompany, companyAccesses });
+  return res.json({ ok: true, company: activeCompany, companyAccesses });
 });
 
 // --- POST /v1/auth/change-password ----------------------------
