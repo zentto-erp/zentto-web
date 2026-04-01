@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS sys."TenantDatabase" (
     CONSTRAINT "UQ_sys_TenantDatabase_DbName" UNIQUE ("DbName")
 );
 
--- SP: Resolver tenant por CompanyId
+-- +goose StatementBegin
 CREATE OR REPLACE FUNCTION usp_sys_tenantdb_resolve(p_company_id integer)
 RETURNS TABLE(
     "DbName" character varying,
@@ -52,8 +52,9 @@ BEGIN
       AND t."IsActive" = true;
 END;
 $$;
+-- +goose StatementEnd
 
--- SP: Registrar tenant database
+-- +goose StatementBegin
 CREATE OR REPLACE FUNCTION usp_sys_tenantdb_register(
     p_company_id integer,
     p_company_code character varying,
@@ -71,6 +72,7 @@ BEGIN
     RETURN QUERY SELECT true, 'Tenant registrado'::VARCHAR;
 END;
 $$;
+-- +goose StatementEnd
 
 -- +goose Down
 DROP FUNCTION IF EXISTS usp_sys_tenantdb_register(integer, character varying, character varying);
