@@ -135,7 +135,8 @@ const providers: Provider[] = [
           tipo: data.usuario?.tipo || null,
           permisos: data.permisos || null,
           modulos: data.modulos || [],
-          company: data.company || null,
+          company: data.defaultCompany || data.company || null,
+          defaultCompany: data.defaultCompany || data.company || null,
           companyAccesses: data.companyAccesses || [],
         };
       } catch (error: unknown) {
@@ -209,6 +210,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         // @ts-ignore
         token.company = user.company;
         // @ts-ignore
+        token.defaultCompany = user.defaultCompany;
+        // @ts-ignore
         token.companyAccesses = user.companyAccesses;
       }
 
@@ -236,6 +239,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       session.modulos = token.modulos;
       // @ts-ignore
       session.company = token.company;
+      // @ts-ignore
+      session.defaultCompany = token.defaultCompany;
       // @ts-ignore
       session.companyAccesses = token.companyAccesses;
       return session;
