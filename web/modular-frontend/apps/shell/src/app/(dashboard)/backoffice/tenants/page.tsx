@@ -17,10 +17,8 @@ import {
   InputLabel,
   CircularProgress,
 } from "@mui/material";
-import {
-  Refresh as RefreshIcon,
-  People as PeopleIcon,
-} from "@mui/icons-material";
+import RefreshIcon from "@mui/icons-material/Refresh";
+import PeopleIcon from "@mui/icons-material/People";
 import type { ColumnDef } from "@zentto/datagrid-core";
 import { useGridLayoutSync } from "@zentto/shared-api";
 import { useScopedGridId, useGridRegistration } from "@/lib/zentto-grid";

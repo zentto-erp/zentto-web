@@ -6,9 +6,7 @@ import {
   Stack,
   Alert,
 } from "@mui/material";
-import {
-  AttachMoney as MoneyIcon,
-} from "@mui/icons-material";
+import MoneyIcon from "@mui/icons-material/AttachMoney";
 
 export default function PlanesPage() {
   return (
