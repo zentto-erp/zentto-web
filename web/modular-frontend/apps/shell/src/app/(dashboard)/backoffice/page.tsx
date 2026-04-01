@@ -8,12 +8,22 @@ import {
   ToggleButton, ToggleButtonGroup, Alert,
 } from "@mui/material";
 import Grid from "@mui/material/Grid2";
-import {
-  Refresh as RefreshIcon, Storage as StorageIcon, People as PeopleIcon,
-  AttachMoney as MoneyIcon, Warning as WarningIcon, BugReport as BugIcon,
-  SmartToy as SmartToyIcon, TrendingUp, Speed, ErrorOutline,
-  Receipt, ShoppingCart, Payment, PersonAdd, PointOfSale, Leaderboard,
-} from "@mui/icons-material";
+import RefreshIcon from "@mui/icons-material/Refresh";
+import StorageIcon from "@mui/icons-material/Storage";
+import PeopleIcon from "@mui/icons-material/People";
+import MoneyIcon from "@mui/icons-material/AttachMoney";
+import WarningIcon from "@mui/icons-material/Warning";
+import BugIcon from "@mui/icons-material/BugReport";
+import SmartToyIcon from "@mui/icons-material/SmartToy";
+import TrendingUp from "@mui/icons-material/TrendingUp";
+import Speed from "@mui/icons-material/Speed";
+import ErrorOutline from "@mui/icons-material/ErrorOutline";
+import Receipt from "@mui/icons-material/Receipt";
+import ShoppingCart from "@mui/icons-material/ShoppingCart";
+import Payment from "@mui/icons-material/Payment";
+import PersonAdd from "@mui/icons-material/PersonAdd";
+import PointOfSale from "@mui/icons-material/PointOfSale";
+import Leaderboard from "@mui/icons-material/Leaderboard";
 import { LineChart } from "@mui/x-charts/LineChart";
 import { BarChart } from "@mui/x-charts/BarChart";
 import { PieChart } from "@mui/x-charts/PieChart";

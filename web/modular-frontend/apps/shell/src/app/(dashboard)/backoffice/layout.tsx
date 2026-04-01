@@ -24,19 +24,17 @@ import {
   Alert,
   useTheme,
 } from "@mui/material";
-import {
-  Lock as LockIcon,
-  Dashboard as DashboardIcon,
-  People as PeopleIcon,
-  AttachMoney as MoneyIcon,
-  Storage as StorageIcon,
-  Backup as BackupIcon,
-  Delete as DeleteIcon,
-  BugReport as BugIcon,
-  Logout as LogoutIcon,
-  MenuOpen as MenuOpenIcon,
-  Menu as MenuIcon,
-} from "@mui/icons-material";
+import LockIcon from "@mui/icons-material/Lock";
+import DashboardIcon from "@mui/icons-material/Dashboard";
+import PeopleIcon from "@mui/icons-material/People";
+import MoneyIcon from "@mui/icons-material/AttachMoney";
+import StorageIcon from "@mui/icons-material/Storage";
+import BackupIcon from "@mui/icons-material/Backup";
+import DeleteIcon from "@mui/icons-material/Delete";
+import BugIcon from "@mui/icons-material/BugReport";
+import LogoutIcon from "@mui/icons-material/Logout";
+import MenuOpenIcon from "@mui/icons-material/MenuOpen";
+import MenuIcon from "@mui/icons-material/Menu";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@zentto/shared-auth";
 import dynamic from "next/dynamic";

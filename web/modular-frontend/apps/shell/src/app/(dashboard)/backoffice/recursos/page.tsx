@@ -9,10 +9,8 @@ import {
   Stack,
   CircularProgress,
 } from "@mui/material";
-import {
-  Refresh as RefreshIcon,
-  Storage as StorageIcon,
-} from "@mui/icons-material";
+import RefreshIcon from "@mui/icons-material/Refresh";
+import StorageIcon from "@mui/icons-material/Storage";
 import type { ColumnDef } from "@zentto/datagrid-core";
 import { useGridLayoutSync } from "@zentto/shared-api";
 import { useScopedGridId, useGridRegistration } from "@/lib/zentto-grid";

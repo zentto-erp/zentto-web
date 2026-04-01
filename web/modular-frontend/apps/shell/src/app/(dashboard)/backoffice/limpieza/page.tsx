@@ -9,11 +9,9 @@ import {
   Stack,
   CircularProgress,
 } from "@mui/material";
-import {
-  Refresh as RefreshIcon,
-  Warning as WarningIcon,
-  Delete as DeleteIcon,
-} from "@mui/icons-material";
+import RefreshIcon from "@mui/icons-material/Refresh";
+import WarningIcon from "@mui/icons-material/Warning";
+import DeleteIcon from "@mui/icons-material/Delete";
 import { ConfirmDialog } from "@zentto/shared-ui";
 import type { ColumnDef } from "@zentto/datagrid-core";
 import { useGridLayoutSync } from "@zentto/shared-api";

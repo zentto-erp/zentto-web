@@ -15,11 +15,9 @@ import {
   Stack,
 } from "@mui/material";
 import Grid from "@mui/material/Grid2";
-import {
-  Refresh as RefreshIcon,
-  BugReport as BugIcon,
-  Visibility as ViewIcon,
-} from "@mui/icons-material";
+import RefreshIcon from "@mui/icons-material/Refresh";
+import BugIcon from "@mui/icons-material/BugReport";
+import ViewIcon from "@mui/icons-material/Visibility";
 import { apiGet } from "@zentto/shared-api";
 
 export default function SoportePage() {
