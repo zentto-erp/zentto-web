@@ -6,7 +6,7 @@ import { randomBytes } from "node:crypto";
 import { paddleApi } from "./paddle.client.js";
 import { PLANS, type WebhookEvent } from "./billing.types.js";
 import { callSp, callSpOut } from "../../db/query.js";
-import { invalidateSubscriptionCache } from "../../middleware/subscription.js";
+import { clearSubscriptionCache } from "../../middleware/subscription.js";
 import { provisionTenant, sendWelcomeEmail } from "../tenants/tenant.service.js";
 import { syncPlanModules } from "../iam/enforcement/plan-sync.service.js";
 
@@ -219,7 +219,7 @@ async function handleSubscriptionCreated(
       CurrentPeriodStart: currentPeriod?.["starts_at"] ?? null,
       CurrentPeriodEnd: currentPeriod?.["ends_at"] ?? null,
     });
-    if (companyId) invalidateSubscriptionCache(companyId);
+    if (companyId) clearSubscriptionCache();
   } catch (err) {
     console.error("[billing] Error guardando subscription.created:", err);
   }
@@ -275,7 +275,7 @@ async function invalidateByPaddleSubId(paddleSubId: string) {
       "usp_sys_Subscription_GetByPaddleId",
       { PaddleSubscriptionId: paddleSubId }
     );
-    if (rows[0]?.CompanyId) invalidateSubscriptionCache(rows[0].CompanyId);
+    if (rows[0]?.CompanyId) clearSubscriptionCache();
   } catch { /* ignore */ }
 }
 

@@ -1,17 +1,16 @@
 /**
- * Middleware de verificación de suscripción.
+ * Verificación de suscripción a nivel de USUARIO.
  *
- * Verifica que la empresa del usuario tiene una suscripción activa.
- * Empresas exentas: CompanyId <= 1 (DEFAULT/demo), Plan='FREE'.
- *
- * Se ejecuta DESPUÉS del middleware de auth (req.user ya tiene companyId).
- * Cachea el resultado por 5 minutos para no consultar la BD en cada request.
+ * La suscripción pertenece al usuario (dueño del tenant), no a cada empresa.
+ * Se valida en el LOGIN, no en cada request.
+ * El SP busca el mejor plan entre todas las empresas del usuario.
  */
 
-import type { Request, Response, NextFunction } from "express";
+import { getMasterPool } from "../db/pg-pool-manager.js";
+import { env } from "../config/env.js";
 import { callSp } from "../db/query.js";
 
-interface SubscriptionCheck {
+export interface SubscriptionCheck {
   ok: boolean;
   reason: string;
   plan: string;
@@ -20,87 +19,37 @@ interface SubscriptionCheck {
   daysRemaining: number;
 }
 
-// Cache simple en memoria: companyId → { result, timestamp }
-const cache = new Map<number, { result: SubscriptionCheck; ts: number }>();
-const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutos
-
-export async function requireSubscription(
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> {
-  const user = (req as any).user;
-  const companyId = user?.companyId;
-
-  // Sin companyId (endpoint público o sin auth) → pasar
-  if (!companyId) {
-    next();
-    return;
-  }
-
-  // Empresa DEFAULT (demo) → siempre permitir
-  if (companyId <= 1) {
-    next();
-    return;
-  }
-
-  // Verificar cache
-  const cached = cache.get(companyId);
-  if (cached && Date.now() - cached.ts < CACHE_TTL_MS) {
-    if (cached.result.ok) {
-      // Agregar info de suscripción al request para uso downstream
-      (req as any).subscription = cached.result;
-      next();
-      return;
-    }
-    res.status(403).json({
-      error: "subscription_required",
-      reason: cached.result.reason,
-      plan: cached.result.plan,
-      status: cached.result.status,
-      expiresAt: cached.result.expiresAt,
-    });
-    return;
-  }
-
-  // Consultar BD
+/**
+ * Verifica la suscripción del usuario. Llamar en el login.
+ * Consulta siempre la BD master (fuente de verdad).
+ */
+export async function checkUserSubscription(userCode: string): Promise<SubscriptionCheck> {
   try {
-    const rows = await callSp<SubscriptionCheck>(
-      "usp_sys_Subscription_CheckAccess",
-      { CompanyId: companyId }
-    );
-
-    const result = rows[0] ?? { ok: false, reason: "CHECK_FAILED", plan: "", status: "", expiresAt: null, daysRemaining: 0 };
-
-    // Cachear resultado
-    cache.set(companyId, { result, ts: Date.now() });
-
-    if (result.ok) {
-      (req as any).subscription = result;
-      next();
-      return;
+    let rows: SubscriptionCheck[];
+    if ((env.dbType ?? "postgres") === "postgres") {
+      const masterPool = getMasterPool();
+      const res = await masterPool.query(
+        `SELECT * FROM usp_sys_subscription_checkaccess($1)`,
+        [userCode],
+      );
+      rows = res.rows as SubscriptionCheck[];
+    } else {
+      rows = await callSp<SubscriptionCheck>(
+        "usp_sys_Subscription_CheckAccess",
+        { UserCode: userCode },
+      );
     }
 
-    res.status(403).json({
-      error: "subscription_required",
-      reason: result.reason,
-      plan: result.plan,
-      status: result.status,
-      expiresAt: result.expiresAt,
-    });
+    return rows[0] ?? { ok: true, reason: "CHECK_FAILED", plan: "FREE", status: "active", expiresAt: null, daysRemaining: 999 };
   } catch (err) {
-    // Si falla la verificación, permitir acceso (fail-open para no bloquear)
+    // Fail-open: si falla la verificación, permitir acceso
     console.error("[subscription] Check failed, allowing access:", err);
-    next();
+    return { ok: true, reason: "CHECK_ERROR", plan: "FREE", status: "active", expiresAt: null, daysRemaining: 999 };
   }
 }
 
-/** Invalida el cache de una empresa (llamar cuando cambia la suscripción) */
-export function invalidateSubscriptionCache(companyId: number) {
-  cache.delete(companyId);
-}
-
-/** Invalida todo el cache */
+/** Invalidar cache de billing (para uso desde paddle webhook) */
 export function clearSubscriptionCache() {
-  cache.clear();
+  // Ya no hay cache por request — la validación es solo en login.
+  // Esta función se mantiene por compatibilidad con billing.service.ts
 }
