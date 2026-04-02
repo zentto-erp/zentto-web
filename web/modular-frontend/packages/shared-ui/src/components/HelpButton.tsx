@@ -28,7 +28,7 @@ export default function HelpButton() {
         <IconButton
           size="small"
           onClick={(e) => setAnchorEl(e.currentTarget)}
-          sx={{ color: '#fff', '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' } }}
+          sx={{ color: 'text.secondary', '&:hover': { bgcolor: 'action.hover' } }}
         >
           <HelpOutlineIcon />
         </IconButton>

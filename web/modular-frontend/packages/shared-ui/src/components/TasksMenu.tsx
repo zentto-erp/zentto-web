@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import {
     IconButton, Badge, Menu, Typography, Box, Divider, Button,
-    List, ListItem, ListItemText, Checkbox, LinearProgress, Tooltip
+    List, ListItem, ListItemText, LinearProgress, Tooltip
 } from '@mui/material';
 import { useRouter } from 'next/navigation';
-import FormatListBulletedIcon from '@mui/icons-material/FormatListBulleted';
+import FormatListBulletedOutlinedIcon from '@mui/icons-material/FormatListBulletedOutlined';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
@@ -51,7 +51,7 @@ export default function TasksMenu() {
             <Tooltip title="Tareas">
               <IconButton onClick={handleClick} size="small" sx={{ color: 'inherit' }}>
                 <Badge badgeContent={pendingTasks} color="warning" max={9}>
-                    <FormatListBulletedIcon />
+                    <FormatListBulletedOutlinedIcon />
                 </Badge>
               </IconButton>
             </Tooltip>

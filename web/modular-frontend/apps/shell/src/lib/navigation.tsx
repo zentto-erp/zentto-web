@@ -83,7 +83,7 @@ export function buildNavigation(isAdmin: boolean, modulos: string[], pathname: s
 
     // If we are on the App Selector or Home, show the general landing/support sidebar
     if (pathname === '/' || pathname === '/aplicaciones') {
-        nav.push({ kind: 'header', title: 'ZENTTO' });
+        nav.push({ kind: 'header', title: 'MENÚ' });
         nav.push({ kind: 'page', segment: '', title: 'Inicio / Aplicaciones', icon: <AppsIcon /> });
         nav.push({ kind: 'divider' });
         nav.push({ kind: 'page', segment: 'reportes', title: 'Reportes', icon: <PrintIcon /> });
@@ -93,6 +93,9 @@ export function buildNavigation(isAdmin: boolean, modulos: string[], pathname: s
         }
         if (isAdmin || modulos.includes('report-studio')) {
             nav.push({ kind: 'page', segment: 'report-studio', title: 'Report Studio', icon: <AssessmentIcon /> });
+        }
+        if (isAdmin) {
+            nav.push({ kind: 'page', segment: 'configuracion', title: 'Ajustes', icon: <SettingsIcon /> });
         }
         nav.push({ kind: 'header', title: 'RECURSOS' });
         nav.push({ kind: 'page', segment: 'docs', title: 'Documentación', icon: <MenuBookIcon /> });

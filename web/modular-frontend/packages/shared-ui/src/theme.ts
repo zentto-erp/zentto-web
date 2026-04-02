@@ -7,26 +7,36 @@ import { esES as coreEsES } from '@mui/material/locale';
 
 /* ── Zentto Brand Colors (derivados del ecommerce) ── */
 export const brandColors = {
+  // Core palette
   dark: '#131921',
+  darkDeep: '#0f1419',
+  darkPaper: '#12181f',
   darkSecondary: '#232f3e',
-  accent: '#ff9900',
-  accentHover: '#e68a00',
+  accent: '#FFB547',
+  accentHover: '#e6a23e',
+  indigo: '#6C63FF',
+  indigoHover: '#5b54e6',
+  heroBackground: '#3b3699',
+  // Functional
   teal: '#007185',
   tealHover: '#005F6B',
   success: '#067D62',
   danger: '#cc0c39',
   cta: '#ffd814',
   ctaHover: '#f7ca00',
+  // Surfaces & borders
   border: '#e3e6e6',
-  bgPage: '#eaeded',
+  borderDark: '#1f2937',
+  bgPage: '#f9fafb',
   bgCard: '#ffffff',
+  // Text
   textDark: '#0f1111',
   textMuted: '#565959',
   link: '#007185',
   // Stats semantic colors
   statBlue: '#232f3e',
   statTeal: '#007185',
-  statOrange: '#ff9900',
+  statOrange: '#FFB547',
   statRed: '#cc0c39',
   // Shortcut backgrounds
   shortcutGreen: '#067D62',
@@ -34,7 +44,7 @@ export const brandColors = {
   shortcutTeal: '#007185',
   shortcutSlate: '#37475a',
   shortcutNavy: '#131921',
-  shortcutOrange: '#ff9900',
+  shortcutOrange: '#FFB547',
 };
 
 const baseThemeOptions = {
@@ -44,22 +54,22 @@ const baseThemeOptions = {
   colorSchemes: {
     light: {
       palette: {
-        primary: { main: '#ff9900', light: '#ffad33', dark: '#e68a00', contrastText: '#131921' },
-        secondary: { main: '#232f3e', light: '#37475a', dark: '#131921', contrastText: '#fff' },
+        primary: { main: brandColors.accent, light: '#ffc76a', dark: brandColors.accentHover, contrastText: brandColors.dark },
+        secondary: { main: brandColors.darkSecondary, light: brandColors.shortcutSlate, dark: brandColors.dark, contrastText: '#fff' },
         error: { main: red.A400 },
-        background: { default: '#eaeded', paper: '#FFFFFF' },
-        text: { primary: '#0f1111', secondary: '#565959' },
+        background: { default: brandColors.bgPage, paper: brandColors.bgCard },
+        text: { primary: brandColors.textDark, secondary: brandColors.textMuted },
       }
     },
     dark: {
       palette: {
         mode: 'dark',
-        primary: { main: '#ff9900', light: '#ffad33', dark: '#e68a00', contrastText: '#131921' },
-        secondary: { main: '#37475a', light: '#485769', dark: '#232f3e', contrastText: '#fff' },
+        primary: { main: brandColors.accent, light: '#ffc76a', dark: brandColors.accentHover, contrastText: brandColors.dark },
+        secondary: { main: brandColors.shortcutSlate, light: '#485769', dark: brandColors.darkSecondary, contrastText: '#fff' },
         error: { main: red.A200 },
-        background: { default: '#131921', paper: '#1a2332' },
+        background: { default: brandColors.dark, paper: brandColors.darkPaper },
         text: { primary: '#F9FAFB', secondary: '#9CA3AF' },
-        divider: 'rgba(255, 255, 255, 0.12)',
+        divider: brandColors.borderDark,
       }
     }
   },
@@ -90,7 +100,7 @@ const baseThemeOptions = {
     MuiButton: {
       styleOverrides: {
         root: {
-          borderRadius: 20,
+          borderRadius: 12,
           textTransform: 'none',
           boxShadow: 'none',
           '&:hover': {
@@ -105,7 +115,7 @@ const baseThemeOptions = {
           textTransform: 'none',
           fontWeight: 500,
           '&.Mui-selected': {
-            color: 'var(--mui-palette-primary-main, #ff9900)',
+            color: 'var(--mui-palette-primary-main, #FFB547)',
           },
         },
       },
@@ -113,7 +123,7 @@ const baseThemeOptions = {
     MuiTabs: {
       styleOverrides: {
         indicator: {
-          backgroundColor: 'var(--mui-palette-primary-main, #ff9900)',
+          backgroundColor: 'var(--mui-palette-primary-main, #FFB547)',
         },
       },
     },
@@ -161,9 +171,9 @@ const baseThemeOptions = {
     MuiCard: {
       styleOverrides: {
         root: {
-          borderRadius: 8,
+          borderRadius: 12,
           boxShadow: '0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04)',
-          border: '1px solid #e3e6e6',
+          border: `1px solid ${brandColors.border}`,
         },
       },
     },
@@ -181,7 +191,14 @@ const baseThemeOptions = {
     MuiPaper: {
       styleOverrides: {
         root: {
-          borderRadius: 8,
+          borderRadius: 12,
+        },
+      },
+    },
+    MuiDrawer: {
+      styleOverrides: {
+        paper: {
+          borderRadius: 0,
         },
       },
     },
@@ -236,7 +253,7 @@ const baseThemeOptions = {
     MuiFab: {
       styleOverrides: {
         root: {
-          boxShadow: '0 2px 8px rgba(255,153,0,0.3)',
+          boxShadow: '0 2px 8px rgba(255,181,71,0.3)',
         },
       },
     },
@@ -258,11 +275,11 @@ export interface BrandingColors {
 }
 
 const DEFAULT_BRANDING: BrandingColors = {
-  primaryColor: '#ff9900',
-  primaryDark: '#e68a00',
+  primaryColor: '#FFB547',
+  primaryDark: '#e6a23e',
   secondaryColor: '#232f3e',
   secondaryDark: '#131921',
-  accentColor: '#ff9900',
+  accentColor: '#FFB547',
 };
 
 export { DEFAULT_BRANDING, baseThemeOptions };
@@ -282,7 +299,7 @@ export function createBrandedTheme(overrides: Partial<BrandingColors> = {}) {
   opts.colorSchemes.dark.palette.primary = {
     main: b.primaryColor, light: b.primaryColor + '33', dark: b.primaryDark, contrastText: b.secondaryDark,
   };
-  opts.colorSchemes.dark.palette.background = { default: b.secondaryDark, paper: b.secondaryColor + '99' };
+  opts.colorSchemes.dark.palette.background = { default: '#131921', paper: '#12181f' };
   return createTheme(opts as any, coreEsES);
 }
 
