@@ -71,7 +71,7 @@ html.theme-transitioning *::after {
 }
 
 [data-toolpad-color-scheme="dark"] .non-editable-cell {
-  background-color: #1a2332 !important;
+  background-color: #12181f !important;
   color: #9CA3AF !important;
 }
 

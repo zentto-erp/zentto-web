@@ -4,7 +4,7 @@ import {
     List, ListItem, ListItemAvatar, ListItemText, Avatar, Tooltip
 } from '@mui/material';
 import { useRouter } from 'next/navigation';
-import NotificationsIcon from '@mui/icons-material/Notifications';
+import NotificationsNoneOutlinedIcon from '@mui/icons-material/NotificationsNoneOutlined';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
@@ -94,7 +94,7 @@ export default function NotificationsMenu() {
             <Tooltip title="Notificaciones">
               <IconButton onClick={handleClick} size="small" sx={{ color: 'inherit' }}>
                 <Badge badgeContent={unreadCount} color="error" max={99}>
-                    <NotificationsIcon />
+                    <NotificationsNoneOutlinedIcon />
                 </Badge>
               </IconButton>
             </Tooltip>
@@ -122,7 +122,7 @@ export default function NotificationsMenu() {
                 <List sx={{ p: 0 }}>
                     {notifications.length === 0 ? (
                         <Box sx={{ p: 3, textAlign: 'center', color: 'text.secondary' }}>
-                            <NotificationsIcon sx={{ fontSize: 40, opacity: 0.3, mb: 1 }} />
+                            <NotificationsNoneOutlinedIcon sx={{ fontSize: 40, opacity: 0.3, mb: 1 }} />
                             <Typography variant="body2">No tienes notificaciones nuevas.</Typography>
                         </Box>
                     ) : (
