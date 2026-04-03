@@ -8,16 +8,13 @@ import Chip from '@mui/material/Chip';
 import Drawer from '@mui/material/Drawer';
 import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
-import ListItemButton from '@mui/material/ListItemButton';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
 import Collapse from '@mui/material/Collapse';
 import IconButton from '@mui/material/IconButton';
 import { useRouter, usePathname } from 'next/navigation';
-import { useSession } from 'next-auth/react';
 import { useAuth } from '@zentto/shared-auth';
 import { useTheme } from '@mui/material/styles';
-import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import AppsOutlinedIcon from '@mui/icons-material/AppsOutlined';
@@ -26,7 +23,6 @@ import MenuOpenOutlinedIcon from '@mui/icons-material/MenuOpenOutlined';
 import Tooltip from '@mui/material/Tooltip';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
-import Avatar from '@mui/material/Avatar';
 import ThemeToggle from './ThemeToggle';
 import NotificationsMenu from './NotificationsMenu';
 import HelpButton from './HelpButton';
@@ -39,13 +35,6 @@ import useMediaQuery from '@mui/material/useMediaQuery';
 import { brandColors } from '../theme';
 import { useBranding } from '../hooks/useBranding';
 
-// Type definition for our custom navigation (ignoring toolpad core for this specific top nav)
-interface NavItem {
-    title: string;
-    segment?: string;
-    children?: NavItem[];
-}
-
 export default function OdooLayout({
     children,
     navigationFields
@@ -56,7 +45,6 @@ export default function OdooLayout({
     const router = useRouter();
     const pathname = usePathname();
     const theme = useTheme();
-    const { data: session } = useSession();
     const { dynamicBrandColors: bc } = useBranding();
 
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -99,9 +87,8 @@ export default function OdooLayout({
         const renderLevel = (rawItem: Record<string, unknown>, idx: string, level = 0) => {
             const item = rawItem as any;
             if (item.kind === 'header') {
-                if (!isDrawerExpanded) return <Box key={`header-${idx}`} sx={{ height: 16 }} />;
                 return (
-                    <Typography key={`header-${idx}`} variant="caption" sx={{ px: 3, pt: 2, pb: 1, display: 'block', fontWeight: 700, color: (t) => t.palette.mode === 'dark' ? 'rgba(255,255,255,0.4)' : brandColors.textMuted, textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
+                    <Typography key={`header-${idx}`} variant="caption" sx={{ px: 3, pt: 2, pb: 1, display: 'block', fontWeight: 700, color: (t) => t.palette.mode === 'dark' ? 'rgba(255,255,255,0.4)' : brandColors.textMuted, textTransform: 'uppercase', whiteSpace: 'nowrap', opacity: isSidebarOpen ? 1 : 0, transition: 'opacity 0.15s ease' }}>
                         {item.title as React.ReactNode}
                     </Typography>
                 );
@@ -120,42 +107,49 @@ export default function OdooLayout({
 
             return (
                 <React.Fragment key={`frag-${idx}`}>
-                    <ListItem disablePadding sx={{ display: 'block' }}>
-                        <ListItemButton
-                            selected={isRouteActive && !hasChildren}
-                            onClick={() => hasChildren ? handleToggleMenu(idx) : handleNavigate(item.segment)}
+                    <ListItem disablePadding sx={{ position: 'relative', my: '4px', px: '12px', minHeight: 48 }}>
+                        {/* Capa de fondo — efecto de selección */}
+                        <Box
                             sx={{
-                                minHeight: 48,
-                                px: isDrawerExpanded ? (2 + level) : 0,
-                                m: isDrawerExpanded ? '4px 12px' : '4px auto',
-                                mx: isDrawerExpanded ? '12px' : 'auto',
-                                width: isDrawerExpanded ? 'auto' : 48,
+                                position: 'absolute',
+                                top: 0, bottom: 0,
+                                left: 12, right: 12,
                                 borderRadius: 1.5,
-                                justifyContent: isDrawerExpanded ? 'flex-start' : 'center',
-                                color: isRouteActive ? 'text.primary' : 'text.secondary',
                                 bgcolor: isRouteActive && !hasChildren ? (t) => t.palette.mode === 'dark' ? 'rgba(255,181,71,0.15)' : 'rgba(255,181,71,0.1)' : 'transparent',
                                 boxShadow: isRouteActive && !hasChildren ? `inset 4px 0 0 0 ${bc.accent}` : 'none',
-                                transition: 'all 0.2s',
+                                pointerEvents: 'none',
+                            }}
+                        />
+                        {/* Contenido — ícono fijo + texto */}
+                        <Box
+                            onClick={() => hasChildren ? handleToggleMenu(idx) : handleNavigate(item.segment)}
+                            sx={{
+                                position: 'relative',
+                                display: 'flex', alignItems: 'center',
+                                minHeight: 48, width: '100%',
+                                cursor: 'pointer',
+                                color: isRouteActive ? 'text.primary' : 'text.secondary',
+                                borderRadius: 1.5,
                                 '&:hover': {
                                     bgcolor: isRouteActive && !hasChildren ? (t) => t.palette.mode === 'dark' ? 'rgba(255,181,71,0.25)' : 'rgba(255,181,71,0.15)' : 'action.hover',
                                 }
                             }}
                         >
-                            <Tooltip title={!isDrawerExpanded ? item.title : ""} placement="right" disableHoverListener={isDrawerExpanded}>
-                                <ListItemIcon sx={{ minWidth: isDrawerExpanded ? 36 : 'auto', color: isRouteActive ? 'text.primary' : 'text.secondary', justifyContent: 'center' }}>
+                            <Tooltip title={!isSidebarOpen ? item.title : ""} placement="right" disableHoverListener={isSidebarOpen}>
+                                <ListItemIcon sx={{ minWidth: 48, color: 'inherit', justifyContent: 'center' }}>
                                     {item.icon || <AppsOutlinedIcon fontSize="small" />}
                                 </ListItemIcon>
                             </Tooltip>
-                            {isDrawerExpanded && (
+                            <Box sx={{ overflow: 'hidden', maxWidth: isSidebarOpen ? 200 : 0, opacity: isSidebarOpen ? 1 : 0, transition: 'max-width 0.2s ease, opacity 0.15s ease', display: 'flex', alignItems: 'center', flexGrow: 1, whiteSpace: 'nowrap' }}>
                                 <ListItemText
                                     primary={item.title}
                                     primaryTypographyProps={{ fontSize: '0.9rem', fontWeight: isRouteActive ? 600 : 400, whiteSpace: 'nowrap' }}
                                 />
-                            )}
-                            {(isDrawerExpanded && hasChildren) ? (isOpen ? <ExpandLessIcon fontSize="small" sx={{ color: 'text.disabled' }} /> : <ExpandMoreIcon fontSize="small" sx={{ color: 'text.disabled' }} />) : null}
-                        </ListItemButton>
+                                {hasChildren ? (isOpen ? <ExpandLessIcon fontSize="small" sx={{ color: 'text.disabled' }} /> : <ExpandMoreIcon fontSize="small" sx={{ color: 'text.disabled' }} />) : null}
+                            </Box>
+                        </Box>
                     </ListItem>
-                    {(hasChildren && isDrawerExpanded) && (
+                    {(hasChildren && isSidebarOpen) && (
                         <Collapse in={isOpen} timeout="auto" unmountOnExit>
                             <List component="div" disablePadding>
                                 {(item.children as Array<Record<string, unknown>>).map((sub, subIdx: number) => renderLevel(sub, `${idx}-${subIdx}`, level + 1))}
@@ -173,7 +167,6 @@ export default function OdooLayout({
         );
     };
 
-    const isDrawerExpanded = isSidebarOpen;
     const actualSidebarWidth = hideSidebar ? 0 : (isMobile ? 0 : (isSidebarOpen ? fullSidebarWidth : miniSidebarWidth));
     const drawerPaperWidth = hideSidebar ? 0 : (isMobile ? fullSidebarWidth : (isSidebarOpen ? fullSidebarWidth : miniSidebarWidth));
     const { company: activeCompany, companyAccesses: authCompanyAccesses, setActiveCompany } = useAuth();
@@ -214,19 +207,21 @@ export default function OdooLayout({
                         },
                     }}
                 >
-                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: isDrawerExpanded ? 'flex-start' : 'center', px: isDrawerExpanded ? 2 : 0, borderBottom: (t) => `1px solid ${t.palette.divider}`, height: 64, minHeight: 64 }}>
-                        <Tooltip title={isDrawerExpanded ? "Contraer menú" : "Expandir menú"}>
-                            <IconButton onClick={() => setSidebarOpen(!isSidebarOpen)} size="small" sx={{ width: 32, height: 32, borderRadius: '6px', mr: isDrawerExpanded ? 1 : 0, color: 'text.secondary', bgcolor: 'transparent', '&:hover': { bgcolor: 'action.hover' }, '& .MuiSvgIcon-root': { fontSize: '1.15rem' } }}>
-                                {isDrawerExpanded ? <MenuOpenOutlinedIcon /> : <MenuOutlinedIcon />}
-                            </IconButton>
+                    <Box sx={{ display: 'flex', alignItems: 'center', px: '12px', borderBottom: (t) => `1px solid ${t.palette.divider}`, height: 64, minHeight: 64 }}>
+                        <Tooltip title={isSidebarOpen ? "Contraer menú" : "Expandir menú"}>
+                            <Box sx={{ width: 48, minWidth: 48, display: 'flex', justifyContent: 'center' }}>
+                                <IconButton onClick={() => setSidebarOpen(!isSidebarOpen)} size="small" sx={{ width: 32, height: 32, borderRadius: '6px', color: 'text.secondary', bgcolor: 'transparent', '&:hover': { bgcolor: 'action.hover' }, '& .MuiSvgIcon-root': { fontSize: '1.15rem' } }}>
+                                    {isSidebarOpen ? <MenuOpenOutlinedIcon /> : <MenuOutlinedIcon />}
+                                </IconButton>
+                            </Box>
                         </Tooltip>
-                        {isDrawerExpanded && (
+                        <Box sx={{ overflow: 'hidden', maxWidth: isSidebarOpen ? 200 : 0, opacity: isSidebarOpen ? 1 : 0, transition: 'max-width 0.2s ease, opacity 0.15s ease', whiteSpace: 'nowrap' }}>
                             <Tooltip title="Ir al Inicio">
                                 <Box onClick={goToShell} sx={{ cursor: 'pointer', ml: 1 }}>
                                     <AppTitle />
                                 </Box>
                             </Tooltip>
-                        )}
+                        </Box>
                     </Box>
                     <Box sx={{ overflowY: 'auto', flexGrow: 1, py: 2 }}>
                         {renderSidebarItems()}
@@ -318,8 +313,10 @@ export default function OdooLayout({
                 </Box>
 
                 {/* Page Content */}
-                <Box component="main" sx={{ flexGrow: 1, minHeight: 0, overflow: 'auto', bgcolor: 'background.default', p: { xs: 2, md: 3 } }}>
-                    {children}
+                <Box component="main" sx={{ flexGrow: 1, minHeight: 0, overflow: 'auto', bgcolor: 'background.default', p: { xs: 2, md: 3 }, display: 'flex', flexDirection: 'column' }}>
+                    <Box sx={{ flexGrow: 1 }}>
+                        {children}
+                    </Box>
                     <Box sx={{ pt: 4, pb: 1, display: 'flex', justifyContent: 'center' }}>
                         <Copyright />
                     </Box>
