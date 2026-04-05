@@ -14,11 +14,7 @@ import {
 } from "@mui/material";
 import { setUser } from "../../lib/auth";
 
-<<<<<<< HEAD
-const AUTH_BASE = process.env.NEXT_PUBLIC_AUTH_API || "https://authdev.zentto.net";
-=======
 const API_BASE = process.env.NEXT_PUBLIC_SITES_API || "http://localhost:4500";
->>>>>>> fix/elasticsearch-security-hardening
 
 export default function LoginPage() {
   const [usuario, setUsuario] = useState("");
@@ -34,19 +30,11 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-<<<<<<< HEAD
-      const res = await fetch(`${AUTH_BASE}/auth/login`, {
-        method: "POST",
-        credentials: "include",  // Recibe cookie HttpOnly
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username: usuario.toUpperCase(), password: clave }),
-=======
       const res = await fetch(`${API_BASE}/auth/login`, {
         method: "POST",
         credentials: "include",  // Recibe cookie HttpOnly
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ usuario: usuario.toUpperCase(), clave, companyId: 1, branchId: 1 }),
->>>>>>> fix/elasticsearch-security-hardening
+        body: JSON.stringify({ username: usuario.toUpperCase(), password: clave }),
       });
       const data = await res.json();
 
@@ -74,11 +62,7 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-<<<<<<< HEAD
-      const res = await fetch(`${AUTH_BASE}/auth/forgot-password`, {
-=======
       const res = await fetch(`${API_BASE}/auth/forgot-password`, {
->>>>>>> fix/elasticsearch-security-hardening
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
