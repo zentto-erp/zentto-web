@@ -34,7 +34,7 @@ export default function LoginPage() {
         method: "POST",
         credentials: "include",  // Recibe cookie HttpOnly
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ usuario: usuario.toUpperCase(), clave, companyId: 1, branchId: 1 }),
+        body: JSON.stringify({ username: usuario.toUpperCase(), password: clave }),
       });
       const data = await res.json();
 
