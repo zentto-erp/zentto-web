@@ -108,21 +108,29 @@ export async function requireJwt(req: Request, res: Response, next: NextFunction
     return next();
   }
 
-  // Extraer token: Bearer header O cookie zentto_access (zentto-auth)
+  // Extraer JWT — prioridad:
+  //   1. Cookie zentto_token (HttpOnly, seteada por este API en /auth/login)
+  //   2. Cookie zentto_access (HttpOnly, seteada por zentto-auth microservice)
+  //   3. Authorization: Bearer header (legacy — será deprecado)
   let token: string | undefined;
 
-  const auth = req.headers.authorization ?? "";
-  const [scheme, bearerToken] = auth.split(" ");
-  if (scheme === "Bearer" && bearerToken) {
-    token = bearerToken;
+  const cookieHeader = req.headers.cookie;
+  if (cookieHeader) {
+    const tokenMatch = cookieHeader.match(/zentto_token=([^;]+)/);
+    if (tokenMatch) {
+      token = tokenMatch[1];
+    } else {
+      const accessMatch = cookieHeader.match(/zentto_access=([^;]+)/);
+      if (accessMatch) token = accessMatch[1];
+    }
   }
 
-  // Fallback: cookie zentto_access emitida por zentto-auth microservice
+  // Fallback: Bearer header (legacy — para transición)
   if (!token) {
-    const cookieHeader = req.headers.cookie;
-    if (cookieHeader) {
-      const match = cookieHeader.match(/zentto_access=([^;]+)/);
-      if (match) token = match[1];
+    const auth = req.headers.authorization ?? "";
+    const [scheme, bearerToken] = auth.split(" ");
+    if (scheme === "Bearer" && bearerToken) {
+      token = bearerToken;
     }
   }
 

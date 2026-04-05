@@ -292,10 +292,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       return token;
     },
     async session({ session, token }) {
-      // @ts-ignore
-      session.accessToken = token.accessToken;
-      // @ts-ignore
-      session.accessTokenExpires = token.accessTokenExpires;
+      // accessToken NO se expone al browser — viaja en cookie HttpOnly.
+      // Solo exponemos datos de contexto (permisos, modulos, company).
       // @ts-ignore
       session.isAdmin = token.isAdmin;
       // @ts-ignore
