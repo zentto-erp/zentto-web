@@ -37,7 +37,11 @@ import { ThemeProvider, createTheme, useTheme } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useRouter, usePathname } from "next/navigation";
+<<<<<<< HEAD
 import { isAuthenticated, getUser, logout, checkAuth } from "../lib/auth";
+=======
+import { isAuthenticated, getUser, logout } from "../lib/auth";
+>>>>>>> fix/elasticsearch-security-hardening
 
 const theme = createTheme({
   palette: {
@@ -214,6 +218,7 @@ function PanelLayout({ children }: { children: React.ReactNode }) {
   const [authChecked, setAuthChecked] = useState(false);
   const [user, setUserState] = useState<any>(null);
 
+<<<<<<< HEAD
   // Check auth on mount — validates cookie against zentto-auth service
   useEffect(() => {
     const isLoginPage = pathname === "/login" || pathname === "/register";
@@ -245,6 +250,22 @@ function PanelLayout({ children }: { children: React.ReactNode }) {
         }
       });
     }
+=======
+  // Check auth on mount and pathname change
+  useEffect(() => {
+    const isLoginPage = pathname === "/login" || pathname === "/register";
+
+    if (!isAuthenticated() && !isLoginPage) {
+      router.replace("/login");
+      return;
+    }
+
+    if (isAuthenticated()) {
+      setUserState(getUser());
+    }
+
+    setAuthChecked(true);
+>>>>>>> fix/elasticsearch-security-hardening
   }, [pathname, router]);
 
   // Don't render layout for login/register pages

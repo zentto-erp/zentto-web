@@ -19,19 +19,25 @@ import {
   ArrowBack as BackIcon,
   Save as SaveIcon,
   Visibility as PreviewIcon,
+  OpenInNew as LiveIcon,
+  AutoAwesome as WizardIcon,
+  Rocket as DeployIcon,
 } from "@mui/icons-material";
 
 import {
-  getLandingTemplate,
   THEME_PRESETS,
-  applyThemePresetToConfig,
   getThemePreset,
+  applyThemePresetToConfig,
 } from "@zentto/studio-core";
 import type { AppConfig } from "@zentto/studio-core";
 
 declare global {
   namespace JSX {
     interface IntrinsicElements {
+      "zs-landing-wizard": React.DetailedHTMLProps<
+        React.HTMLAttributes<HTMLElement> & Record<string, any>,
+        HTMLElement
+      >;
       "zs-landing-designer": React.DetailedHTMLProps<
         React.HTMLAttributes<HTMLElement> & Record<string, any>,
         HTMLElement
@@ -40,11 +46,9 @@ declare global {
   }
 }
 
-/* ------------------------------------------------------------------ */
-/*  Constantes                                                         */
-/* ------------------------------------------------------------------ */
-
 const STORAGE_KEY = "zentto-landing-designer-config";
+
+type View = "wizard" | "designer";
 
 interface SnackState {
   open: boolean;
@@ -52,70 +56,107 @@ interface SnackState {
   sev: "success" | "error" | "info" | "warning";
 }
 
-/* ------------------------------------------------------------------ */
-/*  Página principal                                                   */
-/* ------------------------------------------------------------------ */
-
 export default function LandingDesignerPage() {
   const router = useRouter();
+  const wizardRef = useRef<any>(null);
   const designerRef = useRef<any>(null);
 
   const [ready, setReady] = useState(false);
+  const [view, setView] = useState<View>("wizard");
   const [config, setConfig] = useState<AppConfig | null>(null);
   const [preset, setPreset] = useState("");
   const [snack, setSnack] = useState<SnackState>({ open: false, msg: "", sev: "info" });
-
-  /* ---- helpers --------------------------------------------------- */
 
   const toast = useCallback((msg: string, sev: SnackState["sev"] = "info") => {
     setSnack({ open: true, msg, sev });
   }, []);
 
-  /* ---- cargar config inicial ------------------------------------- */
-
+  /* ---- detectar si ya hay config guardada → ir directo al designer -- */
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
       try {
-        setConfig(JSON.parse(saved));
-      } catch {
-        setConfig(getLandingTemplate("saas-startup"));
-      }
-    } else {
-      setConfig(getLandingTemplate("saas-startup"));
+        const parsed = JSON.parse(saved);
+        if (parsed?.pages?.[0]?.landingSections?.length > 0) {
+          setConfig(parsed);
+          setView("designer");
+        }
+      } catch { /* wizard */ }
     }
   }, []);
 
-  /* ---- cargar web component ------------------------------------- */
-
+  /* ---- cargar web components ---------------------------------------- */
   useEffect(() => {
-    import("@zentto/studio/landing-designer").then(() => setReady(true));
+    Promise.all([
+      import("@zentto/studio/landing-wizard"),
+      import("@zentto/studio/landing-designer"),
+      import("@zentto/studio/landing"),
+    ]).then(() => setReady(true));
   }, []);
 
-  /* ---- pasar config al web component ----------------------------- */
-
+  /* ---- pasar config al componente activo ----------------------------- */
   useEffect(() => {
-    if (!ready || !designerRef.current || !config) return;
-    designerRef.current.config = config;
-  }, [ready, config]);
+    if (!ready) return;
+    if (view === "wizard" && wizardRef.current && config) {
+      wizardRef.current.initialConfig = config;
+    }
+    if (view === "designer" && designerRef.current && config) {
+      designerRef.current.config = config;
+    }
+  }, [ready, view, config]);
 
-  /* ---- escuchar eventos ------------------------------------------ */
-
+  /* ---- escuchar eventos del wizard (en document para cruzar Shadow DOM) */
   useEffect(() => {
-    if (!ready || !designerRef.current) return;
+    if (!ready || view !== "wizard") return;
+
+    const handleComplete = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      const cfg = detail.config as AppConfig;
+      setConfig(cfg);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(cfg));
+      toast("Landing creada — abriendo designer", "success");
+      setView("designer");
+    };
+
+    const handleOpenDesigner = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      const cfg = detail.config as AppConfig;
+      setConfig(cfg);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(cfg));
+      setView("designer");
+    };
+
+    const handleChange = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail?.config) setConfig(detail.config);
+    };
+
+    // Listen on document — CustomEvents with composed:true bubble up from Shadow DOM
+    document.addEventListener("wizard-complete", handleComplete);
+    document.addEventListener("wizard-open-designer", handleOpenDesigner);
+    document.addEventListener("config-change", handleChange);
+
+    return () => {
+      document.removeEventListener("wizard-complete", handleComplete);
+      document.removeEventListener("wizard-open-designer", handleOpenDesigner);
+      document.removeEventListener("config-change", handleChange);
+    };
+  }, [ready, view, toast]);
+
+  /* ---- escuchar eventos del designer -------------------------------- */
+  useEffect(() => {
+    if (!ready || !designerRef.current || view !== "designer") return;
     const el = designerRef.current;
 
     const handleConfigChange = (e: Event) => {
       const detail = (e as CustomEvent).detail;
       setConfig(detail.config);
-      console.log("[LandingDesigner] config-change", detail);
     };
 
     const handleAutoSave = (e: Event) => {
       const detail = (e as CustomEvent).detail;
       localStorage.setItem(STORAGE_KEY, JSON.stringify(detail.config));
       toast("Auto-guardado", "success");
-      console.log("[LandingDesigner] auto-save", detail);
     };
 
     el.addEventListener("config-change", handleConfigChange);
@@ -125,9 +166,9 @@ export default function LandingDesignerPage() {
       el.removeEventListener("config-change", handleConfigChange);
       el.removeEventListener("auto-save", handleAutoSave);
     };
-  }, [ready, toast]);
+  }, [ready, view, toast]);
 
-  /* ---- acciones -------------------------------------------------- */
+  /* ---- acciones toolbar --------------------------------------------- */
 
   const handleSave = () => {
     if (config) {
@@ -143,6 +184,19 @@ export default function LandingDesignerPage() {
     }
   };
 
+  const handleLive = () => {
+    if (config) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
+      window.open("/landing-designer/live", "_blank");
+    }
+  };
+
+  const handleNewWizard = () => {
+    localStorage.removeItem(STORAGE_KEY);
+    setConfig(null);
+    setView("wizard");
+  };
+
   const handlePresetChange = (presetId: string) => {
     if (!config) return;
     const p = getThemePreset(presetId);
@@ -150,13 +204,14 @@ export default function LandingDesignerPage() {
       const updated = applyThemePresetToConfig(config, p);
       setConfig(updated);
       setPreset(presetId);
+      if (designerRef.current) designerRef.current.config = updated;
       toast(`Tema "${p.name}" aplicado`, "info");
     }
   };
 
-  /* ---- render ---------------------------------------------------- */
+  /* ---- loading ------------------------------------------------------ */
 
-  if (!ready || !config) {
+  if (!ready) {
     return (
       <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", height: "80vh" }}>
         <Typography>Cargando Landing Designer...</Typography>
@@ -164,24 +219,35 @@ export default function LandingDesignerPage() {
     );
   }
 
+  /* ---- WIZARD view -------------------------------------------------- */
+
+  if (view === "wizard") {
+    return (
+      <Box sx={{ display: "flex", flexDirection: "column", height: "calc(100vh - 64px)" }}>
+        <Box sx={{ flex: 1, overflow: "auto" }}>
+          <zs-landing-wizard
+            ref={wizardRef}
+            style={{ display: "block", width: "100%", minHeight: "100%" }}
+          />
+        </Box>
+      </Box>
+    );
+  }
+
+  /* ---- DESIGNER view ------------------------------------------------ */
+
   return (
     <Box sx={{ display: "flex", flexDirection: "column", height: "calc(100vh - 64px)" }}>
-      {/* Toolbar */}
       <AppBar position="static" color="default" elevation={1}>
         <Toolbar variant="dense" sx={{ gap: 1 }}>
-          <Button
-            size="small"
-            startIcon={<BackIcon />}
-            onClick={() => router.push("/")}
-          >
+          <Button size="small" startIcon={<BackIcon />} onClick={() => router.push("/")}>
             Inicio
           </Button>
 
           <Typography fontWeight={600} sx={{ mr: 2 }}>
-            Landing Page Designer
+            Landing Designer
           </Typography>
 
-          {/* Theme preset selector */}
           <FormControl size="small" sx={{ minWidth: 160 }}>
             <InputLabel id="preset-label">Tema</InputLabel>
             <Select
@@ -200,27 +266,29 @@ export default function LandingDesignerPage() {
 
           <Box flex={1} />
 
-          <Button
-            size="small"
-            startIcon={<SaveIcon />}
-            variant="outlined"
-            onClick={handleSave}
-          >
+          <Button size="small" startIcon={<WizardIcon />} onClick={handleNewWizard}>
+            Nuevo
+          </Button>
+
+          <Button size="small" startIcon={<SaveIcon />} variant="outlined" onClick={handleSave}>
             Guardar
           </Button>
 
-          <Button
-            size="small"
-            startIcon={<PreviewIcon />}
-            variant="contained"
-            onClick={handlePreview}
-          >
+          <Button size="small" startIcon={<PreviewIcon />} variant="outlined" onClick={handlePreview}>
             Preview
+          </Button>
+
+          <Button size="small" startIcon={<LiveIcon />} variant="contained" color="success" onClick={handleLive}>
+            Ver Sitio
+          </Button>
+
+          <Button size="small" startIcon={<DeployIcon />} variant="contained" color="secondary"
+            onClick={() => { if (config) { localStorage.setItem(STORAGE_KEY, JSON.stringify(config)); router.push("/landing-designer/export"); } }}>
+            Exportar
           </Button>
         </Toolbar>
       </AppBar>
 
-      {/* Designer */}
       <Box sx={{ flex: 1, overflow: "hidden" }}>
         <zs-landing-designer
           ref={designerRef}
@@ -228,7 +296,6 @@ export default function LandingDesignerPage() {
         />
       </Box>
 
-      {/* Snackbar */}
       <Snackbar
         open={snack.open}
         autoHideDuration={3000}

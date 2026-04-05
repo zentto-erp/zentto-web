@@ -1,9 +1,8 @@
 // Auth — Token en cookie HttpOnly (NO en localStorage, NO en JavaScript)
 // El browser envia la cookie automaticamente con credentials: 'include'
-// Cookie domain .zentto.net → compartida entre auth, sites, panel, etc.
 
 const USER_KEY = 'zentto-panel-user';
-const AUTH_BASE = process.env.NEXT_PUBLIC_AUTH_API || 'https://authdev.zentto.net';
+const API_BASE = process.env.NEXT_PUBLIC_SITES_API || 'https://sitesdev.zentto.net';
 
 export function getUser(): any | null {
   if (typeof window === 'undefined') return null;
@@ -18,7 +17,7 @@ export function setUser(user: any): void {
 
 export async function logout(): Promise<void> {
   try {
-    await fetch(`${AUTH_BASE}/auth/logout`, { method: 'POST', credentials: 'include' });
+    await fetch(`${API_BASE}/auth/logout`, { method: 'POST', credentials: 'include' });
   } catch { /* ignore */ }
   if (typeof window !== 'undefined') {
     sessionStorage.removeItem(USER_KEY);
@@ -28,7 +27,7 @@ export async function logout(): Promise<void> {
 
 export async function checkAuth(): Promise<boolean> {
   try {
-    const res = await fetch(`${AUTH_BASE}/auth/me`, { credentials: 'include' });
+    const res = await fetch(`${API_BASE}/auth/me`, { credentials: 'include' });
     if (res.ok) {
       const data = await res.json();
       if (data.ok && data.data) {
