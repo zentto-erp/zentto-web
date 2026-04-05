@@ -17,9 +17,10 @@ function scope() {
 // ── Lead Score Calculate ─────────────────────────────────────────────────────
 
 export async function calculateLeadScore(leadId: number, userId?: number) {
+  const s = scope();
   const { output } = await callSpOut(
     "usp_CRM_LeadScore_Calculate",
-    { LeadId: leadId, UserId: userId ?? null },
+    { CompanyId: s.companyId, LeadId: leadId, UserId: userId ?? null },
     { ok: sql.Int, mensaje: sql.NVarChar(500), Score: sql.Int },
   );
   return {
@@ -47,14 +48,16 @@ export async function bulkCalculateScores() {
 // ── Get Lead Score ───────────────────────────────────────────────────────────
 
 export async function getLeadScore(leadId: number) {
-  const rows = await callSp("usp_CRM_LeadScore_Get", { LeadId: leadId });
+  const s = scope();
+  const rows = await callSp("usp_CRM_LeadScore_Get", { CompanyId: s.companyId, LeadId: leadId });
   return rows[0] ?? null;
 }
 
 // ── Get Lead Detail ──────────────────────────────────────────────────────────
 
 export async function getLeadDetail(leadId: number) {
-  const rows = await callSp("usp_CRM_Lead_GetDetail", { LeadId: leadId });
+  const s = scope();
+  const rows = await callSp("usp_CRM_Lead_GetDetail", { CompanyId: s.companyId, LeadId: leadId });
   return rows[0] ?? null;
 }
 
@@ -72,5 +75,6 @@ export async function getLeadTimeline(pipelineId?: number, status?: string) {
 // ── Get Lead History ─────────────────────────────────────────────────────────
 
 export async function getLeadHistory(leadId: number) {
-  return callSp("usp_CRM_Lead_GetHistory", { LeadId: leadId });
+  const s = scope();
+  return callSp("usp_CRM_Lead_GetHistory", { CompanyId: s.companyId, LeadId: leadId });
 }

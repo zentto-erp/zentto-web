@@ -1,7 +1,7 @@
 // components/AjusteInventarioForm.tsx
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import {
   Box,
@@ -15,21 +15,15 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   InputAdornment,
-  Chip,
 } from "@mui/material";
 import Grid from "@mui/material/Grid2";
 import { FormGrid, FormField } from "@zentto/shared-ui";
 import SearchIcon from "@mui/icons-material/Search";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import { useCreateMovimiento, useInventarioList } from "../hooks/useInventario";
-import { formatCurrency } from "@zentto/shared-api";
+import { formatCurrency, useGridLayoutSync } from "@zentto/shared-api";
+import { useInventarioGridRegistration } from "./zenttoGridPersistence";
+import type { ColumnDef } from "@zentto/datagrid-core";
 import { debounce } from "lodash";
 
 interface SelectedArticulo {
@@ -39,8 +33,18 @@ interface SelectedArticulo {
   precio: number;
 }
 
+const GRID_ID = "module-inventario:ajuste:search";
+
+const COLUMNS: ColumnDef[] = [
+  { field: "codigo", header: "Codigo", width: 110, sortable: true },
+  { field: "articulo", header: "Articulo", flex: 1, minWidth: 160, sortable: true },
+  { field: "stock", header: "Stock", width: 90, type: "number" },
+  { field: "precio", header: "Precio", width: 110, type: "number", currency: "VES" },
+];
+
 export default function AjusteInventarioForm() {
   const router = useRouter();
+  const gridRef = useRef<any>(null);
 
   // Search
   const [search, setSearch] = useState("");
@@ -51,6 +55,9 @@ export default function AjusteInventarioForm() {
     debounce((value: string) => setSearch(value), 400),
     []
   );
+
+  const { ready } = useGridLayoutSync(GRID_ID);
+  const { registered } = useInventarioGridRegistration(ready);
 
   // Selected article
   const [selected, setSelected] = useState<SelectedArticulo | null>(null);
@@ -76,9 +83,40 @@ export default function AjusteInventarioForm() {
     setErrors((prev) => ({ ...prev, articulo: "" }));
   };
 
+  const gridRows = useMemo(() => rows.map((item, i) => ({
+    id: i,
+    codigo: String(item.CODIGO ?? item.ProductCode ?? ""),
+    articulo: String(item.DescripcionCompleta ?? item.DESCRIPCION ?? ""),
+    stock: Number(item.EXISTENCIA ?? item.Stock ?? 0),
+    precio: Number(item.PRECIO_VENTA ?? item.SalesPrice ?? 0),
+  })), [rows]);
+
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+    el.columns = COLUMNS;
+    el.rows = gridRows;
+    el.loading = isLoading;
+    el.getRowId = (r: any) => r.id;
+  }, [gridRows, isLoading, registered]);
+
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+    const handler = (e: CustomEvent) => {
+      if (e.detail?.row) {
+        const row = e.detail.row;
+        const item = rows.find((r) => String(r.CODIGO ?? r.ProductCode ?? "") === row.codigo);
+        if (item) selectArticulo(item);
+      }
+    };
+    el.addEventListener("row-click", handler);
+    return () => el.removeEventListener("row-click", handler);
+  }, [registered, rows]);
+
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
-    if (!selected) newErrors.articulo = "Seleccione un artículo de la lista";
+    if (!selected) newErrors.articulo = "Seleccione un articulo de la lista";
     if (!cantidad || cantidad <= 0) newErrors.cantidad = "La cantidad debe ser mayor que 0";
     if (!motivo?.trim()) newErrors.motivo = "El motivo es requerido";
     if (tipo === "SALIDA" && selected && cantidad > selected.stock) {
@@ -135,14 +173,14 @@ export default function AjusteInventarioForm() {
       )}
 
       <Grid container spacing={3}>
-        {/* Left: Article search table */}
+        {/* Left: Article search grid */}
         <Grid size={{ xs: 12, md: 7 }}>
           <Paper sx={{ p: 2 }}>
             <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
-              Buscar Artículos
+              Buscar Articulos
             </Typography>
             <TextField
-              placeholder="Buscar por código o nombre..."
+              placeholder="Buscar por codigo o nombre..."
               onChange={(e) => debouncedSearch(e.target.value)}
               fullWidth
               sx={{ mb: 2 }}
@@ -155,73 +193,20 @@ export default function AjusteInventarioForm() {
               }}
             />
 
-            {isLoading && (
-              <Box sx={{ textAlign: "center", py: 3 }}>
-                <CircularProgress size={28} />
-              </Box>
-            )}
-
-            {!isLoading && rows.length > 0 && (
-              <TableContainer sx={{ maxHeight: 420 }}>
-                <Table size="small" stickyHeader>
-                  <TableHead>
-                    <TableRow>
-                      <TableCell sx={{ fontWeight: 600 }}>Código</TableCell>
-                      <TableCell sx={{ fontWeight: 600 }}>Artículo</TableCell>
-                      <TableCell align="right" sx={{ fontWeight: 600 }}>Stock</TableCell>
-                      <TableCell align="right" sx={{ fontWeight: 600 }}>Precio</TableCell>
-                      <TableCell />
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {rows.map((item, i) => {
-                      const codigo = String(item.CODIGO ?? item.ProductCode ?? "");
-                      const isSelected = selected?.codigo === codigo;
-                      return (
-                        <TableRow
-                          key={i}
-                          hover
-                          selected={isSelected}
-                          onClick={() => selectArticulo(item)}
-                          sx={{ cursor: "pointer" }}
-                        >
-                          <TableCell sx={{ fontWeight: 500 }}>{codigo}</TableCell>
-                          <TableCell>
-                            {String(item.DescripcionCompleta ?? item.DESCRIPCION ?? "")}
-                          </TableCell>
-                          <TableCell align="right">
-                            <Chip
-                              label={Number(item.EXISTENCIA ?? item.Stock ?? 0)}
-                              size="small"
-                              color={Number(item.EXISTENCIA ?? item.Stock ?? 0) > 0 ? "success" : "error"}
-                              variant="outlined"
-                            />
-                          </TableCell>
-                          <TableCell align="right">
-                            {formatCurrency(Number(item.PRECIO_VENTA ?? item.SalesPrice ?? 0))}
-                          </TableCell>
-                          <TableCell align="center">
-                            {isSelected && <CheckCircleIcon fontSize="small" color="primary" />}
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            )}
-
-            {!isLoading && !search && rows.length === 0 && (
-              <Typography variant="body2" color="text.secondary" sx={{ py: 3, textAlign: "center" }}>
-                Escriba para buscar artículos...
-              </Typography>
-            )}
-
-            {!isLoading && search && rows.length === 0 && (
-              <Typography variant="body2" color="text.secondary" sx={{ py: 3, textAlign: "center" }}>
-                No se encontraron artículos para &ldquo;{search}&rdquo;
-              </Typography>
-            )}
+            <zentto-grid
+              ref={gridRef}
+              grid-id={GRID_ID}
+              height="420px"
+              default-currency="VES"
+              enable-header-filters
+              enable-quick-search
+              enable-status-bar
+              enable-configurator
+              enable-toolbar
+              enable-header-menu
+              enable-clipboard
+              enable-context-menu
+            />
 
             {errors.articulo && (
               <Alert severity="warning" sx={{ mt: 1 }}>{errors.articulo}</Alert>
@@ -248,7 +233,7 @@ export default function AjusteInventarioForm() {
               </Alert>
             ) : (
               <Alert severity="warning" sx={{ mb: 2 }}>
-                Seleccione un artículo de la lista
+                Seleccione un articulo de la lista
               </Alert>
             )}
 
@@ -281,11 +266,11 @@ export default function AjusteInventarioForm() {
                 <FormControl error={!!errors.motivo}>
                   <InputLabel>Motivo</InputLabel>
                   <Select value={motivo} label="Motivo" onChange={(e) => setMotivo(e.target.value)}>
-                    <MenuItem value="">— Seleccionar —</MenuItem>
+                    <MenuItem value="">-- Seleccionar --</MenuItem>
                     <MenuItem value="Compra">Compra a proveedor</MenuItem>
-                    <MenuItem value="Devolucion">Devolución de cliente</MenuItem>
+                    <MenuItem value="Devolucion">Devolucion de cliente</MenuItem>
                     <MenuItem value="Ajuste">Ajuste de inventario</MenuItem>
-                    <MenuItem value="Perdida">Pérdida / Rotura</MenuItem>
+                    <MenuItem value="Perdida">Perdida / Rotura</MenuItem>
                     <MenuItem value="Venta">Venta a cliente</MenuItem>
                     <MenuItem value="Otro">Otro</MenuItem>
                   </Select>
@@ -327,4 +312,12 @@ export default function AjusteInventarioForm() {
       </Grid>
     </Box>
   );
+}
+
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'zentto-grid': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & Record<string, any>, HTMLElement>;
+    }
+  }
 }

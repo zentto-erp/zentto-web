@@ -1,10 +1,17 @@
 import { callSp } from "../../db/query.js";
 import { hashPassword } from "../../auth/password.js";
+import { validateCompanyLimit } from "../iam/enforcement/company-limit.guard.js";
 import type { TenantProvisionInput, TenantProvisionResult, TenantInfo } from "./tenant.types.js";
 
 export async function provisionTenant(
   input: TenantProvisionInput
 ): Promise<TenantProvisionResult> {
+  // Validate company limit before provisioning
+  const limitCheck = await validateCompanyLimit();
+  if (!limitCheck.allowed) {
+    return { ok: false, mensaje: limitCheck.reason ?? "company_limit_exceeded", companyId: 0, userId: 0 };
+  }
+
   const passwordHash = await hashPassword(input.adminPassword);
 
   const rows = await callSp<{

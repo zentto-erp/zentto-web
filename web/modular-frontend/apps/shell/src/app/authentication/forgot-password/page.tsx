@@ -6,7 +6,6 @@ import {
   Alert,
   Box,
   Button,
-  Card,
   CircularProgress,
   FormControl,
   FormHelperText,
@@ -14,12 +13,12 @@ import {
   Stack,
   Typography,
 } from '@mui/material';
-import Grid from '@mui/material/Grid2';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Logo } from '@zentto/shared-ui';
+import { Logo, ThemeToggle } from '@zentto/shared-ui';
 import { TurnstileCaptcha } from '@zentto/shared-auth';
+import BrandPanel from '../BrandPanel';
 
 const forgotSchema = z.object({
   identifier: z.string().min(1, 'Usuario o correo requerido'),
@@ -87,86 +86,118 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <Box
-      sx={{
-        position: 'relative',
-        width: '100%',
-        height: '100vh',
-        '&:before': {
-          content: '""',
-          background: 'radial-gradient(#d2f1df, #d3d7fa, #bad8f4)',
-          backgroundSize: '400% 400%',
-          animation: 'gradient 15s ease infinite',
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          opacity: 0.3,
-        },
-      }}
-    >
-      <Grid container spacing={0} sx={{ width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center' }}>
-        <Grid size={{ xs: 12, sm: 12, lg: 5, xl: 4 }} sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-          <Card elevation={9} sx={{ p: 4, zIndex: 1, width: '100%', maxWidth: '500px', mx: 2 }}>
-            <Box display="flex" alignItems="center" justifyContent="center" mb={3}>
-              <Logo />
-            </Box>
+    <Box sx={{ display: 'flex', minHeight: '100vh', width: '100%' }}>
+      <BrandPanel
+        title={<>Recupera tu acceso a{' '}<Box component="span" sx={{ color: '#FFB547' }}>Zentto</Box></>}
+        description="Te enviaremos un enlace para restablecer tu contraseña de forma segura."
+      />
 
-            <Typography variant="subtitle1" textAlign="center" color="textSecondary" mb={1}>
-              Ingresa tu usuario o correo para recuperar acceso
-            </Typography>
+      {/* Right panel — forgot password form */}
+      <Box
+        sx={{
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'center',
+          p: { xs: 3, sm: 5 },
+          bgcolor: 'background.default',
+          position: 'relative',
+        }}
+      >
+        <ThemeToggle sx={{ position: 'absolute', top: 16, right: 16 }} />
 
-            {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-            {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
+        <Box sx={{ width: '100%', maxWidth: 400 }}>
+          {/* Logo for mobile */}
+          <Box sx={{ display: { xs: 'flex', md: 'none' }, justifyContent: 'center', mb: 3 }}>
+            <Logo />
+          </Box>
 
-            <form onSubmit={handleSubmit(onSubmit)}>
-              <Stack spacing={2}>
-                <Controller
-                  name="identifier"
-                  control={control}
-                  render={({ field }) => (
-                    <FormControl error={!!errors.identifier} fullWidth>
-                      <Typography variant="body2" fontWeight={600} component="label" sx={{ mb: 1, color: 'text.primary' }}>
-                        Usuario o correo
-                      </Typography>
-                      <OutlinedInput
-                        {...field}
-                        placeholder="Tu usuario o correo electrónico"
-                        disabled={isSubmitting}
-                        sx={{
-                          '& .MuiOutlinedInput-input': { py: 1.75, px: 2 },
-                          '& .MuiOutlinedInput-notchedOutline': { borderRadius: 2 },
-                        }}
-                      />
-                      {errors.identifier && <FormHelperText>{errors.identifier.message}</FormHelperText>}
-                    </FormControl>
-                  )}
-                />
-                <TurnstileCaptcha onTokenChange={setCaptchaToken} />
-                <Button type="submit" variant="contained" disabled={isSubmitting} sx={{ py: 1.5 }}>
-                  {isSubmitting ? <CircularProgress size={22} color="inherit" /> : 'Enviar enlace'}
-                </Button>
-              </Stack>
-            </form>
+          <Typography
+            sx={{
+              fontFamily: "'Inter', system-ui, sans-serif",
+              fontWeight: 700,
+              fontSize: '1.25rem',
+              letterSpacing: '-0.025em',
+              mb: 0.5,
+            }}
+          >
+            Recuperar contraseña
+          </Typography>
+          <Typography
+            sx={{
+              fontFamily: "'Inter', system-ui, sans-serif",
+              color: 'text.secondary',
+              fontSize: '0.875rem',
+              mb: 3,
+            }}
+          >
+            Ingresa tu usuario o correo para recuperar acceso
+          </Typography>
 
-            <Stack direction="row" spacing={1} justifyContent="center" mt={3}>
-              <Typography variant="body2" color="textSecondary" fontWeight="500">
-                ¿Recordaste tu contraseña?
-              </Typography>
-              <Typography
-                component={Link}
-                href="/authentication/login"
-                variant="body2"
-                fontWeight="500"
-                sx={{ textDecoration: 'none', color: 'primary.main', '&:hover': { textDecoration: 'underline' } }}
+          {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+          {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
+
+          <form onSubmit={handleSubmit(onSubmit)}>
+            <Stack spacing={2}>
+              <Controller
+                name="identifier"
+                control={control}
+                render={({ field }) => (
+                  <FormControl error={!!errors.identifier} fullWidth>
+                    <Typography variant="body2" fontWeight={600} component="label" sx={{ mb: 1, color: 'text.primary', fontFamily: "'Inter', system-ui, sans-serif" }}>
+                      Usuario o correo
+                    </Typography>
+                    <OutlinedInput
+                      {...field}
+                      placeholder="Tu usuario o correo electrónico"
+                      disabled={isSubmitting}
+                      sx={{
+                        '& .MuiOutlinedInput-input': { py: 1.75, px: 2 },
+                        '& .MuiOutlinedInput-notchedOutline': { borderRadius: 2 },
+                      }}
+                    />
+                    {errors.identifier && <FormHelperText>{errors.identifier.message}</FormHelperText>}
+                  </FormControl>
+                )}
+              />
+              <TurnstileCaptcha onTokenChange={setCaptchaToken} />
+              <Button
+                type="submit"
+                variant="contained"
+                size="large"
+                disabled={isSubmitting}
+                fullWidth
+                sx={{
+                  py: 1.75,
+                  fontWeight: 600,
+                  textTransform: 'none',
+                  fontSize: '1rem',
+                  borderRadius: 2,
+                  mt: 1,
+                }}
               >
-                Iniciar sesión
-              </Typography>
+                {isSubmitting ? <CircularProgress size={24} color="inherit" /> : 'Enviar enlace'}
+              </Button>
             </Stack>
-          </Card>
-        </Grid>
-      </Grid>
+          </form>
+
+          <Stack direction="row" spacing={1} justifyContent="center" mt={3}>
+            <Typography variant="body2" color="textSecondary" fontWeight="500" sx={{ fontFamily: "'Inter', system-ui, sans-serif" }}>
+              ¿Recordaste tu contraseña?
+            </Typography>
+            <Typography
+              component={Link}
+              href="/authentication/login"
+              variant="body2"
+              fontWeight="500"
+              sx={{ fontFamily: "'Inter', system-ui, sans-serif", textDecoration: 'none', color: 'primary.main', '&:hover': { textDecoration: 'underline' } }}
+            >
+              Iniciar sesión
+            </Typography>
+          </Stack>
+        </Box>
+      </Box>
     </Box>
   );
 }

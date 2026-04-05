@@ -1,5 +1,6 @@
 import { callSp, callSpOut, sql } from "../../db/query.js";
 import { objectToXml, arrayToXml } from "../../utils/xml.js";
+import { getActiveScope } from "../_shared/scope.js";
 
 export type TipoOperacionCompra = "ORDEN" | "COMPRA";
 
@@ -191,9 +192,11 @@ export async function listDocumentosCompra(input: {
   const page = Math.max(Number(input.page || 1), 1);
   const limit = Math.min(Math.max(Number(input.limit || 50), 1), 500);
 
+  const scope = getActiveScope();
   const { rows, output } = await callSpOut<any>(
     "usp_Doc_PurchaseDocument_List",
     {
+      CompanyId: scope?.companyId ?? 1,
       TipoOperacion: input.tipoOperacion,
       Search: input.search || null,
       Codigo: input.proveedor ?? input.codigo ?? null,
@@ -215,9 +218,11 @@ export async function listDocumentosCompra(input: {
 }
 
 export async function getDocumentoCompra(tipoOperacion: TipoOperacionCompra, numFact: string) {
+  const scope = getActiveScope();
   const rows = await callSp<any>(
     "usp_Doc_PurchaseDocument_Get",
     {
+      CompanyId: scope?.companyId ?? 1,
       TipoOperacion: tipoOperacion,
       NumDoc: numFact
     }
@@ -230,9 +235,11 @@ export async function getDocumentoCompra(tipoOperacion: TipoOperacionCompra, num
 }
 
 export async function getDetalleDocumentoCompra(tipoOperacion: TipoOperacionCompra, numFact: string) {
+  const scope = getActiveScope();
   return callSp<any>(
     "usp_Doc_PurchaseDocument_GetDetail",
     {
+      CompanyId: scope?.companyId ?? 1,
       TipoOperacion: tipoOperacion,
       NumDoc: numFact
     }
@@ -240,9 +247,11 @@ export async function getDetalleDocumentoCompra(tipoOperacion: TipoOperacionComp
 }
 
 export async function getIndicadoresDocumentoCompra(tipoOperacion: TipoOperacionCompra, numFact: string) {
+  const scope = getActiveScope();
   const rows = await callSp<any>(
     "usp_Doc_PurchaseDocument_GetIndicadores",
     {
+      CompanyId: scope?.companyId ?? 1,
       TipoOperacion: tipoOperacion,
       NumDoc: numFact
     }
@@ -264,6 +273,7 @@ export async function emitirDocumentoCompraTx(payload: {
   const detalleData = mapDetalle(payload.tipoOperacion, numDoc, payload.detalle);
   const pagosData = mapPagos(payload.tipoOperacion, numDoc, []);
 
+  const scope = getActiveScope();
   const rows = await callSp<{
     ok: boolean;
     numDoc: string;
@@ -274,6 +284,7 @@ export async function emitirDocumentoCompraTx(payload: {
   }>(
     "usp_Doc_PurchaseDocument_Upsert",
     {
+      CompanyId: scope?.companyId ?? 1,
       TipoOperacion: payload.tipoOperacion,
       HeaderXml: objectToXml(headerData),
       DetailXml: arrayToXml(detalleData),
@@ -302,6 +313,7 @@ export async function anularDocumentoCompraTx(payload: {
   codUsuario?: string;
   motivo?: string;
 }) {
+  const scope = getActiveScope();
   const rows = await callSp<{
     ok: boolean;
     numDoc: string;
@@ -310,6 +322,7 @@ export async function anularDocumentoCompraTx(payload: {
   }>(
     "usp_Doc_PurchaseDocument_Void",
     {
+      CompanyId: scope?.companyId ?? 1,
       TipoOperacion: payload.tipoOperacion,
       NumDoc: payload.numFact,
       CodUsuario: payload.codUsuario ?? "API",
@@ -368,6 +381,7 @@ export async function cerrarOrdenConCompraDocumentoTx(payload: {
     detalleXml = arrayToXml(detalleData);
   }
 
+  const scope = getActiveScope();
   const rows = await callSp<{
     ok: boolean;
     orden: string;
@@ -379,6 +393,7 @@ export async function cerrarOrdenConCompraDocumentoTx(payload: {
   }>(
     "usp_Doc_PurchaseDocument_ConvertOrder",
     {
+      CompanyId: scope?.companyId ?? 1,
       NumDocOrden: numFactOrden,
       NumDocCompra: numFactCompra,
       CompraOverrideXml: Object.keys(compraOverride).length > 0 ? objectToXml(compraOverride) : null,

@@ -15,6 +15,7 @@ import Collapse from '@mui/material/Collapse';
 import IconButton from '@mui/material/IconButton';
 import { useRouter, usePathname } from 'next/navigation';
 import { useSession } from 'next-auth/react';
+import { useAuth } from '@zentto/shared-auth';
 import { useTheme } from '@mui/material/styles';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
@@ -180,10 +181,7 @@ export default function OdooLayout({
     const isDrawerExpanded = isSidebarOpen;
     const actualSidebarWidth = hideSidebar ? 0 : (isMobile ? 0 : (isSidebarOpen ? fullSidebarWidth : miniSidebarWidth));
     const drawerPaperWidth = hideSidebar ? 0 : (isMobile ? fullSidebarWidth : (isSidebarOpen ? fullSidebarWidth : miniSidebarWidth));
-    // @ts-ignore extended session fields from NextAuth callbacks in shell auth.ts
-    const activeCompany = session?.company as
-        | { companyCode?: string; companyName?: string; branchCode?: string; branchName?: string }
-        | undefined;
+    const { company: activeCompany, companyAccesses: authCompanyAccesses, setActiveCompany } = useAuth();
     const companyLabel = activeCompany
         ? `${activeCompany.companyCode ?? ''}/${activeCompany.branchCode ?? ''} - ${activeCompany.companyName ?? ''}`
         : 'Sin empresa activa';
@@ -272,14 +270,13 @@ export default function OdooLayout({
                                     size="small"
                                     label={`Empresa: ${companyLabel}`}
                                     onClick={(e) => {
-                                        const accesses = (session as any)?.companyAccesses as any[] ?? [];
-                                        if (accesses.length > 1) {
+                                        if (authCompanyAccesses.length > 1) {
                                             setCompanyMenuAnchor(e.currentTarget);
                                         }
                                     }}
                                     sx={{
                                         bgcolor: bc.accent, color: bc.dark, fontWeight: 600, fontSize: '0.75rem',
-                                        cursor: ((session as any)?.companyAccesses?.length ?? 0) > 1 ? 'pointer' : 'default',
+                                        cursor: authCompanyAccesses.length > 1 ? 'pointer' : 'default',
                                     }}
                                 />
                                 <Chip size="small" label={`BD: ${dbName}`} sx={{ bgcolor: 'rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.85)', fontWeight: 500, fontSize: '0.75rem' }} />
@@ -292,15 +289,13 @@ export default function OdooLayout({
                                 onClose={() => setCompanyMenuAnchor(null)}
                                 slotProps={{ paper: { sx: { minWidth: 280 } } }}
                             >
-                                {((session as any)?.companyAccesses as any[] ?? []).map((access: any, idx: number) => (
+                                {authCompanyAccesses.map((access, idx) => (
                                     <MenuItem
                                         key={idx}
-                                        selected={access.companyId === activeCompany?.companyCode && access.branchCode === activeCompany?.branchCode}
+                                        selected={access.companyId === activeCompany?.companyId && access.branchId === activeCompany?.branchId}
                                         onClick={() => {
                                             setCompanyMenuAnchor(null);
-                                            // Recargar con nueva empresa activa
-                                            const params = new URLSearchParams({ companyId: String(access.companyId), branchId: String(access.branchId) });
-                                            window.location.href = `/api/auth/switch-company?${params.toString()}`;
+                                            setActiveCompany(access.companyId, access.branchId);
                                         }}
                                     >
                                         <Box>

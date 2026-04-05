@@ -7,7 +7,7 @@ import {
 } from "@mui/material";
 import type { ColumnDef } from "@zentto/datagrid-core";
 import { useGridLayoutSync, formatCurrency } from "@zentto/shared-api";
-import { ContextActionHeader, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
+import { ContextActionHeader } from "@zentto/shared-ui";
 import {
   useInflationIndices, useUpsertInflationIndex, useMonetaryClassifications, useUpsertMonetaryClass,
   useAutoClassifyAccounts, useCalculateInflation, usePostInflation, useVoidInflation,
@@ -94,10 +94,9 @@ export default function InflacionAjustePage() {
   const indicesRows: InflationIndex[] = indicesQuery.data?.data ?? indicesQuery.data?.rows ?? [];
 
   // Tab 1: Clasificacion Monetaria
-  const [clasSearch, setClasSearch] = useState("");
   const [clasDialogRow, setClasDialogRow] = useState<MonetaryClassification | null>(null);
   const [clasNewValue, setClasNewValue] = useState<"MONETARY" | "NON_MONETARY">("MONETARY");
-  const clasificacionQuery = useMonetaryClassifications(undefined, clasSearch || undefined);
+  const clasificacionQuery = useMonetaryClassifications(undefined, undefined);
   const upsertClasMutation = useUpsertMonetaryClass();
   const autoClassifyMutation = useAutoClassifyAccounts();
   const clasificacionRows: MonetaryClassification[] = clasificacionQuery.data?.data ?? clasificacionQuery.data?.rows ?? [];
@@ -210,10 +209,7 @@ export default function InflacionAjustePage() {
 
           {/* Tab 1: Clasificacion Monetaria */}
           <TabPanel value={tab} index={1}>
-            <Box sx={{ px: 2, pt: 2 }}>
-              <ZenttoFilterPanel filters={[] as FilterFieldDef[]} values={{}} onChange={() => {}} searchPlaceholder="Buscar cuenta..." searchValue={clasSearch} onSearchChange={setClasSearch} />
-            </Box>
-            <Stack direction="row" spacing={2} alignItems="center" sx={{ px: 2, pb: 1 }}>
+            <Stack direction="row" spacing={2} alignItems="center" sx={{ px: 2, pt: 2, pb: 1 }}>
               <Button variant="outlined" size="small" onClick={() => autoClassifyMutation.mutate()} disabled={autoClassifyMutation.isPending}>
                 {autoClassifyMutation.isPending ? <CircularProgress size={18} sx={{ mr: 1 }} /> : null}Auto-clasificar
               </Button>

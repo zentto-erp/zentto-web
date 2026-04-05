@@ -186,7 +186,8 @@ async function getOpenOrderByTable(scope: DefaultScope, tableNumber: string) {
 }
 
 async function recalcOrderTotals(orderId: number) {
-  await callSp("usp_Rest_OrderTicket_RecalcTotals", { OrderId: orderId });
+  const scope = await getDefaultScope();
+  await callSp("usp_Rest_OrderTicket_RecalcTotals", { CompanyId: scope.companyId, OrderId: orderId });
 }
 
 // Mesas
@@ -258,9 +259,10 @@ export async function agregarItemPedido(params: {
   componentes?: string;
   comentarios?: string;
 }) {
+  const scope = await getDefaultScope();
   const orderRows = await callSp<any>(
     "usp_Rest_OrderTicket_GetById",
-    { PedidoId: params.pedidoId }
+    { CompanyId: scope.companyId, PedidoId: params.pedidoId }
   );
 
   const order = orderRows[0];
@@ -299,6 +301,7 @@ export async function agregarItemPedido(params: {
   const { output } = await callSpOut(
     "usp_Rest_OrderTicketLine_Insert",
     {
+      CompanyId: scope.companyId,
       OrderId: Number(order.orderId),
       LineNumber: lineNumber,
       CountryCode: countryCode,
@@ -336,9 +339,10 @@ export async function cancelarItemPedido(params: {
   biometricBypass?: boolean;
   biometricCredentialId?: string | null;
 }) {
+  const scope = await getDefaultScope();
   const orderRows = await callSp<any>(
     "usp_Rest_OrderTicket_GetById",
-    { PedidoId: params.pedidoId }
+    { CompanyId: scope.companyId, PedidoId: params.pedidoId }
   );
 
   const order = orderRows[0];
@@ -424,6 +428,7 @@ export async function cancelarItemPedido(params: {
   const { output: reversalOut } = await callSpOut(
     "usp_Rest_OrderTicketLine_Insert",
     {
+      CompanyId: scope.companyId,
       OrderId: params.pedidoId,
       LineNumber: nextLine,
       CountryCode: String(item.countryCode ?? "VE"),
@@ -450,7 +455,7 @@ export async function cancelarItemPedido(params: {
 
   await recalcOrderTotals(params.pedidoId);
 
-  await callSp("usp_Rest_OrderTicket_UpdateTimestamp", { PedidoId: params.pedidoId });
+  await callSp("usp_Rest_OrderTicket_UpdateTimestamp", { CompanyId: scope.companyId, PedidoId: params.pedidoId });
 
   const consumed = await consumeSupervisorOverride({
     overrideId: override.overrideId,
@@ -482,9 +487,10 @@ export async function cancelarItemPedido(params: {
 }
 
 export async function enviarComanda(pedidoId: number) {
+  const scope = await getDefaultScope();
   await callSpOut(
     "usp_Rest_OrderTicket_SendToKitchen",
-    { PedidoId: pedidoId },
+    { CompanyId: scope.companyId, PedidoId: pedidoId },
     { Resultado: sql.Int, Mensaje: sql.NVarChar(500) }
   );
 
@@ -606,11 +612,14 @@ export async function cerrarPedido(params: {
 
     const alreadyClosed = String(pedidoActual.estado ?? "").toUpperCase() === "CLOSED";
 
+    const scope = await getDefaultScope();
+
     if (!alreadyClosed) {
       const closedByUserId = await resolveUserId(params.codUsuario ?? pedidoActual.codUsuario ?? null);
       await callSpOut(
         "usp_Rest_OrderTicket_Close",
         {
+          CompanyId: scope.companyId,
           PedidoId: params.pedidoId,
           ClosedByUserId: closedByUserId,
         },
@@ -624,12 +633,14 @@ export async function cerrarPedido(params: {
       if (warehouseId && !alreadyClosed) {
         // Get order lines to know what was sold
         const orderLines = await callSp("usp_Rest_OrderTicketLine_GetByPedido", {
+          CompanyId: scope.companyId,
           PedidoId: params.pedidoId,
         });
 
         for (const line of (orderLines ?? []) as Record<string, unknown>[]) {
           // For each menu item, consume its recipe ingredients
           const recipes = await callSp("usp_Rest_Recipe_GetIngredients", {
+            CompanyId: scope.companyId,
             ProductCode: line.productoId ?? line.ProductCode ?? line.productCode,
           });
 
@@ -788,7 +799,7 @@ export async function getPedidoByMesa(mesaId: number) {
 
   const itemsRows = await callSp<any>(
     "usp_Rest_OrderTicketLine_GetByPedido",
-    { PedidoId: Number(pedido.id) }
+    { CompanyId: scope.companyId, PedidoId: Number(pedido.id) }
   );
 
   const legacyEstado = mapOrderStatusToLegacy(String(pedido.estado ?? ""));

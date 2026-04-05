@@ -283,6 +283,14 @@ export default function AsientosRecurrentesPage() {
     return () => el.removeEventListener('action-click', handler);
   }, [registered, templates]);
 
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+    const handler = () => { setEditItem(null); setDialogOpen(true); };
+    el.addEventListener('create-click', handler);
+    return () => el.removeEventListener('create-click', handler);
+  }, [registered]);
+
   const handleExecute = async (id: number) => {
     setError(null); setSuccessMsg(null);
     try {
@@ -326,9 +334,6 @@ export default function AsientosRecurrentesPage() {
               Ejecutar Todos Vencidos ({dueCount})
             </Button>
           )}
-          <Button variant="contained" startIcon={<AddIcon />} onClick={() => { setEditItem(null); setDialogOpen(true); }}>
-            Crear Plantilla
-          </Button>
         </Stack>
       </Stack>
 
@@ -349,6 +354,8 @@ export default function AsientosRecurrentesPage() {
           enable-context-menu
           enable-status-bar
           enable-configurator
+          enable-create
+          create-label="Nuevo Asiento Recurrente"
         ></zentto-grid>
       </Paper>
 

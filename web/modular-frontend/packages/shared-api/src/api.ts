@@ -6,6 +6,23 @@ import { signOut } from 'next-auth/react';
 const RAW_API_BASE = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE || "http://localhost:4000";
 export const API_BASE = RAW_API_BASE.replace(/\/+$/, '');
 
+// Active company override — set by AuthContext, used by authHeader()
+let _activeCompanyOverride: {
+  companyId?: number;
+  branchId?: number;
+  timeZone?: string;
+  countryCode?: string;
+} | null = null;
+
+export function setActiveCompanyForApi(company: {
+  companyId?: number;
+  branchId?: number;
+  timeZone?: string;
+  countryCode?: string;
+} | null) {
+  _activeCompanyOverride = company;
+}
+
 // La auth siempre la gestiona el shell en /api/auth.
 // No usar prefijo de app: compras/bancos van al shell (puerto 3000) vía nginx,
 // el shell no tiene /compras/api/auth. Sub-apps con nginx propio proxean al shell.
@@ -52,10 +69,25 @@ async function authHeader(): Promise<Record<string, string>> {
       headers.Authorization = `Bearer ${token}`;
     }
 
+    // Prioridad: override de AuthContext > localStorage > session.company > primer acceso
     // @ts-ignore
-    const activeCompany = session?.company as { companyId?: number; branchId?: number } | undefined;
+    const sessionCompany = session?.company as { companyId?: number; branchId?: number; timeZone?: string; countryCode?: string } | undefined;
     // @ts-ignore
-    const accesses = (session?.companyAccesses as Array<{ companyId?: number; branchId?: number }> | undefined) ?? [];
+    const accesses = (session?.companyAccesses as Array<{ companyId?: number; branchId?: number; timeZone?: string; countryCode?: string }> | undefined) ?? [];
+
+    let activeCompany = _activeCompanyOverride ?? null;
+    if (!activeCompany && typeof window !== 'undefined') {
+      try {
+        const userId = session?.user?.id ?? (session as any)?.userId;
+        const stored = localStorage.getItem(`zentto-active-company:${userId ?? 'anon'}`);
+        if (stored) {
+          const { companyId: storedCid, branchId: storedBid } = JSON.parse(stored);
+          const match = accesses.find((a) => a.companyId === storedCid && a.branchId === storedBid);
+          if (match) activeCompany = match;
+        }
+      } catch { /* ignore */ }
+    }
+    if (!activeCompany) activeCompany = sessionCompany ?? null;
 
     const companyId = Number(activeCompany?.companyId ?? accesses[0]?.companyId);
     const branchId = Number(activeCompany?.branchId ?? accesses[0]?.branchId);
@@ -67,9 +99,7 @@ async function authHeader(): Promise<Record<string, string>> {
       headers['x-branch-id'] = String(branchId);
     }
 
-    // @ts-ignore
     const timezone = activeCompany?.timeZone as string | undefined;
-    // @ts-ignore
     const countryCode = activeCompany?.countryCode as string | undefined;
     if (timezone) {
       headers['x-timezone'] = timezone;

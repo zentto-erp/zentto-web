@@ -32,6 +32,7 @@ import AccountTreeIcon from '@mui/icons-material/AccountTree';
 import HubIcon from '@mui/icons-material/Hub';
 import CalculateIcon from '@mui/icons-material/Calculate';
 import LockIcon from '@mui/icons-material/Lock';
+import SecurityIcon from '@mui/icons-material/Security';
 import AssessmentIcon from '@mui/icons-material/Assessment';
 import SavingsIcon from '@mui/icons-material/Savings';
 import HealthAndSafetyIcon from '@mui/icons-material/HealthAndSafety';
@@ -565,6 +566,9 @@ export function buildNavigation(isAdmin: boolean, modulos: string[], pathname: s
         nav.push({ kind: 'page', segment: 'configuracion/formas-pago', title: 'Formas de Pago', icon: <PaymentsIcon /> });
         if (has(modulos, 'usuarios')) {
             nav.push({ kind: 'page', segment: 'configuracion/usuarios', title: 'Usuarios', icon: <ManageAccountsIcon /> });
+        }
+        if (isAdmin) {
+            nav.push({ kind: 'page', segment: 'configuracion/roles', title: 'Roles y Permisos', icon: <SecurityIcon /> });
         }
         nav.push({ kind: 'header', title: 'Maestros' });
         nav.push({ kind: 'page', segment: 'maestros/empresa', title: 'Empresa', icon: <SettingsIcon /> });

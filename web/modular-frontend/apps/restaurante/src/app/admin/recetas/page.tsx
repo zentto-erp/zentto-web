@@ -113,6 +113,24 @@ export default function AdminRecetasPage() {
         return () => el.removeEventListener("action-click", handler);
     }, [registered, productos]);
 
+    useEffect(() => {
+        const el = gridRef.current;
+        if (!el || !registered) return;
+        const handler = () => {
+            // Open recipe dialog for a new product selection
+            setProductoSeleccionado(null);
+            setInventarioId('');
+            setInsumoSeleccionado(null);
+            setInventarioSearchText('');
+            setCantidad(1);
+            setUnidad('UND');
+            setComentario('');
+            setErrorMsg(null);
+        };
+        el.addEventListener("create-click", handler);
+        return () => el.removeEventListener("create-click", handler);
+    }, [registered]);
+
     // Handle row click to open receta dialog
     useEffect(() => {
         const el = gridRef.current;
@@ -210,6 +228,8 @@ export default function AdminRecetasPage() {
                     enable-context-menu
                     enable-status-bar
                     enable-configurator
+                    enable-create
+                    create-label="Nueva Receta"
                 />
             )}
 

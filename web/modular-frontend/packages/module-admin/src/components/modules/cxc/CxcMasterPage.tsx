@@ -27,7 +27,6 @@ import {
 import {
   Add,
   Delete,
-  Search as SearchIcon,
   Refresh as RefreshIcon,
   AccountBalance as AccountBalanceIcon,
   Payment as PaymentIcon,
@@ -89,7 +88,6 @@ const CLIENTE_COLUMNS: ColumnDef[] = [
 
 export default function CxcMasterPage() {
   const { timeZone } = useTimezone();
-  const [search, setSearch] = useState("");
   const [selectedCod, setSelectedCod] = useState("");
   const [selectedNombre, setSelectedNombre] = useState("");
   const [tabValue, setTabValue] = useState(0);
@@ -99,7 +97,7 @@ export default function CxcMasterPage() {
   const { registered } = useAdminGridRegistration(clientesLayoutReady);
 
   // ─── Datos de clientes ────────────────────────────────────
-  const clientesQuery = useClientesList({ search, limit: 50 });
+  const clientesQuery = useClientesList({ limit: 200 });
   const clientes = (clientesQuery.data?.items || clientesQuery.data?.data || []) as unknown as ClienteRow[];
 
   // ─── Datos CxC del cliente seleccionado ───────────────────
@@ -179,13 +177,6 @@ export default function CxcMasterPage() {
           <Typography variant="h6" fontWeight={700} sx={{ flex: 1 }}>
             Cuentas por Cobrar
           </Typography>
-          <TextField
-            placeholder="Buscar cliente..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            InputProps={{ startAdornment: <SearchIcon fontSize="small" sx={{ mr: 1, color: "text.secondary" }} /> }}
-            sx={{ width: 300 }}
-          />
           <Tooltip title="Recargar">
             <IconButton onClick={() => clientesQuery.refetch()} size="small">
               <RefreshIcon />

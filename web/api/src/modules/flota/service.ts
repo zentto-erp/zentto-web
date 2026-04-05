@@ -52,7 +52,8 @@ export async function listVehicles(params: {
 }
 
 export async function getVehicle(vehicleId: number) {
-  const rows = await callSp<any>("usp_Fleet_Vehicle_Get", { VehicleId: vehicleId });
+  const { companyId } = scope();
+  const rows = await callSp<any>("usp_Fleet_Vehicle_Get", { CompanyId: companyId, VehicleId: vehicleId });
   return rows[0] ?? null;
 }
 
@@ -258,7 +259,8 @@ export async function listMaintenanceOrders(params: {
 }
 
 export async function getMaintenanceOrder(id: number) {
-  const rows = await callSp<any>("usp_Fleet_MaintenanceOrder_Get", { MaintenanceOrderId: id });
+  const { companyId } = scope();
+  const rows = await callSp<any>("usp_Fleet_MaintenanceOrder_Get", { CompanyId: companyId, MaintenanceOrderId: id });
   return rows[0] ?? null;
 }
 
@@ -315,6 +317,7 @@ export async function completeMaintenanceOrder(params: {
   const { output } = await callSpOut(
     "usp_Fleet_MaintenanceOrder_Complete",
     {
+      CompanyId: scope().companyId,
       MaintenanceOrderId: params.maintenanceOrderId,
       ActualCost: params.actualCost,
       CompletedDate: params.completedDate,
@@ -336,6 +339,7 @@ export async function cancelMaintenanceOrder(params: {
   const { output } = await callSpOut(
     "usp_Fleet_MaintenanceOrder_Cancel",
     {
+      CompanyId: scope().companyId,
       MaintenanceOrderId: params.maintenanceOrderId,
       UserId: params.userId,
     },
@@ -427,6 +431,7 @@ export async function completeTrip(params: {
   const { output } = await callSpOut(
     "usp_Fleet_Trip_Complete",
     {
+      CompanyId: scope().companyId,
       TripId: params.tripId,
       EndMileage: params.endMileage,
       ArrivalDate: params.arrivalDate,
@@ -447,7 +452,8 @@ export async function completeTrip(params: {
 // ═══════════════════════════════════════════════════════════════
 
 export async function listVehicleDocuments(vehicleId: number) {
-  return callSp<any>("usp_Fleet_VehicleDocument_List", { VehicleId: vehicleId });
+  const { companyId } = scope();
+  return callSp<any>("usp_Fleet_VehicleDocument_List", { CompanyId: companyId, VehicleId: vehicleId });
 }
 
 export async function upsertVehicleDocument(params: {

@@ -1,26 +1,14 @@
 // components/LotesPage.tsx
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import {
   Box,
   Button,
   TextField,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TablePagination,
   Paper,
   CircularProgress,
-  Chip,
   Typography,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -32,16 +20,28 @@ import AddIcon from "@mui/icons-material/Add";
 import { useLotesList, useCreateLote } from "../hooks/useInventarioAvanzado";
 import { DatePicker } from "@zentto/shared-ui";
 import dayjs from "dayjs";
-import { formatCurrency } from "@zentto/shared-api";
+import type { ColumnDef } from "@zentto/datagrid-core";
+import { useGridLayoutSync } from "@zentto/shared-api";
+import { useInventarioGridRegistration } from "./zenttoGridPersistence";
 
-const LOT_STATUS_CONFIG: Record<string, { label: string; color: "success" | "error" | "warning" | "default" }> = {
-  ACTIVE: { label: "Activo", color: "success" },
-  EXPIRED: { label: "Expirado", color: "error" },
-  QUARANTINE: { label: "Cuarentena", color: "warning" },
-  DEPLETED: { label: "Agotado", color: "default" },
-};
+const GRID_ID = "module-inventario:lotes:list";
+
+const COLUMNS: ColumnDef[] = [
+  { field: "lotNumber", header: "Nro. Lote", width: 140, sortable: true },
+  { field: "productId", header: "Producto ID", width: 110, sortable: true },
+  { field: "manufactureDate", header: "Fecha Fabricacion", width: 130, type: "date" },
+  { field: "expiryDate", header: "Fecha Expiracion", width: 130, type: "date" },
+  { field: "currentQuantity", header: "Cantidad Actual", width: 120, type: "number", aggregation: "sum" },
+  { field: "unitCost", header: "Costo Unit.", width: 120, type: "number", currency: "VES", aggregation: "avg" },
+  {
+    field: "status", header: "Estado", width: 110,
+    statusColors: { ACTIVE: "success", EXPIRED: "error", QUARANTINE: "warning", DEPLETED: "default" },
+    statusVariant: "outlined",
+  },
+];
 
 export default function LotesPage() {
+  const gridRef = useRef<any>(null);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(25);
   const [filterProductId, setFilterProductId] = useState<string>("");
@@ -60,6 +60,9 @@ export default function LotesPage() {
     notes: "",
   });
 
+  const { ready } = useGridLayoutSync(GRID_ID);
+  const { registered } = useInventarioGridRegistration(ready);
+
   const { data, isLoading } = useLotesList({
     productId: filterProductId ? Number(filterProductId) : undefined,
     status: filterStatus || undefined,
@@ -72,10 +75,25 @@ export default function LotesPage() {
   const rows = (data as any)?.rows ?? [];
   const total = (data as any)?.total ?? 0;
 
-  const getStatusChip = (status: string) => {
-    const cfg = LOT_STATUS_CONFIG[status] ?? { label: status, color: "default" as const };
-    return <Chip label={cfg.label} size="small" color={cfg.color} variant="outlined" />;
-  };
+  const gridRows = useMemo(() => rows.map((row: any, i: number) => ({
+    id: row.LotId ?? i,
+    lotNumber: String(row.LotNumber ?? ""),
+    productId: row.ProductId ?? "",
+    manufactureDate: String(row.ManufactureDate ?? "").slice(0, 10),
+    expiryDate: String(row.ExpiryDate ?? "").slice(0, 10),
+    currentQuantity: Number(row.CurrentQuantity ?? 0),
+    unitCost: Number(row.UnitCost ?? 0),
+    status: String(row.Status ?? ""),
+  })), [rows]);
+
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+    el.columns = COLUMNS;
+    el.rows = gridRows;
+    el.loading = isLoading;
+    el.getRowId = (r: any) => r.id;
+  }, [gridRows, isLoading, registered]);
 
   const handleCreate = () => {
     setSubmitError(null);
@@ -115,90 +133,22 @@ export default function LotesPage() {
         </Button>
       </Box>
 
-      {/* Filtros */}
-      <Paper sx={{ p: 2, mb: 2 }}>
-        <Grid container spacing={2} alignItems="center">
-          <Grid size={{ xs: 12, sm: 4 }}>
-            <TextField
-              label="ID Producto"
-              type="number"
-              value={filterProductId}
-              onChange={(e) => { setFilterProductId(e.target.value); setPage(0); }}
-              fullWidth
-            />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 4 }}>
-            <FormControl fullWidth>
-              <InputLabel>Estado</InputLabel>
-              <Select value={filterStatus} label="Estado" onChange={(e) => { setFilterStatus(e.target.value); setPage(0); }}>
-                <MenuItem value="">Todos</MenuItem>
-                <MenuItem value="ACTIVE">Activo</MenuItem>
-                <MenuItem value="EXPIRED">Expirado</MenuItem>
-                <MenuItem value="QUARANTINE">Cuarentena</MenuItem>
-                <MenuItem value="DEPLETED">Agotado</MenuItem>
-              </Select>
-            </FormControl>
-          </Grid>
-        </Grid>
-      </Paper>
-
-      {/* Tabla */}
-      <TableContainer component={Paper}>
-        <Table size="small">
-          <TableHead>
-            <TableRow sx={{ backgroundColor: "#f5f5f5" }}>
-              <TableCell sx={{ fontWeight: 600 }}>Nro. Lote</TableCell>
-              <TableCell sx={{ fontWeight: 600 }}>Producto ID</TableCell>
-              <TableCell sx={{ fontWeight: 600 }}>Fecha Fabricación</TableCell>
-              <TableCell sx={{ fontWeight: 600 }}>Fecha Expiración</TableCell>
-              <TableCell align="right" sx={{ fontWeight: 600 }}>Cantidad Actual</TableCell>
-              <TableCell align="right" sx={{ fontWeight: 600 }}>Costo Unit.</TableCell>
-              <TableCell sx={{ fontWeight: 600 }}>Estado</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
-                  <CircularProgress size={40} />
-                </TableCell>
-              </TableRow>
-            ) : rows.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={7} align="center" sx={{ py: 4, color: "text.secondary" }}>
-                  No hay lotes registrados
-                </TableCell>
-              </TableRow>
-            ) : (
-              rows.map((row: any, i: number) => (
-                <TableRow key={row.LotId ?? i} hover>
-                  <TableCell sx={{ fontWeight: 500 }}>{String(row.LotNumber ?? "")}</TableCell>
-                  <TableCell>{row.ProductId ?? ""}</TableCell>
-                  <TableCell>{String(row.ManufactureDate ?? "").slice(0, 10)}</TableCell>
-                  <TableCell>{String(row.ExpiryDate ?? "").slice(0, 10)}</TableCell>
-                  <TableCell align="right" sx={{ fontWeight: 500 }}>{Number(row.CurrentQuantity ?? 0)}</TableCell>
-                  <TableCell align="right">{formatCurrency(Number(row.UnitCost ?? 0))}</TableCell>
-                  <TableCell>{getStatusChip(String(row.Status ?? ""))}</TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
-
-      {total > 0 && (
-        <TablePagination
-          rowsPerPageOptions={[10, 25, 50, 100]}
-          component="div"
-          count={total}
-          rowsPerPage={rowsPerPage}
-          page={page}
-          onPageChange={(_, p) => setPage(p)}
-          onRowsPerPageChange={(e) => { setRowsPerPage(parseInt(e.target.value, 10)); setPage(0); }}
-          labelRowsPerPage="Filas por página:"
-          labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count}`}
-        />
-      )}
+      {/* Grid */}
+      <zentto-grid
+        ref={gridRef}
+        grid-id={GRID_ID}
+        height="calc(100vh - 200px)"
+        default-currency="VES"
+        export-filename="lotes"
+        enable-toolbar
+        enable-header-menu
+        enable-header-filters
+        enable-clipboard
+        enable-quick-search
+        enable-context-menu
+        enable-status-bar
+        enable-configurator
+      />
 
       {/* Dialog Crear Lote */}
       <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="sm" fullWidth>
@@ -212,7 +162,7 @@ export default function LotesPage() {
           <Grid container spacing={2} sx={{ mt: 1 }}>
             <Grid size={6}>
               <TextField
-                label="Número de Lote"
+                label="Numero de Lote"
                 value={formData.lotNumber}
                 onChange={(e) => setFormData({ ...formData, lotNumber: e.target.value })}
                 fullWidth
@@ -231,7 +181,7 @@ export default function LotesPage() {
             </Grid>
             <Grid size={6}>
               <DatePicker
-                label="Fecha Fabricación"
+                label="Fecha Fabricacion"
                 value={formData.manufactureDate ? dayjs(formData.manufactureDate) : null}
                 onChange={(v) => setFormData({ ...formData, manufactureDate: v ? v.format('YYYY-MM-DD') : '' })}
                 slotProps={{ textField: { size: 'small', fullWidth: true } }}
@@ -239,7 +189,7 @@ export default function LotesPage() {
             </Grid>
             <Grid size={6}>
               <DatePicker
-                label="Fecha Expiración"
+                label="Fecha Expiracion"
                 value={formData.expiryDate ? dayjs(formData.expiryDate) : null}
                 onChange={(v) => setFormData({ ...formData, expiryDate: v ? v.format('YYYY-MM-DD') : '' })}
                 slotProps={{ textField: { size: 'small', fullWidth: true } }}
@@ -291,4 +241,12 @@ export default function LotesPage() {
       </Dialog>
     </Box>
   );
+}
+
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'zentto-grid': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & Record<string, any>, HTMLElement>;
+    }
+  }
 }

@@ -8,7 +8,7 @@ import {
 } from "@mui/material";
 import Grid from "@mui/material/Grid2";
 import type { ColumnDef } from "@zentto/datagrid-core";
-import { DatePicker, FormGrid, FormField, ZenttoFilterPanel, type FilterFieldDef } from "@zentto/shared-ui";
+import { DatePicker, FormGrid, FormField } from "@zentto/shared-ui";
 import dayjs from "dayjs";
 import PrintIcon from "@mui/icons-material/Print";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
@@ -163,7 +163,6 @@ export default function ReportesAvanzadosPage() {
   const firstDay = toDateOnly(new Date(new Date().getFullYear(), 0, 1), timeZone);
 
   const [tab, setTab] = useState(0);
-  const [reportSearch, setReportSearch] = useState("");
   const [fechaDesde, setFechaDesde] = useState(firstDay);
   const [fechaHasta, setFechaHasta] = useState(today);
   const [fechaCorte, setFechaCorte] = useState(today);
@@ -212,7 +211,6 @@ export default function ReportesAvanzadosPage() {
 
   return (
     <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-      <ZenttoFilterPanel filters={[] as FilterFieldDef[]} values={{}} onChange={() => {}} searchPlaceholder="Buscar en reportes avanzados..." searchValue={reportSearch} onSearchChange={setReportSearch} />
       <Stack direction="row" alignItems="center" justifyContent="space-between" mb={1}>
         <Tabs value={tab} onChange={(_, v) => { setTab(v); setRun(false); }} variant="scrollable" scrollButtons="auto" sx={{ "& .MuiTab-root": { minWidth: "auto", px: 1.5 } }}>
           <Tab label="Libro diario" /><Tab label="Libro mayor" /><Tab label="Balance comp." /><Tab label="Estado result." /><Tab label="Balance general" /><Tab label="Flujo efectivo" /><Tab label="Aging CxC/CxP" /><Tab label="Ratios" /><Tab label="Fiscal" />

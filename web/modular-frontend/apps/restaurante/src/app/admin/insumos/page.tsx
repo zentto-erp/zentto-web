@@ -116,6 +116,14 @@ export default function AdminInsumosPage() {
         return () => el.removeEventListener("action-click", handler);
     }, [registered]);
 
+    useEffect(() => {
+        const el = gridRef.current;
+        if (!el || !registered) return;
+        const handler = () => handleOpenModal();
+        el.addEventListener("create-click", handler);
+        return () => el.removeEventListener("create-click", handler);
+    }, [registered]);
+
     const handleOpenModal = () => {
         setForm({ codigo: '', nombre: '', unidad: '', descripcion: '' });
         setErrorMsg(null);
@@ -162,9 +170,6 @@ export default function AdminInsumosPage() {
                 <Typography variant="h4" fontWeight="bold">
                     Insumos Restaurante
                 </Typography>
-                <Button variant="contained" color="primary" sx={{ fontWeight: 700 }} onClick={handleOpenModal}>
-                    Nuevo Insumo
-                </Button>
             </Box>
 
             <Paper sx={{ p: 2, mb: 2 }}>
@@ -192,6 +197,8 @@ export default function AdminInsumosPage() {
                 enable-context-menu
                 enable-status-bar
                 enable-configurator
+                enable-create
+                create-label="Nuevo Insumo"
             />
 
             <Dialog open={modalOpen} onClose={handleCloseModal} maxWidth="xs" fullWidth>

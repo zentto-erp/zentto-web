@@ -1,5 +1,6 @@
 import { callSp, callSpOut, sql } from "../../db/query.js";
 import { objectToXml } from "../../utils/xml.js";
+import { getActiveScope } from "../_shared/scope.js";
 
 export interface EmpleadoRow {
   CEDULA?: string;
@@ -116,7 +117,7 @@ export async function insertEmpleadoSP(row: EmpleadoRow): Promise<SpResult> {
 
   const { output } = await callSpOut(
     "usp_Empleados_Insert",
-    { RowXml: objectToXml(xmlData) },
+    { CompanyId: getActiveScope()?.companyId ?? 1, RowXml: objectToXml(xmlData) },
     { Resultado: sql.Int, Mensaje: sql.NVarChar(500) }
   );
 
@@ -149,6 +150,7 @@ export async function updateEmpleadoSP(cedula: string, row: Partial<EmpleadoRow>
   const { output } = await callSpOut(
     "usp_Empleados_Update",
     {
+      CompanyId: getActiveScope()?.companyId ?? 1,
       Cedula: cedula.trim(),
       RowXml: objectToXml(xmlData),
     },
@@ -168,7 +170,7 @@ export async function updateEmpleadoSP(cedula: string, row: Partial<EmpleadoRow>
 export async function deleteEmpleadoSP(cedula: string): Promise<SpResult> {
   const { output } = await callSpOut(
     "usp_Empleados_Delete",
-    { Cedula: cedula.trim() },
+    { CompanyId: getActiveScope()?.companyId ?? 1, Cedula: cedula.trim() },
     { Resultado: sql.Int, Mensaje: sql.NVarChar(500) }
   );
 

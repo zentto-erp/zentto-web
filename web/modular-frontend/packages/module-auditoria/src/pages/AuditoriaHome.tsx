@@ -184,6 +184,8 @@ export default function AuditoriaHome() {
         enable-context-menu
         enable-status-bar
         enable-configurator
+        enable-header-filters
+        enable-toolbar
       ></zentto-grid>
               )}
             </Paper>

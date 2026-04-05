@@ -65,7 +65,8 @@ export async function upsertPipeline(data: {
 }
 
 export async function getStages(pipelineId: number) {
-  return callSp("usp_CRM_Pipeline_GetStages", { PipelineId: pipelineId });
+  const s = scope();
+  return callSp("usp_CRM_Pipeline_GetStages", { CompanyId: s.companyId, PipelineId: pipelineId });
 }
 
 // ── Stages ───────────────────────────────────────────────────────────────────
@@ -86,9 +87,11 @@ export async function upsertStage(
     userId: number;
   },
 ): Promise<SpResult> {
+  const s = scope();
   const { output } = await callSpOut(
     "usp_CRM_Stage_Upsert",
     {
+      CompanyId: s.companyId,
       PipelineId: pipelineId,
       StageId: data.stageId ?? null,
       StageCode: data.stageCode,
@@ -152,7 +155,8 @@ export async function listLeads(params: ListLeadsParams = {}) {
 }
 
 export async function getLead(leadId: number) {
-  const rows = await callSp("usp_CRM_Lead_Get", { LeadId: leadId });
+  const s = scope();
+  const rows = await callSp("usp_CRM_Lead_Get", { CompanyId: s.companyId, LeadId: leadId });
   return rows[0] || null;
 }
 
@@ -226,9 +230,11 @@ export async function updateLead(
     userId: number;
   },
 ): Promise<SpResult> {
+  const s = scope();
   const { output } = await callSpOut(
     "usp_CRM_Lead_Update",
     {
+      CompanyId: s.companyId,
       LeadId: leadId,
       StageId: data.stageId,
       ContactName: data.contactName,
@@ -252,9 +258,11 @@ export async function changeLeadStage(
   leadId: number,
   data: { newStageId: number; notes?: string | null; userId: number },
 ): Promise<SpResult> {
+  const s = scope();
   const { output } = await callSpOut(
     "usp_CRM_Lead_ChangeStage",
     {
+      CompanyId: s.companyId,
       LeadId: leadId,
       NewStageId: data.newStageId,
       Notes: data.notes ?? null,
@@ -278,9 +286,11 @@ export async function closeLead(
     userId: number;
   },
 ): Promise<SpResult> {
+  const s = scope();
   const { output } = await callSpOut(
     "usp_CRM_Lead_Close",
     {
+      CompanyId: s.companyId,
       LeadId: leadId,
       IsWon: data.isWon,
       LostReason: data.lostReason ?? null,
@@ -377,9 +387,10 @@ export async function completeActivity(
   activityId: number,
   userId: number,
 ): Promise<SpResult> {
+  const s = scope();
   const { output } = await callSpOut(
     "usp_CRM_Activity_Complete",
-    { ActivityId: activityId, UserId: userId },
+    { CompanyId: s.companyId, ActivityId: activityId, UserId: userId },
     { Resultado: sql.Int, Mensaje: sql.NVarChar(500) },
   );
   const resultComplete = parseSpResult(output);
@@ -399,9 +410,11 @@ export async function updateActivity(
     userId: number;
   },
 ): Promise<SpResult> {
+  const s = scope();
   const { output } = await callSpOut(
     "usp_CRM_Activity_Update",
     {
+      CompanyId: s.companyId,
       ActivityId: activityId,
       Subject: data.subject,
       Description: data.description,

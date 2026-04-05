@@ -8,6 +8,7 @@ import { PLANS, type WebhookEvent } from "./billing.types.js";
 import { callSp, callSpOut } from "../../db/query.js";
 import { invalidateSubscriptionCache } from "../../middleware/subscription.js";
 import { provisionTenant, sendWelcomeEmail } from "../tenants/tenant.service.js";
+import { syncPlanModules } from "../iam/enforcement/plan-sync.service.js";
 
 // ── Planes ───────────────────────────────────────────────────────────────────
 
@@ -253,6 +254,13 @@ async function handleSubscriptionUpdated(
     });
     // Invalidar cache de la empresa asociada
     await invalidateByPaddleSubId(subscriptionId);
+
+    // Sync plan modules when plan changes
+    if (plan?.name) {
+      await syncPlanModules(subscriptionId, plan.name).catch((err) => {
+        console.error("[billing] Error syncing plan modules:", err);
+      });
+    }
   } catch (err) {
     console.error("[billing] Error guardando subscription.updated:", err);
   }
