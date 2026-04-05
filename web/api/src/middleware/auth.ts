@@ -108,19 +108,38 @@ export async function requireJwt(req: Request, res: Response, next: NextFunction
     return next();
   }
 
-  const auth = req.headers.authorization ?? "";
-  const [scheme, token] = auth.split(" ");
+  // Extraer token: Bearer header O cookie zentto_access (zentto-auth)
+  let token: string | undefined;
 
-  if (scheme !== "Bearer" || !token) {
+  const auth = req.headers.authorization ?? "";
+  const [scheme, bearerToken] = auth.split(" ");
+  if (scheme === "Bearer" && bearerToken) {
+    token = bearerToken;
+  }
+
+  // Fallback: cookie zentto_access emitida por zentto-auth microservice
+  if (!token) {
+    const cookieHeader = req.headers.cookie;
+    if (cookieHeader) {
+      const match = cookieHeader.match(/zentto_access=([^;]+)/);
+      if (match) token = match[1];
+    }
+  }
+
+  if (!token) {
     return res.status(401).json({ error: "missing_token" });
   }
 
   try {
-    const payload = verifyJwt(token);
+    const payload = verifyJwt(token!);
     const scope = resolveScope(payload, req);
 
+    // /auth/profile puede funcionar sin scope (JWT de zentto-auth sin companyAccesses)
+    const isProfileEndpoint = req.path === "/auth/profile" || req.path === "/auth/companies";
     if (!scope?.companyId || !scope?.branchId) {
-      return res.status(403).json({ error: "invalid_scope", message: "No hay empresa/sucursal activa para este usuario" });
+      if (!isProfileEndpoint) {
+        return res.status(403).json({ error: "invalid_scope", message: "No hay empresa/sucursal activa para este usuario" });
+      }
     }
 
     // ── Resolver BD del tenant (solo PostgreSQL) ──

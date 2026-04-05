@@ -71,6 +71,12 @@ const providers: Provider[] = [
           process.env.API_URL ||
           'http://localhost:4000';
 
+        // zentto-auth microservice URL (centralizado para todas las apps)
+        const AUTH_SERVICE_URL =
+          process.env.AUTH_SERVICE_URL ||
+          process.env.NEXT_PUBLIC_AUTH_URL ||
+          '';
+
         const incoming = credentials as
           | Partial<Record<'username' | 'password' | 'companyId' | 'branchId' | 'captchaToken', unknown>>
           | undefined;
@@ -88,42 +94,117 @@ const providers: Provider[] = [
         const branchId =
           typeof incoming?.branchId === 'string' ? Number(incoming.branchId) : undefined;
 
-        const userData = {
-          usuario: username.trim().toUpperCase(),
-          clave: password || '',
-          companyId: Number.isFinite(companyId) && Number(companyId) > 0 ? Number(companyId) : undefined,
-          branchId: Number.isFinite(branchId) && Number(branchId) > 0 ? Number(branchId) : undefined,
-          captchaToken,
-        };
+        let token: string;
+        let userId: string;
+        let userName: string;
+        let email: string | null = null;
 
-        const response = await fetch(`${BACKEND_URL}/v1/auth/login`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(userData),
-        });
+        // ── Estrategia: zentto-auth → ERP profile (si AUTH_SERVICE_URL configurado) ──
+        // ── Fallback: ERP directo (retrocompatible) ──
+        if (AUTH_SERVICE_URL) {
+          // 1. Autenticar contra zentto-auth microservice
+          const authRes = await fetch(`${AUTH_SERVICE_URL}/auth/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              username: username.trim().toUpperCase(),
+              password: password || '',
+              appId: 'zentto-erp',
+            }),
+          });
 
-        if (!response.ok) {
-          throw new CredentialsSignin();
+          if (!authRes.ok) throw new CredentialsSignin();
+
+          const authData = await authRes.json();
+          if (!authData.user) throw new CredentialsSignin();
+
+          // zentto-auth devuelve accessToken en body o cookie
+          token = authData.accessToken || '';
+          userId = authData.user.userId || authData.user.username || 'unknown';
+          userName = authData.user.displayName || authData.user.username || 'Usuario';
+          email = authData.user.email || null;
+
+          // Si no hay token en body, la cookie no la podemos capturar server-side
+          // En ese caso, generamos token via ERP fallback
+          if (!token) {
+            // Fallback: usar ERP login para obtener token con claims completos
+            const erpRes = await fetch(`${BACKEND_URL}/v1/auth/login`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                usuario: username.trim().toUpperCase(),
+                clave: password || '',
+                companyId: Number.isFinite(companyId) ? companyId : undefined,
+                branchId: Number.isFinite(branchId) ? branchId : undefined,
+                captchaToken,
+              }),
+            });
+            if (!erpRes.ok) throw new CredentialsSignin();
+            const erpData = await erpRes.json();
+            if (!erpData.token) throw new CredentialsSignin();
+            token = erpData.token;
+          }
+        } else {
+          // ── Modo legacy: autenticar directo contra ERP API ──
+          const userData = {
+            usuario: username.trim().toUpperCase(),
+            clave: password || '',
+            companyId: Number.isFinite(companyId) && Number(companyId) > 0 ? Number(companyId) : undefined,
+            branchId: Number.isFinite(branchId) && Number(branchId) > 0 ? Number(branchId) : undefined,
+            captchaToken,
+          };
+
+          const response = await fetch(`${BACKEND_URL}/v1/auth/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(userData),
+          });
+
+          if (!response.ok) throw new CredentialsSignin();
+          const data = await response.json();
+          if (!data?.token) throw new CredentialsSignin();
+
+          return {
+            id: data.userId || data.usuario?.codUsuario || 'unknown',
+            name: data.userName || data.usuario?.nombre || 'Usuario',
+            email: data.email || null,
+            token: data.token,
+            isAdmin: data.isAdmin || data.usuario?.isAdmin || false,
+            tipo: data.usuario?.tipo || null,
+            permisos: data.permisos || null,
+            modulos: data.modulos || [],
+            company: data.defaultCompany || data.company || null,
+            defaultCompany: data.defaultCompany || data.company || null,
+            companyAccesses: data.companyAccesses || [],
+          };
         }
 
-        const data = await response.json();
+        // 2. Enriquecer con datos ERP via /v1/auth/profile
+        const profileRes = await fetch(`${BACKEND_URL}/v1/auth/profile`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            ...(companyId ? { 'x-company-id': String(companyId) } : {}),
+            ...(branchId ? { 'x-branch-id': String(branchId) } : {}),
+          },
+        });
 
-        if (!data || !data.token) {
-          throw new CredentialsSignin();
+        let profile: any = {};
+        if (profileRes.ok) {
+          profile = await profileRes.json();
         }
 
         return {
-          id: data.userId || data.usuario?.codUsuario || 'unknown',
-          name: data.userName || data.usuario?.nombre || 'Usuario',
-          email: data.email || null,
-          token: data.token,
-          isAdmin: data.isAdmin || data.usuario?.isAdmin || false,
-          tipo: data.usuario?.tipo || null,
-          permisos: data.permisos || null,
-          modulos: data.modulos || [],
-          company: data.defaultCompany || data.company || null,
-          defaultCompany: data.defaultCompany || data.company || null,
-          companyAccesses: data.companyAccesses || [],
+          id: profile.userId || userId,
+          name: profile.userName || userName,
+          email: email,
+          token,
+          isAdmin: profile.isAdmin ?? false,
+          tipo: profile.tipo || null,
+          permisos: profile.permisos || null,
+          modulos: profile.modulos || [],
+          company: profile.defaultCompany || null,
+          defaultCompany: profile.defaultCompany || null,
+          companyAccesses: profile.companyAccesses || [],
         };
       } catch (error: unknown) {
         if (error instanceof CredentialsSignin) throw error;

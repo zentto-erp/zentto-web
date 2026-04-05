@@ -39,6 +39,18 @@ export async function authenticateUsuario(usuario: string, clave: string) {
   return authenticated ? record : null;
 }
 
+/**
+ * Obtener datos del usuario SIN verificar password.
+ * Para uso con zentto-auth (ya autenticado via JWT).
+ */
+export async function getUsuarioRecord(usuario: string): Promise<UsuarioRecord | null> {
+  const rows = await callSp<UsuarioRecord>(
+    "usp_Sec_User_Authenticate",
+    { CodUsuario: usuario }
+  );
+  return rows.length > 0 ? rows[0] : null;
+}
+
 export async function getUsuarioTipo(codUsuario: string): Promise<{ codUsuario: string; tipo: string | null } | null> {
   const rows = await callSp<{ Cod_Usuario: string; Tipo: string | null }>(
     "usp_Sec_User_GetType",
