@@ -47,7 +47,7 @@ export const mediaApi = {
   upload: async (siteId: string, file: File) => {
     const form = new FormData();
     form.append('file', file);
-    const res = await fetch(`${API_BASE}/v1/sites/${siteId}/media`, { method: 'POST', body: form });
+    const res = await fetch(`${API_BASE}/v1/sites/${siteId}/media`, { method: 'POST', credentials: 'include', body: form });
     return res.json();
   },
   delete: (siteId: string, mediaId: string) => fetchAPI<any>(`/v1/sites/${siteId}/media/${mediaId}`, { method: 'DELETE' }),
