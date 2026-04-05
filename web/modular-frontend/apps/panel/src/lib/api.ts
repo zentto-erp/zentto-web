@@ -147,3 +147,38 @@ export const couponsApi = {
   update: (siteId: string, id: string, data: any) => fetchAPI<any>(`/v1/sites/${siteId}/coupons/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   delete: (siteId: string, id: string) => fetchAPI<any>(`/v1/sites/${siteId}/coupons/${id}`, { method: 'DELETE' }),
 };
+
+// AI
+export const aiApi = {
+  generateSite: (data: { prompt: string; locale?: string; style?: string }) =>
+    fetchAPI<any>('/v1/ai/generate-site', { method: 'POST', body: JSON.stringify(data) }),
+  suggestContent: (data: { sectionType: string; businessDescription: string; locale?: string }) =>
+    fetchAPI<any>('/v1/ai/suggest-content', { method: 'POST', body: JSON.stringify(data) }),
+};
+
+// Marketplace
+export const marketplaceApi = {
+  browse: (params?: { category?: string; search?: string; sort?: string; limit?: number; offset?: number }) => {
+    const qs = new URLSearchParams();
+    if (params?.category) qs.set('category', params.category);
+    if (params?.search) qs.set('search', params.search);
+    if (params?.sort) qs.set('sort', params.sort || 'downloads');
+    if (params?.limit) qs.set('limit', String(params.limit));
+    if (params?.offset) qs.set('offset', String(params.offset));
+    return fetchAPI<any>(`/v1/marketplace/templates?${qs}`);
+  },
+  get: (id: string) => fetchAPI<any>(`/v1/marketplace/templates/${id}`),
+  featured: () => fetchAPI<any>('/v1/marketplace/featured'),
+  categories: () => fetchAPI<any>('/v1/marketplace/categories'),
+  use: (id: string) => fetchAPI<any>(`/v1/marketplace/templates/${id}/use`, { method: 'POST' }),
+  rate: (id: string, rating: number, review?: string) => fetchAPI<any>(`/v1/marketplace/templates/${id}/rate`, { method: 'POST', body: JSON.stringify({ rating, review }) }),
+  submit: (data: any) => fetchAPI<any>('/v1/marketplace/templates', { method: 'POST', body: JSON.stringify(data) }),
+};
+
+// Collaborators
+export const collaboratorsApi = {
+  list: (siteId: string) => fetchAPI<any>(`/v1/sites/${siteId}/collaborators`),
+  invite: (siteId: string, email: string, role: string) => fetchAPI<any>(`/v1/sites/${siteId}/collaborators`, { method: 'POST', body: JSON.stringify({ email, role }) }),
+  updateRole: (siteId: string, userId: string, role: string) => fetchAPI<any>(`/v1/sites/${siteId}/collaborators/${userId}`, { method: 'PUT', body: JSON.stringify({ role }) }),
+  remove: (siteId: string, userId: string) => fetchAPI<any>(`/v1/sites/${siteId}/collaborators/${userId}`, { method: 'DELETE' }),
+};

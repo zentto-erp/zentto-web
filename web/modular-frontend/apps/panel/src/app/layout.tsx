@@ -27,6 +27,9 @@ import {
   Inventory as InventoryIcon,
   ShoppingCart as ShoppingCartIcon,
   LocalOffer as LocalOfferIcon,
+  Storefront as StorefrontIcon,
+  Group as GroupIcon,
+  AutoAwesome as AutoAwesomeIcon,
 } from "@mui/icons-material";
 import { ThemeProvider, createTheme, useTheme } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
@@ -49,7 +52,9 @@ const queryClient = new QueryClient();
 const NAV_ITEMS = [
   { label: "Dashboard", href: "/", icon: <DashboardIcon /> },
   { label: "Mis Sitios", href: "/sites", icon: <SitesIcon /> },
+  { label: "Templates", href: "/templates", icon: <StorefrontIcon /> },
   { label: "Crear Sitio", href: "/sites/new", icon: <AddIcon />, color: "#059669" },
+  { label: "AI Generator", href: "/sites/ai", icon: <AutoAwesomeIcon />, color: "#8b5cf6" },
 ];
 
 function getSiteNavItems(pathname: string) {
@@ -61,6 +66,7 @@ function getSiteNavItems(pathname: string) {
     { label: "Productos", href: `/sites/${siteId}/products`, icon: <InventoryIcon /> },
     { label: "Pedidos", href: `/sites/${siteId}/orders`, icon: <ShoppingCartIcon /> },
     { label: "Cupones", href: `/sites/${siteId}/coupons`, icon: <LocalOfferIcon /> },
+    { label: "Equipo", href: `/sites/${siteId}/team`, icon: <GroupIcon /> },
   ];
 }
 
