@@ -183,8 +183,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       userName: session?.user?.name || null,
       userEmail: session?.user?.email || null,
       userId,
-      // accessToken ya NO se expone — viaja en cookie HttpOnly
-      accessToken: null,
+      // @ts-ignore — accessToken necesario para shared-api hasta migración completa a zentto-auth cookies
+      accessToken: session?.accessToken || null,
       tipo,
       permisos,
       modulos,
