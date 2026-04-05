@@ -183,8 +183,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       userName: session?.user?.name || null,
       userEmail: session?.user?.email || null,
       userId,
-      // @ts-ignore
-      accessToken: session?.accessToken || null,
+      // accessToken ya NO se expone — viaja en cookie HttpOnly
+      accessToken: null,
       tipo,
       permisos,
       modulos,

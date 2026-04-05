@@ -387,8 +387,20 @@ authRouter.post("/login", loginLimiter, async (req, res) => {
 
   await registerLoginSuccess(record.Cod_Usuario);
 
+  // Setear JWT en cookie HttpOnly — el browser la envía automáticamente
+  // y NO es visible en JavaScript/DevTools (protección XSS)
+  const isProduction = (process.env.NODE_ENV || "").includes("prod");
+  res.cookie("zentto_token", token, {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: "lax",
+    domain: isProduction ? ".zentto.net" : undefined,
+    path: "/",
+    maxAge: 12 * 60 * 60 * 1000, // 12 horas
+  });
+
   return res.json({
-    token,
+    token,  // backward compat — frontend migrará a usar solo cookie
     userId: record.Cod_Usuario,
     userName: record.Nombre,
     email: null,
