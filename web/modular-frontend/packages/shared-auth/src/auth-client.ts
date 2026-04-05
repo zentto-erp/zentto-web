@@ -70,6 +70,12 @@ export async function appAwareSignOut(options: AppAwareSignOutOptions = {}) {
     json: 'true',
   });
 
+  // Limpiar cookie HttpOnly zentto_token antes de cerrar sesión
+  await fetch(`${window.location.origin}/api/auth/set-token`, {
+    method: 'DELETE',
+    credentials: 'include',
+  }).catch(() => {});
+
   const signOutResponse = await fetch(`${window.location.origin}${authBasePath}/signout`, {
     method: 'POST',
     credentials: 'include',

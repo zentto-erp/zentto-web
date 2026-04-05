@@ -292,8 +292,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       return token;
     },
     async session({ session, token }) {
-      // accessToken NO se expone al browser — viaja en cookie HttpOnly.
-      // Solo exponemos datos de contexto (permisos, modulos, company).
+      // accessToken viaja en cookie HttpOnly zentto_token (via /api/auth/set-token).
+      // Se expone SOLO para que el cookie proxy pueda leerlo server-side.
+      // El browser NO lo usa en Authorization headers — 100% cookies.
+      // @ts-ignore
+      session.accessToken = token.accessToken;
       // @ts-ignore
       session.isAdmin = token.isAdmin;
       // @ts-ignore
