@@ -1,6 +1,6 @@
 import { getToken, logout } from './auth';
 
-const API_BASE = process.env.NEXT_PUBLIC_SITES_API || 'http://localhost:4500';
+const API_BASE = process.env.NEXT_PUBLIC_SITES_API || 'https://sitesdev.zentto.net';
 
 async function fetchAPI<T>(path: string, options?: RequestInit): Promise<T> {
   const token = getToken();
