@@ -27,9 +27,15 @@
     "@zentto/shared-api": "*",
     "@zentto/shared-auth": "*",
     "@zentto/shared-ui": "*",
-    "@zentto/studio": "^0.10.0",
-    "@zentto/studio-core": "^0.10.0",
-    "@zentto/studio-react": "^0.10.0",
+<<<<<<< HEAD
+    "@zentto/studio": "^0.14.0",
+    "@zentto/studio-core": "^0.14.0",
+    "@zentto/studio-react": "^0.14.0",
+=======
+    "@zentto/studio": "^0.13.0",
+    "@zentto/studio-core": "^0.13.0",
+    "@zentto/studio-react": "^0.13.0",
+>>>>>>> fix/elasticsearch-security-hardening
     "dayjs": "^1.11.13",
     "lit": "^3.2.0",
     "lodash": "^4.17.21",

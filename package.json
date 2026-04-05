@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "@zentto/obs": "^1.0.0"
+  }
+}

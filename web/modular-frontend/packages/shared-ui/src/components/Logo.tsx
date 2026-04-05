@@ -1,7 +1,6 @@
 'use client';
 import React from 'react';
-import { Typography, useTheme, Box, Stack } from '@mui/material';
-import type { TypographyProps } from '@mui/material/Typography';
+import { Typography, Stack, useTheme } from '@mui/material';
 import { getSharedAssetUrl } from '../lib/asset-url';
 import { useBranding } from '../hooks/useBranding';
 
@@ -10,38 +9,28 @@ interface LogoProps { size?: 'small' | 'medium' | 'large' }
 export default function Logo({ size = 'medium' }: LogoProps) {
   const theme = useTheme();
   const { branding } = useBranding();
-  const defaultLogoSrc = getSharedAssetUrl('/logo-blanco.svg');
+  const isDark = theme.palette.mode === 'dark';
+  const defaultLogoSrc = getSharedAssetUrl(isDark ? '/logo-blanco.svg' : '/logo-gris.svg');
   const logoSrc = branding.logoUrl || defaultLogoSrc;
   const appName = branding.appName || 'Zentto';
   const appSubtitle = branding.appSubtitle || 'Sistema de Administración';
 
-  const sizes: Record<'small' | 'medium' | 'large', { box: number; font: string; title: TypographyProps['variant']; subtitle: TypographyProps['variant'] }> = {
-    small: { box: 32, font: '1rem', title: 'h6', subtitle: 'caption' },
-    medium: { box: 56, font: '1.5rem', title: 'h5', subtitle: 'body2' },
-    large: { box: 72, font: '2rem', title: 'h4', subtitle: 'body1' },
-  };
-  const s = sizes[size];
+  const imgSize = { small: 24, medium: 36, large: 48 }[size];
+  const fontSize = { small: '1rem', medium: '1.5rem', large: '2rem' }[size];
 
   return (
     <Stack alignItems="center" spacing={1.5}>
-      <Box sx={{
-        width: s.box, height: s.box, borderRadius: '50%',
-        background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.primary.dark})`,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        boxShadow: `0 4px 12px ${theme.palette.primary.main}40`,
-      }}>
-        <img src={logoSrc} alt={appName} style={{ width: s.box * 0.75, height: s.box * 0.75, objectFit: 'contain' }} />
-      </Box>
-      <Box textAlign="center">
-        <Typography variant={s.title} component="h1"
-          sx={{ fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'text.primary', lineHeight: 1.2 }}>
+      <Stack direction="row" alignItems="center" spacing={1}>
+        <img src={logoSrc} alt={appName} style={{ height: imgSize, width: imgSize, objectFit: 'contain' }} />
+        <Typography component="h1"
+          sx={{ fontWeight: 700, letterSpacing: '-0.01em', color: 'text.primary', fontSize, lineHeight: 1.2 }}>
           {appName}
         </Typography>
-        <Typography variant={s.subtitle}
-          sx={{ color: 'text.secondary', letterSpacing: '0.1em', fontWeight: 500 }}>
-          {appSubtitle}
-        </Typography>
-      </Box>
+      </Stack>
+      <Typography variant="body2"
+        sx={{ color: 'text.secondary', fontWeight: 500 }}>
+        {appSubtitle}
+      </Typography>
     </Stack>
   );
 }

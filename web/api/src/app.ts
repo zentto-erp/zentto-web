@@ -371,19 +371,9 @@ export async function createApp() {
   app.use("/v1", auditTrailMiddleware);
   app.use("/v1/auth", authRouter);
 
-  // Subscription check — después de auth, antes de rutas de negocio
-  // Excluye: /v1/auth, /v1/billing, /v1/config (necesarios para renovar suscripción)
-  {
-    const { requireSubscription } = await import("./middleware/subscription.js");
-    app.use("/v1", (req, res, next) => {
-      const path = req.path;
-      // Rutas exentas de verificación de suscripción
-      if (path.startsWith("/auth") || path.startsWith("/billing") || path.startsWith("/config") || path.startsWith("/settings")) {
-        return next();
-      }
-      return requireSubscription(req, res, next);
-    });
-  }
+  // Subscription check: se valida en el LOGIN, no por request.
+  // La suscripción es del usuario, no de cada empresa.
+  // Ver: auth.routes.ts → POST /v1/auth/login
 
   // Documentos Unificados (reemplazan a facturas, pedidos, cotizaciones, presupuestos, notas, compras, ordenes)
   app.use("/v1/documentos-venta", documentosVentaRouter);

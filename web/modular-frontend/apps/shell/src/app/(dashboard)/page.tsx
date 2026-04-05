@@ -1,32 +1,33 @@
 'use client';
 
 import React from 'react';
-import { Box, Typography, ButtonBase, Avatar, useMediaQuery } from '@mui/material';
+import { Box, Typography, ButtonBase, useMediaQuery } from '@mui/material';
 import Grid from '@mui/material/Grid2';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@zentto/shared-auth';
 import { isShellLocalPath, resolveAppHref } from '@/lib/app-links';
 
-// Icons - Importar todos los necesarios
-const AccountBalanceWalletIcon = dynamic(() => import('@mui/icons-material/AccountBalanceWallet'), { ssr: false });
-const BadgeIcon = dynamic(() => import('@mui/icons-material/Badge'), { ssr: false });
-const AccountBalanceIcon = dynamic(() => import('@mui/icons-material/AccountBalance'), { ssr: false });
-const WarehouseIcon = dynamic(() => import('@mui/icons-material/Warehouse'), { ssr: false });
-const ShoppingCartIcon = dynamic(() => import('@mui/icons-material/ShoppingCart'), { ssr: false });
-const AppsIcon = dynamic(() => import('@mui/icons-material/Apps'), { ssr: false });
-const SettingsIcon = dynamic(() => import('@mui/icons-material/Settings'), { ssr: false });
-const PointOfSaleIcon = dynamic(() => import('@mui/icons-material/PointOfSale'), { ssr: false });
-const ShoppingBagIcon = dynamic(() => import('@mui/icons-material/ShoppingBag'), { ssr: false });
-const LocalShippingIcon = dynamic(() => import('@mui/icons-material/LocalShipping'), { ssr: false });
-const RestaurantIcon = dynamic(() => import('@mui/icons-material/Restaurant'), { ssr: false });
-const PublicIcon = dynamic(() => import('@mui/icons-material/Public'), { ssr: false });
-const VerifiedUserIcon = dynamic(() => import('@mui/icons-material/VerifiedUser'), { ssr: false });
-const PrecisionManufacturingIcon = dynamic(() => import('@mui/icons-material/PrecisionManufacturing'), { ssr: false });
-const DirectionsCarIcon = dynamic(() => import('@mui/icons-material/DirectionsCar'), { ssr: false });
-const GroupsIcon = dynamic(() => import('@mui/icons-material/Groups'), { ssr: false });
-const DescriptionIcon = dynamic(() => import('@mui/icons-material/Description'), { ssr: false });
-const ExtensionIcon = dynamic(() => import('@mui/icons-material/Extension'), { ssr: false });
+// Icons — outlined variants (match landing style)
+const AccountBalanceWalletOutlinedIcon = dynamic(() => import('@mui/icons-material/AccountBalanceWalletOutlined'), { ssr: false });
+const BadgeOutlinedIcon = dynamic(() => import('@mui/icons-material/BadgeOutlined'), { ssr: false });
+const AccountBalanceOutlinedIcon = dynamic(() => import('@mui/icons-material/AccountBalanceOutlined'), { ssr: false });
+const WarehouseOutlinedIcon = dynamic(() => import('@mui/icons-material/WarehouseOutlined'), { ssr: false });
+const ShoppingCartOutlinedIcon = dynamic(() => import('@mui/icons-material/ShoppingCartOutlined'), { ssr: false });
+const AppsOutlinedIcon = dynamic(() => import('@mui/icons-material/AppsOutlined'), { ssr: false });
+const SettingsOutlinedIcon = dynamic(() => import('@mui/icons-material/SettingsOutlined'), { ssr: false });
+const PointOfSaleOutlinedIcon = dynamic(() => import('@mui/icons-material/PointOfSaleOutlined'), { ssr: false });
+const ShoppingBagOutlinedIcon = dynamic(() => import('@mui/icons-material/ShoppingBagOutlined'), { ssr: false });
+const LocalShippingOutlinedIcon = dynamic(() => import('@mui/icons-material/LocalShippingOutlined'), { ssr: false });
+const RestaurantOutlinedIcon = dynamic(() => import('@mui/icons-material/RestaurantOutlined'), { ssr: false });
+const PublicOutlinedIcon = dynamic(() => import('@mui/icons-material/PublicOutlined'), { ssr: false });
+const VerifiedUserOutlinedIcon = dynamic(() => import('@mui/icons-material/VerifiedUserOutlined'), { ssr: false });
+const PrecisionManufacturingOutlinedIcon = dynamic(() => import('@mui/icons-material/PrecisionManufacturingOutlined'), { ssr: false });
+const DirectionsCarOutlinedIcon = dynamic(() => import('@mui/icons-material/DirectionsCarOutlined'), { ssr: false });
+const GroupsOutlinedIcon = dynamic(() => import('@mui/icons-material/GroupsOutlined'), { ssr: false });
+const DescriptionOutlinedIcon = dynamic(() => import('@mui/icons-material/DescriptionOutlined'), { ssr: false });
+const ExtensionOutlinedIcon = dynamic(() => import('@mui/icons-material/ExtensionOutlined'), { ssr: false });
+const RouteOutlinedIcon = dynamic(() => import('@mui/icons-material/RouteOutlined'), { ssr: false });
 
 interface AppShortcut {
   id: string;
@@ -55,63 +56,63 @@ export default function AppSelectorPage() {
   // Todas las apps disponibles
   const allApps: AppShortcut[] = [];
 
+  // Colores en escala cromática continua: rojo → naranja → ámbar → verde → teal → azul → índigo → púrpura → rosa
   if (has('contabilidad')) {
-    allApps.push({ id: 'contabilidad', name: isSmall ? 'Cont.' : 'Contabilidad', icon: <AccountBalanceWalletIcon sx={{ fontSize: 'inherit', color: '#fff' }} />, path: '/contabilidad', bgColor: '#875A7B' });
+    allApps.push({ id: 'contabilidad', name: isSmall ? 'Cont.' : 'Contabilidad', icon: <AccountBalanceWalletOutlinedIcon sx={{ fontSize: 'inherit' }} />, path: '/contabilidad', bgColor: '#E74C3C' });
   }
   if (has('nomina')) {
-    allApps.push({ id: 'nomina', name: 'Nómina', icon: <BadgeIcon sx={{ fontSize: 'inherit', color: '#fff' }} />, path: '/nomina', bgColor: '#00A09D' });
+    allApps.push({ id: 'nomina', name: 'Nómina', icon: <BadgeOutlinedIcon sx={{ fontSize: 'inherit' }} />, path: '/nomina', bgColor: '#E67E22' });
   }
   if (has('bancos')) {
-    allApps.push({ id: 'bancos', name: 'Bancos', icon: <AccountBalanceIcon sx={{ fontSize: 'inherit', color: '#fff' }} />, path: '/bancos', bgColor: '#E67E22' });
+    allApps.push({ id: 'bancos', name: 'Bancos', icon: <AccountBalanceOutlinedIcon sx={{ fontSize: 'inherit' }} />, path: '/bancos', bgColor: '#F39C12' });
   }
   if (has('inventario') || has('articulos')) {
-    allApps.push({ id: 'inventario', name: isSmall ? 'Inv.' : 'Inventario', icon: <WarehouseIcon sx={{ fontSize: 'inherit', color: '#fff' }} />, path: '/inventario', bgColor: '#27AE60' });
+    allApps.push({ id: 'inventario', name: isSmall ? 'Inv.' : 'Inventario', icon: <WarehouseOutlinedIcon sx={{ fontSize: 'inherit' }} />, path: '/inventario', bgColor: '#27AE60' });
   }
   if (has('ventas') || has('facturas')) {
-    allApps.push({ id: 'ventas', name: 'Ventas', icon: <ShoppingCartIcon sx={{ fontSize: 'inherit', color: '#fff' }} />, path: '/ventas', bgColor: '#3498DB' });
+    allApps.push({ id: 'ventas', name: 'Ventas', icon: <ShoppingCartOutlinedIcon sx={{ fontSize: 'inherit' }} />, path: '/ventas', bgColor: '#1ABC9C' });
   }
   if (has('compras') || has('cxp')) {
-    allApps.push({ id: 'compras', name: 'Compras', icon: <ShoppingBagIcon sx={{ fontSize: 'inherit', color: '#fff' }} />, path: '/compras', bgColor: '#F39C12' });
+    allApps.push({ id: 'compras', name: 'Compras', icon: <ShoppingBagOutlinedIcon sx={{ fontSize: 'inherit' }} />, path: '/compras', bgColor: '#00A09D' });
   }
   if (has('pos')) {
-    allApps.push({ id: 'pos', name: 'Punto de Venta', icon: <PointOfSaleIcon sx={{ fontSize: 'inherit', color: '#fff' }} />, path: '/pos/facturacion', bgColor: '#9B59B6' });
+    allApps.push({ id: 'pos', name: 'Punto de Venta', icon: <PointOfSaleOutlinedIcon sx={{ fontSize: 'inherit' }} />, path: '/pos/facturacion', bgColor: '#3498DB' });
   }
   if (has('restaurante')) {
-    allApps.push({ id: 'restaurante', name: isSmall ? 'Rest.' : 'Restaurante', icon: <RestaurantIcon sx={{ fontSize: 'inherit', color: '#fff' }} />, path: '/restaurante', bgColor: '#E84393' });
+    allApps.push({ id: 'restaurante', name: isSmall ? 'Rest.' : 'Restaurante', icon: <RestaurantOutlinedIcon sx={{ fontSize: 'inherit' }} />, path: '/restaurante', bgColor: '#0984E3' });
   }
   if (has('ecommerce')) {
-    allApps.push({ id: 'ecommerce', name: 'E-Commerce', icon: <PublicIcon sx={{ fontSize: 'inherit', color: '#fff' }} />, path: '/ecommerce', bgColor: '#0984E3' });
+    allApps.push({ id: 'ecommerce', name: 'E-Commerce', icon: <PublicOutlinedIcon sx={{ fontSize: 'inherit' }} />, path: '/ecommerce', bgColor: '#1565C0' });
   }
   if (has('auditoria')) {
-    allApps.push({ id: 'auditoria', name: isSmall ? 'Audit.' : 'Auditoría', icon: <VerifiedUserIcon sx={{ fontSize: 'inherit', color: '#fff' }} />, path: '/auditoria', bgColor: '#2D3436' });
+    allApps.push({ id: 'auditoria', name: isSmall ? 'Audit.' : 'Auditoría', icon: <VerifiedUserOutlinedIcon sx={{ fontSize: 'inherit' }} />, path: '/auditoria', bgColor: '#5C6BC0' });
   }
 
-  // Módulos avanzados (requieren licencia + acceso por usuario)
+  // Módulos avanzados — continúa la escala: índigo → púrpura → rosa
   if (has('logistica')) {
-    allApps.push({ id: 'logistica', name: isSmall ? 'Logíst.' : 'Logística', icon: <LocalShippingIcon sx={{ fontSize: 'inherit', color: '#fff' }} />, path: '/logistica', bgColor: '#1ABC9C' });
+    allApps.push({ id: 'logistica', name: isSmall ? 'Logíst.' : 'Logística', icon: <RouteOutlinedIcon sx={{ fontSize: 'inherit' }} />, path: '/logistica', bgColor: '#7E57C2' });
   }
   if (has('crm')) {
-    allApps.push({ id: 'crm', name: 'CRM', icon: <GroupsIcon sx={{ fontSize: 'inherit', color: '#fff' }} />, path: '/crm', bgColor: '#E74C3C' });
+    allApps.push({ id: 'crm', name: 'CRM', icon: <GroupsOutlinedIcon sx={{ fontSize: 'inherit' }} />, path: '/crm', bgColor: '#9B59B6' });
   }
   if (has('manufactura')) {
-    allApps.push({ id: 'manufactura', name: isSmall ? 'Manuf.' : 'Manufactura', icon: <PrecisionManufacturingIcon sx={{ fontSize: 'inherit', color: '#fff' }} />, path: '/manufactura', bgColor: '#8E44AD' });
+    allApps.push({ id: 'manufactura', name: isSmall ? 'Manuf.' : 'Manufactura', icon: <PrecisionManufacturingOutlinedIcon sx={{ fontSize: 'inherit' }} />, path: '/manufactura', bgColor: '#8E44AD' });
   }
   if (has('flota')) {
-    allApps.push({ id: 'flota', name: 'Flota', icon: <DirectionsCarIcon sx={{ fontSize: 'inherit', color: '#fff' }} />, path: '/flota', bgColor: '#2C3E50' });
+    allApps.push({ id: 'flota', name: 'Flota', icon: <DirectionsCarOutlinedIcon sx={{ fontSize: 'inherit' }} />, path: '/flota', bgColor: '#875A7B' });
   }
   if (has('shipping')) {
-    allApps.push({ id: 'shipping', name: 'Shipping', icon: <LocalShippingIcon sx={{ fontSize: 'inherit', color: '#fff' }} />, path: '/shipping', bgColor: '#1565C0' });
+    allApps.push({ id: 'shipping', name: 'Shipping', icon: <LocalShippingOutlinedIcon sx={{ fontSize: 'inherit' }} />, path: '/shipping', bgColor: '#E84393' });
   }
+
+  // Utilidades (cierra la escala: rosa → coral → warm)
   if (has('report-studio')) {
-    allApps.push({ id: 'report-studio', name: isSmall ? 'Reportes' : 'Report Studio', icon: <DescriptionIcon sx={{ fontSize: 'inherit', color: '#fff' }} />, path: '/report-studio', bgColor: '#FF6F00' });
+    allApps.push({ id: 'report-studio', name: isSmall ? 'Reportes' : 'Report Studio', icon: <DescriptionOutlinedIcon sx={{ fontSize: 'inherit' }} />, path: '/report-studio', bgColor: '#FF6584' });
   }
-  allApps.push({ id: 'aplicaciones', name: isSmall ? 'Apps' : 'Aplicaciones', icon: <AppsIcon sx={{ fontSize: 'inherit', color: '#fff' }} />, path: '/aplicaciones', bgColor: '#546E7A' });
   if (isAdmin || has('addons')) {
-    allApps.push({ id: 'addons', name: 'Addons', icon: <ExtensionIcon sx={{ fontSize: 'inherit', color: '#fff' }} />, path: '/addons', bgColor: '#37474F' });
+    allApps.push({ id: 'addons', name: 'Addons', icon: <ExtensionOutlinedIcon sx={{ fontSize: 'inherit' }} />, path: '/addons', bgColor: '#B0879E' });
   }
-  if (isAdmin) {
-    allApps.push({ id: 'settings', name: 'Ajustes', icon: <SettingsIcon sx={{ fontSize: 'inherit', color: '#fff' }} />, path: '/configuracion', bgColor: '#7F8C8D' });
-  }
+  allApps.push({ id: 'aplicaciones', name: isSmall ? 'Apps' : 'Aplicaciones', icon: <AppsOutlinedIcon sx={{ fontSize: 'inherit' }} />, path: '/aplicaciones', bgColor: '#78909C' });
 
   return (
     <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'center', p: { xs: 2, md: 4 }, bgcolor: 'background.default' }}>
@@ -129,32 +130,33 @@ export default function AppSelectorPage() {
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
-                  borderRadius: 4,
+                  borderRadius: 3,
                   p: 2,
-                  '&:hover .app-avatar': {
-                    transform: 'translateY(-5px)',
-                    boxShadow: '0 10px 20px -3px rgba(0, 0, 0, 0.2)',
+                  '&:hover .app-icon-box': {
+                    transform: 'translateY(-3px)',
+                    bgcolor: (t) => t.palette.mode === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
                   },
                 }}
               >
-                <Avatar
-                  variant="circular"
-                  className="app-avatar"
+                <Box
+                  className="app-icon-box"
                   sx={{
-                    width: 80,
-                    height: 80,
-                    fontSize: 40,
-                    '@media (max-width: 1200px)': { width: 68, height: 68, fontSize: 34 },
-                    '@media (max-width: 900px)': { width: 56, height: 56, fontSize: 28 },
-                    '@media (max-width: 700px)': { width: 32, height: 32, fontSize: 16 },
-                    bgcolor: app.bgColor,
+                    width: 64,
+                    height: 64,
+                    fontSize: 30,
+                    '@media (max-width: 700px)': { width: 44, height: 44, fontSize: 22 },
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    borderRadius: 3,
+                    bgcolor: (t) => t.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.12)',
+                    color: app.bgColor,
                     mb: 1.5,
-                    boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)',
                     transition: 'all 0.2s',
                   }}
                 >
                   {app.icon}
-                </Avatar>
+                </Box>
                 <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary', textAlign: 'center' }}>
                   {app.name}
                 </Typography>

@@ -7,9 +7,7 @@ import {
     Button,
     Paper,
     useTheme,
-    Avatar,
     Chip,
-    Stack,
     Dialog,
     DialogTitle,
     DialogContent,
@@ -27,17 +25,17 @@ import { useAuth } from '@zentto/shared-auth';
 import { useRouter } from 'next/navigation';
 import { resolveAppHref } from '@/lib/app-links';
 
-// Icons
-const AccountBalanceWalletIcon = dynamic(() => import('@mui/icons-material/AccountBalanceWallet'), { ssr: false });
-const BadgeIcon = dynamic(() => import('@mui/icons-material/Badge'), { ssr: false });
-const AccountBalanceIcon = dynamic(() => import('@mui/icons-material/AccountBalance'), { ssr: false });
-const StorefrontIcon = dynamic(() => import('@mui/icons-material/Storefront'), { ssr: false });
-const ShoppingCartIcon = dynamic(() => import('@mui/icons-material/ShoppingCart'), { ssr: false });
-const PointOfSaleIcon = dynamic(() => import('@mui/icons-material/PointOfSale'), { ssr: false });
-const LocalShippingIcon = dynamic(() => import('@mui/icons-material/LocalShipping'), { ssr: false });
-const ContentPasteSearchIcon = dynamic(() => import('@mui/icons-material/ContentPasteSearch'), { ssr: false });
-const RestaurantIcon = dynamic(() => import('@mui/icons-material/Restaurant'), { ssr: false });
-const LanguageIcon = dynamic(() => import('@mui/icons-material/Language'), { ssr: false });
+// Icons — outlined variants (match landing style)
+const AccountBalanceWalletIcon = dynamic(() => import('@mui/icons-material/AccountBalanceWalletOutlined'), { ssr: false });
+const BadgeIcon = dynamic(() => import('@mui/icons-material/BadgeOutlined'), { ssr: false });
+const AccountBalanceIcon = dynamic(() => import('@mui/icons-material/AccountBalanceOutlined'), { ssr: false });
+const StorefrontIcon = dynamic(() => import('@mui/icons-material/WarehouseOutlined'), { ssr: false });
+const ShoppingCartIcon = dynamic(() => import('@mui/icons-material/ShoppingCartOutlined'), { ssr: false });
+const PointOfSaleIcon = dynamic(() => import('@mui/icons-material/PointOfSaleOutlined'), { ssr: false });
+const LocalShippingIcon = dynamic(() => import('@mui/icons-material/LocalShippingOutlined'), { ssr: false });
+const ContentPasteSearchIcon = dynamic(() => import('@mui/icons-material/ContentPasteSearchOutlined'), { ssr: false });
+const RestaurantIcon = dynamic(() => import('@mui/icons-material/RestaurantOutlined'), { ssr: false });
+const LanguageIcon = dynamic(() => import('@mui/icons-material/PublicOutlined'), { ssr: false });
 const CloseIcon = dynamic(() => import('@mui/icons-material/Close'), { ssr: false });
 const CheckCircleIcon = dynamic(() => import('@mui/icons-material/CheckCircle'), { ssr: false });
 const StarIcon = dynamic(() => import('@mui/icons-material/Star'), { ssr: false });
@@ -45,9 +43,9 @@ const UpdateIcon = dynamic(() => import('@mui/icons-material/Update'), { ssr: fa
 const PeopleIcon = dynamic(() => import('@mui/icons-material/People'), { ssr: false });
 const RocketLaunchIcon = dynamic(() => import('@mui/icons-material/RocketLaunch'), { ssr: false });
 const LockIcon = dynamic(() => import('@mui/icons-material/Lock'), { ssr: false });
-const PrecisionManufacturingIcon = dynamic(() => import('@mui/icons-material/PrecisionManufacturing'), { ssr: false });
-const DirectionsCarIcon = dynamic(() => import('@mui/icons-material/DirectionsCar'), { ssr: false });
-const GroupsIcon = dynamic(() => import('@mui/icons-material/Groups'), { ssr: false });
+const PrecisionManufacturingIcon = dynamic(() => import('@mui/icons-material/PrecisionManufacturingOutlined'), { ssr: false });
+const DirectionsCarIcon = dynamic(() => import('@mui/icons-material/DirectionsCarOutlined'), { ssr: false });
+const GroupsIcon = dynamic(() => import('@mui/icons-material/GroupsOutlined'), { ssr: false });
 
 interface StoreApp {
     id: string;
@@ -63,231 +61,31 @@ interface StoreApp {
     author: string;
 }
 
-const DescriptionIcon = dynamic(() => import('@mui/icons-material/Description'), { ssr: false });
-const ExtensionIcon = dynamic(() => import('@mui/icons-material/Extension'), { ssr: false });
+const DescriptionIcon = dynamic(() => import('@mui/icons-material/DescriptionOutlined'), { ssr: false });
+const ExtensionIcon = dynamic(() => import('@mui/icons-material/ExtensionOutlined'), { ssr: false });
+const RouteIcon = dynamic(() => import('@mui/icons-material/RouteOutlined'), { ssr: false });
+const ShoppingBagIcon = dynamic(() => import('@mui/icons-material/ShoppingBagOutlined'), { ssr: false });
+const VerifiedUserIcon = dynamic(() => import('@mui/icons-material/VerifiedUserOutlined'), { ssr: false });
 
 const CATALOG: StoreApp[] = [
-    {
-        id: 'contabilidad',
-        name: 'Contabilidad',
-        description: 'Gestione la contabilidad financiera y analítica, asientos, mayores y reportes.',
-        fullDescription: 'El módulo de Contabilidad le permite gestionar toda la contabilidad de su empresa de manera eficiente. Incluye gestión de asientos contables, plan de cuentas, mayores, balances y reportes financieros completos.',
-        icon: <AccountBalanceWalletIcon sx={{ fontSize: 40, color: '#fff' }} />,
-        bgColor: '#875A7B',
-        category: 'Finanzas',
-        path: '/contabilidad',
-        features: ['Asientos contables', 'Plan de cuentas', 'Mayores automáticos', 'Balances', 'Reportes financieros'],
-        version: '2.1.0',
-        author: 'Zentto'
-    },
-    {
-        id: 'nomina',
-        name: 'Nómina',
-        description: 'Administración de empleados, vacaciones, liquidaciones y roles de pago.',
-        fullDescription: 'Gestione su talento humano con el módulo de Nómina. Incluye administración de empleados, cálculo de nómina, gestión de vacaciones, liquidaciones y roles de pago automatizados.',
-        icon: <BadgeIcon sx={{ fontSize: 40, color: '#fff' }} />,
-        bgColor: '#00A09D',
-        category: 'Recursos Humanos',
-        path: '/nomina',
-        features: ['Gestión de empleados', 'Cálculo de nómina', 'Vacaciones', 'Liquidaciones', 'Roles de pago'],
-        version: '1.8.5',
-        author: 'Zentto'
-    },
-    {
-        id: 'bancos',
-        name: 'Bancos e Inst.',
-        description: 'Gestión de cuentas corrientes, movimientos y conciliación bancaria.',
-        fullDescription: 'Controle sus finanzas bancarias con este módulo integrado. Gestione múltiples cuentas corrientes, registre movimientos y realice conciliaciones bancarias automáticas.',
-        icon: <AccountBalanceIcon sx={{ fontSize: 40, color: '#fff' }} />,
-        bgColor: '#E67E22',
-        category: 'Finanzas',
-        path: '/bancos',
-        features: ['Múltiples cuentas', 'Conciliación bancaria', 'Movimientos', 'Reportes', 'Integración contable'],
-        version: '1.5.2',
-        author: 'Zentto'
-    },
-    {
-        id: 'inventario',
-        name: 'Inventario',
-        description: 'Controle su stock, existencias, bodegas, kardex y valoración.',
-        fullDescription: 'Mantenga el control total de su inventario. Gestione bodegas múltiples, movimientos de stock, kardex valorizado, y obtenga reportes detallados de existencias.',
-        icon: <StorefrontIcon sx={{ fontSize: 40, color: '#fff' }} />,
-        bgColor: '#27AE60',
-        category: 'Operaciones',
-        path: '/inventario',
-        features: ['Múltiples bodegas', 'Kardex valorizado', 'Movimientos', 'Alertas de stock', 'Reportes'],
-        version: '3.0.1',
-        author: 'Zentto'
-    },
-    {
-        id: 'ventas',
-        name: 'Ventas',
-        description: 'Gestione facturas, abonos, cuentas por cobrar (CxC) y bases de clientes.',
-        fullDescription: 'Maximice sus ventas con este completo módulo. Gestione facturación, cuentas por cobrar, abonos, notas de crédito/débito y mantenga su cartera de clientes organizada.',
-        icon: <ShoppingCartIcon sx={{ fontSize: 40, color: '#fff' }} />,
-        bgColor: '#3498DB',
-        category: 'Ventas',
-        path: '/ventas',
-        features: ['Facturación', 'Cuentas por cobrar', 'Abonos', 'Notas crédito/débito', 'Clientes'],
-        version: '2.5.0',
-        author: 'Zentto'
-    },
-    {
-        id: 'compras',
-        name: 'Compras',
-        description: 'Órdenes de compra, recepción de facturas proveedor y cuentas por pagar.',
-        fullDescription: 'Optimice su proceso de compras. Desde órdenes de compra hasta recepción de mercancía y gestión de cuentas por pagar. Mantenga a sus proveedores organizados.',
-        icon: <LocalShippingIcon sx={{ fontSize: 40, color: '#fff' }} />,
-        bgColor: '#F39C12',
-        category: 'Operaciones',
-        path: '/compras',
-        features: ['Órdenes de compra', 'Recepciones', 'Cuentas por pagar', 'Proveedores', 'Reportes'],
-        version: '2.0.3',
-        author: 'Zentto'
-    },
-    {
-        id: 'pos',
-        name: 'Punto de Venta',
-        description: 'Software TPV optimizado para tiendas. Fácil, rápido y robusto.',
-        fullDescription: 'El Punto de Venta perfecto para su tienda. Interfaz táctil optimizada, gestión de caja, facturación rápida y reportes de ventas en tiempo real.',
-        icon: <PointOfSaleIcon sx={{ fontSize: 40, color: '#fff' }} />,
-        bgColor: '#9B59B6',
-        category: 'Ventas',
-        path: '/pos',
-        features: ['Interfaz táctil', 'Múltiples formas de pago', 'Cierre de caja', 'Reportes Z', 'Facturación'],
-        version: '1.9.0',
-        author: 'Zentto'
-    },
-    {
-        id: 'restaurante',
-        name: 'Restaurante',
-        description: 'Extensión de Punto de Venta con mapas de mesas, salones y cocina.',
-        fullDescription: 'Especializado para restaurantes. Gestione mapas de mesas, múltiples salones, comandas para cocina y propinas. Integrado con el módulo POS.',
-        icon: <RestaurantIcon sx={{ fontSize: 40, color: '#fff' }} />,
-        bgColor: '#E84393',
-        category: 'Especializados',
-        path: '/restaurante',
-        features: ['Mapa de mesas', 'Salones múltiples', 'Comandas cocina', 'Propinas', 'Integración POS'],
-        version: '1.2.0',
-        author: 'Zentto'
-    },
-    {
-        id: 'ecommerce',
-        name: 'Comercio Electrónico',
-        description: 'Tienda en línea B2B/B2C integrada en tiempo real con facturación.',
-        fullDescription: 'Lleve su negocio al siguiente nivel con una tienda en línea integrada. Ventas B2B y B2C, sincronización automática de inventario y facturación electrónica.',
-        icon: <LanguageIcon sx={{ fontSize: 40, color: '#fff' }} />,
-        bgColor: '#0984E3',
-        category: 'Ventas',
-        path: '/ecommerce',
-        features: ['Tienda online', 'B2B/B2C', 'Sincronización inventario', 'Pagos en línea', 'Envíos'],
-        version: '1.0.5',
-        author: 'Zentto'
-    },
-    {
-        id: 'auditoria',
-        name: 'Auditoría Fiscal',
-        description: 'Preparación de libros contables legales y declaración de impuestos.',
-        fullDescription: 'Mantenga su empresa al día con las obligaciones fiscales. Generación de libros legales, declaraciones de impuestos y reportes para auditorías.',
-        icon: <ContentPasteSearchIcon sx={{ fontSize: 40, color: '#fff' }} />,
-        bgColor: '#2D3436',
-        category: 'Especializados',
-        path: '/auditoria',
-        features: ['Libros legales', 'Declaraciones', 'Reportes fiscales', 'Auditorías', 'Compliance'],
-        version: '1.3.2',
-        author: 'Zentto'
-    },
-    {
-        id: 'logistica',
-        name: 'Logística',
-        description: 'Recepción de mercancía, devoluciones, albaranes y transportistas.',
-        fullDescription: 'Gestione toda la cadena logística de su empresa. Reciba mercancía con inspección de calidad, procese devoluciones a proveedores, genere albaranes de entrega con firma digital y administre su flota de transportistas.',
-        icon: <LocalShippingIcon sx={{ fontSize: 40, color: '#fff' }} />,
-        bgColor: '#1ABC9C',
-        category: 'Operaciones',
-        path: '/logistica',
-        features: ['Recepción mercancía', 'Inspección de calidad', 'Devoluciones', 'Albaranes / Guías despacho', 'Transportistas', 'Firma digital de entrega'],
-        version: '1.0.0',
-        author: 'Zentto'
-    },
-    {
-        id: 'crm',
-        name: 'CRM',
-        description: 'Pipeline de ventas, leads, actividades y seguimiento comercial.',
-        fullDescription: 'Impulse su fuerza de ventas con un CRM completo. Visualice su pipeline en tablero Kanban, gestione leads con probabilidad de cierre, registre actividades (llamadas, emails, reuniones) y analice su tasa de conversión.',
-        icon: <GroupsIcon sx={{ fontSize: 40, color: '#fff' }} />,
-        bgColor: '#E74C3C',
-        category: 'Ventas',
-        path: '/crm',
-        features: ['Pipeline Kanban', 'Leads con probabilidad', 'Actividades y tareas', 'Historial de cambios', 'Funnel de conversión', 'Multi-pipeline'],
-        version: '1.0.0',
-        author: 'Zentto'
-    },
-    {
-        id: 'manufactura',
-        name: 'Manufactura',
-        description: 'Listas de materiales (BOM), centros de trabajo y órdenes de producción.',
-        fullDescription: 'Controle su proceso productivo de principio a fin. Defina listas de materiales con componentes y costos, configure centros de trabajo con capacidad, y gestione órdenes de producción con seguimiento de estado en tiempo real.',
-        icon: <PrecisionManufacturingIcon sx={{ fontSize: 40, color: '#fff' }} />,
-        bgColor: '#8E44AD',
-        category: 'Operaciones',
-        path: '/manufactura',
-        features: ['Listas de materiales (BOM)', 'Centros de trabajo', 'Órdenes de producción', 'Control de costos', 'Seguimiento en tiempo real', 'Integración contable'],
-        version: '1.0.0',
-        author: 'Zentto'
-    },
-    {
-        id: 'flota',
-        name: 'Control de Flota',
-        description: 'Vehículos, combustible, mantenimiento preventivo y registro de viajes.',
-        fullDescription: 'Administre todos los vehículos de su empresa. Registre cargas de combustible con costos, programe mantenimiento preventivo y correctivo, lleve control de viajes con origen/destino y analice costos operativos por vehículo.',
-        icon: <DirectionsCarIcon sx={{ fontSize: 40, color: '#fff' }} />,
-        bgColor: '#2C3E50',
-        category: 'Operaciones',
-        path: '/flota',
-        features: ['Registro de vehículos', 'Control de combustible', 'Mantenimiento preventivo', 'Registro de viajes', 'Costos por vehículo', 'Alertas de servicio'],
-        version: '1.0.0',
-        author: 'Zentto'
-    },
-    {
-        id: 'shipping',
-        name: 'Zentto Shipping',
-        description: 'Portal de paquetería: envía, rastrea y gestiona paquetes con múltiples carriers.',
-        fullDescription: 'Plataforma completa de envíos para clientes finales. Registro de clientes, cotización multi-carrier (Zoom, MRW, Liberty Express), generación de guías, rastreo en tiempo real con timeline, gestión de aduanas para envíos internacionales, y notificaciones automáticas en cada cambio de estado.',
-        icon: <LocalShippingIcon sx={{ fontSize: 40, color: '#fff' }} />,
-        bgColor: '#1565C0',
-        category: 'Operaciones',
-        path: '/shipping',
-        features: ['Envíos nacionales e internacionales', 'Cotización multi-carrier', 'Rastreo en tiempo real', 'Gestión de aduanas', 'Notificaciones automáticas', 'Portal público de rastreo', 'Zoom / MRW / Liberty Express'],
-        version: '1.0.0',
-        author: 'Zentto'
-    },
-    {
-        id: 'report-studio',
-        name: 'Report Studio',
-        description: 'Diseñador de reportes profesional con motor propio y plantillas listas para usar.',
-        fullDescription: 'Crea reportes personalizados para tu empresa sin programar. El Designer visual permite arrastrar y soltar campos, tablas, graficos y codigos QR. Incluye 30+ plantillas del sistema (facturas, nominas, inventario) y 25 layouts predefinidos por modulo. Los reportes se guardan en la nube y los cambios se ven inmediatamente sin deploy.',
-        icon: <DescriptionIcon sx={{ fontSize: 40, color: '#fff' }} />,
-        bgColor: '#FF6F00',
-        category: 'Herramientas',
-        path: '/report-studio',
-        features: ['Designer visual WYSIWYG', '30+ plantillas del sistema', '25 layouts por modulo', 'Motor de expresiones (80+ funciones)', 'Graficos SVG, QR y codigos de barra', 'Exportar a PDF y HTML', 'Guardar en la nube sin deploy'],
-        version: '1.9.2',
-        author: 'Zentto'
-    },
-    {
-        id: 'addons',
-        name: 'Addons',
-        description: 'Crea aplicaciones personalizadas con el Wizard o el Designer visual.',
-        fullDescription: 'Extiende tu ERP con aplicaciones a medida. El Wizard guiado permite crear apps en minutos sin codigo, mientras que el Designer ofrece control total sobre el layout. Las apps creadas aparecen automaticamente en el menu del modulo que elijas (Ventas, Inventario, Contabilidad, etc.).',
-        icon: <ExtensionIcon sx={{ fontSize: 40, color: '#fff' }} />,
-        bgColor: '#37474F',
-        category: 'Herramientas',
-        path: '/addons',
-        features: ['Wizard guiado paso a paso', 'Designer visual avanzado', 'Asignar a multiples modulos', 'Preview en tiempo real', 'Publicar y compartir', 'Sin necesidad de programar'],
-        version: '1.0.0',
-        author: 'Zentto'
-    },
+    // Mismo orden y colores que el home (escala cromática: rojo → naranja → verde → teal → azul → púrpura → rosa)
+    { id: 'contabilidad', name: 'Contabilidad', description: 'Gestione la contabilidad financiera y analítica, asientos, mayores y reportes.', fullDescription: 'El módulo de Contabilidad le permite gestionar toda la contabilidad de su empresa de manera eficiente. Incluye gestión de asientos contables, plan de cuentas, mayores, balances y reportes financieros completos.', icon: <AccountBalanceWalletIcon sx={{ fontSize: 28 }} />, bgColor: '#E74C3C', category: 'Finanzas', path: '/contabilidad', features: ['Asientos contables', 'Plan de cuentas', 'Mayores automáticos', 'Balances', 'Reportes financieros'], version: '2.1.0', author: 'Zentto' },
+    { id: 'nomina', name: 'Nómina', description: 'Administración de empleados, vacaciones, liquidaciones y roles de pago.', fullDescription: 'Gestione su talento humano con el módulo de Nómina. Incluye administración de empleados, cálculo de nómina, gestión de vacaciones, liquidaciones y roles de pago automatizados.', icon: <BadgeIcon sx={{ fontSize: 28 }} />, bgColor: '#E67E22', category: 'Recursos Humanos', path: '/nomina', features: ['Gestión de empleados', 'Cálculo de nómina', 'Vacaciones', 'Liquidaciones', 'Roles de pago'], version: '1.8.5', author: 'Zentto' },
+    { id: 'bancos', name: 'Bancos e Inst.', description: 'Gestión de cuentas corrientes, movimientos y conciliación bancaria.', fullDescription: 'Controle sus finanzas bancarias con este módulo integrado. Gestione múltiples cuentas corrientes, registre movimientos y realice conciliaciones bancarias automáticas.', icon: <AccountBalanceIcon sx={{ fontSize: 28 }} />, bgColor: '#F39C12', category: 'Finanzas', path: '/bancos', features: ['Múltiples cuentas', 'Conciliación bancaria', 'Movimientos', 'Reportes', 'Integración contable'], version: '1.5.2', author: 'Zentto' },
+    { id: 'inventario', name: 'Inventario', description: 'Controle su stock, existencias, bodegas, kardex y valoración.', fullDescription: 'Mantenga el control total de su inventario. Gestione bodegas múltiples, movimientos de stock, kardex valorizado, y obtenga reportes detallados de existencias.', icon: <StorefrontIcon sx={{ fontSize: 28 }} />, bgColor: '#27AE60', category: 'Operaciones', path: '/inventario', features: ['Múltiples bodegas', 'Kardex valorizado', 'Movimientos', 'Alertas de stock', 'Reportes'], version: '3.0.1', author: 'Zentto' },
+    { id: 'ventas', name: 'Ventas', description: 'Gestione facturas, abonos, cuentas por cobrar (CxC) y bases de clientes.', fullDescription: 'Maximice sus ventas con este completo módulo. Gestione facturación, cuentas por cobrar, abonos, notas de crédito/débito y mantenga su cartera de clientes organizada.', icon: <ShoppingCartIcon sx={{ fontSize: 28 }} />, bgColor: '#1ABC9C', category: 'Ventas', path: '/ventas', features: ['Facturación', 'Cuentas por cobrar', 'Abonos', 'Notas crédito/débito', 'Clientes'], version: '2.5.0', author: 'Zentto' },
+    { id: 'compras', name: 'Compras', description: 'Órdenes de compra, recepción de facturas proveedor y cuentas por pagar.', fullDescription: 'Optimice su proceso de compras. Desde órdenes de compra hasta recepción de mercancía y gestión de cuentas por pagar. Mantenga a sus proveedores organizados.', icon: <ShoppingBagIcon sx={{ fontSize: 28 }} />, bgColor: '#00A09D', category: 'Operaciones', path: '/compras', features: ['Órdenes de compra', 'Recepciones', 'Cuentas por pagar', 'Proveedores', 'Reportes'], version: '2.0.3', author: 'Zentto' },
+    { id: 'pos', name: 'Punto de Venta', description: 'Software TPV optimizado para tiendas. Fácil, rápido y robusto.', fullDescription: 'El Punto de Venta perfecto para su tienda. Interfaz táctil optimizada, gestión de caja, facturación rápida y reportes de ventas en tiempo real.', icon: <PointOfSaleIcon sx={{ fontSize: 28 }} />, bgColor: '#3498DB', category: 'Ventas', path: '/pos', features: ['Interfaz táctil', 'Múltiples formas de pago', 'Cierre de caja', 'Reportes Z', 'Facturación'], version: '1.9.0', author: 'Zentto' },
+    { id: 'restaurante', name: 'Restaurante', description: 'Extensión de Punto de Venta con mapas de mesas, salones y cocina.', fullDescription: 'Especializado para restaurantes. Gestione mapas de mesas, múltiples salones, comandas para cocina y propinas. Integrado con el módulo POS.', icon: <RestaurantIcon sx={{ fontSize: 28 }} />, bgColor: '#0984E3', category: 'Especializados', path: '/restaurante', features: ['Mapa de mesas', 'Salones múltiples', 'Comandas cocina', 'Propinas', 'Integración POS'], version: '1.2.0', author: 'Zentto' },
+    { id: 'ecommerce', name: 'Comercio Electrónico', description: 'Tienda en línea B2B/B2C integrada en tiempo real con facturación.', fullDescription: 'Lleve su negocio al siguiente nivel con una tienda en línea integrada. Ventas B2B y B2C, sincronización automática de inventario y facturación electrónica.', icon: <LanguageIcon sx={{ fontSize: 28 }} />, bgColor: '#1565C0', category: 'Ventas', path: '/ecommerce', features: ['Tienda online', 'B2B/B2C', 'Sincronización inventario', 'Pagos en línea', 'Envíos'], version: '1.0.5', author: 'Zentto' },
+    { id: 'auditoria', name: 'Auditoría Fiscal', description: 'Preparación de libros contables legales y declaración de impuestos.', fullDescription: 'Mantenga su empresa al día con las obligaciones fiscales. Generación de libros legales, declaraciones de impuestos y reportes para auditorías.', icon: <VerifiedUserIcon sx={{ fontSize: 28 }} />, bgColor: '#5C6BC0', category: 'Especializados', path: '/auditoria', features: ['Libros legales', 'Declaraciones', 'Reportes fiscales', 'Auditorías', 'Compliance'], version: '1.3.2', author: 'Zentto' },
+    { id: 'logistica', name: 'Logística', description: 'Recepción de mercancía, devoluciones, albaranes y transportistas.', fullDescription: 'Gestione toda la cadena logística de su empresa. Reciba mercancía con inspección de calidad, procese devoluciones a proveedores, genere albaranes de entrega con firma digital y administre su flota de transportistas.', icon: <RouteIcon sx={{ fontSize: 28 }} />, bgColor: '#7E57C2', category: 'Operaciones', path: '/logistica', features: ['Recepción mercancía', 'Inspección de calidad', 'Devoluciones', 'Albaranes / Guías despacho', 'Transportistas', 'Firma digital de entrega'], version: '1.0.0', author: 'Zentto' },
+    { id: 'crm', name: 'CRM', description: 'Pipeline de ventas, leads, actividades y seguimiento comercial.', fullDescription: 'Impulse su fuerza de ventas con un CRM completo. Visualice su pipeline en tablero Kanban, gestione leads con probabilidad de cierre, registre actividades (llamadas, emails, reuniones) y analice su tasa de conversión.', icon: <GroupsIcon sx={{ fontSize: 28 }} />, bgColor: '#9B59B6', category: 'Ventas', path: '/crm', features: ['Pipeline Kanban', 'Leads con probabilidad', 'Actividades y tareas', 'Historial de cambios', 'Funnel de conversión', 'Multi-pipeline'], version: '1.0.0', author: 'Zentto' },
+    { id: 'manufactura', name: 'Manufactura', description: 'Listas de materiales (BOM), centros de trabajo y órdenes de producción.', fullDescription: 'Controle su proceso productivo de principio a fin. Defina listas de materiales con componentes y costos, configure centros de trabajo con capacidad, y gestione órdenes de producción con seguimiento de estado en tiempo real.', icon: <PrecisionManufacturingIcon sx={{ fontSize: 28 }} />, bgColor: '#8E44AD', category: 'Operaciones', path: '/manufactura', features: ['Listas de materiales (BOM)', 'Centros de trabajo', 'Órdenes de producción', 'Control de costos', 'Seguimiento en tiempo real', 'Integración contable'], version: '1.0.0', author: 'Zentto' },
+    { id: 'flota', name: 'Control de Flota', description: 'Vehículos, combustible, mantenimiento preventivo y registro de viajes.', fullDescription: 'Administre todos los vehículos de su empresa. Registre cargas de combustible con costos, programe mantenimiento preventivo y correctivo, lleve control de viajes con origen/destino y analice costos operativos por vehículo.', icon: <DirectionsCarIcon sx={{ fontSize: 28 }} />, bgColor: '#875A7B', category: 'Operaciones', path: '/flota', features: ['Registro de vehículos', 'Control de combustible', 'Mantenimiento preventivo', 'Registro de viajes', 'Costos por vehículo', 'Alertas de servicio'], version: '1.0.0', author: 'Zentto' },
+    { id: 'shipping', name: 'Zentto Shipping', description: 'Portal de paquetería: envía, rastrea y gestiona paquetes con múltiples carriers.', fullDescription: 'Plataforma completa de envíos para clientes finales. Registro de clientes, cotización multi-carrier (Zoom, MRW, Liberty Express), generación de guías, rastreo en tiempo real con timeline, gestión de aduanas para envíos internacionales, y notificaciones automáticas en cada cambio de estado.', icon: <LocalShippingIcon sx={{ fontSize: 28 }} />, bgColor: '#E84393', category: 'Operaciones', path: '/shipping', features: ['Envíos nacionales e internacionales', 'Cotización multi-carrier', 'Rastreo en tiempo real', 'Gestión de aduanas', 'Notificaciones automáticas', 'Portal público de rastreo', 'Zoom / MRW / Liberty Express'], version: '1.0.0', author: 'Zentto' },
+    { id: 'report-studio', name: 'Report Studio', description: 'Diseñador de reportes profesional con motor propio y plantillas listas para usar.', fullDescription: 'Crea reportes personalizados para tu empresa sin programar. El Designer visual permite arrastrar y soltar campos, tablas, graficos y codigos QR. Incluye 30+ plantillas del sistema (facturas, nominas, inventario) y 25 layouts predefinidos por modulo.', icon: <DescriptionIcon sx={{ fontSize: 28 }} />, bgColor: '#FF6584', category: 'Herramientas', path: '/report-studio', features: ['Designer visual WYSIWYG', '30+ plantillas del sistema', '25 layouts por modulo', 'Motor de expresiones (80+ funciones)', 'Graficos SVG, QR y codigos de barra', 'Exportar a PDF y HTML', 'Guardar en la nube sin deploy'], version: '1.9.2', author: 'Zentto' },
+    { id: 'addons', name: 'Addons', description: 'Crea aplicaciones personalizadas con el Wizard o el Designer visual.', fullDescription: 'Extiende tu ERP con aplicaciones a medida. El Wizard guiado permite crear apps en minutos sin codigo, mientras que el Designer ofrece control total sobre el layout.', icon: <ExtensionIcon sx={{ fontSize: 28 }} />, bgColor: '#B0879E', category: 'Herramientas', path: '/addons', features: ['Wizard guiado paso a paso', 'Designer visual avanzado', 'Asignar a multiples modulos', 'Preview en tiempo real', 'Publicar y compartir', 'Sin necesidad de programar'], version: '1.0.0', author: 'Zentto' },
 ];
 
 export default function AppsStorePage() {
@@ -315,13 +113,10 @@ export default function AppsStorePage() {
     };
 
     return (
-        <Box sx={{ flex: 1, p: { xs: 2, md: 4 }, bgcolor: '#F9FAFB' }}>
-            {/* Odoo-like header for Apps section */}
-            <Stack direction="row" alignItems="center" justifyContent="space-between" mb={4}>
-                <Typography variant="h5" sx={{ fontWeight: 600, color: '#111827' }}>
-                    Aplicaciones
-                </Typography>
-            </Stack>
+        <Box sx={{ flex: 1, p: { xs: 2, md: 4 }, bgcolor: 'background.default' }}>
+            <Typography variant="h5" sx={{ fontWeight: 600, color: 'text.primary', mb: 4 }}>
+                Aplicaciones
+            </Typography>
 
             <Grid container spacing={3}>
                 {CATALOG.map((app) => {
@@ -330,57 +125,57 @@ export default function AppsStorePage() {
                         <Grid key={app.id} size={{ xs: 12, md: 6, lg: 4 }}>
                             <Paper
                                 elevation={0}
+                                onClick={() => installed ? handleOpenApp(app) : setSelectedApp(app)}
                                 sx={{
                                     p: 3,
                                     height: '100%',
                                     display: 'flex',
                                     flexDirection: 'column',
-                                    border: '1px solid #E5E7EB',
-                                    borderRadius: 2,
-                                    transition: 'border-color 0.2s, box-shadow 0.2s',
+                                    border: (t) => `1px solid ${t.palette.divider}`,
+                                    borderRadius: 4,
+                                    cursor: 'pointer',
+                                    transition: 'box-shadow 0.2s',
+                                    bgcolor: (t) => t.palette.mode === 'dark' ? 'rgba(255,255,255,0.04)' : 'background.paper',
+                                    boxShadow: (t) => t.palette.mode === 'dark' ? 'none' : '0 1px 4px rgba(0,0,0,0.06)',
                                     '&:hover': {
-                                        borderColor: '#D1D5DB',
-                                        boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)'
+                                        boxShadow: (t) => t.palette.mode === 'dark' ? '0 4px 12px rgba(0,0,0,0.3)' : '0 4px 12px rgba(0,0,0,0.1)',
                                     }
                                 }}
                             >
-                                <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
-                                    <Avatar
-                                        variant="rounded"
-                                        sx={{ width: 64, height: 64, bgcolor: app.bgColor }}
-                                    >
-                                        {app.icon}
-                                    </Avatar>
-                                    <Box sx={{ flex: 1 }}>
-                                        <Typography variant="subtitle1" sx={{ fontWeight: 600, lineHeight: 1.2, mb: 0.5 }}>
-                                            {app.name}
-                                        </Typography>
-                                        <Typography variant="body2" color="text.secondary" sx={{ display: 'flex', gap: 1 }}>
-                                            {app.category}
-                                        </Typography>
-                                    </Box>
+                                {/* Icon box — landing style */}
+                                <Box sx={{
+                                    width: 48, height: 48, borderRadius: 3,
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    bgcolor: (t) => t.palette.mode === 'dark' ? 'rgba(255,255,255,0.08)' : '#fff',
+                                    border: (t) => `1px solid ${t.palette.divider}`,
+                                    boxShadow: (t) => t.palette.mode === 'dark' ? 'none' : '0 2px 8px rgba(0,0,0,0.12)',
+                                    color: app.bgColor,
+                                    mb: 2.5,
+                                }}>
+                                    {app.icon}
                                 </Box>
 
-                                <Typography variant="body2" color="text.secondary" sx={{ flexGrow: 1, mb: 3 }}>
+                                <Typography variant="subtitle1" sx={{ fontWeight: 600, color: 'text.secondary', mb: 1 }}>
+                                    {app.name}
+                                </Typography>
+
+                                <Typography variant="body2" color="text.secondary" sx={{ flexGrow: 1, mb: 3, lineHeight: 1.6 }}>
                                     {app.description}
                                 </Typography>
 
-                                <Stack direction={{ xs: 'column', sm: 'row' }} gap={1}>
+                                <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
                                     {installed ? (
                                         <Button
                                             variant="contained"
                                             size="small"
-                                            onClick={() => handleOpenApp(app)}
+                                            onClick={(e) => { e.stopPropagation(); handleOpenApp(app); }}
                                             startIcon={<CheckCircleIcon />}
                                             sx={{
                                                 bgcolor: app.bgColor,
                                                 color: '#fff',
                                                 fontWeight: 600,
                                                 textTransform: 'none',
-                                                '&:hover': {
-                                                    bgcolor: app.bgColor,
-                                                    opacity: 0.9,
-                                                }
+                                                '&:hover': { bgcolor: app.bgColor, opacity: 0.9 }
                                             }}
                                         >
                                             Abrir
@@ -390,7 +185,7 @@ export default function AppsStorePage() {
                                             variant="contained"
                                             size="small"
                                             startIcon={<LockIcon />}
-                                            onClick={() => router.push('/pricing')}
+                                            onClick={(e) => { e.stopPropagation(); router.push('/pricing'); }}
                                             sx={{
                                                 bgcolor: '#6C63FF',
                                                 fontWeight: 600,
@@ -406,12 +201,12 @@ export default function AppsStorePage() {
                                         variant="text"
                                         color="inherit"
                                         size="small"
-                                        onClick={() => setSelectedApp(app)}
-                                        sx={{ textTransform: 'none', color: '#6B7280' }}
+                                        onClick={(e) => { e.stopPropagation(); setSelectedApp(app); }}
+                                        sx={{ textTransform: 'none', color: 'text.secondary' }}
                                     >
                                         Más información
                                     </Button>
-                                </Stack>
+                                </Box>
                             </Paper>
                         </Grid>
                     );
@@ -434,12 +229,9 @@ export default function AppsStorePage() {
                             pb: 1
                         }}>
                             <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-                                <Avatar
-                                    variant="rounded"
-                                    sx={{ width: 56, height: 56, bgcolor: selectedApp.bgColor }}
-                                >
+                                <Box sx={{ width: 56, height: 56, borderRadius: 3, display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: (t) => t.palette.mode === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)', color: selectedApp.bgColor }}>
                                     {selectedApp.icon}
-                                </Avatar>
+                                </Box>
                                 <Box>
                                     <Typography variant="h6" fontWeight="bold">
                                         {selectedApp.name}
@@ -493,31 +285,17 @@ export default function AppsStorePage() {
                             </Box>
 
                             {isInstalled(selectedApp.id) ? (
-                                <Box sx={{
-                                    p: 2,
-                                    bgcolor: '#e8f5e9',
-                                    borderRadius: 1,
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: 1
-                                }}>
+                                <Box sx={(t) => ({ p: 2, borderRadius: 1, display: 'flex', alignItems: 'center', gap: 1, ...(t.palette.mode === 'dark' ? { bgcolor: 'rgba(46,125,50,0.15)' } : { bgcolor: '#e8f5e9' }) })}>
                                     <CheckCircleIcon color="success" />
-                                    <Typography variant="body2" color="success.dark">
+                                    <Typography variant="body2" color="success.main">
                                         Esta aplicación está instalada y lista para usar.
                                     </Typography>
                                 </Box>
                             ) : (
-                                <Box sx={{
-                                    p: 2,
-                                    bgcolor: '#f3f0ff',
-                                    borderRadius: 1,
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: 1
-                                }}>
+                                <Box sx={(t) => ({ p: 2, borderRadius: 1, display: 'flex', alignItems: 'center', gap: 1, ...(t.palette.mode === 'dark' ? { bgcolor: 'rgba(108,99,255,0.15)' } : { bgcolor: '#f3f0ff' }) })}>
                                     <RocketLaunchIcon sx={{ color: '#6C63FF' }} />
-                                    <Typography variant="body2" sx={{ color: '#5b54e6' }}>
-                                        Suscribete a un plan para acceder a este modulo.
+                                    <Typography variant="body2" sx={{ color: '#6C63FF' }}>
+                                        Suscríbete a un plan para acceder a este módulo.
                                     </Typography>
                                 </Box>
                             )}
