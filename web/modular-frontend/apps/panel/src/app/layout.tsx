@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Drawer,
@@ -16,6 +16,7 @@ import {
   Avatar,
   Divider,
   useMediaQuery,
+  Tooltip,
 } from "@mui/material";
 import {
   Dashboard as DashboardIcon,
@@ -30,11 +31,13 @@ import {
   Storefront as StorefrontIcon,
   Group as GroupIcon,
   AutoAwesome as AutoAwesomeIcon,
+  Logout as LogoutIcon,
 } from "@mui/icons-material";
 import { ThemeProvider, createTheme, useTheme } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useRouter, usePathname } from "next/navigation";
+import { isAuthenticated, getUser, logout } from "../lib/auth";
 
 const theme = createTheme({
   palette: {
@@ -208,11 +211,47 @@ function PanelLayout({ children }: { children: React.ReactNode }) {
   const muiTheme = useTheme();
   const isMobile = useMediaQuery(muiTheme.breakpoints.down("md"));
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [authChecked, setAuthChecked] = useState(false);
+  const [user, setUserState] = useState<any>(null);
+
+  // Check auth on mount and pathname change
+  useEffect(() => {
+    const isLoginPage = pathname === "/login" || pathname === "/register";
+
+    if (!isAuthenticated() && !isLoginPage) {
+      router.replace("/login");
+      return;
+    }
+
+    if (isAuthenticated()) {
+      setUserState(getUser());
+    }
+
+    setAuthChecked(true);
+  }, [pathname, router]);
+
+  // Don't render layout for login/register pages
+  const isLoginPage = pathname === "/login" || pathname === "/register";
+  if (isLoginPage) {
+    return <>{children}</>;
+  }
+
+  // Don't render until auth check completes
+  if (!authChecked) {
+    return null;
+  }
 
   const handleNavigate = (href: string) => {
     router.push(href);
     if (isMobile) setMobileOpen(false);
   };
+
+  const handleLogout = () => {
+    logout();
+  };
+
+  const userInitial = user?.name?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || "U";
+  const userName = user?.name || user?.email || "Usuario";
 
   const drawerContent = <SidebarContent pathname={pathname} onNavigate={handleNavigate} />;
 
@@ -265,6 +304,9 @@ function PanelLayout({ children }: { children: React.ReactNode }) {
             <Typography variant="h6" sx={{ flex: 1, fontWeight: 600, fontSize: 16, color: "#334155" }}>
               Zentto Panel
             </Typography>
+            <Typography variant="body2" sx={{ color: "#64748b", fontSize: 13, display: { xs: "none", sm: "block" } }}>
+              {userName}
+            </Typography>
             <Avatar
               sx={{
                 width: 34,
@@ -275,8 +317,13 @@ function PanelLayout({ children }: { children: React.ReactNode }) {
                 cursor: "pointer",
               }}
             >
-              U
+              {userInitial}
             </Avatar>
+            <Tooltip title="Cerrar sesion">
+              <IconButton onClick={handleLogout} sx={{ color: "#94a3b8" }}>
+                <LogoutIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
           </Toolbar>
         </AppBar>
 
