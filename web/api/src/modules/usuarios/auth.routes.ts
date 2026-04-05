@@ -22,6 +22,7 @@ import {
   getUserCompanyAccesses,
   resolveActiveCompanyAccess,
   getUsuarioTipo,
+  getUsuarioRecord,
 } from "./usuarios.service.js";
 import {
   AuthFlowError,
@@ -433,6 +434,56 @@ authRouter.get("/companies", async (req, res) => {
     rows: companyAccesses,
     active: activeCompany,
   });
+});
+
+// --- GET /v1/auth/profile ----------------------------------------
+// Endpoint para zentto-auth migration: dado un JWT básico (sub, isAdmin),
+// enriquece con permisos, modulos y companyAccesses del ERP.
+// Usado por el frontend después de autenticar contra zentto-auth.
+authRouter.get("/profile", async (req, res) => {
+  const user = (req as Request & { user?: JwtPayload }).user;
+  if (!user?.sub) {
+    return res.status(401).json({ error: "not_authenticated" });
+  }
+
+  try {
+    // Obtener datos del ERP para este usuario
+    const record = await getUsuarioRecord(user.sub);
+    const isAdmin = record
+      ? record.Tipo === "ADMIN" || record.Tipo === "SUP" || record.Cod_Usuario.toUpperCase() === "SUP"
+      : user.isAdmin ?? false;
+
+    const permisos = record ? extractPermisos(record) : undefined;
+    const modulosAcceso = record ? await getModulosAcceso(record.Cod_Usuario) : [];
+
+    let allowedModules: string[];
+    if (isAdmin) {
+      allowedModules = [...SYSTEM_MODULES];
+    } else if (modulosAcceso.length === 0) {
+      allowedModules = getPlanModules("STARTER");
+    } else {
+      allowedModules = modulosAcceso.filter((m) => m.permitido).map((m) => m.modulo);
+      if (!allowedModules.includes("dashboard")) allowedModules.unshift("dashboard");
+    }
+
+    const companyAccesses = await getUserCompanyAccesses(user.sub, isAdmin);
+    const scope = (req as any).scope as { companyId?: number; branchId?: number } | undefined;
+    const activeCompany = resolveActiveCompanyAccess(companyAccesses, scope?.companyId, scope?.branchId);
+
+    return res.json({
+      userId: user.sub,
+      userName: record?.Nombre ?? user.name,
+      tipo: record?.Tipo ?? user.tipo,
+      isAdmin,
+      permisos,
+      modulos: allowedModules,
+      defaultCompany: activeCompany,
+      companyAccesses,
+    });
+  } catch (err: any) {
+    console.error("[AUTH PROFILE]", err?.message);
+    return res.status(500).json({ error: "profile_error", message: err?.message });
+  }
 });
 
 // --- POST /v1/auth/switch-company (DEPRECATED) ----------------

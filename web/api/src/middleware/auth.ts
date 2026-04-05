@@ -108,42 +108,61 @@ export async function requireJwt(req: Request, res: Response, next: NextFunction
     return next();
   }
 
-  const auth = req.headers.authorization ?? "";
-  const [scheme, token] = auth.split(" ");
+  // Extraer token: Bearer header O cookie zentto_access (zentto-auth)
+  let token: string | undefined;
 
-  if (scheme !== "Bearer" || !token) {
+  const auth = req.headers.authorization ?? "";
+  const [scheme, bearerToken] = auth.split(" ");
+  if (scheme === "Bearer" && bearerToken) {
+    token = bearerToken;
+  }
+
+  // Fallback: cookie zentto_access emitida por zentto-auth microservice
+  if (!token) {
+    const cookieHeader = req.headers.cookie;
+    if (cookieHeader) {
+      const match = cookieHeader.match(/zentto_access=([^;]+)/);
+      if (match) token = match[1];
+    }
+  }
+
+  if (!token) {
     return res.status(401).json({ error: "missing_token" });
   }
 
   try {
-    const payload = verifyJwt(token);
+    const payload = verifyJwt(token!);
     const scope = resolveScope(payload, req);
 
+    // /auth/profile puede funcionar sin scope (JWT de zentto-auth sin companyAccesses)
+    const isProfileEndpoint = req.path === "/auth/profile" || req.path === "/auth/companies";
     if (!scope?.companyId || !scope?.branchId) {
-      return res.status(403).json({ error: "invalid_scope", message: "No hay empresa/sucursal activa para este usuario" });
+      if (!isProfileEndpoint) {
+        return res.status(403).json({ error: "invalid_scope", message: "No hay empresa/sucursal activa para este usuario" });
+      }
+    }
+
+    // Profile/companies endpoints: funcionar sin scope (JWT de zentto-auth sin companies)
+    if (!scope) {
+      (req as AuthenticatedRequest).user = payload;
+      (req as AuthenticatedRequest).scope = undefined;
+      return next();
     }
 
     // ── Resolver BD del tenant (solo PostgreSQL) ──
-    // Prioridad: subdomain > x-company-id header > JWT default
     let tenantPool;
     if ((env.dbType ?? "postgres") === "postgres") {
       try {
         const { resolveTenantDb } = await import("../db/tenant-resolver.js");
         const { getTenantPool, getMasterPool } = await import("../db/pg-pool-manager.js");
 
-        // Si viene de un subdomain de tenant, forzar ese CompanyId
         const subdomainCompanyId = (req as any)._tenantCompanyId as number | undefined;
         if (subdomainCompanyId) {
-          // SEGURIDAD: el usuario debe tener acceso a este tenant
           const accesses = (payload.companyAccesses ?? []);
           const hasAccess = accesses.some((a) => Number(a.companyId) === subdomainCompanyId);
           if (!hasAccess) {
-            return res.status(403).json({
-              error: "tenant_mismatch",
-              message: "Tu cuenta no tiene acceso a este tenant",
-            });
+            return res.status(403).json({ error: "tenant_mismatch", message: "Tu cuenta no tiene acceso a este tenant" });
           }
-          // Forzar scope al tenant del subdomain
           const tenantAccess = accesses.find((a) => Number(a.companyId) === subdomainCompanyId);
           if (tenantAccess) {
             const tenantScope = toScope(tenantAccess);
@@ -158,7 +177,6 @@ export async function requireJwt(req: Request, res: Response, next: NextFunction
           }
         }
 
-        // x-db-mode: demo solo permitido desde dominios conocidos (NO desde subdomains de tenant)
         const dbMode = req.headers["x-db-mode"] as string | undefined;
         const isTenantSubdomain = !!(req as any)._isTenantSubdomain;
 
@@ -175,7 +193,6 @@ export async function requireJwt(req: Request, res: Response, next: NextFunction
       } catch (err) {
         const isTenantSubdomain = !!(req as any)._isTenantSubdomain;
         if (isTenantSubdomain) {
-          // SEGURIDAD: si es un subdomain de tenant y falla la resolución, rechazar
           console.error("[auth] Tenant resolver failed for subdomain:", (err as Error).message);
           return res.status(503).json({ error: "tenant_unavailable", message: "Base de datos del tenant no disponible" });
         }
@@ -183,7 +200,6 @@ export async function requireJwt(req: Request, res: Response, next: NextFunction
       }
     }
 
-    // Construir scopedUser DESPUÉS de resolver tenant (scope puede haber cambiado)
     const scopedUser: JwtPayload = {
       ...payload,
       companyId: scope.companyId,
