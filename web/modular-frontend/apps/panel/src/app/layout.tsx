@@ -23,6 +23,7 @@ import {
   Add as AddIcon,
   Menu as MenuIcon,
   Settings as SettingsIcon,
+  Article as ArticleIcon,
 } from "@mui/icons-material";
 import { ThemeProvider, createTheme, useTheme } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
@@ -48,7 +49,17 @@ const NAV_ITEMS = [
   { label: "Crear Sitio", href: "/sites/new", icon: <AddIcon />, color: "#059669" },
 ];
 
+function getSiteNavItems(pathname: string) {
+  const match = pathname.match(/^\/sites\/([^/]+)/);
+  if (!match || match[1] === "new") return [];
+  const siteId = match[1];
+  return [
+    { label: "Blog", href: `/sites/${siteId}/blog`, icon: <ArticleIcon /> },
+  ];
+}
+
 function SidebarContent({ pathname, onNavigate }: { pathname: string; onNavigate: (href: string) => void }) {
+  const siteNav = getSiteNavItems(pathname);
   return (
     <Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
       {/* Brand */}
@@ -112,6 +123,43 @@ function SidebarContent({ pathname, onNavigate }: { pathname: string; onNavigate
             </ListItem>
           );
         })}
+        {siteNav.length > 0 && (
+          <>
+            <Divider sx={{ borderColor: "rgba(255,255,255,0.08)", mx: 2, my: 1 }} />
+            <Typography variant="caption" sx={{ px: 2.5, color: "rgba(255,255,255,0.35)", fontWeight: 600, textTransform: "uppercase", letterSpacing: 1 }}>
+              Sitio
+            </Typography>
+            {siteNav.map((item) => {
+              const isActive = pathname.startsWith(item.href);
+              return (
+                <ListItem key={item.href} disablePadding sx={{ mb: 0.5 }}>
+                  <ListItemButton
+                    onClick={() => onNavigate(item.href)}
+                    sx={{
+                      borderRadius: 2,
+                      px: 2,
+                      py: 1,
+                      color: isActive ? "#fff" : "rgba(255,255,255,0.6)",
+                      bgcolor: isActive ? "rgba(99,102,241,0.25)" : "transparent",
+                      "&:hover": {
+                        bgcolor: isActive ? "rgba(99,102,241,0.3)" : "rgba(255,255,255,0.06)",
+                        color: "#fff",
+                      },
+                    }}
+                  >
+                    <ListItemIcon sx={{ minWidth: 36, color: isActive ? "#818cf8" : "rgba(255,255,255,0.4)" }}>
+                      {item.icon}
+                    </ListItemIcon>
+                    <ListItemText
+                      primary={item.label}
+                      primaryTypographyProps={{ fontSize: 14, fontWeight: isActive ? 600 : 400 }}
+                    />
+                  </ListItemButton>
+                </ListItem>
+              );
+            })}
+          </>
+        )}
       </List>
 
       {/* Footer */}

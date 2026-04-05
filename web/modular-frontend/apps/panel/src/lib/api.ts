@@ -63,3 +63,50 @@ export const revisionsApi = {
   list: (siteId: string) => fetchAPI<any>(`/v1/sites/${siteId}/revisions`),
   restore: (siteId: string, revisionId: string) => fetchAPI<any>(`/v1/sites/${siteId}/revisions/${revisionId}/restore`, { method: 'POST' }),
 };
+
+// Posts
+export const postsApi = {
+  list: (siteId: string, params?: { status?: string; categoryId?: string; search?: string; limit?: number; offset?: number }) => {
+    const qs = new URLSearchParams();
+    if (params?.status) qs.set('status', params.status);
+    if (params?.categoryId) qs.set('categoryId', params.categoryId);
+    if (params?.search) qs.set('search', params.search);
+    if (params?.limit) qs.set('limit', String(params.limit));
+    if (params?.offset) qs.set('offset', String(params.offset));
+    return fetchAPI<any>(`/v1/sites/${siteId}/posts?${qs}`);
+  },
+  get: (siteId: string, postId: string) => fetchAPI<any>(`/v1/sites/${siteId}/posts/${postId}`),
+  create: (siteId: string, data: any) => fetchAPI<any>(`/v1/sites/${siteId}/posts`, { method: 'POST', body: JSON.stringify(data) }),
+  update: (siteId: string, postId: string, data: any) => fetchAPI<any>(`/v1/sites/${siteId}/posts/${postId}`, { method: 'PUT', body: JSON.stringify(data) }),
+  delete: (siteId: string, postId: string) => fetchAPI<any>(`/v1/sites/${siteId}/posts/${postId}`, { method: 'DELETE' }),
+  publish: (siteId: string, postId: string) => fetchAPI<any>(`/v1/sites/${siteId}/posts/${postId}/publish`, { method: 'POST' }),
+};
+
+// Categories
+export const categoriesApi = {
+  list: (siteId: string) => fetchAPI<any>(`/v1/sites/${siteId}/categories`),
+  create: (siteId: string, data: any) => fetchAPI<any>(`/v1/sites/${siteId}/categories`, { method: 'POST', body: JSON.stringify(data) }),
+  update: (siteId: string, categoryId: string, data: any) => fetchAPI<any>(`/v1/sites/${siteId}/categories/${categoryId}`, { method: 'PUT', body: JSON.stringify(data) }),
+  delete: (siteId: string, categoryId: string) => fetchAPI<any>(`/v1/sites/${siteId}/categories/${categoryId}`, { method: 'DELETE' }),
+};
+
+// Tags
+export const tagsApi = {
+  list: (siteId: string) => fetchAPI<any>(`/v1/sites/${siteId}/tags`),
+  create: (siteId: string, data: any) => fetchAPI<any>(`/v1/sites/${siteId}/tags`, { method: 'POST', body: JSON.stringify(data) }),
+  delete: (siteId: string, tagId: string) => fetchAPI<any>(`/v1/sites/${siteId}/tags/${tagId}`, { method: 'DELETE' }),
+};
+
+// Integrations
+export const integrationsApi = {
+  catalog: () => fetchAPI<any>('/v1/sites/integrations/catalog'),
+  list: (siteId: string) => fetchAPI<any>(`/v1/sites/${siteId}/integrations`),
+  update: (siteId: string, integrations: any[]) => fetchAPI<any>(`/v1/sites/${siteId}/integrations`, { method: 'PUT', body: JSON.stringify({ integrations }) }),
+};
+
+// Comments
+export const commentsApi = {
+  list: (siteId: string, postId: string) => fetchAPI<any>(`/v1/sites/${siteId}/posts/${postId}/comments`),
+  moderate: (siteId: string, commentId: string, status: string) => fetchAPI<any>(`/v1/sites/${siteId}/comments/${commentId}`, { method: 'PUT', body: JSON.stringify({ status }) }),
+  delete: (siteId: string, commentId: string) => fetchAPI<any>(`/v1/sites/${siteId}/comments/${commentId}`, { method: 'DELETE' }),
+};

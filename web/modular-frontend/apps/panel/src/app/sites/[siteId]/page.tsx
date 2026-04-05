@@ -19,7 +19,8 @@ import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import DescriptionIcon from "@mui/icons-material/Description";
 import ImageIcon from "@mui/icons-material/Image";
 import InboxIcon from "@mui/icons-material/Inbox";
-import { sitesApi, pagesApi, mediaApi, formsApi, revisionsApi } from "@/lib/api";
+import ArticleIcon from "@mui/icons-material/Article";
+import { sitesApi, pagesApi, mediaApi, formsApi, revisionsApi, postsApi } from "@/lib/api";
 
 interface Revision {
   id: string;
@@ -36,6 +37,7 @@ export default function SiteDashboardPage() {
   const [pages, setPages] = useState<any[]>([]);
   const [media, setMedia] = useState<any[]>([]);
   const [submissions, setSubmissions] = useState<any[]>([]);
+  const [posts, setPosts] = useState<any[]>([]);
   const [revisions, setRevisions] = useState<Revision[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -49,13 +51,16 @@ export default function SiteDashboardPage() {
       mediaApi.list(siteId).catch(() => []),
       formsApi.list(siteId).catch(() => []),
       revisionsApi.list(siteId).catch(() => []),
+      postsApi.list(siteId).catch(() => []),
     ])
-      .then(([siteData, pagesData, mediaData, formsData, revisionsData]) => {
+      .then(([siteData, pagesData, mediaData, formsData, revisionsData, postsData]) => {
         setSite(siteData);
         setPages(Array.isArray(pagesData) ? pagesData : []);
         setMedia(Array.isArray(mediaData) ? mediaData : []);
         setSubmissions(Array.isArray(formsData) ? formsData : []);
         setRevisions(Array.isArray(revisionsData) ? revisionsData : []);
+        const postsList = Array.isArray(postsData) ? postsData : postsData?.data ?? postsData?.posts ?? [];
+        setPosts(postsList);
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
@@ -177,7 +182,7 @@ export default function SiteDashboardPage() {
 
       {/* Stats */}
       <Grid container spacing={3} sx={{ mb: 3 }}>
-        <Grid size={{ xs: 12, sm: 4 }}>
+        <Grid size={{ xs: 12, sm: 3 }}>
           <Paper
             sx={{ p: 3, cursor: "pointer", "&:hover": { bgcolor: "action.hover" } }}
             onClick={() => router.push(`/sites/${siteId}/pages`)}
@@ -195,7 +200,7 @@ export default function SiteDashboardPage() {
             </Box>
           </Paper>
         </Grid>
-        <Grid size={{ xs: 12, sm: 4 }}>
+        <Grid size={{ xs: 12, sm: 3 }}>
           <Paper
             sx={{ p: 3, cursor: "pointer", "&:hover": { bgcolor: "action.hover" } }}
             onClick={() => router.push(`/sites/${siteId}/media`)}
@@ -213,7 +218,7 @@ export default function SiteDashboardPage() {
             </Box>
           </Paper>
         </Grid>
-        <Grid size={{ xs: 12, sm: 4 }}>
+        <Grid size={{ xs: 12, sm: 3 }}>
           <Paper
             sx={{ p: 3, cursor: "pointer", "&:hover": { bgcolor: "action.hover" } }}
             onClick={() => router.push(`/sites/${siteId}/forms`)}
@@ -226,6 +231,24 @@ export default function SiteDashboardPage() {
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
                   Envios de formularios
+                </Typography>
+              </Box>
+            </Box>
+          </Paper>
+        </Grid>
+        <Grid size={{ xs: 12, sm: 3 }}>
+          <Paper
+            sx={{ p: 3, cursor: "pointer", "&:hover": { bgcolor: "action.hover" } }}
+            onClick={() => router.push(`/sites/${siteId}/blog`)}
+          >
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+              <ArticleIcon sx={{ fontSize: 40, color: "#8b5cf6" }} />
+              <Box>
+                <Typography variant="h4" fontWeight={700}>
+                  {posts.length}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Posts del blog
                 </Typography>
               </Box>
             </Box>
