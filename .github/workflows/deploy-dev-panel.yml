@@ -1,0 +1,107 @@
+# ─────────────────────────────────────────────────────────────────────
+#  Deploy Panel → DEV environment (paneldev.zentto.net)
+#
+#  Trigger: push to developer branch (web/modular-frontend/apps/panel/**)
+#  Target: Same Hetzner server, sites-panel-dev container, port 3028
+#  Image: ghcr.io/zentto-erp/zentto-web/panel:dev
+# ─────────────────────────────────────────────────────────────────────
+
+name: Deploy Panel (DEV)
+
+on:
+  push:
+    branches: [developer]
+    paths:
+      - 'web/modular-frontend/apps/panel/**'
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-dev-panel
+  cancel-in-progress: true
+
+env:
+  IMAGE: ghcr.io/zentto-erp/zentto-web/panel:dev
+  REPO: zentto-erp/zentto-web
+
+jobs:
+  # ── 1. Build Docker image (:dev tag) ───────────────────────────────
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GHCR_PAT }}
+
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+          sudo docker image prune --all --force
+          df -h
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Build panel as standalone Next.js app
+      - name: Create Dockerfile
+        run: |
+          cat > Dockerfile.panel << 'EOF'
+          FROM node:22-alpine AS deps
+          WORKDIR /app
+          COPY web/modular-frontend/apps/panel/package.json ./
+          RUN npm install
+
+          FROM node:22-alpine AS builder
+          WORKDIR /app
+          COPY --from=deps /app/node_modules ./node_modules
+          COPY web/modular-frontend/apps/panel/ ./
+          RUN npx next build || true
+
+          FROM node:22-alpine
+          WORKDIR /app
+          COPY --from=builder /app ./
+          EXPOSE 3028
+          ENV PORT=3028 NODE_ENV=production
+          CMD ["npx", "next", "start", "-p", "3028"]
+          EOF
+
+      - uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Dockerfile.panel
+          push: true
+          tags: ${{ env.IMAGE }}
+          cache-from: type=gha,scope=panel-dev
+          cache-to: type=gha,mode=max,scope=panel-dev
+
+  # ── 2. Deploy DEV container ────────────────────────────────────────
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy Panel dev container
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            set -e
+
+            # Login to GHCR + deploy
+            echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u zentto-erp --password-stdin
+            docker pull ghcr.io/zentto-erp/zentto-web/panel:dev
+            cd /opt/zentto-sites
+            docker compose up -d --force-recreate --no-deps sites-panel-dev
+            sleep 5
+            curl -fsS http://127.0.0.1:3028 >/dev/null
+            docker image prune -f
+            echo "✓ Panel DEV deployed: $(date -u)"
+
+  # set-private omitido — los workflows de prod manejan la visibilidad

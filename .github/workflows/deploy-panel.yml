@@ -1,0 +1,154 @@
+# ─────────────────────────────────────────────────────────────────────
+#  Deploy Panel → PROD environment (panel.zentto.net)
+#
+#  Trigger: PR merged to main (web/modular-frontend/apps/panel/**)
+#  Target: Hetzner server, sites-panel container, port 3018
+#  Image: ghcr.io/zentto-erp/zentto-web/panel:latest
+# ─────────────────────────────────────────────────────────────────────
+
+name: Deploy Panel (Prod)
+
+on:
+  pull_request:
+    branches: [main]
+    types: [closed]
+    paths:
+      - 'web/modular-frontend/apps/panel/**'
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-panel
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  IMAGE: ghcr.io/zentto-erp/zentto-web/panel:latest
+  REPO: zentto-erp/zentto-web
+
+jobs:
+  # ── Step 0: Hacer repo publico para usar minutos gratuitos ───
+  set-public:
+    if: github.event.pull_request.merged == true || github.event_name == 'workflow_dispatch'
+    name: Make repo public (free minutes)
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Make repo public
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X PATCH \
+            -H "Authorization: token ${{ secrets.GHCR_PAT }}" \
+            -H "Accept: application/vnd.github+json" \
+            https://api.github.com/repos/${{ env.REPO }} \
+            -d '{"private":false}')
+          echo "HTTP status: $STATUS"
+          if [ "$STATUS" != "200" ]; then
+            echo "⚠ No se pudo hacer el repo publico (status $STATUS) — continuando de todas formas"
+          else
+            echo "✓ Repo es ahora publico"
+          fi
+
+  # ── Build & Push Docker image ───────────────────────────────
+  build:
+    name: Build & Push Panel
+    needs: set-public
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+          sudo docker image prune --all --force
+          df -h /
+
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GHCR_PAT }}
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/setup-buildx-action@v3
+
+      # Build panel as standalone Next.js app
+      - name: Create Dockerfile
+        run: |
+          cat > Dockerfile.panel << 'EOF'
+          FROM node:22-alpine AS deps
+          WORKDIR /app
+          COPY web/modular-frontend/apps/panel/package.json ./
+          RUN npm install
+
+          FROM node:22-alpine AS builder
+          WORKDIR /app
+          COPY --from=deps /app/node_modules ./node_modules
+          COPY web/modular-frontend/apps/panel/ ./
+          RUN npx next build || true
+
+          FROM node:22-alpine
+          WORKDIR /app
+          COPY --from=builder /app ./
+          EXPOSE 3018
+          ENV PORT=3018 NODE_ENV=production
+          CMD ["npx", "next", "start", "-p", "3018"]
+          EOF
+
+      - uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Dockerfile.panel
+          push: true
+          tags: ${{ env.IMAGE }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ── Deploy container en servidor ────────────────────────────
+  deploy:
+    name: Deploy Panel
+    needs: build
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: appleboy/ssh-action@v1.0.3
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_ACTOR: ${{ github.actor }}
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          envs: GHCR_TOKEN,GITHUB_ACTOR
+          script: |
+            set -e
+            echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+            docker pull ghcr.io/zentto-erp/zentto-web/panel:latest
+            cd /opt/zentto-sites
+            docker compose up -d --force-recreate --no-deps sites-panel
+            sleep 5
+            curl -fsS http://127.0.0.1:3018 >/dev/null
+            docker image prune -f
+            echo "✓ Panel deployed: $(date -u)"
+
+  # ── Step final: SIEMPRE volver a privado ─────────────────────
+  set-private:
+    name: Restore repo to private
+    runs-on: ubuntu-22.04
+    needs: deploy
+    if: always()
+    steps:
+      - name: Make repo private
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X PATCH \
+            -H "Authorization: token ${{ secrets.GHCR_PAT }}" \
+            -H "Accept: application/vnd.github+json" \
+            https://api.github.com/repos/${{ env.REPO }} \
+            -d '{"private":true}')
+          echo "HTTP status: $STATUS"
+          if [ "$STATUS" = "200" ]; then
+            echo "✓ Repo restaurado a privado"
+          else
+            echo "⚠ No se pudo restaurar privado (status $STATUS) — verificar manualmente"
+            exit 1
+          fi
