@@ -1,4 +1,4 @@
-const API_BASE = process.env.NEXT_PUBLIC_SITES_API || 'http://localhost:4100';
+const API_BASE = process.env.NEXT_PUBLIC_SITES_API || 'http://localhost:4500';
 
 async function fetchAPI<T>(path: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
@@ -109,4 +109,41 @@ export const commentsApi = {
   list: (siteId: string, postId: string) => fetchAPI<any>(`/v1/sites/${siteId}/posts/${postId}/comments`),
   moderate: (siteId: string, commentId: string, status: string) => fetchAPI<any>(`/v1/sites/${siteId}/comments/${commentId}`, { method: 'PUT', body: JSON.stringify({ status }) }),
   delete: (siteId: string, commentId: string) => fetchAPI<any>(`/v1/sites/${siteId}/comments/${commentId}`, { method: 'DELETE' }),
+};
+
+// Products
+export const productsApi = {
+  list: (siteId: string, params?: { status?: string; search?: string; limit?: number; offset?: number }) => {
+    const qs = new URLSearchParams();
+    if (params?.status) qs.set('status', params.status);
+    if (params?.search) qs.set('search', params.search);
+    if (params?.limit) qs.set('limit', String(params.limit));
+    if (params?.offset) qs.set('offset', String(params.offset));
+    return fetchAPI<any>(`/v1/sites/${siteId}/products?${qs}`);
+  },
+  get: (siteId: string, id: string) => fetchAPI<any>(`/v1/sites/${siteId}/products/${id}`),
+  create: (siteId: string, data: any) => fetchAPI<any>(`/v1/sites/${siteId}/products`, { method: 'POST', body: JSON.stringify(data) }),
+  update: (siteId: string, id: string, data: any) => fetchAPI<any>(`/v1/sites/${siteId}/products/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  delete: (siteId: string, id: string) => fetchAPI<any>(`/v1/sites/${siteId}/products/${id}`, { method: 'DELETE' }),
+};
+
+// Orders
+export const ordersApi = {
+  list: (siteId: string, params?: { paymentStatus?: string; limit?: number; offset?: number }) => {
+    const qs = new URLSearchParams();
+    if (params?.paymentStatus) qs.set('paymentStatus', params.paymentStatus);
+    if (params?.limit) qs.set('limit', String(params.limit));
+    if (params?.offset) qs.set('offset', String(params.offset));
+    return fetchAPI<any>(`/v1/sites/${siteId}/orders?${qs}`);
+  },
+  get: (siteId: string, id: string) => fetchAPI<any>(`/v1/sites/${siteId}/orders/${id}`),
+  update: (siteId: string, id: string, data: any) => fetchAPI<any>(`/v1/sites/${siteId}/orders/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+};
+
+// Coupons
+export const couponsApi = {
+  list: (siteId: string) => fetchAPI<any>(`/v1/sites/${siteId}/coupons`),
+  create: (siteId: string, data: any) => fetchAPI<any>(`/v1/sites/${siteId}/coupons`, { method: 'POST', body: JSON.stringify(data) }),
+  update: (siteId: string, id: string, data: any) => fetchAPI<any>(`/v1/sites/${siteId}/coupons/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  delete: (siteId: string, id: string) => fetchAPI<any>(`/v1/sites/${siteId}/coupons/${id}`, { method: 'DELETE' }),
 };

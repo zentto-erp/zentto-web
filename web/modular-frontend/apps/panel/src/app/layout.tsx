@@ -24,6 +24,9 @@ import {
   Menu as MenuIcon,
   Settings as SettingsIcon,
   Article as ArticleIcon,
+  Inventory as InventoryIcon,
+  ShoppingCart as ShoppingCartIcon,
+  LocalOffer as LocalOfferIcon,
 } from "@mui/icons-material";
 import { ThemeProvider, createTheme, useTheme } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
@@ -55,6 +58,9 @@ function getSiteNavItems(pathname: string) {
   const siteId = match[1];
   return [
     { label: "Blog", href: `/sites/${siteId}/blog`, icon: <ArticleIcon /> },
+    { label: "Productos", href: `/sites/${siteId}/products`, icon: <InventoryIcon /> },
+    { label: "Pedidos", href: `/sites/${siteId}/orders`, icon: <ShoppingCartIcon /> },
+    { label: "Cupones", href: `/sites/${siteId}/coupons`, icon: <LocalOfferIcon /> },
   ];
 }
 
