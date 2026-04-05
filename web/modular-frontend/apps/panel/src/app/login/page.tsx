@@ -17,8 +17,8 @@ import { setToken, setUser } from "../../lib/auth";
 const API_BASE = process.env.NEXT_PUBLIC_SITES_API || "http://localhost:4500";
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [usuario, setUsuario] = useState("");
+  const [clave, setClave] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [mode, setMode] = useState<"login" | "forgot">("login");
@@ -33,7 +33,7 @@ export default function LoginPage() {
       const res = await fetch(`${API_BASE}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ usuario: usuario.toUpperCase(), clave, companyId: 1, branchId: 1 }),
       });
       const data = await res.json();
 
@@ -179,12 +179,13 @@ export default function LoginPage() {
             >
               <TextField
                 fullWidth
-                label="Email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                label="Usuario"
+                type="text"
+                value={usuario}
+                onChange={(e) => setUsuario(e.target.value)}
                 required
-                autoComplete="email"
+                autoComplete="username"
+                placeholder="ej: admin.demo"
                 sx={{ mb: 2 }}
                 size="small"
               />
@@ -194,8 +195,8 @@ export default function LoginPage() {
                   fullWidth
                   label="Contrasena"
                   type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  value={clave}
+                  onChange={(e) => setClave(e.target.value)}
                   required
                   autoComplete="current-password"
                   sx={{ mb: 3 }}
