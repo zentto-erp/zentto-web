@@ -63,13 +63,9 @@ async function authHeader(): Promise<Record<string, string>> {
   try {
     const session = await fetchSessionFromCurrentApp();
     const headers: Record<string, string> = {};
-    // JWT: preferir cookie HttpOnly zentto_token (credentials: 'include').
-    // Fallback: Bearer token desde NextAuth session (necesario hasta migración completa a zentto-auth).
-    // @ts-ignore
-    const token = session?.accessToken as string | undefined;
-    if (token) {
-      headers.Authorization = `Bearer ${token}`;
-    }
+    // JWT viaja en cookie HttpOnly zentto_token (credentials: 'include').
+    // Cookie seteada por /api/auth/set-token después del login.
+    // NO enviar Authorization: Bearer — 100% cookies.
 
     // Prioridad: override de AuthContext > localStorage > session.company > primer acceso
     // @ts-ignore
@@ -129,8 +125,8 @@ async function authHeader(): Promise<Record<string, string>> {
 
     return headers;
   } catch {
-    const token = await getAuthToken();
-    return token ? { Authorization: `Bearer ${token}` } : {};
+    // Cookie HttpOnly viaja automáticamente via credentials: 'include'.
+    return {};
   }
 }
 

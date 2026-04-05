@@ -81,6 +81,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     branchId: number;
   } | null>(null);
 
+  // Setear cookie HttpOnly zentto_token en el browser después del login
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    // Llama al cookie proxy para que el browser tenga zentto_token
+    fetch("/api/auth/set-token", { method: "POST", credentials: "include" }).catch(() => {});
+  }, [isAuthenticated]);
+
   // Inicializar activeCompany desde localStorage → defaultCompany → primer acceso
   useEffect(() => {
     if (!isAuthenticated || companyAccesses.length === 0) return;
@@ -183,8 +190,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       userName: session?.user?.name || null,
       userEmail: session?.user?.email || null,
       userId,
-      // @ts-ignore — accessToken necesario para shared-api hasta migración completa a zentto-auth cookies
-      accessToken: session?.accessToken || null,
+      // accessToken NO se usa en el browser — cookie HttpOnly zentto_token viaja automáticamente
+      accessToken: null,
       tipo,
       permisos,
       modulos,
