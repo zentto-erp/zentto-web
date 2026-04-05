@@ -292,12 +292,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       return token;
     },
     async session({ session, token }) {
-      // accessToken: necesario para que shared-api envíe auth al backend.
-      // TODO: migrar a cookie HttpOnly proxy cuando zentto-auth esté 100% activo.
+      // accessToken viaja en cookie HttpOnly zentto_token (via /api/auth/set-token).
+      // Se expone SOLO para que el cookie proxy pueda leerlo server-side.
+      // El browser NO lo usa en Authorization headers — 100% cookies.
       // @ts-ignore
       session.accessToken = token.accessToken;
-      // @ts-ignore
-      session.accessTokenExpires = token.accessTokenExpires;
       // @ts-ignore
       session.isAdmin = token.isAdmin;
       // @ts-ignore
