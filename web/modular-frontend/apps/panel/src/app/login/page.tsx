@@ -12,7 +12,7 @@ import {
   Link,
   CircularProgress,
 } from "@mui/material";
-import { setToken, setUser } from "../../lib/auth";
+import { setUser } from "../../lib/auth";
 
 const API_BASE = process.env.NEXT_PUBLIC_SITES_API || "http://localhost:4500";
 
@@ -32,6 +32,7 @@ export default function LoginPage() {
     try {
       const res = await fetch(`${API_BASE}/auth/login`, {
         method: "POST",
+        credentials: "include",  // Recibe cookie HttpOnly
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ usuario: usuario.toUpperCase(), clave, companyId: 1, branchId: 1 }),
       });
@@ -42,15 +43,9 @@ export default function LoginPage() {
         return;
       }
 
-      // Store token and user info
-      const token = data.token || data.data?.token;
-      if (!token) {
-        setError("Respuesta del servidor sin token");
-        return;
-      }
-
-      setToken(token);
-      setUser(data.user || data.data?.user || { email });
+      // Token esta en cookie HttpOnly — NO en JavaScript
+      // Solo guardamos el perfil del usuario (no sensible)
+      setUser(data.data?.user || { usuario });
 
       // Redirect to dashboard
       window.location.href = "/";
