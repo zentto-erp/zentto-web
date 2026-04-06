@@ -16,6 +16,7 @@ export type CompanyAccessClaim = {
 export type JwtPayload = {
   sub: string;
   name?: string | null;
+  email?: string | null;
   tipo?: string | null;
   isAdmin?: boolean;
   permisos?: {
