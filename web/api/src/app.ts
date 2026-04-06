@@ -88,6 +88,8 @@ import { studioRouter } from "./modules/studio/routes.js";
 import { rolesRouter } from "./modules/roles/roles.routes.js";
 import { iamRouter } from "./modules/iam/iam.routes.js";
 import { startResourceCleanupJob } from "./jobs/resource-cleanup.job.js";
+import { startWebhookRetryJob } from "./jobs/webhook-retry.job.js";
+import { webhookEndpointsRouter } from "./modules/webhooks/webhook-endpoints.routes.js";
 import { requireJwt } from "./middleware/auth.js";
 import {
   localizeResponseDateTimes,
@@ -456,6 +458,7 @@ export async function createApp() {
   app.use("/v1/manufactura", manufacturaRouter);
   app.use("/v1/devices", devicesRouter);
   app.use("/v1/integrations/zoho", zohoRouter);
+  app.use("/v1/webhooks-mgmt", webhookEndpointsRouter);
   app.use("/v1/support", supportRouter);
   app.use("/v1/analytics", analyticsRouter);
   app.use("/v1/studio", studioRouter);
@@ -538,6 +541,7 @@ export async function createApp() {
   // ── Jobs periódicos — solo en producción/desarrollo, nunca en tests ──
   if (process.env.NODE_ENV !== 'test') {
     startResourceCleanupJob();
+    startWebhookRetryJob();
   }
 
   // ── Global error handler — NUNCA retornar 502, siempre JSON ──
