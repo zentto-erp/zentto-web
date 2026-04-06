@@ -147,10 +147,28 @@ async function pgCallSpOut<T>(
   const normalizedRow = normalizePgRow(firstRow as Record<string, unknown>);
 
   // Separar output params (los que declaró el caller como outputs)
+  // Alias map: SQL Server usa Resultado/Mensaje como OUTPUT params,
+  // pero las funciones PG retornan ok/mensaje como columnas de TABLE.
+  const PG_OUTPUT_ALIASES: Record<string, string[]> = {
+    Resultado: ["ok"],
+    Mensaje:   ["mensaje"],
+  };
+
   const outputRecord: Record<string, unknown> = {};
   if (outputs) {
     for (const key of Object.keys(outputs)) {
-      outputRecord[key] = normalizedRow[key] ?? firstRow[toSnakeParam(key)] ?? null;
+      let val = normalizedRow[key] ?? firstRow[toSnakeParam(key)] ?? undefined;
+      // Si no encontramos el valor, buscar aliases PG conocidos
+      if (val === undefined) {
+        const aliases = PG_OUTPUT_ALIASES[key];
+        if (aliases) {
+          for (const alias of aliases) {
+            val = normalizedRow[alias] ?? firstRow[alias] ?? undefined;
+            if (val !== undefined) break;
+          }
+        }
+      }
+      outputRecord[key] = val ?? null;
     }
   }
 
