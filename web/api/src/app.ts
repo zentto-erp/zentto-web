@@ -443,6 +443,10 @@ export async function createApp() {
   // Payment Gateway (multi-country, multi-provider)
   app.use("/v1/payments", paymentsRouter);
 
+  // White-label brand config per tenant (F4)
+  const { brandRouter } = await import("./modules/brand/routes.js");
+  app.use("/v1/brand", brandRouter);
+
   // Configuraciones Globales (BD, Tasas, Licencias)
   app.use("/v1/config", configRouter);
   app.use("/v1/settings", settingsRouter);
