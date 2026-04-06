@@ -26,6 +26,7 @@ CREATE TABLE IF NOT EXISTS cfg."BrandConfig" (
 CREATE INDEX IF NOT EXISTS idx_brand_config_company ON cfg."BrandConfig" ("CompanyId");
 
 -- ── SP: usp_cfg_brand_config_get ───────────────────────────────────────────────
+-- +goose StatementBegin
 CREATE OR REPLACE FUNCTION usp_cfg_brand_config_get(
     p_company_id INTEGER
 )
@@ -74,8 +75,10 @@ BEGIN
       AND bc."IsActive" = TRUE;
 END;
 $$;
+-- +goose StatementEnd
 
 -- ── SP: usp_cfg_brand_config_upsert ────────────────────────────────────────────
+-- +goose StatementBegin
 CREATE OR REPLACE FUNCTION usp_cfg_brand_config_upsert(
     p_company_id      INTEGER,
     p_logo_url        VARCHAR DEFAULT ''::VARCHAR,
@@ -139,6 +142,7 @@ BEGIN
     END IF;
 END;
 $$;
+-- +goose StatementEnd
 
 -- +goose Down
 DROP FUNCTION IF EXISTS usp_cfg_brand_config_upsert;

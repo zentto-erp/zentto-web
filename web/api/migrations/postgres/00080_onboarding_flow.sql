@@ -26,6 +26,7 @@ CREATE INDEX IF NOT EXISTS idx_onboarding_email
     ON cfg."OnboardingFlow" ("Email");
 
 -- SP: Crear registro de onboarding
+-- +goose StatementBegin
 CREATE OR REPLACE FUNCTION cfg.usp_Cfg_Onboarding_Create(
     p_email             VARCHAR,
     p_company_name      VARCHAR,
@@ -53,8 +54,10 @@ BEGIN
     RETURN NEXT;
 END;
 $$;
+-- +goose StatementEnd
 
 -- SP: Verificar token
+-- +goose StatementBegin
 CREATE OR REPLACE FUNCTION cfg.usp_Cfg_Onboarding_Verify(
     p_token VARCHAR
 )
@@ -86,8 +89,10 @@ BEGIN
         v_row."Email", v_row."CompanyName", v_row."Plan", 'verified'::VARCHAR;
 END;
 $$;
+-- +goose StatementEnd
 
 -- SP: Actualizar status de onboarding
+-- +goose StatementBegin
 CREATE OR REPLACE FUNCTION cfg.usp_Cfg_Onboarding_UpdateStatus(
     p_id            INT,
     p_status        VARCHAR,
@@ -115,8 +120,10 @@ BEGIN
     RETURN QUERY SELECT true, 'OK'::VARCHAR;
 END;
 $$;
+-- +goose StatementEnd
 
 -- SP: Consultar status por email
+-- +goose StatementBegin
 CREATE OR REPLACE FUNCTION cfg.usp_Cfg_Onboarding_StatusByEmail(
     p_email VARCHAR
 )
@@ -137,6 +144,7 @@ BEGIN
     LIMIT 1;
 END;
 $$;
+-- +goose StatementEnd
 
 -- +goose Down
 DROP FUNCTION IF EXISTS cfg.usp_Cfg_Onboarding_StatusByEmail(VARCHAR);
