@@ -33,7 +33,7 @@ partnersRouter.post("/apply", async (req, res) => {
 partnersRouter.get("/me", async (req, res) => {
   try {
     const authReq = req as AuthenticatedRequest;
-    const email = authReq.scope?.email;
+    const email = authReq.user?.email;
     if (!email) {
       return res.status(401).json({ error: "No se pudo obtener el email del token" });
     }
@@ -54,7 +54,7 @@ partnersRouter.get("/me", async (req, res) => {
 partnersRouter.get("/referrals", async (req, res) => {
   try {
     const authReq = req as AuthenticatedRequest;
-    const email = authReq.scope?.email;
+    const email = authReq.user?.email;
     if (!email) {
       return res.status(401).json({ error: "No se pudo obtener el email del token" });
     }
@@ -76,7 +76,7 @@ partnersRouter.get("/referrals", async (req, res) => {
 partnersRouter.get("/dashboard", async (req, res) => {
   try {
     const authReq = req as AuthenticatedRequest;
-    const email = authReq.scope?.email;
+    const email = authReq.user?.email;
     if (!email) {
       return res.status(401).json({ error: "No se pudo obtener el email del token" });
     }
