@@ -14,14 +14,28 @@ export function useContabilidadGridRegistration(layoutReady: boolean) {
 
     let cancelled = false;
 
+    // Safety timeout: if dynamic import hangs, unblock the page after 2s
+    const safetyTimer = setTimeout(() => {
+      if (!cancelled) setRegistered(true);
+    }, 2000);
+
     import("@zentto/datagrid").then(() => {
       if (!cancelled) {
+        clearTimeout(safetyTimer);
+        setRegistered(true);
+      }
+    }).catch(() => {
+      // If the dynamic import fails (e.g. chunk error, network), still mark as
+      // registered so the page renders instead of showing an infinite spinner.
+      if (!cancelled) {
+        clearTimeout(safetyTimer);
         setRegistered(true);
       }
     });
 
     return () => {
       cancelled = true;
+      clearTimeout(safetyTimer);
     };
   }, [layoutReady]);
 
