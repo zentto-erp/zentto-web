@@ -85,11 +85,15 @@ async function fetchSessionIdentity(): Promise<GridLayoutIdentity | null> {
   if (typeof window === 'undefined') return null;
 
   try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 2000);
     const response = await fetch(`${window.location.origin}/api/auth/session`, {
       cache: 'no-store',
       credentials: 'include',
       headers: { Accept: 'application/json' },
+      signal: controller.signal,
     });
+    clearTimeout(timer);
 
     if (!response.ok) return null;
 
@@ -126,13 +130,17 @@ async function fetchRemoteLayout(
   if (identity.userId) query.set('userId', identity.userId);
   if (identity.email) query.set('email', identity.email);
 
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 2000);
   const response = await fetch(`${baseUrl}/v1/grid-layouts/${encodeURIComponent(gridId)}?${query.toString()}`, {
     cache: 'no-store',
     headers: {
       Accept: 'application/json',
       ...buildRemoteHeaders(),
     },
+    signal: controller.signal,
   });
+  clearTimeout(timer);
 
   if (response.status === 404) return null;
   if (!response.ok) throw new Error(`Cache GET failed: ${response.status}`);
@@ -252,12 +260,20 @@ export function useGridLayoutSync(gridId: string, options: UseGridLayoutSyncOpti
       window.addEventListener('beforeunload', syncFromLocalStorage);
     };
 
+    // Safety timeout: if boot() hangs for any reason, unblock after 3s
+    const safetyTimer = window.setTimeout(() => {
+      if (!cancelled) setReady(true);
+    }, 3000);
+
     boot().catch(() => {
       if (!cancelled) setReady(true);
+    }).finally(() => {
+      window.clearTimeout(safetyTimer);
     });
 
     return () => {
       cancelled = true;
+      window.clearTimeout(safetyTimer);
       if (pollTimer !== null) {
         window.clearInterval(pollTimer);
       }

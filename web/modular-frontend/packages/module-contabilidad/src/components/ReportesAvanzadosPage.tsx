@@ -49,8 +49,9 @@ function DrillDownDialog({ open, onClose, accountCode, accountName, fechaDesde, 
   open: boolean; onClose: () => void; accountCode: string; accountName?: string; fechaDesde: string; fechaHasta: string;
 }) {
   const gridRef = useRef<any>(null);
-  const { ready: gridLayoutReady } = useGridLayoutSync(GRID_IDS.gridRef);
-  useContabilidadGridId(gridRef, GRID_IDS.gridRef);
+  const drillGridId = buildContabilidadGridId("reportes-avanzados", "drill-down");
+  const { ready: gridLayoutReady } = useGridLayoutSync(drillGridId, { enabled: open });
+  useContabilidadGridId(gridRef, drillGridId);
   const { registered } = useContabilidadGridRegistration(gridLayoutReady);
   const { data, isLoading } = useDrillDown(accountCode, fechaDesde, fechaHasta, open && !!accountCode);
   const rows: DrillDownRow[] = useMemo(() => { const items = data?.data ?? data?.rows ?? []; return items.map((r: any, i: number) => ({ ...r, id: i })); }, [data]);
@@ -170,7 +171,9 @@ export default function ReportesAvanzadosPage() {
   const [agingSubTab, setAgingSubTab] = useState(0);
   const [drillDown, setDrillDown] = useState<{ accountCode: string; accountName?: string } | null>(null);
 
-  const { ready: gridLayoutReady } = useGridLayoutSync(GRID_IDS.gridRef);
+  // Grid layout sync is non-blocking: tabs that don't use grids render immediately
+  const needsGrid = [0, 1, 2, 6, 8].includes(tab);
+  const { ready: gridLayoutReady } = useGridLayoutSync(GRID_IDS.gridRef, { enabled: needsGrid });
   const { registered } = useContabilidadGridRegistration(gridLayoutReady);
 
   // Grid refs for tabs 0,1,2,6(cxc),6(cxp),8
@@ -206,8 +209,7 @@ export default function ReportesAvanzadosPage() {
   const renderNotRun = () => <Alert severity="info">Seleccione el rango y presione &quot;Generar&quot;</Alert>;
   const renderLoading = () => <Box display="flex" justifyContent="center" p={4}><CircularProgress /></Box>;
   const renderError = (err: unknown) => <Alert severity="error">Error: {String(err)}</Alert>;
-
-  if (!registered) return <Box sx={{ display: "flex", justifyContent: "center", mt: 10 }}><CircularProgress /></Box>;
+  const renderGridLoading = () => <Box display="flex" justifyContent="center" p={4}><CircularProgress size={28} /><Typography variant="body2" color="text.secondary" sx={{ ml: 1 }}>Cargando grid...</Typography></Box>;
 
   return (
     <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
@@ -237,7 +239,7 @@ export default function ReportesAvanzadosPage() {
           const queries = [libroDiario, libroMayor, balance];
           return (
             <TabPanel key={idx} value={tab} index={idx}>
-              {!run ? renderNotRun() : queries[idx].isLoading ? renderLoading() : queries[idx].error ? renderError(queries[idx].error)
+              {!run ? renderNotRun() : !registered ? renderGridLoading() : queries[idx].isLoading ? renderLoading() : queries[idx].error ? renderError(queries[idx].error)
               : <zentto-grid ref={refs[idx]} default-currency="VES" height="100%" show-totals
                   enable-toolbar enable-header-menu enable-header-filters enable-clipboard enable-quick-search enable-context-menu enable-status-bar enable-configurator></zentto-grid>}
             </TabPanel>
@@ -324,7 +326,7 @@ export default function ReportesAvanzadosPage() {
 
         {/* Tab 6: Aging */}
         <TabPanel value={tab} index={6}>
-          {!run ? renderNotRun() : (<Box>
+          {!run ? renderNotRun() : !registered ? renderGridLoading() : (<Box>
             <Tabs value={agingSubTab} onChange={(_, v) => setAgingSubTab(v)} sx={{ mb: 2 }}><Tab label="Cuentas por cobrar" /><Tab label="Cuentas por pagar" /></Tabs>
             {agingSubTab === 0 && (agingCxC.isLoading ? renderLoading() : agingCxC.error ? renderError(agingCxC.error)
               : <Box sx={{ height: 400 }}><zentto-grid ref={agingCxCRef} default-currency="VES" height="100%" enable-toolbar enable-header-menu enable-header-filters enable-clipboard enable-quick-search enable-context-menu enable-status-bar enable-configurator></zentto-grid></Box>)}
@@ -349,7 +351,7 @@ export default function ReportesAvanzadosPage() {
 
         {/* Tab 8: Fiscal */}
         <TabPanel value={tab} index={8}>
-          {!run ? renderNotRun() : taxSummary.isLoading ? renderLoading() : taxSummary.error ? renderError(taxSummary.error) : (
+          {!run ? renderNotRun() : !registered ? renderGridLoading() : taxSummary.isLoading ? renderLoading() : taxSummary.error ? renderError(taxSummary.error) : (
             <Box>{(() => {
               const txRows: TaxSummaryRow[] = (taxSummary.data?.data ?? taxSummary.data?.rows ?? []).map((r: any, i: number) => ({ ...r, id: i }));
               if (txRows.length === 0) return <Alert severity="info">No hay datos fiscales para este periodo</Alert>;
