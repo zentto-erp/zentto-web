@@ -26,6 +26,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_pricing_plan_slug ON cfg."PricingPlan" ("Sl
 CREATE INDEX IF NOT EXISTS idx_pricing_plan_vertical ON cfg."PricingPlan" ("VerticalType", "IsActive");
 
 -- ── SP: usp_cfg_pricing_plan_list ─────────────────────────────────────────────
+-- +goose StatementBegin
 CREATE OR REPLACE FUNCTION usp_cfg_pricing_plan_list(
     p_vertical_type VARCHAR DEFAULT NULL
 )
@@ -67,8 +68,10 @@ BEGIN
     ORDER BY pp."MonthlyPrice" ASC;
 END;
 $$;
+-- +goose StatementEnd
 
 -- ── SP: usp_cfg_pricing_plan_get ──────────────────────────────────────────────
+-- +goose StatementBegin
 CREATE OR REPLACE FUNCTION usp_cfg_pricing_plan_get(
     p_slug VARCHAR
 )
@@ -109,6 +112,7 @@ BEGIN
       AND pp."IsActive" = TRUE;
 END;
 $$;
+-- +goose StatementEnd
 
 -- ── Seed: planes default ──────────────────────────────────────────────────────
 INSERT INTO cfg."PricingPlan" ("Name", "Slug", "VerticalType", "MonthlyPrice", "AnnualPrice", "TransactionFeePercent", "MaxUsers", "MaxTransactions", "Features")
@@ -163,6 +167,7 @@ CREATE TABLE IF NOT EXISTS cfg."PartnerReferral" (
 CREATE INDEX IF NOT EXISTS idx_referral_partner ON cfg."PartnerReferral" ("PartnerId");
 
 -- ── SP: usp_cfg_partner_apply ─────────────────────────────────────────────────
+-- +goose StatementBegin
 CREATE OR REPLACE FUNCTION usp_cfg_partner_apply(
     p_company_name VARCHAR,
     p_contact_name VARCHAR,
@@ -187,8 +192,10 @@ BEGIN
     RETURN QUERY SELECT TRUE, 'Solicitud enviada correctamente'::VARCHAR;
 END;
 $$;
+-- +goose StatementEnd
 
 -- ── SP: usp_cfg_partner_get_by_email ──────────────────────────────────────────
+-- +goose StatementBegin
 CREATE OR REPLACE FUNCTION usp_cfg_partner_get_by_email(
     p_email VARCHAR
 )
@@ -226,8 +233,10 @@ BEGIN
     WHERE p."Email" = p_email;
 END;
 $$;
+-- +goose StatementEnd
 
 -- ── SP: usp_cfg_partner_referrals_list ────────────────────────────────────────
+-- +goose StatementBegin
 CREATE OR REPLACE FUNCTION usp_cfg_partner_referrals_list(
     p_partner_id INTEGER
 )
@@ -256,8 +265,10 @@ BEGIN
     ORDER BY r."CreatedAt" DESC;
 END;
 $$;
+-- +goose StatementEnd
 
 -- ── SP: usp_cfg_partner_dashboard ─────────────────────────────────────────────
+-- +goose StatementBegin
 CREATE OR REPLACE FUNCTION usp_cfg_partner_dashboard(
     p_partner_id INTEGER
 )
@@ -283,6 +294,7 @@ BEGIN
     WHERE r."PartnerId" = p_partner_id;
 END;
 $$;
+-- +goose StatementEnd
 
 -- +goose Down
 DROP FUNCTION IF EXISTS usp_cfg_partner_dashboard(INTEGER);
