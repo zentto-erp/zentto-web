@@ -284,13 +284,12 @@ export default function RegisterPage() {
                         </Typography>
                         <OutlinedInput
                           {...field}
-                          type="text"
+                          type={showPassword ? 'text' : 'password'}
                           placeholder="Contraseña"
                           autoComplete="new-password"
                           sx={{
                             '& .MuiOutlinedInput-input': {
                               py: 1.75, px: 2,
-                              ...(!showPassword && { WebkitTextSecurity: 'disc', textSecurity: 'disc' }),
                             },
                             '& .MuiOutlinedInput-notchedOutline': { borderRadius: 2 },
                           }}
@@ -319,13 +318,12 @@ export default function RegisterPage() {
                         </Typography>
                         <OutlinedInput
                           {...field}
-                          type="text"
+                          type={showConfirmPassword ? 'text' : 'password'}
                           placeholder="Repite la contraseña"
                           autoComplete="new-password"
                           sx={{
                             '& .MuiOutlinedInput-input': {
                               py: 1.75, px: 2,
-                              ...(!showConfirmPassword && { WebkitTextSecurity: 'disc', textSecurity: 'disc' }),
                             },
                             '& .MuiOutlinedInput-notchedOutline': { borderRadius: 2 },
                           }}
