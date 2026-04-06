@@ -47,12 +47,12 @@ export default function AppSelectorPage() {
   const has = (mod: string) => isAdmin || modulos.includes(mod);
 
   const navigateToApp = (appId: string, path: string) => {
-    const href = resolveAppHref(appId, path);
-    // URLs absolutas (apps externas como tickets, medical) -> abrir en nueva ventana
-    if (href.startsWith('http')) {
-      window.open(href, '_blank');
+    // Apps standalone con URL absoluta (tickets, medical) -> nueva ventana
+    if (path.startsWith('http')) {
+      window.open(path, '_blank');
       return;
     }
+    const href = resolveAppHref(appId, path);
     if (isShellLocalPath(path)) {
       router.push(href);
       return;
