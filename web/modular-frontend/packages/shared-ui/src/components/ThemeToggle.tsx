@@ -47,7 +47,9 @@ export default function ThemeToggle({ sx }: { sx?: object }) {
     const html = document.documentElement;
     html.classList.add('theme-transitioning');
     setMode(resolvedMode === 'dark' ? 'light' : 'dark');
-    setTimeout(() => html.classList.remove('theme-transitioning'), 350);
+    requestAnimationFrame(() => {
+      setTimeout(() => html.classList.remove('theme-transitioning'), 400);
+    });
   };
 
   if (!mounted) return <IconButton size="small" sx={{ color: 'text.secondary', visibility: 'hidden', ...sx }}><MoonIcon /></IconButton>;

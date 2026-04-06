@@ -50,18 +50,13 @@ html {
   scroll-behavior: smooth;
 }
 
-/* Theme transition — mirrors zentto.net landing */
-*,
-*::before,
-*::after {
-  transition-property: background-color, border-color, color;
-  transition-duration: 0ms;
-}
-
-html.theme-transitioning *,
-html.theme-transitioning *::before,
-html.theme-transitioning *::after {
-  transition-duration: 300ms !important;
+/* Theme transition — solo contenedores clave, el resto cambia instantáneo */
+html.theme-transitioning,
+html.theme-transitioning body,
+html.theme-transitioning .MuiDrawer-paper,
+html.theme-transitioning [role="main"],
+html.theme-transitioning header {
+  transition: background-color 0.5s ease, color 0.5s ease !important;
 }
 
 /* Celdas no editables DataGrid */
