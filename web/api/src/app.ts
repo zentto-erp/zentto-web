@@ -475,6 +475,14 @@ export async function createApp() {
   app.use("/v1/analytics", analyticsRouter);
   app.use("/v1/studio", studioRouter);
 
+  // Pricing Engine por vertical (F7) — público
+  const { pricingRouter } = await import("./modules/pricing/routes.js");
+  app.use("/v1/pricing", pricingRouter);
+
+  // Partner Portal (F8)
+  const { partnersRouter } = await import("./modules/partners/routes.js");
+  app.use("/v1/partners", partnersRouter);
+
   // BYOC — Bring Your Own Cloud
   app.use("/v1/byoc", byocRouter);
 
