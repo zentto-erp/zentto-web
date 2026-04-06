@@ -30,6 +30,7 @@ const ExtensionOutlinedIcon = dynamic(() => import('@mui/icons-material/Extensio
 const RouteOutlinedIcon = dynamic(() => import('@mui/icons-material/RouteOutlined'), { ssr: false });
 const ConfirmationNumberOutlinedIcon = dynamic(() => import('@mui/icons-material/ConfirmationNumberOutlined'), { ssr: false });
 const LocalHospitalOutlinedIcon = dynamic(() => import('@mui/icons-material/LocalHospitalOutlined'), { ssr: false });
+const ApartmentOutlinedIcon = dynamic(() => import('@mui/icons-material/ApartmentOutlined'), { ssr: false });
 
 interface AppShortcut {
   id: string;
@@ -115,6 +116,7 @@ export default function AppSelectorPage() {
   // Apps standalone (dominios externos)
   allApps.push({ id: 'tickets', name: 'Tickets', icon: <ConfirmationNumberOutlinedIcon sx={{ fontSize: 'inherit' }} />, path: process.env.NEXT_PUBLIC_TICKETS_URL || 'https://tickets.zentto.net', bgColor: '#6366F1' });
   allApps.push({ id: 'medical', name: 'Medical', icon: <LocalHospitalOutlinedIcon sx={{ fontSize: 'inherit' }} />, path: process.env.NEXT_PUBLIC_MEDICAL_URL || 'https://medical.zentto.net', bgColor: '#059669' });
+  allApps.push({ id: 'inmobiliario', name: isSmall ? 'Inmob.' : 'Inmobiliario', icon: <ApartmentOutlinedIcon sx={{ fontSize: 'inherit' }} />, path: process.env.NEXT_PUBLIC_INMOBILIARIO_URL || 'https://inmobiliario.zentto.net', bgColor: '#D4A574' });
 
   // Utilidades (cierra la escala: rosa → coral → warm)
   if (has('report-studio')) {
