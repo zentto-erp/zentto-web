@@ -145,7 +145,7 @@ export default function AppSelectorPage() {
                   p: 2,
                   '&:hover .app-icon-box': {
                     transform: 'translateY(-3px)',
-                    bgcolor: (t) => t.palette.mode === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+                    boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)',
                   },
                 }}
               >
@@ -160,7 +160,9 @@ export default function AppSelectorPage() {
                     alignItems: 'center',
                     justifyContent: 'center',
                     borderRadius: 3,
-                    bgcolor: (t) => t.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.12)',
+                    bgcolor: (t) => t.palette.mode === 'dark' ? 'rgba(255,255,255,0.08)' : '#ffffff',
+                    border: (t) => `1px solid ${t.palette.mode === 'dark' ? '#374151' : '#e5e7eb'}`,
+                    boxShadow: '0 1px 2px 0 rgba(0,0,0,0.05)',
                     color: app.bgColor,
                     mb: 1.5,
                     transition: 'all 0.2s',
