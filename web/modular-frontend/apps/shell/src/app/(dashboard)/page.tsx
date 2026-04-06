@@ -28,6 +28,8 @@ const GroupsOutlinedIcon = dynamic(() => import('@mui/icons-material/GroupsOutli
 const DescriptionOutlinedIcon = dynamic(() => import('@mui/icons-material/DescriptionOutlined'), { ssr: false });
 const ExtensionOutlinedIcon = dynamic(() => import('@mui/icons-material/ExtensionOutlined'), { ssr: false });
 const RouteOutlinedIcon = dynamic(() => import('@mui/icons-material/RouteOutlined'), { ssr: false });
+const ConfirmationNumberOutlinedIcon = dynamic(() => import('@mui/icons-material/ConfirmationNumberOutlined'), { ssr: false });
+const LocalHospitalOutlinedIcon = dynamic(() => import('@mui/icons-material/LocalHospitalOutlined'), { ssr: false });
 
 interface AppShortcut {
   id: string;
@@ -46,6 +48,11 @@ export default function AppSelectorPage() {
 
   const navigateToApp = (appId: string, path: string) => {
     const href = resolveAppHref(appId, path);
+    // URLs absolutas (apps externas como tickets, medical) -> abrir en nueva ventana
+    if (href.startsWith('http')) {
+      window.open(href, '_blank');
+      return;
+    }
     if (isShellLocalPath(path)) {
       router.push(href);
       return;
@@ -104,6 +111,10 @@ export default function AppSelectorPage() {
   if (has('shipping')) {
     allApps.push({ id: 'shipping', name: 'Shipping', icon: <LocalShippingOutlinedIcon sx={{ fontSize: 'inherit' }} />, path: '/shipping', bgColor: '#E84393' });
   }
+
+  // Apps standalone (dominios externos)
+  allApps.push({ id: 'tickets', name: 'Tickets', icon: <ConfirmationNumberOutlinedIcon sx={{ fontSize: 'inherit' }} />, path: process.env.NEXT_PUBLIC_TICKETS_URL || 'https://tickets.zentto.net', bgColor: '#6366F1' });
+  allApps.push({ id: 'medical', name: 'Medical', icon: <LocalHospitalOutlinedIcon sx={{ fontSize: 'inherit' }} />, path: process.env.NEXT_PUBLIC_MEDICAL_URL || 'https://medical.zentto.net', bgColor: '#059669' });
 
   // Utilidades (cierra la escala: rosa → coral → warm)
   if (has('report-studio')) {
