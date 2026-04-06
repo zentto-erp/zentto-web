@@ -24,6 +24,7 @@ import Tooltip from '@mui/material/Tooltip';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import ThemeToggle from './ThemeToggle';
+import LocaleSelectorButton from './LocaleSelectorButton';
 import NotificationsMenu from './NotificationsMenu';
 import HelpButton from './HelpButton';
 import TasksMenu from './TasksMenu';
@@ -302,6 +303,7 @@ export default function OdooLayout({
                         </Box>
 
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0.5, sm: 1 }, '& .MuiIconButton-root': { width: 32, height: 32, borderRadius: '6px', color: 'text.secondary', '&:hover': { bgcolor: 'action.hover' }, '& .MuiSvgIcon-root': { fontSize: '1.15rem' } } }}>
+                            <LocaleSelectorButton />
                             <ThemeToggle />
                             <HelpButton />
                             <NotificationsMenu />
