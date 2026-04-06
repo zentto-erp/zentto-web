@@ -248,6 +248,14 @@ export async function createApp() {
   // Tenant provisioning — protegido por master key, sin JWT
   app.use("/api/tenants", tenantsRouter);
 
+  // Onboarding self-service — público (signup, verify, status)
+  const { onboardingRouter } = await import("./modules/onboarding/onboarding.routes.js");
+  app.use("/v1/onboarding", onboardingRouter);
+
+  // Status page — público (health check detallado)
+  const { statusRouter } = await import("./modules/health/status.routes.js");
+  app.use("/v1/status", statusRouter);
+
   // Licencias — /validate es público (BYOC servers); resto protegido por Master-Key, sin JWT
   app.use("/v1/license", licenseRouter);
 
