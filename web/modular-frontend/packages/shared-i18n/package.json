@@ -1,0 +1,16 @@
+{
+  "name": "@zentto/shared-i18n",
+  "version": "0.1.0",
+  "private": true,
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./locales/es": "./src/locales/es.json",
+    "./locales/en": "./src/locales/en.json",
+    "./locales/pt": "./src/locales/pt.json"
+  },
+  "dependencies": {
+    "react": "^19.2.4"
+  }
+}

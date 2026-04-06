@@ -72,6 +72,9 @@ export type {
 // Db Mode Toggle
 export { DbModeToggle } from './components/DbModeToggle';
 
+// i18n — Locale Selector (MUI)
+export { default as LocaleSelectorButton } from './components/LocaleSelectorButton';
+
 // Help
 export { default as HelpButton } from './components/HelpButton';
 export { HELP_MAP, getHelpForPath } from './lib/help-map';
