@@ -28,6 +28,8 @@ const GroupsOutlinedIcon = dynamic(() => import('@mui/icons-material/GroupsOutli
 const DescriptionOutlinedIcon = dynamic(() => import('@mui/icons-material/DescriptionOutlined'), { ssr: false });
 const ExtensionOutlinedIcon = dynamic(() => import('@mui/icons-material/ExtensionOutlined'), { ssr: false });
 const RouteOutlinedIcon = dynamic(() => import('@mui/icons-material/RouteOutlined'), { ssr: false });
+const ConfirmationNumberOutlinedIcon = dynamic(() => import('@mui/icons-material/ConfirmationNumberOutlined'), { ssr: false });
+const LocalHospitalOutlinedIcon = dynamic(() => import('@mui/icons-material/LocalHospitalOutlined'), { ssr: false });
 
 interface AppShortcut {
   id: string;
@@ -45,6 +47,11 @@ export default function AppSelectorPage() {
   const has = (mod: string) => isAdmin || modulos.includes(mod);
 
   const navigateToApp = (appId: string, path: string) => {
+    // Apps standalone con URL absoluta (tickets, medical) -> nueva ventana
+    if (path.startsWith('http')) {
+      window.open(path, '_blank');
+      return;
+    }
     const href = resolveAppHref(appId, path);
     if (isShellLocalPath(path)) {
       router.push(href);
@@ -105,6 +112,10 @@ export default function AppSelectorPage() {
     allApps.push({ id: 'shipping', name: 'Shipping', icon: <LocalShippingOutlinedIcon sx={{ fontSize: 'inherit' }} />, path: '/shipping', bgColor: '#E84393' });
   }
 
+  // Apps standalone (dominios externos)
+  allApps.push({ id: 'tickets', name: 'Tickets', icon: <ConfirmationNumberOutlinedIcon sx={{ fontSize: 'inherit' }} />, path: process.env.NEXT_PUBLIC_TICKETS_URL || 'https://tickets.zentto.net', bgColor: '#6366F1' });
+  allApps.push({ id: 'medical', name: 'Medical', icon: <LocalHospitalOutlinedIcon sx={{ fontSize: 'inherit' }} />, path: process.env.NEXT_PUBLIC_MEDICAL_URL || 'https://medical.zentto.net', bgColor: '#059669' });
+
   // Utilidades (cierra la escala: rosa → coral → warm)
   if (has('report-studio')) {
     allApps.push({ id: 'report-studio', name: isSmall ? 'Reportes' : 'Report Studio', icon: <DescriptionOutlinedIcon sx={{ fontSize: 'inherit' }} />, path: '/report-studio', bgColor: '#FF6584' });
@@ -134,7 +145,7 @@ export default function AppSelectorPage() {
                   p: 2,
                   '&:hover .app-icon-box': {
                     transform: 'translateY(-3px)',
-                    bgcolor: (t) => t.palette.mode === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+                    boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)',
                   },
                 }}
               >
@@ -149,7 +160,9 @@ export default function AppSelectorPage() {
                     alignItems: 'center',
                     justifyContent: 'center',
                     borderRadius: 3,
-                    bgcolor: (t) => t.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.12)',
+                    bgcolor: (t) => t.palette.mode === 'dark' ? 'rgba(255,255,255,0.08)' : '#ffffff',
+                    border: (t) => `1px solid ${t.palette.mode === 'dark' ? '#374151' : '#e5e7eb'}`,
+                    boxShadow: '0 1px 2px 0 rgba(0,0,0,0.05)',
                     color: app.bgColor,
                     mb: 1.5,
                     transition: 'all 0.2s',

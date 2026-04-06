@@ -24,6 +24,7 @@ import Tooltip from '@mui/material/Tooltip';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import ThemeToggle from './ThemeToggle';
+import LocaleSelectorButton from './LocaleSelectorButton';
 import NotificationsMenu from './NotificationsMenu';
 import HelpButton from './HelpButton';
 import TasksMenu from './TasksMenu';
@@ -202,7 +203,7 @@ export default function OdooLayout({
                             backgroundColor: 'background.paper',
                             color: 'text.primary',
                             boxShadow: isMobile ? '4px 0 20px rgba(0,0,0,0.3)' : 'none',
-                            transition: 'width 0.2s, background-color 0.3s, color 0.3s',
+                            transition: 'width 0.2s',
                             overflowX: 'hidden'
                         },
                     }}
@@ -233,7 +234,7 @@ export default function OdooLayout({
             <Box sx={{ display: 'flex', flexDirection: 'column', flexGrow: 1, width: `calc(100% - ${actualSidebarWidth}px)`, transition: 'width 0.2s' }}>
 
                 {/* Top Header */}
-                <Box component="header" sx={{ backgroundColor: 'background.paper', color: 'text.primary', transition: 'background-color 0.3s, color 0.3s' }}>
+                <Box component="header" sx={{ backgroundColor: 'background.paper', color: 'text.primary' }}>
                     <Toolbar variant="dense" sx={{ height: 64, minHeight: 64, maxHeight: 64, px: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: (t) => `1px solid ${t.palette.divider}` }}>
 
                         <Box sx={{ display: 'flex', alignItems: 'center' }}>
@@ -302,6 +303,7 @@ export default function OdooLayout({
                         </Box>
 
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0.5, sm: 1 }, '& .MuiIconButton-root': { width: 32, height: 32, borderRadius: '6px', color: 'text.secondary', '&:hover': { bgcolor: 'action.hover' }, '& .MuiSvgIcon-root': { fontSize: '1.15rem' } } }}>
+                            <LocaleSelectorButton />
                             <ThemeToggle />
                             <HelpButton />
                             <NotificationsMenu />

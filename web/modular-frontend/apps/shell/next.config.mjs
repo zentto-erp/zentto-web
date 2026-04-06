@@ -3,6 +3,7 @@ const nextConfig = {
   typescript: { ignoreBuildErrors: true },
   transpilePackages: [
     '@zentto/shared-auth',
+    '@zentto/shared-i18n',
     '@zentto/shared-ui',
     '@zentto/shared-api', '@zentto/shared-reports',
     '@zentto/module-admin',

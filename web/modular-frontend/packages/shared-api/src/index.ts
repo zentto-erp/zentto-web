@@ -69,6 +69,10 @@ export type {
   CompanyPaymentConfig, AcceptedPaymentMethod, PaymentTransaction,
 } from './usePayments';
 
+// Brand Config hooks (dedicated white-label API)
+export { useBrandConfig, useSaveBrandConfig } from './useBrandConfig';
+export type { BrandConfig, BrandConfigInput } from './useBrandConfig';
+
 // Unified Settings hooks
 export {
   useAllSettings, useModuleSettings, useModuleSettingsMeta,

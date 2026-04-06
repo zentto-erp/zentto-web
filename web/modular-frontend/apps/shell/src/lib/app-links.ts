@@ -25,6 +25,11 @@ const SHELL_LOCAL_PATHS = new Set([
 ]);
 
 export function resolveAppHref(appId: string, path: string): string {
+  // URLs absolutas (apps standalone como tickets, medical) -> devolver sin modificar
+  if (path.startsWith('http')) {
+    return path;
+  }
+
   if (SHELL_LOCAL_PATHS.has(path)) {
     return path;
   }

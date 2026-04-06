@@ -108,12 +108,12 @@ export async function upsertVehicle(params: {
       IsActive: params.isActive ?? true,
       UserId: params.userId,
     },
-    { Resultado: sql.Int, VehicleIdOut: sql.Int }
+    { Resultado: sql.Int, VehicleId: sql.Int }
   );
 
   return {
     success: Number(output.Resultado ?? 0) > 0,
-    vehicleId: Number(output.VehicleIdOut ?? output.VehicleId ?? 0),
+    vehicleId: Number(output.VehicleId ?? 0),
   };
 }
 

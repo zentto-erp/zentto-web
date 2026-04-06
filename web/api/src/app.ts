@@ -88,6 +88,8 @@ import { studioRouter } from "./modules/studio/routes.js";
 import { rolesRouter } from "./modules/roles/roles.routes.js";
 import { iamRouter } from "./modules/iam/iam.routes.js";
 import { startResourceCleanupJob } from "./jobs/resource-cleanup.job.js";
+import { startWebhookRetryJob } from "./jobs/webhook-retry.job.js";
+import { webhookEndpointsRouter } from "./modules/webhooks/webhook-endpoints.routes.js";
 import { requireJwt } from "./middleware/auth.js";
 import {
   localizeResponseDateTimes,
@@ -245,6 +247,14 @@ export async function createApp() {
 
   // Tenant provisioning — protegido por master key, sin JWT
   app.use("/api/tenants", tenantsRouter);
+
+  // Onboarding self-service — público (signup, verify, status)
+  const { onboardingRouter } = await import("./modules/onboarding/onboarding.routes.js");
+  app.use("/v1/onboarding", onboardingRouter);
+
+  // Status page — público (health check detallado)
+  const { statusRouter } = await import("./modules/health/status.routes.js");
+  app.use("/v1/status", statusRouter);
 
   // Licencias — /validate es público (BYOC servers); resto protegido por Master-Key, sin JWT
   app.use("/v1/license", licenseRouter);
@@ -441,6 +451,10 @@ export async function createApp() {
   // Payment Gateway (multi-country, multi-provider)
   app.use("/v1/payments", paymentsRouter);
 
+  // White-label brand config per tenant (F4)
+  const { brandRouter } = await import("./modules/brand/routes.js");
+  app.use("/v1/brand", brandRouter);
+
   // Configuraciones Globales (BD, Tasas, Licencias)
   app.use("/v1/config", configRouter);
   app.use("/v1/settings", settingsRouter);
@@ -456,9 +470,18 @@ export async function createApp() {
   app.use("/v1/manufactura", manufacturaRouter);
   app.use("/v1/devices", devicesRouter);
   app.use("/v1/integrations/zoho", zohoRouter);
+  app.use("/v1/webhooks-mgmt", webhookEndpointsRouter);
   app.use("/v1/support", supportRouter);
   app.use("/v1/analytics", analyticsRouter);
   app.use("/v1/studio", studioRouter);
+
+  // Pricing Engine por vertical (F7) — público
+  const { pricingRouter } = await import("./modules/pricing/routes.js");
+  app.use("/v1/pricing", pricingRouter);
+
+  // Partner Portal (F8)
+  const { partnersRouter } = await import("./modules/partners/routes.js");
+  app.use("/v1/partners", partnersRouter);
 
   // BYOC — Bring Your Own Cloud
   app.use("/v1/byoc", byocRouter);
@@ -538,6 +561,7 @@ export async function createApp() {
   // ── Jobs periódicos — solo en producción/desarrollo, nunca en tests ──
   if (process.env.NODE_ENV !== 'test') {
     startResourceCleanupJob();
+    startWebhookRetryJob();
   }
 
   // ── Global error handler — NUNCA retornar 502, siempre JSON ──
