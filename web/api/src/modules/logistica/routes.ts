@@ -125,7 +125,7 @@ logisticaRouter.post("/recepciones", async (req, res) => {
 
 logisticaRouter.post("/recepciones/:id/aprobar", async (req, res) => {
   try {
-    const codUsuario = req.body.userId || (req as any).user?.username || "API";
+    const codUsuario = (req as any).user?.username || (req as any).user?.userId || "API";
     const result = await approveGoodsReceipt(
       parseInt(req.params.id),
       codUsuario
@@ -182,12 +182,13 @@ logisticaRouter.post("/devoluciones", async (req, res) => {
 
 logisticaRouter.post("/devoluciones/:id/aprobar", async (req, res) => {
   try {
+    const codUsuario = (req as any).user?.username || (req as any).user?.userId || "API";
     const result = await approveGoodsReturn(
       parseInt(req.params.id),
-      req.body.userId
+      codUsuario
     );
     if (result.ok) {
-      try { obs.audit('logistics.return.approved', { userId: req.body.userId, userName: (req as any).user?.userName, companyId: (req as any).user?.companyId, module: 'logistica', entity: 'GoodsReturn', entityId: parseInt(req.params.id) }); } catch { /* never blocks */ }
+      try { obs.audit('logistics.return.approved', { userId: codUsuario, userName: (req as any).user?.userName, companyId: (req as any).user?.companyId, module: 'logistica', entity: 'GoodsReturn', entityId: parseInt(req.params.id) }); } catch { /* never blocks */ }
     }
     return res.status(result.ok ? 200 : 400).json(result);
   } catch (err: any) {
@@ -237,7 +238,7 @@ logisticaRouter.post("/notas-entrega", async (req, res) => {
 
 logisticaRouter.post("/notas-entrega/:id/despachar", async (req, res) => {
   try {
-    const codUsuario = req.body.userId || (req as any).user?.username || "API";
+    const codUsuario = (req as any).user?.username || (req as any).user?.userId || "API";
     const result = await dispatchDeliveryNote(
       parseInt(req.params.id),
       codUsuario

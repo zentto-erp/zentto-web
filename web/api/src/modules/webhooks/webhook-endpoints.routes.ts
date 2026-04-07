@@ -37,7 +37,7 @@ webhookEndpointsRouter.get("/event-types", (_req, res) => {
 webhookEndpointsRouter.post("/", async (req, res) => {
   try {
     const scope = (req as any).scope as { companyId: number } | undefined;
-    const companyId = scope?.companyId ?? Number(req.query.companyId) ?? 0;
+    const companyId = scope?.companyId ?? 0;
     if (!companyId) return res.status(400).json({ error: "companyId requerido" });
 
     const { url, secret, events, description } = req.body;
@@ -74,7 +74,7 @@ webhookEndpointsRouter.post("/", async (req, res) => {
 webhookEndpointsRouter.get("/", async (req, res) => {
   try {
     const scope = (req as any).scope as { companyId: number } | undefined;
-    const companyId = scope?.companyId ?? Number(req.query.companyId) ?? 0;
+    const companyId = scope?.companyId ?? 0;
     if (!companyId) return res.status(400).json({ error: "companyId requerido" });
 
     const endpoints = await listWebhookEndpoints(companyId);
@@ -90,7 +90,7 @@ webhookEndpointsRouter.get("/", async (req, res) => {
 webhookEndpointsRouter.get("/:id", async (req, res) => {
   try {
     const scope = (req as any).scope as { companyId: number } | undefined;
-    const companyId = scope?.companyId ?? Number(req.query.companyId) ?? 0;
+    const companyId = scope?.companyId ?? 0;
     if (!companyId) return res.status(400).json({ error: "companyId requerido" });
 
     const endpointId = Number(req.params.id);
@@ -120,7 +120,7 @@ webhookEndpointsRouter.get("/:id", async (req, res) => {
 webhookEndpointsRouter.patch("/:id", async (req, res) => {
   try {
     const scope = (req as any).scope as { companyId: number } | undefined;
-    const companyId = scope?.companyId ?? Number(req.query.companyId) ?? 0;
+    const companyId = scope?.companyId ?? 0;
     if (!companyId) return res.status(400).json({ error: "companyId requerido" });
 
     const endpointId = Number(req.params.id);
@@ -144,7 +144,7 @@ webhookEndpointsRouter.patch("/:id", async (req, res) => {
 webhookEndpointsRouter.delete("/:id", async (req, res) => {
   try {
     const scope = (req as any).scope as { companyId: number } | undefined;
-    const companyId = scope?.companyId ?? Number(req.query.companyId) ?? 0;
+    const companyId = scope?.companyId ?? 0;
     if (!companyId) return res.status(400).json({ error: "companyId requerido" });
 
     const endpointId = Number(req.params.id);
@@ -169,7 +169,7 @@ webhookEndpointsRouter.delete("/:id", async (req, res) => {
 webhookEndpointsRouter.get("/:id/deliveries", async (req, res) => {
   try {
     const scope = (req as any).scope as { companyId: number } | undefined;
-    const companyId = scope?.companyId ?? Number(req.query.companyId) ?? 0;
+    const companyId = scope?.companyId ?? 0;
     if (!companyId) return res.status(400).json({ error: "companyId requerido" });
 
     const endpointId = Number(req.params.id);
