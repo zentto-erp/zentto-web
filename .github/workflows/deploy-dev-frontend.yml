@@ -99,8 +99,9 @@ jobs:
             sed -i 's|^NEXTAUTH_URL=.*|NEXTAUTH_URL=https://appdev.zentto.net|' /opt/zentto-dev/.env.frontend
             sed -i 's|^BACKEND_URL=.*|BACKEND_URL=http://zentto-api-dev:4000|' /opt/zentto-dev/.env.frontend
             sed -i 's|^API_URL=.*|API_URL=http://zentto-api-dev:4000|' /opt/zentto-dev/.env.frontend
-            # DEV usa el mismo zentto-auth de produccion (misma red Docker, misma BD de usuarios)
-            # zentto-auth-dev tiene BD separada sin usuarios de prueba — por eso se usa el de prod
+            # zentto-auth-dev: BD aislada con usuarios de prueba (seed 00004_dev_users.sql)
+            sed -i 's|^AUTH_SERVICE_URL=.*|AUTH_SERVICE_URL=http://zentto-auth-dev:4600|' /opt/zentto-dev/.env.frontend
+            grep -q '^AUTH_SERVICE_URL=' /opt/zentto-dev/.env.frontend || echo 'AUTH_SERVICE_URL=http://zentto-auth-dev:4600' >> /opt/zentto-dev/.env.frontend
 
             # Ensure PM2 config is in place
             mkdir -p /opt/zentto-dev/docker
