@@ -1,5 +1,7 @@
 -- +goose Up
 -- usp_Master_Generic_List — SP genérico para listar maestros con paginación y búsqueda
+-- DROP CASCADE elimina todos los overloads previos (había una versión vieja sin p_company_id)
+DROP FUNCTION IF EXISTS usp_master_generic_list CASCADE;
 
 CREATE OR REPLACE FUNCTION usp_master_generic_list(
   p_company_id  integer      DEFAULT NULL,
