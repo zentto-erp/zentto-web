@@ -139,7 +139,7 @@ jobs:
     steps:
       - name: Create or update PR developer -> main
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GHCR_PAT }}
         run: |
           EXISTING=$(gh pr list --repo "${{ github.repository }}" --base main --head developer --state open --json number --jq '.[0].number' 2>/dev/null || echo "")
           if [ -z "$EXISTING" ]; then

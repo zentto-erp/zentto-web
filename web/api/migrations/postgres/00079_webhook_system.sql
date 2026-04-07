@@ -88,6 +88,7 @@ BEGIN
     RETURN QUERY SELECT TRUE, 'Webhook creado'::VARCHAR, v_id;
 END;
 $$;
+-- +goose StatementEnd
 
 -- ═══════════════════════════════════════════════════════════════════════════════
 -- SP: usp_Platform_WebhookEndpoint_List
@@ -123,6 +124,7 @@ BEGIN
     ORDER BY e."CreatedAtUtc" DESC;
 END;
 $$;
+-- +goose StatementEnd
 
 -- ═══════════════════════════════════════════════════════════════════════════════
 -- SP: usp_Platform_WebhookEndpoint_GetById
@@ -161,6 +163,7 @@ BEGIN
       AND e."CompanyId" = p_company_id;
 END;
 $$;
+-- +goose StatementEnd
 
 -- ═══════════════════════════════════════════════════════════════════════════════
 -- SP: usp_Platform_WebhookEndpoint_Update
@@ -200,6 +203,7 @@ BEGIN
     RETURN QUERY SELECT TRUE, 'Webhook actualizado'::VARCHAR;
 END;
 $$;
+-- +goose StatementEnd
 
 -- ═══════════════════════════════════════════════════════════════════════════════
 -- SP: usp_Platform_WebhookEndpoint_Delete
@@ -227,6 +231,7 @@ BEGIN
     RETURN QUERY SELECT TRUE, 'Webhook eliminado'::VARCHAR;
 END;
 $$;
+-- +goose StatementEnd
 
 -- ═══════════════════════════════════════════════════════════════════════════════
 -- SP: usp_Platform_WebhookEndpoint_ListByEvent
@@ -255,6 +260,7 @@ BEGIN
       AND (p_event_type = ANY(e."Events") OR '*' = ANY(e."Events"));
 END;
 $$;
+-- +goose StatementEnd
 
 -- ═══════════════════════════════════════════════════════════════════════════════
 -- SP: usp_Platform_WebhookDelivery_Create
@@ -286,6 +292,7 @@ BEGIN
     RETURN QUERY SELECT v_id;
 END;
 $$;
+-- +goose StatementEnd
 
 -- ═══════════════════════════════════════════════════════════════════════════════
 -- SP: usp_Platform_WebhookDelivery_UpdateStatus
@@ -324,6 +331,7 @@ BEGIN
     RETURN QUERY SELECT TRUE, 'Delivery actualizado'::VARCHAR;
 END;
 $$;
+-- +goose StatementEnd
 
 -- ═══════════════════════════════════════════════════════════════════════════════
 -- SP: usp_Platform_WebhookDelivery_ListByEndpoint
@@ -384,6 +392,7 @@ BEGIN
     LIMIT p_page_size OFFSET v_offset;
 END;
 $$;
+-- +goose StatementEnd
 
 -- ═══════════════════════════════════════════════════════════════════════════════
 -- SP: usp_Platform_WebhookDelivery_ListPendingRetries
@@ -425,6 +434,7 @@ BEGIN
     LIMIT p_limit;
 END;
 $$;
+-- +goose StatementEnd
 
 -- +goose Down
 
