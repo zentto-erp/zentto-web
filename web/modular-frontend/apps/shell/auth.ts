@@ -144,113 +144,56 @@ const providers: Provider[] = [
     },
     authorize: async (credentials) => {
       try {
-        const BACKEND_URL =
-          process.env.BACKEND_URL ||
-          process.env.NEXT_PUBLIC_API_BASE ||
-          process.env.NEXT_PUBLIC_API_BASE_URL ||
-          process.env.NEXT_PUBLIC_API_URL ||
-          process.env.NEXT_PUBLIC_BACKEND_URL ||
-          process.env.API_URL ||
-          'http://localhost:4000';
-
-        // zentto-auth microservice URL (centralizado para todas las apps)
+        // zentto-auth es OBLIGATORIO. Sin AUTH_SERVICE_URL no hay login.
+        // El ERP fallback fue eliminado porque inflaba la cookie de NextAuth
+        // con permisos/modulos/companyAccesses (~3-5KB) → error 400 Cloudflare.
+        // Los claims los carga loadIamClaimsForSession() server-side sin tocar la cookie.
         const AUTH_SERVICE_URL =
           process.env.AUTH_SERVICE_URL ||
           process.env.NEXT_PUBLIC_AUTH_URL ||
           '';
+
+        if (!AUTH_SERVICE_URL) {
+          throw new CustomAuthError('misconfiguration', 'AUTH_SERVICE_URL no configurado');
+        }
 
         const incoming = credentials as
           | Partial<Record<'username' | 'password' | 'companyId' | 'branchId' | 'captchaToken', unknown>>
           | undefined;
         const username = typeof incoming?.username === 'string' ? incoming.username : undefined;
         const password = typeof incoming?.password === 'string' ? incoming.password : undefined;
-        const captchaToken =
-          typeof incoming?.captchaToken === 'string' ? incoming.captchaToken : undefined;
 
         if (!username) {
           throw new CustomAuthError('invalid_credentials', 'Usuario es requerido');
         }
 
-        const companyId =
-          typeof incoming?.companyId === 'string' ? Number(incoming.companyId) : undefined;
-        const branchId =
-          typeof incoming?.branchId === 'string' ? Number(incoming.branchId) : undefined;
+        const authRes = await fetch(`${AUTH_SERVICE_URL}/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            username: username.trim().toUpperCase(),
+            password: password || '',
+            appId: 'zentto-erp',
+          }),
+        });
 
-        // ── Estrategia primaria: zentto-auth con JWT enriquecido ─────
-        // zentto-auth ahora devuelve modulos, permisos y companyAccesses
-        // directamente en el token + en el response body. No necesitamos
-        // el round-trip a /v1/auth/profile del ERP — todo viene del IAM
-        // central.
-        if (AUTH_SERVICE_URL) {
-          const authRes = await fetch(`${AUTH_SERVICE_URL}/auth/login`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              username: username.trim().toUpperCase(),
-              password: password || '',
-              appId: 'zentto-erp',
-            }),
-          });
+        if (!authRes.ok) throw new CredentialsSignin();
 
-          if (!authRes.ok) throw new CredentialsSignin();
+        const authData = await authRes.json();
+        if (!authData.user || !authData.accessToken) throw new CredentialsSignin();
 
-          const authData = await authRes.json();
-          if (!authData.user || !authData.accessToken) throw new CredentialsSignin();
-
-          // Mapear directamente al shape que NextAuth + AuthContext esperan
-          const u = authData.user;
-          return {
-            id: u.userId,
-            name: u.displayName || u.username,
-            email: u.email || null,
-            token: authData.accessToken,
-            isAdmin: u.isAdmin || false,
-            tipo: u.userType || null,
-            permisos: u.permisos || null,
-            modulos: u.modulos || [],
-            company: u.defaultCompany || null,
-            defaultCompany: u.defaultCompany || null,
-            companyAccesses: u.companyAccesses || [],
-          };
-        } else {
-          // ── Modo legacy: autenticar directo contra ERP API ──
-          const userData = {
-            usuario: username.trim().toUpperCase(),
-            clave: password || '',
-            companyId: Number.isFinite(companyId) && Number(companyId) > 0 ? Number(companyId) : undefined,
-            branchId: Number.isFinite(branchId) && Number(branchId) > 0 ? Number(branchId) : undefined,
-            captchaToken,
-          };
-
-          const response = await fetch(`${BACKEND_URL}/v1/auth/login`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(userData),
-          });
-
-          if (!response.ok) throw new CredentialsSignin();
-          const data = await response.json();
-          if (!data?.token) throw new CredentialsSignin();
-
-          return {
-            id: data.userId || data.usuario?.codUsuario || 'unknown',
-            name: data.userName || data.usuario?.nombre || 'Usuario',
-            email: data.email || null,
-            token: data.token,
-            isAdmin: data.isAdmin || data.usuario?.isAdmin || false,
-            tipo: data.usuario?.tipo || null,
-            permisos: data.permisos || null,
-            modulos: data.modulos || [],
-            company: data.defaultCompany || data.company || null,
-            defaultCompany: data.defaultCompany || data.company || null,
-            companyAccesses: data.companyAccesses || [],
-          };
-        }
-
-        // No deberiamos llegar aqui — los dos branches anteriores
-        // (zentto-auth o ERP fallback) ya retornan. Si caemos aqui,
-        // algo esta mal en el flujo.
-        throw new CredentialsSignin();
+        // JWT slim: solo id, name, email, token.
+        // permisos/modulos/companyAccesses NO van aquí — los carga
+        // loadIamClaimsForSession() en session() callback (server-side).
+        const u = authData.user;
+        return {
+          id: u.userId,
+          name: u.displayName || u.username,
+          email: u.email || null,
+          token: authData.accessToken,
+          isAdmin: u.isAdmin || false,
+          tipo: u.userType || null,
+        };
       } catch (error: unknown) {
         if (error instanceof CredentialsSignin) throw error;
         throw new CredentialsSignin();
