@@ -20,14 +20,10 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-
-const AUTH_SERVICE_URL =
-  process.env.AUTH_SERVICE_URL ||
-  process.env.NEXT_PUBLIC_AUTH_URL ||
-  '';
+import { authBaseUrl } from '@/lib/auth-client';
 
 async function proxy(req: NextRequest, params: { path: string[] }) {
-  if (!AUTH_SERVICE_URL) {
+  if (!authBaseUrl) {
     return NextResponse.json(
       { error: 'auth_service_not_configured' },
       { status: 503 },
@@ -36,7 +32,7 @@ async function proxy(req: NextRequest, params: { path: string[] }) {
 
   const subPath = params.path.join('/');
   const search = req.nextUrl.search;
-  const url = `${AUTH_SERVICE_URL}/admin/${subPath}${search}`;
+  const url = `${authBaseUrl}/admin/${subPath}${search}`;
 
   const headers: Record<string, string> = {};
   const cookie = req.headers.get('cookie');
