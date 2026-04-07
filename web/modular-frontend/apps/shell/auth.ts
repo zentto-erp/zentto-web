@@ -4,6 +4,59 @@ import Google from 'next-auth/providers/google';
 import type { Provider } from 'next-auth/providers';
 import { AuthError, CredentialsSignin } from 'next-auth';
 
+// ─── Cache server-side de claims IAM por usuario ─────────────────
+// Los claims pesados (modulos, permisos, companyAccesses) NO van en
+// el JWT/cookie de NextAuth porque inflarian el header mas alla del
+// limite de Cloudflare. Los cargamos en cada session() callback con
+// cache en memoria del proceso (TTL 60s) para no martillar zentto-auth.
+type IamClaimsCache = {
+  modulos: string[];
+  permisos: Record<string, Record<string, boolean>>;
+  companyAccesses: Array<Record<string, unknown>>;
+  defaultCompany: Record<string, unknown> | null;
+  loadedAt: number;
+};
+const iamCache = new Map<string, IamClaimsCache>();
+const IAM_CACHE_TTL_MS = 60 * 1000;
+
+async function loadIamClaimsForSession(
+  userId: string,
+  accessToken: string | null,
+): Promise<IamClaimsCache | null> {
+  const cached = iamCache.get(userId);
+  if (cached && Date.now() - cached.loadedAt < IAM_CACHE_TTL_MS) {
+    return cached;
+  }
+
+  const AUTH_SERVICE_URL =
+    process.env.AUTH_SERVICE_URL || process.env.NEXT_PUBLIC_AUTH_URL || '';
+  if (!AUTH_SERVICE_URL || !accessToken) return cached ?? null;
+
+  try {
+    // Server-to-server: usamos el accessToken slim como Bearer.
+    // zentto-auth acepta Bearer porque la request NO viene de un browser
+    // (es el server del shell hablando con el microservicio interno).
+    const res = await fetch(`${AUTH_SERVICE_URL}/auth/me?appId=zentto-erp`, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+    if (!res.ok) return cached ?? null;
+    const data = await res.json();
+    const fresh: IamClaimsCache = {
+      modulos: data.modulos ?? [],
+      permisos: data.permisos ?? {},
+      companyAccesses: data.companyAccesses ?? [],
+      defaultCompany: data.defaultCompany ?? null,
+      loadedAt: Date.now(),
+    };
+    iamCache.set(userId, fresh);
+    return fresh;
+  } catch {
+    return cached ?? null;
+  }
+}
+
 function getJwtExpMs(jwtToken: string | null | undefined): number | null {
   if (!jwtToken) return null;
   try {
@@ -225,6 +278,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       }
 
       if (user) {
+        // SLIM token: solo identidad y company activa. Los claims pesados
+        // (modulos, permisos, companyAccesses completos) NO van aqui porque
+        // la cookie supera el limite de 16KB de Cloudflare. Se cargan
+        // server-side en el callback session() con cache en memoria.
         // @ts-ignore
         token.accessToken = user.token;
         // @ts-ignore
@@ -233,16 +290,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.isAdmin = user.isAdmin;
         // @ts-ignore
         token.tipo = user.tipo;
-        // @ts-ignore
-        token.permisos = user.permisos;
-        // @ts-ignore
-        token.modulos = user.modulos;
-        // @ts-ignore
-        token.company = user.company;
-        // @ts-ignore
-        token.defaultCompany = user.defaultCompany;
-        // @ts-ignore
-        token.companyAccesses = user.companyAccesses;
       }
 
       // @ts-ignore
@@ -256,24 +303,48 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
     async session({ session, token }) {
       // accessToken viaja en cookie HttpOnly zentto_token (via /api/auth/set-token).
-      // Se expone SOLO para que el cookie proxy pueda leerlo server-side.
       // El browser NO lo usa en Authorization headers — 100% cookies.
       // @ts-ignore
       session.accessToken = token.accessToken;
       // @ts-ignore
+      session.accessTokenExpires = token.accessTokenExpires;
+      // @ts-ignore
       session.isAdmin = token.isAdmin;
       // @ts-ignore
       session.tipo = token.tipo;
+
+      // Cargar claims pesados desde zentto-auth con cache server-side.
+      // Estos claims NO van en el JWT/cookie (por tamaño) pero SI se
+      // exponen en el session object porque session vive solo en memoria
+      // del server y se reconstruye en cada GET /api/auth/session.
       // @ts-ignore
-      session.permisos = token.permisos;
-      // @ts-ignore
-      session.modulos = token.modulos;
-      // @ts-ignore
-      session.company = token.company;
-      // @ts-ignore
-      session.defaultCompany = token.defaultCompany;
-      // @ts-ignore
-      session.companyAccesses = token.companyAccesses;
+      const userId = (token.sub as string | undefined) ?? session?.user?.id;
+      if (userId) {
+        try {
+          // Buscar la cookie del request actual para reenviar al microservicio.
+          // En el callback session() de NextAuth tenemos acceso a headers via
+          // next/headers (server context).
+          const { headers: nextHeaders } = await import('next/headers');
+          const h = await nextHeaders();
+          const cookieHeader = h.get('cookie');
+          const claims = await loadIamClaimsForSession(userId, cookieHeader);
+          if (claims) {
+            // @ts-ignore
+            session.modulos = claims.modulos;
+            // @ts-ignore
+            session.permisos = claims.permisos;
+            // @ts-ignore
+            session.companyAccesses = claims.companyAccesses;
+            // @ts-ignore
+            session.company = claims.defaultCompany;
+            // @ts-ignore
+            session.defaultCompany = claims.defaultCompany;
+          }
+        } catch {
+          // Fallback: session sin claims pesados; el AuthContext usara defaults
+        }
+      }
+
       return session;
     },
     authorized({ auth: session, request: { nextUrl } }) {
