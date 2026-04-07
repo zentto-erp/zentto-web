@@ -550,7 +550,7 @@ function AssignRoleDialog({ codigo, roles, onClose, onSuccess }: {
 }) {
   const { data: userRolesData, isLoading } = useUserRoles(codigo);
   const assignMutation = useAssignUserRole(codigo || '');
-  const [selectedRoleId, setSelectedRoleId] = useState<number | ''>('');
+  const [selectedRoleId, setSelectedRoleId] = useState<string>('');
   const [err, setErr] = useState<string | null>(null);
 
   React.useEffect(() => {
@@ -569,7 +569,7 @@ function AssignRoleDialog({ codigo, roles, onClose, onSuccess }: {
       return;
     }
     try {
-      await assignMutation.mutateAsync(Number(selectedRoleId));
+      await assignMutation.mutateAsync(selectedRoleId);
       onClose();
       onSuccess();
     } catch (e: unknown) {
@@ -593,7 +593,7 @@ function AssignRoleDialog({ codigo, roles, onClose, onSuccess }: {
                 fullWidth
                 size="small"
                 value={selectedRoleId}
-                onChange={(e) => setSelectedRoleId(Number(e.target.value))}
+                onChange={(e) => setSelectedRoleId(e.target.value)}
               >
                 <MenuItem value="">-- Sin rol --</MenuItem>
                 {roles.filter((r) => r.IsActive).map((r) => (
