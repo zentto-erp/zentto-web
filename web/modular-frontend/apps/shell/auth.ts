@@ -94,15 +94,12 @@ const providers: Provider[] = [
         const branchId =
           typeof incoming?.branchId === 'string' ? Number(incoming.branchId) : undefined;
 
-        let token: string;
-        let userId: string;
-        let userName: string;
-        let email: string | null = null;
-
-        // ── Estrategia: zentto-auth → ERP profile (si AUTH_SERVICE_URL configurado) ──
-        // ── Fallback: ERP directo (retrocompatible) ──
+        // ── Estrategia primaria: zentto-auth con JWT enriquecido ─────
+        // zentto-auth ahora devuelve modulos, permisos y companyAccesses
+        // directamente en el token + en el response body. No necesitamos
+        // el round-trip a /v1/auth/profile del ERP — todo viene del IAM
+        // central.
         if (AUTH_SERVICE_URL) {
-          // 1. Autenticar contra zentto-auth microservice
           const authRes = await fetch(`${AUTH_SERVICE_URL}/auth/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -116,34 +113,23 @@ const providers: Provider[] = [
           if (!authRes.ok) throw new CredentialsSignin();
 
           const authData = await authRes.json();
-          if (!authData.user) throw new CredentialsSignin();
+          if (!authData.user || !authData.accessToken) throw new CredentialsSignin();
 
-          // zentto-auth devuelve accessToken en body o cookie
-          token = authData.accessToken || '';
-          userId = authData.user.userId || authData.user.username || 'unknown';
-          userName = authData.user.displayName || authData.user.username || 'Usuario';
-          email = authData.user.email || null;
-
-          // Si no hay token en body, la cookie no la podemos capturar server-side
-          // En ese caso, generamos token via ERP fallback
-          if (!token) {
-            // Fallback: usar ERP login para obtener token con claims completos
-            const erpRes = await fetch(`${BACKEND_URL}/v1/auth/login`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                usuario: username.trim().toUpperCase(),
-                clave: password || '',
-                companyId: Number.isFinite(companyId) ? companyId : undefined,
-                branchId: Number.isFinite(branchId) ? branchId : undefined,
-                captchaToken,
-              }),
-            });
-            if (!erpRes.ok) throw new CredentialsSignin();
-            const erpData = await erpRes.json();
-            if (!erpData.token) throw new CredentialsSignin();
-            token = erpData.token;
-          }
+          // Mapear directamente al shape que NextAuth + AuthContext esperan
+          const u = authData.user;
+          return {
+            id: u.userId,
+            name: u.displayName || u.username,
+            email: u.email || null,
+            token: authData.accessToken,
+            isAdmin: u.isAdmin || false,
+            tipo: u.userType || null,
+            permisos: u.permisos || null,
+            modulos: u.modulos || [],
+            company: u.defaultCompany || null,
+            defaultCompany: u.defaultCompany || null,
+            companyAccesses: u.companyAccesses || [],
+          };
         } else {
           // ── Modo legacy: autenticar directo contra ERP API ──
           const userData = {
@@ -179,33 +165,10 @@ const providers: Provider[] = [
           };
         }
 
-        // 2. Enriquecer con datos ERP via /v1/auth/profile
-        const profileRes = await fetch(`${BACKEND_URL}/v1/auth/profile`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            ...(companyId ? { 'x-company-id': String(companyId) } : {}),
-            ...(branchId ? { 'x-branch-id': String(branchId) } : {}),
-          },
-        });
-
-        let profile: any = {};
-        if (profileRes.ok) {
-          profile = await profileRes.json();
-        }
-
-        return {
-          id: profile.userId || userId,
-          name: profile.userName || userName,
-          email: email,
-          token,
-          isAdmin: profile.isAdmin ?? false,
-          tipo: profile.tipo || null,
-          permisos: profile.permisos || null,
-          modulos: profile.modulos || [],
-          company: profile.defaultCompany || null,
-          defaultCompany: profile.defaultCompany || null,
-          companyAccesses: profile.companyAccesses || [],
-        };
+        // No deberiamos llegar aqui — los dos branches anteriores
+        // (zentto-auth o ERP fallback) ya retornan. Si caemos aqui,
+        // algo esta mal en el flujo.
+        throw new CredentialsSignin();
       } catch (error: unknown) {
         if (error instanceof CredentialsSignin) throw error;
         throw new CredentialsSignin();

@@ -270,6 +270,13 @@ const AuthLogin = ({ title, subtitle, subtext }: loginType) => {
                 fullWidth
                 error={!!errors.email}
                 helperText={errors.email?.message}
+                sx={{
+                  '& input:-webkit-autofill': {
+                    WebkitBoxShadow: '0 0 0 100px transparent inset',
+                    WebkitTextFillColor: 'inherit',
+                    transition: 'background-color 5000s ease-in-out 0s',
+                  },
+                }}
               />
             )}
           />
@@ -300,7 +307,7 @@ const AuthLogin = ({ title, subtitle, subtext }: loginType) => {
                 {...field}
                 id="password"
                 label="Contraseña"
-                type="text"
+                type={showPassword ? 'text' : 'password'}
                 placeholder="Contraseña"
                 autoComplete="current-password"
                 disabled={isSubmitting}
@@ -308,8 +315,10 @@ const AuthLogin = ({ title, subtitle, subtext }: loginType) => {
                 error={!!errors.password}
                 helperText={errors.password?.message}
                 sx={{
-                  '& input': {
-                    ...(!showPassword && { WebkitTextSecurity: 'disc', textSecurity: 'disc' }),
+                  '& input:-webkit-autofill': {
+                    WebkitBoxShadow: '0 0 0 100px transparent inset',
+                    WebkitTextFillColor: 'inherit',
+                    transition: 'background-color 5000s ease-in-out 0s',
                   },
                 }}
                 slotProps={{
