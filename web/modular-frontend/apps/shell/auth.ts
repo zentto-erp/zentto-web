@@ -313,35 +313,25 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       // @ts-ignore
       session.tipo = token.tipo;
 
-      // Cargar claims pesados desde zentto-auth con cache server-side.
-      // Estos claims NO van en el JWT/cookie (por tamaño) pero SI se
-      // exponen en el session object porque session vive solo en memoria
-      // del server y se reconstruye en cada GET /api/auth/session.
+      // Cargar claims pesados desde zentto-auth /auth/me con el accessToken
+      // slim como Bearer (server-to-server, sin browser). Cache 60s por user.
       // @ts-ignore
       const userId = (token.sub as string | undefined) ?? session?.user?.id;
-      if (userId) {
-        try {
-          // Buscar la cookie del request actual para reenviar al microservicio.
-          // En el callback session() de NextAuth tenemos acceso a headers via
-          // next/headers (server context).
-          const { headers: nextHeaders } = await import('next/headers');
-          const h = await nextHeaders();
-          const cookieHeader = h.get('cookie');
-          const claims = await loadIamClaimsForSession(userId, cookieHeader);
-          if (claims) {
-            // @ts-ignore
-            session.modulos = claims.modulos;
-            // @ts-ignore
-            session.permisos = claims.permisos;
-            // @ts-ignore
-            session.companyAccesses = claims.companyAccesses;
-            // @ts-ignore
-            session.company = claims.defaultCompany;
-            // @ts-ignore
-            session.defaultCompany = claims.defaultCompany;
-          }
-        } catch {
-          // Fallback: session sin claims pesados; el AuthContext usara defaults
+      // @ts-ignore
+      const accessToken = (token.accessToken as string | undefined) ?? null;
+      if (userId && accessToken) {
+        const claims = await loadIamClaimsForSession(userId, accessToken);
+        if (claims) {
+          // @ts-ignore
+          session.modulos = claims.modulos;
+          // @ts-ignore
+          session.permisos = claims.permisos;
+          // @ts-ignore
+          session.companyAccesses = claims.companyAccesses;
+          // @ts-ignore
+          session.company = claims.defaultCompany;
+          // @ts-ignore
+          session.defaultCompany = claims.defaultCompany;
         }
       }
 
