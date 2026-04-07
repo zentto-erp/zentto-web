@@ -223,3 +223,74 @@ export async function apiDelete(path: string) {
   if (!res.ok) throw new Error(responseData?.message || responseData?.error || res.statusText);
   return responseData;
 }
+
+// ═══════════════════════════════════════════════════════════════
+// IAM (Identity & Access Management) — proxy a zentto-auth /admin
+// ═══════════════════════════════════════════════════════════════
+//
+// Estos wrappers apuntan al proxy local /api/iam/* del shell, que
+// reenvia las requests al microservicio zentto-auth (puerto interno
+// 4600, NO expuesto publicamente). El path en zentto-auth es
+// /admin/<path>, asi que iamGet('users') → /api/iam/users → zentto-auth /admin/users.
+//
+// La cookie httponly del usuario viaja al shell automaticamente
+// (mismo dominio) y el route handler la reenvia a zentto-auth.
+
+function iamUrl(path: string): string {
+  // Quitar / inicial si lo trae para que el join sea limpio
+  const clean = path.replace(/^\/+/, '');
+  return `/api/iam/${clean}`;
+}
+
+export async function iamGet(path: string, params?: Record<string, unknown>) {
+  let fullUrl = iamUrl(path);
+  if (params) {
+    const query = Object.entries(params)
+      .filter(([, v]) => v !== undefined && v !== null && v !== '')
+      .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`)
+      .join('&');
+    if (query) fullUrl += `?${query}`;
+  }
+  const res = await fetch(fullUrl, { credentials: 'include' });
+  await handleUnauthorized(res);
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data?.error || data?.message || res.statusText);
+  return data;
+}
+
+export async function iamPost(path: string, body: unknown) {
+  const res = await fetch(iamUrl(path), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify(body),
+  });
+  await handleUnauthorized(res);
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data?.error || data?.message || res.statusText);
+  return data;
+}
+
+export async function iamPut(path: string, body: unknown) {
+  const res = await fetch(iamUrl(path), {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify(body),
+  });
+  await handleUnauthorized(res);
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data?.error || data?.message || res.statusText);
+  return data;
+}
+
+export async function iamDelete(path: string) {
+  const res = await fetch(iamUrl(path), {
+    method: 'DELETE',
+    credentials: 'include',
+  });
+  await handleUnauthorized(res);
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data?.error || data?.message || res.statusText);
+  return data;
+}
