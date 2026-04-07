@@ -7,6 +7,7 @@
 import { Router, Request, Response } from "express";
 import { z } from "zod";
 import * as svc from "./service.js";
+import { requireAdmin } from "../../middleware/auth.js";
 
 export const permisosRouter = Router();
 
@@ -29,8 +30,8 @@ permisosRouter.get("/permisos", async (req: Request, res: Response) => {
   }
 });
 
-// POST /v1/permisos/permisos/seed
-permisosRouter.post("/permisos/seed", async (_req: Request, res: Response) => {
+// POST /v1/permisos/permisos/seed — solo admin
+permisosRouter.post("/permisos/seed", requireAdmin, async (_req: Request, res: Response) => {
   try {
     const result = await svc.seedPermissions();
     res.json(result);
@@ -60,7 +61,7 @@ const setPermissionSchema = z.object({
   isGranted: z.boolean(),
 });
 
-permisosRouter.post("/roles/:roleId/permisos", async (req: Request, res: Response) => {
+permisosRouter.post("/roles/:roleId/permisos", requireAdmin, async (req: Request, res: Response) => {
   const parsed = setPermissionSchema.safeParse(req.body);
   if (!parsed.success) {
     return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
@@ -95,7 +96,7 @@ const bulkPermissionSchema = z.object({
   })),
 });
 
-permisosRouter.post("/roles/:roleId/permisos/bulk", async (req: Request, res: Response) => {
+permisosRouter.post("/roles/:roleId/permisos/bulk", requireAdmin, async (req: Request, res: Response) => {
   const parsed = bulkPermissionSchema.safeParse(req.body);
   if (!parsed.success) {
     return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
@@ -146,7 +147,7 @@ const overrideSchema = z.object({
   isGranted: z.boolean(),
 });
 
-permisosRouter.post("/usuarios/:userId/permisos/override", async (req: Request, res: Response) => {
+permisosRouter.post("/usuarios/:userId/permisos/override", requireAdmin, async (req: Request, res: Response) => {
   const parsed = overrideSchema.safeParse(req.body);
   if (!parsed.success) {
     return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });

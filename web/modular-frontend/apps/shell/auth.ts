@@ -194,7 +194,10 @@ const providers: Provider[] = [
         // pueden no pasarse al jwt() callback (solo llegan id/name/email/image).
         // Guardarlo aquí garantiza que set-token lo encuentre sin importar eso.
         const expMs = getJwtExpMs(authData.accessToken);
-        storeAccessToken(u.userId, authData.accessToken, expMs);
+        // String() garantiza clave string en el Map — u.userId llega como number
+        // desde PG (integer) y token.sub en NextAuth es siempre string.
+        // Sin este cast: Map.get("1") !== Map.get(1) → token_not_available → loop.
+        storeAccessToken(String(u.userId), authData.accessToken, expMs);
 
         return {
           id: u.userId,
@@ -269,9 +272,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         // SLIM token: solo identidad básica. El accessToken (~3KB) va en
         // accessTokenStore (server-side) para no inflar la cookie de NextAuth.
         // @ts-ignore
-        const at = user.token as string;
-        const exp = getJwtExpMs(at);
-        if (token.sub) storeAccessToken(token.sub, at, exp);
+        const at = user.token as string | undefined;
+        // Redundante con el storeAccessToken en authorize(), pero cubre el caso
+        // donde authorize() guardó con clave numérica (antes del fix String()).
+        if (token.sub && at) storeAccessToken(token.sub, at, getJwtExpMs(at));
         token.accessTokenExpires = exp;
         // @ts-ignore
         token.isAdmin = user.isAdmin;
