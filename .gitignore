@@ -5,6 +5,7 @@
 *.suo
 nul
 .claude/
+!.claude/commands/
 node_modules/
 **/node_modules/
 .next/
@@ -23,3 +24,6 @@ SpainInside_WEB/
 BrokerPlatform/
 DatqBox.LocalFiscalAgent/
 md/
+
+# TypeScript incremental build cache (auto-generado)
+*.tsbuildinfo
