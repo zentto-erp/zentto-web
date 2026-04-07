@@ -1,5 +1,24 @@
 # Zentto - Claude Code
 
+## ⚠️ ANTES DE CUALQUIER TAREA — LEER MEMORIA Y REGLAS
+
+**OBLIGATORIO al inicio de cada conversación o tarea nueva:**
+
+1. Leer `C:\Users\Dell\.claude\projects\d--DatqBoxWorkspace-DatqBoxWeb\memory\MEMORY.md`
+2. Por cada entrada relevante a la tarea, leer el archivo de detalle referenciado
+3. Verificar reglas críticas que apliquen antes de escribir una sola línea de código
+
+**Reglas críticas que se repiten con más frecuencia (no saltarse):**
+
+| Regla | Consecuencia si se omite |
+|-------|--------------------------|
+| Branch desde `developer`, PR a `developer` | Regresión en pipeline CI/CD |
+| Nunca commit en `main` ni `developer` directo | Rompe protección de ramas |
+| Sin `Co-Authored-By: Claude` en commits | Historial contaminado |
+| Todo cambio BD → migración goose + sqlweb-pg + sqlweb (ambos motores) | BD rota en producción |
+| Nunca `<table>` HTML — siempre `<ZenttoDataGrid>` | Inconsistencia UI |
+| Sin datos mock en frontend — usar hooks API | Datos falsos en producción |
+
 ## Idioma
 
 - Toda la salida debe ser en **español**.

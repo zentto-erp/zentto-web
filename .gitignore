@@ -5,6 +5,7 @@
 *.suo
 nul
 .claude/
+!.claude/commands/
 node_modules/
 **/node_modules/
 .next/
