@@ -23,3 +23,6 @@ SpainInside_WEB/
 BrokerPlatform/
 DatqBox.LocalFiscalAgent/
 md/
+
+# TypeScript incremental build cache (auto-generado)
+*.tsbuildinfo
