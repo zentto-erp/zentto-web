@@ -317,8 +317,8 @@ function PermissionsDialog({
   onClose: () => void;
   onSuccess: () => void;
 }) {
-  const { data, isLoading } = useRolePermissions(role?.RoleId ?? null);
-  const saveMutation = useSaveRolePermissions(role?.RoleId ?? 0);
+  const { data, isLoading } = useRolePermissions(role?.erpRoleId ?? null);
+  const saveMutation = useSaveRolePermissions(role?.erpRoleId ?? 0);
   const [perms, setPerms] = useState<Record<number, Record<PermKey, boolean>>>({});
   const [err, setErr] = useState<string | null>(null);
 
