@@ -188,6 +188,14 @@ const providers: Provider[] = [
         // permisos/modulos/companyAccesses NO van aquí — los carga
         // loadIamClaimsForSession() en session() callback (server-side).
         const u = authData.user;
+
+        // Almacenar el token en el store SERVER-SIDE ahora mismo.
+        // En NextAuth v5 beta, los campos custom del return de authorize()
+        // pueden no pasarse al jwt() callback (solo llegan id/name/email/image).
+        // Guardarlo aquí garantiza que set-token lo encuentre sin importar eso.
+        const expMs = getJwtExpMs(authData.accessToken);
+        storeAccessToken(u.userId, authData.accessToken, expMs);
+
         return {
           id: u.userId,
           name: u.displayName || u.username,
@@ -291,6 +299,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
 
     async session({ session, token }) {
+      // Garantizar que session.user.id esté siempre disponible.
+      // NextAuth v5 beta puede no mapearlo automáticamente desde token.sub.
+      if (token.sub) session.user.id = token.sub;
+
       // @ts-ignore
       session.accessTokenExpires = token.accessTokenExpires;
       // @ts-ignore
