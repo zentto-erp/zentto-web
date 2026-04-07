@@ -1,10 +1,39 @@
-﻿import NextAuth from 'next-auth';
+import NextAuth from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
 import Google from 'next-auth/providers/google';
 import type { Provider } from 'next-auth/providers';
 import { AuthError, CredentialsSignin } from 'next-auth';
 
-// ─── Cache server-side de claims IAM por usuario ─────────────────
+// ─── Server-side access token store ───────────────────────────────────────────
+// El accessToken de zentto-auth (~3KB) NO va en el JWT de NextAuth porque
+// inflaría la cookie por encima del límite de nginx. Se guarda aquí en memoria
+// del proceso y se recupera por userId en session() y en /api/auth/set-token.
+//
+// Trade-off aceptable: proceso restart limpia el store → zentto_token no puede
+// renovarse hasta que el usuario haga login de nuevo. La cookie zentto_token
+// existente (maxAge 12h) sigue siendo válida para las llamadas a la API.
+type AccessTokenEntry = { token: string; expiresAt: number };
+const accessTokenStore = new Map<string, AccessTokenEntry>();
+
+export function getStoredAccessToken(userId: string): string | null {
+  const entry = accessTokenStore.get(userId);
+  if (!entry) return null;
+  if (Date.now() >= entry.expiresAt) {
+    accessTokenStore.delete(userId);
+    return null;
+  }
+  return entry.token;
+}
+
+function storeAccessToken(userId: string, token: string, expiresAt: number | null): void {
+  if (!userId || !token) return;
+  accessTokenStore.set(userId, {
+    token,
+    expiresAt: expiresAt ?? Date.now() + 12 * 60 * 60 * 1000,
+  });
+}
+
+// ─── Cache server-side de claims IAM por usuario ─────────────────────────────
 // Los claims pesados (modulos, permisos, companyAccesses) NO van en
 // el JWT/cookie de NextAuth porque inflarian el header mas alla del
 // limite de Cloudflare. Los cargamos en cada session() callback con
@@ -239,12 +268,18 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   },
   callbacks: {
     async jwt({ token, user, account, trigger, session: updateData }) {
-      // Switch company: actualizar token con nuevos datos de empresa
+      // Switch company: actualizar store con nuevo accessToken
       if (trigger === 'update' && updateData?.accessToken) {
-        token.accessToken = updateData.accessToken;
+        const userId = token.sub;
+        if (userId) {
+          storeAccessToken(userId, updateData.accessToken, getJwtExpMs(updateData.accessToken));
+        }
         token.accessTokenExpires = getJwtExpMs(updateData.accessToken);
         if (updateData.company) token.company = updateData.company;
         if (updateData.companyAccesses) token.companyAccesses = updateData.companyAccesses;
+        // Limpiar accessToken del JWT si quedó de versión anterior
+        // @ts-ignore
+        delete token.accessToken;
         return token;
       }
 
@@ -264,8 +299,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
           if (res.ok) {
             const data = await res.json();
-            if (data.token) {
-              token.accessToken = data.token;
+            if (data.token && token.sub) {
+              storeAccessToken(token.sub, data.token, getJwtExpMs(data.token));
               token.accessTokenExpires = getJwtExpMs(data.token);
               token.isAdmin = false;
               token.modulos = ['ecommerce'];
@@ -278,34 +313,39 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       }
 
       if (user) {
-        // SLIM token: solo identidad y company activa. Los claims pesados
-        // (modulos, permisos, companyAccesses completos) NO van aqui porque
-        // la cookie supera el limite de 16KB de Cloudflare. Se cargan
-        // server-side en el callback session() con cache en memoria.
+        // SLIM token: solo identidad básica. El accessToken (~3KB) va en
+        // accessTokenStore (server-side) para no inflar la cookie de NextAuth.
         // @ts-ignore
-        token.accessToken = user.token;
-        // @ts-ignore
-        token.accessTokenExpires = getJwtExpMs(user.token as string);
+        const at = user.token as string;
+        const exp = getJwtExpMs(at);
+        if (token.sub) storeAccessToken(token.sub, at, exp);
+        token.accessTokenExpires = exp;
         // @ts-ignore
         token.isAdmin = user.isAdmin;
         // @ts-ignore
         token.tipo = user.tipo;
+        return token;
       }
 
+      // Migración: JWT viejo puede tener token.accessToken — pasarlo al store y eliminarlo
+      // para que la cookie se reduzca en el próximo ciclo.
       // @ts-ignore
-      const accessTokenExpires = token.accessTokenExpires as number | undefined;
-      if (accessTokenExpires && Date.now() >= accessTokenExpires) {
+      const legacyAt = token.accessToken as string | undefined;
+      if (legacyAt && token.sub) {
+        storeAccessToken(
+          token.sub,
+          legacyAt,
+          // @ts-ignore
+          (token.accessTokenExpires as number | undefined) ?? null,
+        );
         // @ts-ignore
-        token.accessToken = null;
+        delete token.accessToken;
       }
 
       return token;
     },
+
     async session({ session, token }) {
-      // accessToken viaja en cookie HttpOnly zentto_token (via /api/auth/set-token).
-      // El browser NO lo usa en Authorization headers — 100% cookies.
-      // @ts-ignore
-      session.accessToken = token.accessToken;
       // @ts-ignore
       session.accessTokenExpires = token.accessTokenExpires;
       // @ts-ignore
@@ -317,8 +357,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       // slim como Bearer (server-to-server, sin browser). Cache 60s por user.
       // @ts-ignore
       const userId = (token.sub as string | undefined) ?? session?.user?.id;
-      // @ts-ignore
-      const accessToken = (token.accessToken as string | undefined) ?? null;
+      const accessToken = userId ? getStoredAccessToken(userId) : null;
+
       if (userId && accessToken) {
         const claims = await loadIamClaimsForSession(userId, accessToken);
         if (claims) {
@@ -335,8 +375,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         }
       }
 
+      // NOTA: session.accessToken NO se expone aquí — el token viaja solo en
+      // la cookie HttpOnly zentto_token (seteada por /api/auth/set-token que
+      // lee directamente de getStoredAccessToken). Nunca llega al cliente.
+
       return session;
     },
+
     authorized({ auth: session, request: { nextUrl } }) {
       const isLoggedIn = !!session?.user;
       const isPublicRoute = PUBLIC_ROUTES.some((route) => nextUrl.pathname.startsWith(route));
