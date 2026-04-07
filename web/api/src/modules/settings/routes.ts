@@ -1,4 +1,5 @@
 import { Router } from "express";
+import type { AuthenticatedRequest } from "../../middleware/auth.js";
 import {
   getAllSettings,
   getModuleSettings,
@@ -16,7 +17,7 @@ export const settingsRouter = Router();
  */
 settingsRouter.get("/", async (req, res) => {
   try {
-    const companyId = Number(req.query.companyId) || 1;
+    const companyId = (req as AuthenticatedRequest).scope?.companyId ?? Number(req.query.companyId) ?? 1;
     const data = await getAllSettings(companyId);
     res.json(data);
   } catch (err: any) {
@@ -30,7 +31,7 @@ settingsRouter.get("/", async (req, res) => {
  */
 settingsRouter.get("/modules", async (req, res) => {
   try {
-    const companyId = Number(req.query.companyId) || 1;
+    const companyId = (req as AuthenticatedRequest).scope?.companyId ?? Number(req.query.companyId) ?? 1;
     const modules = await listSettingModules(companyId);
     res.json(modules);
   } catch (err: any) {
@@ -45,7 +46,7 @@ settingsRouter.get("/modules", async (req, res) => {
  */
 settingsRouter.get("/:module", async (req, res) => {
   try {
-    const companyId = Number(req.query.companyId) || 1;
+    const companyId = (req as AuthenticatedRequest).scope?.companyId ?? Number(req.query.companyId) ?? 1;
     const moduleName = req.params.module;
     const wantMeta = req.query.meta === "true";
 
@@ -68,7 +69,7 @@ settingsRouter.get("/:module", async (req, res) => {
  */
 settingsRouter.put("/:module", async (req, res) => {
   try {
-    const companyId = Number(req.query.companyId) || 1;
+    const companyId = (req as AuthenticatedRequest).scope?.companyId ?? Number(req.query.companyId) ?? 1;
     const moduleName = req.params.module;
     const userId = (req as any).userId ?? null;
     const result = await saveModuleSettings(companyId, moduleName, req.body, userId);
