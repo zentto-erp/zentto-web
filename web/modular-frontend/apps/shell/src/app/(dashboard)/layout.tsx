@@ -11,7 +11,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const { data: session, status } = useSession();
   const router = useRouter();
   const pathname = usePathname();
-  const { isAdmin, modulos } = useAuth();
+  const { isAdmin, modulos, isCookieReady } = useAuth();
 
   const navigationContainer = React.useMemo(() => {
     return buildNavigation(isAdmin, modulos, pathname);
@@ -23,7 +23,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     }
   }, [status, router]);
 
-  if (status === 'loading') {
+  // Esperar a que la cookie zentto_token esté lista antes de renderizar.
+  // Sin esto, los componentes del dashboard hacen llamadas API sin cookie
+  // → 401 → signOut() → bucle de login.
+  if (status === 'loading' || (status === 'authenticated' && !isCookieReady)) {
     return null;
   }
 
