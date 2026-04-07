@@ -1,6 +1,10 @@
 'use client';
 
-export { apiGet, apiPost, apiPut, apiPatch, apiDelete, resolveAssetUrl, setActiveCompanyForApi } from './api';
+export {
+  apiGet, apiPost, apiPut, apiPatch, apiDelete,
+  iamGet, iamPost, iamPut, iamDelete,
+  resolveAssetUrl, setActiveCompanyForApi,
+} from './api';
 export {
   isWebAuthnSupported,
   listSupervisorBiometricCredentials,

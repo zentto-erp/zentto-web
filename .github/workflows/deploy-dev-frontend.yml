@@ -129,4 +129,22 @@ jobs:
             fi
             echo "✅ Frontend DEV deployed → appdev.zentto.net"
 
-  # set-private omitido — el pre-push hook y los workflows de prod manejan la visibilidad
+  # ── 3. Abrir PR developer → main (si no existe ya) ────────────────
+  pr-to-main:
+    needs: deploy
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Create or update PR developer -> main
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          EXISTING=$(gh pr list --repo "${{ github.repository }}" --base main --head developer --state open --json number --jq '.[0].number' 2>/dev/null || echo "")
+          if [ -z "$EXISTING" ]; then
+            gh pr create --repo "${{ github.repository }}" --base main --head developer --title "chore: sync developer -> main [auto]" --body "Deploy DEV exitoso en appdev.zentto.net. Verificar antes de mergear a produccion."
+            echo "PR developer->main creado"
+          else
+            echo "Ya existe PR numero $EXISTING developer->main"
+          fi
