@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import type { AuthenticatedRequest } from '../../middleware/auth.js';
 import * as service from './sistema.service.js';
 
 const router = Router();
@@ -6,7 +7,7 @@ const router = Router();
 // /v1/sistema/notificaciones
 router.get('/notificaciones', async (req, res) => {
     try {
-        const usuarioId = (req.query.usuarioId as string) || undefined;
+        const usuarioId = (req as AuthenticatedRequest).user?.sub;
         const data = await service.getNotificaciones(usuarioId);
         res.json({ ok: true, data });
     } catch (e: any) {
@@ -30,7 +31,7 @@ router.post('/notificaciones/leido', async (req, res) => {
 // /v1/sistema/tareas
 router.get('/tareas', async (req, res) => {
     try {
-        const asignadoA = (req.query.asignadoA as string) || undefined;
+        const asignadoA = (req as AuthenticatedRequest).user?.sub;
         const data = await service.getTareas(asignadoA);
         res.json({ ok: true, data });
     } catch (e: any) {
@@ -56,9 +57,8 @@ router.patch('/tareas/:id/progreso', async (req, res) => {
 // /v1/sistema/mensajes
 router.get('/mensajes', async (req, res) => {
     try {
-        // En una app real lo sacas del token (req.user.id)
-        // Por ahora lo permitimos por query params:
-        const destinatarioId = (req.query.userId as string) || 'admin';
+        const destinatarioId = (req as AuthenticatedRequest).user?.sub;
+        if (!destinatarioId) return res.status(401).json({ ok: false, error: 'missing_user' });
         const data = await service.getMensajes(destinatarioId);
         res.json({ ok: true, data });
     } catch (e: any) {

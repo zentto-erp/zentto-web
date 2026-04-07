@@ -95,7 +95,8 @@ byocRouter.get("/jobs/:jobId", requireJwt, async (req, res) => {
 // GET /v1/byoc/jobs?companyId=N
 // ---------------------------------------------------------------------------
 byocRouter.get("/jobs", requireJwt, async (req, res) => {
-  const companyId = Number(req.query.companyId);
+  // Usar companyId del scope JWT. No confiar en query param.
+  const companyId = (req as any).scope?.companyId ?? Number(req.query.companyId);
   if (!companyId || isNaN(companyId)) {
     res.status(400).json({ error: "invalid_company_id" });
     return;
