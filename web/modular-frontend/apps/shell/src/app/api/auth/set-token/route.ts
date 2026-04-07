@@ -30,15 +30,22 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: "token_not_available" }, { status: 401 });
   }
 
-  const isProduction = process.env.NODE_ENV === "production";
+  // Determinar dominio de la cookie según el host del request.
+  // En prod Y en dev (appdev.zentto.net), la cookie debe tener domain=.zentto.net
+  // para que viaje también a apidev.zentto.net (mismo dominio raíz, subdomain distinto).
+  // Sin domain explícito, el browser solo la envía al subdominio exacto → 401 en API.
+  const host = req.headers.get("host") ?? "";
+  const isZenttoNet = host.endsWith(".zentto.net") || host === "zentto.net";
+  const cookieDomain = isZenttoNet ? ".zentto.net" : undefined;
+  const isSecure = host.endsWith(".zentto.net") || host === "zentto.net";
 
   const response = NextResponse.json({ ok: true });
 
   response.cookies.set("zentto_token", token, {
     httpOnly: true,
-    secure: isProduction,
+    secure: isSecure,
     sameSite: "lax",
-    domain: isProduction ? ".zentto.net" : undefined,
+    domain: cookieDomain,
     path: "/",
     maxAge: 12 * 60 * 60, // 12 horas (en segundos)
   });
@@ -50,17 +57,18 @@ export async function POST(req: NextRequest) {
  * DELETE /api/auth/set-token
  * Limpia la cookie zentto_token (logout).
  */
-export async function DELETE() {
-  const isProduction = process.env.NODE_ENV === "production";
+export async function DELETE(req: NextRequest) {
+  const host = req.headers.get("host") ?? "";
+  const isZenttoNet = host.endsWith(".zentto.net") || host === "zentto.net";
   const response = NextResponse.json({ ok: true });
 
   response.cookies.set("zentto_token", "", {
     httpOnly: true,
-    secure: isProduction,
+    secure: isZenttoNet,
     sameSite: "lax",
-    domain: isProduction ? ".zentto.net" : undefined,
+    domain: isZenttoNet ? ".zentto.net" : undefined,
     path: "/",
-    maxAge: 0, // Expirar inmediatamente
+    maxAge: 0,
   });
 
   return response;
