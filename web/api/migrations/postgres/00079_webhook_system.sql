@@ -60,6 +60,7 @@ CREATE INDEX IF NOT EXISTS "IX_WebhookDelivery_Pending"
 -- SP: usp_Platform_WebhookEndpoint_Create
 -- ═══════════════════════════════════════════════════════════════════════════════
 
+-- +goose StatementBegin
 CREATE OR REPLACE FUNCTION public.usp_platform_webhookendpoint_create(
     p_company_id   INT,
     p_url          VARCHAR,
@@ -92,6 +93,7 @@ $$;
 -- SP: usp_Platform_WebhookEndpoint_List
 -- ═══════════════════════════════════════════════════════════════════════════════
 
+-- +goose StatementBegin
 CREATE OR REPLACE FUNCTION public.usp_platform_webhookendpoint_list(
     p_company_id INT
 ) RETURNS TABLE(
@@ -126,6 +128,7 @@ $$;
 -- SP: usp_Platform_WebhookEndpoint_GetById
 -- ═══════════════════════════════════════════════════════════════════════════════
 
+-- +goose StatementBegin
 CREATE OR REPLACE FUNCTION public.usp_platform_webhookendpoint_getbyid(
     p_company_id          INT,
     p_webhook_endpoint_id BIGINT
@@ -163,6 +166,7 @@ $$;
 -- SP: usp_Platform_WebhookEndpoint_Update
 -- ═══════════════════════════════════════════════════════════════════════════════
 
+-- +goose StatementBegin
 CREATE OR REPLACE FUNCTION public.usp_platform_webhookendpoint_update(
     p_company_id          INT,
     p_webhook_endpoint_id BIGINT,
@@ -201,6 +205,7 @@ $$;
 -- SP: usp_Platform_WebhookEndpoint_Delete
 -- ═══════════════════════════════════════════════════════════════════════════════
 
+-- +goose StatementBegin
 CREATE OR REPLACE FUNCTION public.usp_platform_webhookendpoint_delete(
     p_company_id          INT,
     p_webhook_endpoint_id BIGINT
@@ -228,6 +233,7 @@ $$;
 -- Busca endpoints activos suscritos a un event type para un tenant
 -- ═══════════════════════════════════════════════════════════════════════════════
 
+-- +goose StatementBegin
 CREATE OR REPLACE FUNCTION public.usp_platform_webhookendpoint_listbyevent(
     p_company_id  INT,
     p_event_type  VARCHAR
@@ -254,6 +260,7 @@ $$;
 -- SP: usp_Platform_WebhookDelivery_Create
 -- ═══════════════════════════════════════════════════════════════════════════════
 
+-- +goose StatementBegin
 CREATE OR REPLACE FUNCTION public.usp_platform_webhookdelivery_create(
     p_webhook_endpoint_id BIGINT,
     p_event_type          VARCHAR,
@@ -284,6 +291,7 @@ $$;
 -- SP: usp_Platform_WebhookDelivery_UpdateStatus
 -- ═══════════════════════════════════════════════════════════════════════════════
 
+-- +goose StatementBegin
 CREATE OR REPLACE FUNCTION public.usp_platform_webhookdelivery_updatestatus(
     p_webhook_delivery_id BIGINT,
     p_status              VARCHAR,
@@ -321,6 +329,7 @@ $$;
 -- SP: usp_Platform_WebhookDelivery_ListByEndpoint
 -- ═══════════════════════════════════════════════════════════════════════════════
 
+-- +goose StatementBegin
 CREATE OR REPLACE FUNCTION public.usp_platform_webhookdelivery_listbyendpoint(
     p_company_id          INT,
     p_webhook_endpoint_id BIGINT,
@@ -381,6 +390,7 @@ $$;
 -- Para el job de retry: busca deliveries pendientes cuyo next_retry ya pasó
 -- ═══════════════════════════════════════════════════════════════════════════════
 
+-- +goose StatementBegin
 CREATE OR REPLACE FUNCTION public.usp_platform_webhookdelivery_listpendingretries(
     p_limit INT DEFAULT 100
 ) RETURNS TABLE(
