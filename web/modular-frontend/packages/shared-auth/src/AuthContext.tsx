@@ -12,6 +12,8 @@ export type AuthContextType = {
   isAdmin: boolean;
   isLoading: boolean;
   isAuthenticated: boolean;
+  /** true cuando la cookie zentto_token ya fue seteada (safe para hacer llamadas API) */
+  isCookieReady: boolean;
   userName: string | null;
   userEmail: string | null;
   userId: string | null;
@@ -81,11 +83,49 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     branchId: number;
   } | null>(null);
 
-  // Setear cookie HttpOnly zentto_token en el browser después del login
+  // isCookieReady: true cuando zentto_token ya está seteada en el browser.
+  // El dashboard layout espera este flag antes de renderizar (evita race condition
+  // donde API calls se hacen antes de que la cookie exista → 401 → signOut → loop).
+  const [isCookieReady, setIsCookieReady] = useState(false);
+
+  // Setear cookie HttpOnly zentto_token en el browser después del login.
+  // Reintenta hasta 5 veces con backoff para manejar el race condition donde
+  // el accessTokenStore server-side aún no tiene el token al primer intento.
   useEffect(() => {
-    if (!isAuthenticated) return;
-    // Llama al cookie proxy para que el browser tenga zentto_token
-    fetch("/api/auth/set-token", { method: "POST", credentials: "include" }).catch(() => {});
+    if (!isAuthenticated) {
+      setIsCookieReady(false);
+      return;
+    }
+
+    let cancelled = false;
+    let attempts = 0;
+    const MAX_ATTEMPTS = 5;
+    const BASE_DELAY_MS = 300;
+
+    async function trySetToken(): Promise<void> {
+      if (cancelled) return;
+      try {
+        const res = await fetch("/api/auth/set-token", { method: "POST", credentials: "include" });
+        if (res.ok && !cancelled) {
+          setIsCookieReady(true);
+          return;
+        }
+      } catch { /* network error — reintentar */ }
+
+      attempts++;
+      if (cancelled) return;
+
+      if (attempts < MAX_ATTEMPTS) {
+        setTimeout(() => { void trySetToken(); }, BASE_DELAY_MS * attempts);
+      } else {
+        // Agotar reintentos: marcar ready de todas formas para no bloquear al usuario.
+        // Si la cookie no está, las llamadas API fallarán, pero no en bucle de login.
+        setIsCookieReady(true);
+      }
+    }
+
+    void trySetToken();
+    return () => { cancelled = true; };
   }, [isAuthenticated]);
 
   // Inicializar activeCompany desde localStorage → defaultCompany → primer acceso
@@ -187,6 +227,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isAdmin,
       isLoading,
       isAuthenticated,
+      isCookieReady,
       userName: session?.user?.name || null,
       userEmail: session?.user?.email || null,
       userId,
@@ -202,7 +243,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signIn,
       signOut,
     };
-  }, [session, status, isLoading, isAuthenticated, activeCompany, companyAccesses, setActiveCompany, userId]);
+  }, [session, status, isLoading, isAuthenticated, isCookieReady, activeCompany, companyAccesses, setActiveCompany, userId]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
