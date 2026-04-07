@@ -18,6 +18,11 @@ const runtimeEnv = {
   API_URL: process.env.API_URL || process.env.BACKEND_URL || 'https://api.zentto.net',
   AUTH_SECRET: process.env.AUTH_SECRET,
   AUTH_TRUST_HOST: process.env.AUTH_TRUST_HOST || 'true',
+  // ── zentto-auth microservice (autoridad central de identidad) ──
+  // Si esta definido, NextAuth credentials provider del shell autentica
+  // contra zentto-auth y obtiene el JWT enriquecido (modulos, permisos,
+  // companyAccesses). Si no, fallback a /v1/auth/login del ERP.
+  AUTH_SERVICE_URL: process.env.AUTH_SERVICE_URL || '',
 };
 
 // Shell-specific: hereda AUTH_SECRET, AUTH_TRUST_HOST del contenedor
