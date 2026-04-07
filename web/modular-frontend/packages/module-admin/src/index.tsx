@@ -75,5 +75,46 @@ export { FacturaTable } from './components/FacturaTable';
 export { ProtectedComponent, withProtection } from './components/ProtectedComponent';
 export { default as EditableDataGrid } from './components/EditableDataGrid';
 
+// ─── IAM (Identity & Access Management) ───────────────────────
+// Hooks que consumen los endpoints /admin/* del microservicio
+// zentto-auth via el proxy /api/iam/* del shell.
+export {
+  useIamUsers,
+  useIamUser,
+  useCreateIamUser,
+  useUpdateIamUser,
+  useDeleteIamUser,
+  useIamUserModules,
+  useSetIamUserModules,
+  useIamUserCompanies,
+  useSetIamUserCompanies,
+  useIamCompanies,
+  useCreateIamCompany,
+  useIamApps,
+  useIamAppModules,
+  useIamModulePermissions,
+} from './hooks/useIam';
+export type {
+  IamUser,
+  IamUserListResponse,
+  IamModule,
+  IamPermission,
+  IamApp,
+  IamCompany,
+  IamCompanyAccess,
+  CreateUserInput,
+  UpdateUserInput,
+  CreateCompanyInput,
+  UserModuleRow,
+} from './hooks/useIam';
+
+// Componentes IAM
+export { default as IamUsersTable } from './components/modules/iam/IamUsersTable';
+export { default as IamUserFormDialog } from './components/modules/iam/IamUserFormDialog';
+export { default as IamUserModulesDialog } from './components/modules/iam/IamUserModulesDialog';
+export { default as IamUserCompaniesDialog } from './components/modules/iam/IamUserCompaniesDialog';
+export { default as IamCompaniesTable } from './components/modules/iam/IamCompaniesTable';
+export { default as IamCompanyFormDialog } from './components/modules/iam/IamCompanyFormDialog';
+
 // Home page
 export { default as AdminHome } from './pages/AdminHome';
