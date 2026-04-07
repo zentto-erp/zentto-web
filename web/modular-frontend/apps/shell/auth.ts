@@ -273,9 +273,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         // accessTokenStore (server-side) para no inflar la cookie de NextAuth.
         // @ts-ignore
         const at = user.token as string | undefined;
+        const exp = at ? getJwtExpMs(at) : null;
         // Redundante con el storeAccessToken en authorize(), pero cubre el caso
         // donde authorize() guardó con clave numérica (antes del fix String()).
-        if (token.sub && at) storeAccessToken(token.sub, at, getJwtExpMs(at));
+        if (token.sub && at) storeAccessToken(token.sub, at, exp);
         token.accessTokenExpires = exp;
         // @ts-ignore
         token.isAdmin = user.isAdmin;
