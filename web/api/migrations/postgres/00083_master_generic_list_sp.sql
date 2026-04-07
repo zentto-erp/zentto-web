@@ -3,6 +3,7 @@
 -- DROP CASCADE elimina todos los overloads previos (había una versión vieja sin p_company_id)
 DROP FUNCTION IF EXISTS usp_master_generic_list CASCADE;
 
+-- +goose StatementBegin
 CREATE OR REPLACE FUNCTION usp_master_generic_list(
   p_company_id  integer      DEFAULT NULL,
   p_schema_name varchar(100) DEFAULT 'cfg',
@@ -110,6 +111,9 @@ BEGIN
     ' LIMIT '  || LEAST(COALESCE(p_limit, 50), 500)::text;
 END;
 $$;
+-- +goose StatementEnd
 
 -- +goose Down
-DROP FUNCTION IF EXISTS usp_master_generic_list(integer, varchar, varchar, varchar, varchar, integer, integer);
+-- +goose StatementBegin
+DROP FUNCTION IF EXISTS usp_master_generic_list CASCADE;
+-- +goose StatementEnd
