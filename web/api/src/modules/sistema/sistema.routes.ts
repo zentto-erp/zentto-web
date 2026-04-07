@@ -7,7 +7,7 @@ const router = Router();
 // /v1/sistema/notificaciones
 router.get('/notificaciones', async (req, res) => {
     try {
-        const usuarioId = (req as AuthenticatedRequest).user?.userId;
+        const usuarioId = (req as AuthenticatedRequest).user?.sub;
         const data = await service.getNotificaciones(usuarioId);
         res.json({ ok: true, data });
     } catch (e: any) {
@@ -31,7 +31,7 @@ router.post('/notificaciones/leido', async (req, res) => {
 // /v1/sistema/tareas
 router.get('/tareas', async (req, res) => {
     try {
-        const asignadoA = (req as AuthenticatedRequest).user?.userId;
+        const asignadoA = (req as AuthenticatedRequest).user?.sub;
         const data = await service.getTareas(asignadoA);
         res.json({ ok: true, data });
     } catch (e: any) {
@@ -57,7 +57,7 @@ router.patch('/tareas/:id/progreso', async (req, res) => {
 // /v1/sistema/mensajes
 router.get('/mensajes', async (req, res) => {
     try {
-        const destinatarioId = (req as AuthenticatedRequest).user?.userId;
+        const destinatarioId = (req as AuthenticatedRequest).user?.sub;
         if (!destinatarioId) return res.status(401).json({ ok: false, error: 'missing_user' });
         const data = await service.getMensajes(destinatarioId);
         res.json({ ok: true, data });
