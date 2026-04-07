@@ -99,6 +99,12 @@ jobs:
             sed -i 's|^NEXTAUTH_URL=.*|NEXTAUTH_URL=https://appdev.zentto.net|' /opt/zentto-dev/.env.frontend
             sed -i 's|^BACKEND_URL=.*|BACKEND_URL=http://zentto-api-dev:4000|' /opt/zentto-dev/.env.frontend
             sed -i 's|^API_URL=.*|API_URL=http://zentto-api-dev:4000|' /opt/zentto-dev/.env.frontend
+            # Apuntar al microservicio de auth DEV (no al de produccion)
+            if grep -q '^AUTH_SERVICE_URL=' /opt/zentto-dev/.env.frontend; then
+              sed -i 's|^AUTH_SERVICE_URL=.*|AUTH_SERVICE_URL=http://zentto-auth-dev:4600|' /opt/zentto-dev/.env.frontend
+            else
+              echo 'AUTH_SERVICE_URL=http://zentto-auth-dev:4600' >> /opt/zentto-dev/.env.frontend
+            fi
 
             # Ensure PM2 config is in place
             mkdir -p /opt/zentto-dev/docker
