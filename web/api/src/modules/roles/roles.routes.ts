@@ -2,6 +2,7 @@ import { Router } from "express";
 import { z } from "zod";
 import * as svc from "./roles.service.js";
 import { checkUserLimit, checkCompanyLimit } from "../license/license-enforcement.service.js";
+import { requireAdmin } from "../../middleware/auth.js";
 
 export const rolesRouter = Router();
 
@@ -15,7 +16,7 @@ rolesRouter.get("/", async (_req, res) => {
   }
 });
 
-// POST /v1/roles
+// POST /v1/roles — solo admin
 const upsertSchema = z.object({
   roleId: z.number().optional(),
   roleCode: z.string().min(1),
@@ -23,7 +24,7 @@ const upsertSchema = z.object({
   isActive: z.boolean().optional(),
 });
 
-rolesRouter.post("/", async (req, res) => {
+rolesRouter.post("/", requireAdmin, async (req, res) => {
   try {
     const parsed = upsertSchema.safeParse(req.body);
     if (!parsed.success) {
@@ -36,8 +37,8 @@ rolesRouter.post("/", async (req, res) => {
   }
 });
 
-// DELETE /v1/roles/:id
-rolesRouter.delete("/:id", async (req, res) => {
+// DELETE /v1/roles/:id — solo admin
+rolesRouter.delete("/:id", requireAdmin, async (req, res) => {
   try {
     const roleId = Number(req.params.id);
     if (!Number.isFinite(roleId) || roleId <= 0) {
@@ -64,12 +65,12 @@ rolesRouter.get("/usuarios/:userId", async (req, res) => {
   }
 });
 
-// POST /v1/roles/usuarios/:userId
+// POST /v1/roles/usuarios/:userId — solo admin
 const setUserRolesSchema = z.object({
   roleIds: z.array(z.number()),
 });
 
-rolesRouter.post("/usuarios/:userId", async (req, res) => {
+rolesRouter.post("/usuarios/:userId", requireAdmin, async (req, res) => {
   try {
     const userId = Number(req.params.userId);
     if (!Number.isFinite(userId) || userId <= 0) {
