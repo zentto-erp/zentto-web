@@ -118,9 +118,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (attempts < MAX_ATTEMPTS) {
         setTimeout(() => { void trySetToken(); }, BASE_DELAY_MS * attempts);
       } else {
-        // Agotar reintentos: marcar ready de todas formas para no bloquear al usuario.
-        // Si la cookie no está, las llamadas API fallarán, pero no en bucle de login.
-        setIsCookieReady(true);
+        // Reintentos agotados — no marcar ready porque haría que API calls fallen con 401
+        // y el shared-api llamaría signOut() creando un bucle. En su lugar, cerrar sesión
+        // limpiamente para que el usuario vuelva al login sin loop.
+        void appAwareSignOut({ callbackUrl: buildLoginCallbackUrl() });
       }
     }
 

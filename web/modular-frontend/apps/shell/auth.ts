@@ -65,11 +65,13 @@ async function loadIamClaimsForSession(
     // Server-to-server: usamos el accessToken slim como Bearer.
     // zentto-auth acepta Bearer porque la request NO viene de un browser
     // (es el server del shell hablando con el microservicio interno).
+    // Timeout 3s: si zentto-auth tarda, no bloqueamos auth() ni set-token.
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3000);
     const res = await fetch(`${AUTH_SERVICE_URL}/auth/me?appId=zentto-erp`, {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    });
+      headers: { Authorization: `Bearer ${accessToken}` },
+      signal: controller.signal,
+    }).finally(() => clearTimeout(timeoutId));
     if (!res.ok) return cached ?? null;
     const data = await res.json();
     const fresh: IamClaimsCache = {
