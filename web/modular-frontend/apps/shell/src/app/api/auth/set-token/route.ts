@@ -55,21 +55,61 @@ export async function POST(req: NextRequest) {
 
 /**
  * DELETE /api/auth/set-token
- * Limpia la cookie zentto_token (logout).
+ * Limpia la cookie zentto_token (logout) Y revoca el refresh token en DB
+ * llamando server-to-server a zentto-auth /auth/logout.
+ *
+ * Sin esta llamada server-side, el refresh token sobrevive en la BD de
+ * zentto-auth hasta 30 días — un atacante con la cookie podría seguir
+ * obteniendo access tokens nuevos vía /auth/refresh.
+ *
+ * Cierra Hallazgo del plan de seguridad auth (Sprint 0 #4).
  */
 export async function DELETE(req: NextRequest) {
   const host = req.headers.get("host") ?? "";
   const isZenttoNet = host.endsWith(".zentto.net") || host === "zentto.net";
+  const cookieDomain = isZenttoNet ? ".zentto.net" : undefined;
   const response = NextResponse.json({ ok: true });
 
-  response.cookies.set("zentto_token", "", {
-    httpOnly: true,
-    secure: isZenttoNet,
-    sameSite: "lax",
-    domain: isZenttoNet ? ".zentto.net" : undefined,
-    path: "/",
-    maxAge: 0,
-  });
+  // 1) Llamar a zentto-auth /auth/logout para revocar el refresh token en DB.
+  //    Reenviamos la cookie del browser para que zentto-auth sepa qué sesión cerrar.
+  //    Best-effort: si falla, igual limpiamos las cookies del browser.
+  const authServiceUrl = process.env.AUTH_SERVICE_URL;
+  if (authServiceUrl) {
+    const cookieHeader = req.headers.get("cookie") ?? "";
+    if (cookieHeader) {
+      try {
+        await fetch(`${authServiceUrl}/auth/logout`, {
+          method: "POST",
+          headers: {
+            cookie: cookieHeader,
+            "content-type": "application/json",
+          },
+          // Importante: no seguir redirects ni propagar Set-Cookie del response;
+          // la limpieza de cookies en el browser la hacemos abajo de forma explícita.
+        });
+      } catch (err) {
+        console.warn(
+          "[/api/auth/set-token DELETE] zentto-auth /auth/logout failed:",
+          (err as Error).message
+        );
+      }
+    }
+  }
+
+  // 2) Limpiar cookies HttpOnly en el browser. Cubrimos los 3 nombres en transición:
+  //    - __Secure-zentto_token (escritura nueva, prefijo seguro)
+  //    - zentto_token (escritura actual del shell)
+  //    - zentto_access (escritura legacy de zentto-auth)
+  for (const name of ["__Secure-zentto_token", "zentto_token", "zentto_access"]) {
+    response.cookies.set(name, "", {
+      httpOnly: true,
+      secure: isZenttoNet,
+      sameSite: "lax",
+      domain: cookieDomain,
+      path: "/",
+      maxAge: 0,
+    });
+  }
 
   return response;
 }

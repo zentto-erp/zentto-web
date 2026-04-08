@@ -26,6 +26,24 @@ function parseIntHeader(value: string | string[] | undefined): number | null {
   return Math.trunc(parsed);
 }
 
+/**
+ * Lookup exacto de una cookie por nombre. Evita matches accidentales por
+ * substring (importante: `zentto_token` es prefijo de `__Secure-zentto_token`).
+ */
+function getCookieValue(cookieHeader: string | undefined, name: string): string | undefined {
+  if (!cookieHeader) return undefined;
+  const parts = cookieHeader.split(";");
+  for (const part of parts) {
+    const trimmed = part.trim();
+    const eq = trimmed.indexOf("=");
+    if (eq < 0) continue;
+    if (trimmed.slice(0, eq) === name) {
+      return decodeURIComponent(trimmed.slice(eq + 1));
+    }
+  }
+  return undefined;
+}
+
 function toScope(access: CompanyAccessClaim): RequestScope {
   return {
     companyId: Number(access.companyId),
@@ -109,21 +127,15 @@ export async function requireJwt(req: Request, res: Response, next: NextFunction
   }
 
   // Extraer JWT — prioridad:
-  //   1. Cookie zentto_token (HttpOnly, seteada por este API en /auth/login)
-  //   2. Cookie zentto_access (HttpOnly, seteada por zentto-auth microservice)
-  //   3. Authorization: Bearer header (legacy — será deprecado)
-  let token: string | undefined;
-
+  //   1. Cookie __Secure-zentto_token (HttpOnly + Secure prefix, escritura nueva)
+  //   2. Cookie zentto_token (HttpOnly, seteada por este API en /auth/login — legacy en transición)
+  //   3. Cookie zentto_access (HttpOnly, seteada por zentto-auth microservice — legacy)
+  //   4. Authorization: Bearer header (legacy — será deprecado)
   const cookieHeader = req.headers.cookie;
-  if (cookieHeader) {
-    const tokenMatch = cookieHeader.match(/zentto_token=([^;]+)/);
-    if (tokenMatch) {
-      token = tokenMatch[1];
-    } else {
-      const accessMatch = cookieHeader.match(/zentto_access=([^;]+)/);
-      if (accessMatch) token = accessMatch[1];
-    }
-  }
+  let token: string | undefined =
+    getCookieValue(cookieHeader, "__Secure-zentto_token") ??
+    getCookieValue(cookieHeader, "zentto_token") ??
+    getCookieValue(cookieHeader, "zentto_access");
 
   // Fallback: Bearer header (legacy — para transición)
   if (!token) {
