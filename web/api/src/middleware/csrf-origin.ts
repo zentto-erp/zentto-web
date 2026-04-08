@@ -16,6 +16,16 @@ import type { Request, Response, NextFunction } from "express";
 import { obs } from "../modules/integrations/observability.js";
 
 const STATE_CHANGING_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
+// Cookies que indican una sesión browser. Si NINGUNA está presente, no hay
+// riesgo de CSRF (el browser no tiene nada que enviar automáticamente).
+const SESSION_COOKIE_NAMES = [
+  "__Secure-zentto_token",
+  "zentto_token",
+  "zentto_access",
+  "zentto_refresh",
+  "next-auth.session-token",
+  "__Secure-next-auth.session-token",
+];
 
 export interface CsrfOriginOptions {
   /** Set de origins explícitamente permitidos (mismo conjunto que CORS). */
@@ -36,15 +46,29 @@ function extractOrigin(req: Request): string {
   }
 }
 
+function hasSessionCookie(req: Request): boolean {
+  const cookieHeader = req.headers.cookie;
+  if (!cookieHeader) return false;
+  return SESSION_COOKIE_NAMES.some((name) =>
+    new RegExp("(?:^|;\\s*)" + name.replace(/[-]/g, "\\$&") + "=").test(cookieHeader),
+  );
+}
+
 export function createCsrfOriginMiddleware(opts: CsrfOriginOptions) {
   const subdomainRegex = /^https:\/\/[a-z0-9-]+\.zentto\.net$/;
   return function csrfOrigin(req: Request, res: Response, next: NextFunction) {
     if (!STATE_CHANGING_METHODS.has(req.method)) return next();
 
-    // Server-to-server / scripts con Bearer: no hay riesgo de CSRF (cookies
-    // no se envían automáticamente con headers Authorization).
+    // Bypass 1 — Server-to-server con Bearer: el atacante no puede forzar al
+    // browser a enviar Authorization headers; sin riesgo de CSRF.
     const authHeader = req.headers.authorization ?? "";
     if (authHeader.startsWith("Bearer ")) return next();
+
+    // Bypass 2 — Sin ninguna cookie de sesión presente: la request viene de
+    // Node fetch, curl, un SDK o un script. CSRF requiere que el browser
+    // envíe la cookie automáticamente, así que sin cookie no hay riesgo.
+    // Esto cubre POST /auth/login y todas las llamadas SDK server-side.
+    if (!hasSessionCookie(req)) return next();
 
     const candidate = extractOrigin(req);
 
