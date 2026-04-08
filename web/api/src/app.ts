@@ -96,6 +96,7 @@ import {
   normalizeRequestDateTimesToUtc,
 } from "./middleware/datetime.js";
 import { observabilityMiddleware } from "./middleware/observability.js";
+import { createCsrfOriginMiddleware } from "./middleware/csrf-origin.js";
 
 function resolveOpenApiPath() {
   const here = path.dirname(fileURLToPath(import.meta.url));
@@ -141,7 +142,26 @@ function loadOpenApiDoc() {
 export async function createApp() {
   const app = express();
   app.disable("etag");
-  app.use(helmet());
+  // Helmet endurecido (Sprint 4 del plan de seguridad auth):
+  // - HSTS preload con 1 año + includeSubDomains (para Cloudflare HSTS preload list)
+  // - frameguard deny (anti-clickjacking)
+  // - referrerPolicy same-origin
+  // - noSniff, hidePoweredBy, etc. (defaults de helmet)
+  // CSP queda en false porque la API sirve JSON; el endpoint /media-files
+  // ya gestiona sus propios headers (línea ~175).
+  app.use(
+    helmet({
+      contentSecurityPolicy: false,
+      crossOriginResourcePolicy: false,
+      hsts: {
+        maxAge: 31536000,
+        includeSubDomains: true,
+        preload: true,
+      },
+      referrerPolicy: { policy: "same-origin" },
+      frameguard: { action: "deny" },
+    })
+  );
   // CORS: origins locales + produccion + subdominios dinamicos de tenants
   const corsWhitelist = new Set([
     'http://localhost:3000', 'http://localhost:3100',
@@ -166,6 +186,14 @@ export async function createApp() {
     },
     credentials: true,
   }));
+
+  // CSRF defense en profundidad (Sprint 3 #1): valida Origin/Referer en
+  // mutaciones (POST/PUT/PATCH/DELETE). Permite server-to-server con Bearer.
+  // Va DESPUÉS de cors() para que el preflight OPTIONS pase antes.
+  const csrfOrigin = createCsrfOriginMiddleware({
+    allowlist: corsWhitelist,
+    allowZenttoSubdomain: true,
+  });
   fs.mkdirSync(env.media.storagePath, { recursive: true });
   app.use(
     "/media-files",
@@ -187,6 +215,8 @@ export async function createApp() {
     next();
   });
   // Webhooks externos — ANTES de express.json() para preservar raw body
+  // y ANTES del csrfOrigin middleware (los webhooks vienen de Paddle/GitHub
+  // y no tienen Origin de zentto.net; tienen su propia validación de firma).
   app.use("/api/webhooks", paddleWebhookRouter);
   app.use("/api/webhooks", githubSupportWebhookRouter);
   app.use("/v1/billing/webhook", billingWebhookHandler);
@@ -194,6 +224,9 @@ export async function createApp() {
   app.use(express.json({ limit: "2mb" }));
   app.use(morgan("dev"));
   app.use(observabilityMiddleware);
+  // CSRF Origin check después de los webhooks (que ya respondieron) y
+  // antes de las rutas autenticadas. No bloquea OPTIONS (cors lo maneja).
+  app.use(csrfOrigin);
 
   // ── Multi-tenant: resolver tenant por subdomain del Origin ──
   // Debe ir ANTES de las rutas. Inyecta req._tenantCompanyId para auth.ts.
