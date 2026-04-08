@@ -10,7 +10,12 @@ import { callSp } from '../../db/query.js';
 
 const KAFKA_BROKERS = (process.env.KAFKA_BROKERS || 'localhost:9092').split(',');
 const KAFKA_ENABLED = process.env.KAFKA_ENABLED === 'true';
-const GROUP_ID = 'zentto-notifications';
+// Opt-out explícito (default ON cuando KAFKA_ENABLED=true)
+const NOTIFICATION_CONSUMER_ENABLED = process.env.NOTIFICATION_CONSUMER_ENABLED !== 'false';
+// Aislar prod/dev/etc en consumer groups separados — evita rebalance loop
+// cuando dos containers (api + api-dev) corren contra el mismo cluster Kafka.
+const GROUP_ID = process.env.NOTIFICATION_GROUP_ID
+  || `zentto-notifications-${process.env.NODE_ENV || 'production'}`;
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -364,10 +369,18 @@ export async function startNotificationConsumer(): Promise<void> {
     console.log('[kafka-consumer] Kafka disabled (KAFKA_ENABLED != true), skipping');
     return;
   }
+  if (!NOTIFICATION_CONSUMER_ENABLED) {
+    console.log('[kafka-consumer] Notification consumer disabled (NOTIFICATION_CONSUMER_ENABLED=false), skipping');
+    return;
+  }
 
   try {
+    // clientId único por instancia para evitar colisión entre containers
+    // que comparten broker (ej. api + api-dev en el mismo Kafka)
+    const clientId = `zentto-notification-consumer-${process.env.NODE_ENV || 'production'}-${process.pid}`;
+
     const kafka = new Kafka({
-      clientId: 'zentto-notification-consumer',
+      clientId,
       brokers: KAFKA_BROKERS,
       logLevel: logLevel.WARN,
       retry: { initialRetryTime: 2000, retries: 5 },
@@ -383,7 +396,7 @@ export async function startNotificationConsumer(): Promise<void> {
       eachMessage: processMessage,
     });
 
-    console.log('[kafka-consumer] Notification consumer started — listening to events, audit, notifications');
+    console.log(`[kafka-consumer] Notification consumer started — group=${GROUP_ID} clientId=${clientId}`);
   } catch (err) {
     console.warn('[kafka-consumer] Failed to start:', (err as Error).message);
   }
