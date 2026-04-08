@@ -2,9 +2,64 @@
 
 import { getSession } from 'next-auth/react';
 import { signOut } from 'next-auth/react';
+import { createAuthClient } from '@zentto/auth-client';
 
 const RAW_API_BASE = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE || "http://localhost:4000";
 export const API_BASE = RAW_API_BASE.replace(/\/+$/, '');
+
+// Sprint 1 #2 — fetchWithRefresh wireado.
+//
+// Cliente del SDK @zentto/auth-client@^0.3.0. Usado por todas las funciones
+// apiGet/apiPost/apiPut/apiPatch/apiDelete: cuando una request responde 401,
+// llama automáticamente a /auth/refresh (de-duplicado entre requests
+// concurrentes) y reintenta UNA vez.
+//
+// Si el refresh falla, dispara onRefreshFailed → forzamos signOut.
+// Si el refresh sucede, dispara onRefreshed → re-seteamos zentto_token cookie
+// vía /api/auth/set-token (igual que el flujo post-login del shell).
+const AUTH_BASE_URL =
+  process.env.NEXT_PUBLIC_AUTH_URL ||
+  process.env.NEXT_PUBLIC_AUTH_SERVICE_URL ||
+  'https://auth.zentto.net';
+
+const authClient = createAuthClient({
+  baseUrl: AUTH_BASE_URL,
+  appId: 'zentto-erp',
+});
+
+async function reSetTokenCookie(): Promise<void> {
+  // El shell expone POST /api/auth/set-token que lee el accessToken de su
+  // store server-side (renovado por el refresh) y lo setea como cookie
+  // zentto_token HttpOnly. Sin esta llamada, el refresh deja /auth/refresh
+  // con cookies actualizadas pero nuestra cookie zentto_token sigue stale.
+  if (typeof window === 'undefined') return;
+  try {
+    await fetch(`${window.location.origin}/api/auth/set-token`, {
+      method: 'POST',
+      credentials: 'include',
+      cache: 'no-store',
+    });
+  } catch {
+    // best-effort
+  }
+}
+
+async function forceSignOut(): Promise<void> {
+  if (typeof window === 'undefined') return;
+  try {
+    const loginUrl = `${window.location.origin}/authentication/login`;
+    await signOut({ callbackUrl: loginUrl });
+  } catch {
+    // noop
+  }
+}
+
+function fetchWithRefresh(input: string | URL | Request, init?: RequestInit): Promise<Response> {
+  return authClient.fetchWithRefresh(input, init, {
+    onRefreshed: reSetTokenCookie,
+    onRefreshFailed: forceSignOut,
+  });
+}
 
 // Active company override — set by AuthContext, used by authHeader()
 let _activeCompanyOverride: {
@@ -166,7 +221,7 @@ export async function apiGet(path: string, params?: Record<string, unknown>) {
       .join('&');
     if (query) fullUrl += `?${query}`;
   }
-  const res = await fetch(fullUrl, { headers: await authHeader(), credentials: 'include' });
+  const res = await fetchWithRefresh(fullUrl, { headers: await authHeader(), credentials: 'include' });
   await handleUnauthorized(res);
   const responseData = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(responseData?.message || responseData?.error || res.statusText);
@@ -175,7 +230,7 @@ export async function apiGet(path: string, params?: Record<string, unknown>) {
 
 export async function apiPost(path: string, body: unknown) {
   const fullUrl = `${API_BASE}${path}`;
-  const res = await fetch(fullUrl, {
+  const res = await fetchWithRefresh(fullUrl, {
     method: "POST",
     headers: { "Content-Type": "application/json", ...(await authHeader()) },
     credentials: 'include',
@@ -189,7 +244,7 @@ export async function apiPost(path: string, body: unknown) {
 
 export async function apiPut(path: string, body: unknown) {
   const fullUrl = `${API_BASE}${path}`;
-  const res = await fetch(fullUrl, {
+  const res = await fetchWithRefresh(fullUrl, {
     method: "PUT",
     headers: { "Content-Type": "application/json", ...(await authHeader()) },
     credentials: 'include',
@@ -203,7 +258,7 @@ export async function apiPut(path: string, body: unknown) {
 
 export async function apiPatch(path: string, body: unknown) {
   const fullUrl = `${API_BASE}${path}`;
-  const res = await fetch(fullUrl, {
+  const res = await fetchWithRefresh(fullUrl, {
     method: "PATCH",
     headers: { "Content-Type": "application/json", ...(await authHeader()) },
     credentials: 'include',
@@ -217,7 +272,7 @@ export async function apiPatch(path: string, body: unknown) {
 
 export async function apiDelete(path: string) {
   const fullUrl = `${API_BASE}${path}`;
-  const res = await fetch(fullUrl, { method: "DELETE", headers: await authHeader(), credentials: 'include' });
+  const res = await fetchWithRefresh(fullUrl, { method: "DELETE", headers: await authHeader(), credentials: 'include' });
   await handleUnauthorized(res);
   const responseData = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(responseData?.message || responseData?.error || res.statusText);

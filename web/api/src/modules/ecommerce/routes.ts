@@ -269,7 +269,7 @@ storeRouter.get("/orders/:token", async (req, res) => {
 
 storeRouter.get("/my/orders", async (req, res) => {
   try {
-    const user = verifyCustomerToken(req.headers.authorization);
+    const user = await verifyCustomerToken(req.headers.authorization);
     if (!user) return res.status(401).json({ error: "not_authenticated" });
 
     // Obtener customerCode del usuario
@@ -307,7 +307,7 @@ const addressSchema = z.object({
 
 storeRouter.get("/my/addresses", async (req, res) => {
   try {
-    const user = verifyCustomerToken(req.headers.authorization);
+    const user = await verifyCustomerToken(req.headers.authorization);
     if (!user) return res.status(401).json({ error: "not_authenticated" });
 
     const { callSp } = await import("../../db/query.js");
@@ -327,7 +327,7 @@ storeRouter.get("/my/addresses", async (req, res) => {
 
 storeRouter.post("/my/addresses", async (req, res) => {
   try {
-    const user = verifyCustomerToken(req.headers.authorization);
+    const user = await verifyCustomerToken(req.headers.authorization);
     if (!user) return res.status(401).json({ error: "not_authenticated" });
 
     const parsed = addressSchema.safeParse(req.body);
@@ -351,7 +351,7 @@ storeRouter.post("/my/addresses", async (req, res) => {
 
 storeRouter.put("/my/addresses/:id", async (req, res) => {
   try {
-    const user = verifyCustomerToken(req.headers.authorization);
+    const user = await verifyCustomerToken(req.headers.authorization);
     if (!user) return res.status(401).json({ error: "not_authenticated" });
 
     const parsed = addressSchema.safeParse(req.body);
@@ -378,7 +378,7 @@ storeRouter.put("/my/addresses/:id", async (req, res) => {
 
 storeRouter.delete("/my/addresses/:id", async (req, res) => {
   try {
-    const user = verifyCustomerToken(req.headers.authorization);
+    const user = await verifyCustomerToken(req.headers.authorization);
     if (!user) return res.status(401).json({ error: "not_authenticated" });
 
     const { callSp } = await import("../../db/query.js");
@@ -416,7 +416,7 @@ const paymentMethodSchema = z.object({
 
 storeRouter.get("/my/payment-methods", async (req, res) => {
   try {
-    const user = verifyCustomerToken(req.headers.authorization);
+    const user = await verifyCustomerToken(req.headers.authorization);
     if (!user) return res.status(401).json({ error: "not_authenticated" });
 
     const { callSp } = await import("../../db/query.js");
@@ -436,7 +436,7 @@ storeRouter.get("/my/payment-methods", async (req, res) => {
 
 storeRouter.post("/my/payment-methods", async (req, res) => {
   try {
-    const user = verifyCustomerToken(req.headers.authorization);
+    const user = await verifyCustomerToken(req.headers.authorization);
     if (!user) return res.status(401).json({ error: "not_authenticated" });
 
     const parsed = paymentMethodSchema.safeParse(req.body);
@@ -460,7 +460,7 @@ storeRouter.post("/my/payment-methods", async (req, res) => {
 
 storeRouter.put("/my/payment-methods/:id", async (req, res) => {
   try {
-    const user = verifyCustomerToken(req.headers.authorization);
+    const user = await verifyCustomerToken(req.headers.authorization);
     if (!user) return res.status(401).json({ error: "not_authenticated" });
 
     const parsed = paymentMethodSchema.safeParse(req.body);
@@ -487,7 +487,7 @@ storeRouter.put("/my/payment-methods/:id", async (req, res) => {
 
 storeRouter.delete("/my/payment-methods/:id", async (req, res) => {
   try {
-    const user = verifyCustomerToken(req.headers.authorization);
+    const user = await verifyCustomerToken(req.headers.authorization);
     if (!user) return res.status(401).json({ error: "not_authenticated" });
 
     const { callSp } = await import("../../db/query.js");
@@ -508,7 +508,7 @@ storeRouter.delete("/my/payment-methods/:id", async (req, res) => {
 
 storeRouter.get("/my/profile", async (req, res) => {
   try {
-    const user = verifyCustomerToken(req.headers.authorization);
+    const user = await verifyCustomerToken(req.headers.authorization);
     if (!user) return res.status(401).json({ error: "not_authenticated" });
 
     const { callSp } = await import("../../db/query.js");

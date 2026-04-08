@@ -2,6 +2,7 @@
 import { verifyJwt, type JwtPayload, type CompanyAccessClaim } from "../auth/jwt.js";
 import { runWithRequestContext, type RequestScope } from "../context/request-context.js";
 import { env } from "../config/env.js";
+import { obs } from "../modules/integrations/observability.js";
 
 const PUBLIC_PATHS = new Set([
   "/auth/login",
@@ -24,6 +25,24 @@ function parseIntHeader(value: string | string[] | undefined): number | null {
   const parsed = Number(first);
   if (!Number.isFinite(parsed) || parsed <= 0) return null;
   return Math.trunc(parsed);
+}
+
+/**
+ * Lookup exacto de una cookie por nombre. Evita matches accidentales por
+ * substring (importante: `zentto_token` es prefijo de `__Secure-zentto_token`).
+ */
+function getCookieValue(cookieHeader: string | undefined, name: string): string | undefined {
+  if (!cookieHeader) return undefined;
+  const parts = cookieHeader.split(";");
+  for (const part of parts) {
+    const trimmed = part.trim();
+    const eq = trimmed.indexOf("=");
+    if (eq < 0) continue;
+    if (trimmed.slice(0, eq) === name) {
+      return decodeURIComponent(trimmed.slice(eq + 1));
+    }
+  }
+  return undefined;
 }
 
 function toScope(access: CompanyAccessClaim): RequestScope {
@@ -109,21 +128,15 @@ export async function requireJwt(req: Request, res: Response, next: NextFunction
   }
 
   // Extraer JWT — prioridad:
-  //   1. Cookie zentto_token (HttpOnly, seteada por este API en /auth/login)
-  //   2. Cookie zentto_access (HttpOnly, seteada por zentto-auth microservice)
-  //   3. Authorization: Bearer header (legacy — será deprecado)
-  let token: string | undefined;
-
+  //   1. Cookie __Secure-zentto_token (HttpOnly + Secure prefix, escritura nueva)
+  //   2. Cookie zentto_token (HttpOnly, seteada por este API en /auth/login — legacy en transición)
+  //   3. Cookie zentto_access (HttpOnly, seteada por zentto-auth microservice — legacy)
+  //   4. Authorization: Bearer header (legacy — será deprecado)
   const cookieHeader = req.headers.cookie;
-  if (cookieHeader) {
-    const tokenMatch = cookieHeader.match(/zentto_token=([^;]+)/);
-    if (tokenMatch) {
-      token = tokenMatch[1];
-    } else {
-      const accessMatch = cookieHeader.match(/zentto_access=([^;]+)/);
-      if (accessMatch) token = accessMatch[1];
-    }
-  }
+  let token: string | undefined =
+    getCookieValue(cookieHeader, "__Secure-zentto_token") ??
+    getCookieValue(cookieHeader, "zentto_token") ??
+    getCookieValue(cookieHeader, "zentto_access");
 
   // Fallback: Bearer header (legacy — para transición)
   if (!token) {
@@ -139,7 +152,7 @@ export async function requireJwt(req: Request, res: Response, next: NextFunction
   }
 
   try {
-    const payload = verifyJwt(token!);
+    const payload = await verifyJwt(token!);
     const scope = resolveScope(payload, req);
 
     // /auth/profile puede funcionar sin scope (JWT de zentto-auth sin companyAccesses)
@@ -169,6 +182,20 @@ export async function requireJwt(req: Request, res: Response, next: NextFunction
           const accesses = (payload.companyAccesses ?? []);
           const hasAccess = accesses.some((a) => Number(a.companyId) === subdomainCompanyId);
           if (!hasAccess) {
+            // Sprint 0 #5 — auditar intento de cross-tenant. Es señal fuerte
+            // de token robado o de un usuario malicioso probando subdominios.
+            try {
+              obs.audit("auth.tenant_mismatch", {
+                userId: payload.sub,
+                tenantCompanyId: subdomainCompanyId,
+                allowedCompanies: accesses.map((a) => Number(a.companyId)),
+                ip: req.ip,
+                ua: req.headers["user-agent"],
+                path: req.path,
+              });
+            } catch {
+              /* obs no debe romper la auth */
+            }
             return res.status(403).json({ error: "tenant_mismatch", message: "Tu cuenta no tiene acceso a este tenant" });
           }
           const tenantAccess = accesses.find((a) => Number(a.companyId) === subdomainCompanyId);
@@ -224,7 +251,19 @@ export async function requireJwt(req: Request, res: Response, next: NextFunction
     (req as AuthenticatedRequest).scope = scope;
 
     return runWithRequestContext({ user: scopedUser, scope, tenantPool }, () => next());
-  } catch {
+  } catch (err) {
+    // Sprint 0 #5 — auditar fallos de validación de token (firma inválida,
+    // expirado, claims malformados). Útil para detectar ataques de forgery.
+    try {
+      obs.audit("auth.token_invalid", {
+        reason: (err as Error)?.message,
+        ip: req.ip,
+        ua: req.headers["user-agent"],
+        path: req.path,
+      });
+    } catch {
+      /* obs no debe romper la auth */
+    }
     return res.status(401).json({ error: "invalid_token" });
   }
 }
