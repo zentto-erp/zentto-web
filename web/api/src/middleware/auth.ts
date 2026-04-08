@@ -152,7 +152,7 @@ export async function requireJwt(req: Request, res: Response, next: NextFunction
   }
 
   try {
-    const payload = verifyJwt(token!);
+    const payload = await verifyJwt(token!);
     const scope = resolveScope(payload, req);
 
     // /auth/profile puede funcionar sin scope (JWT de zentto-auth sin companyAccesses)

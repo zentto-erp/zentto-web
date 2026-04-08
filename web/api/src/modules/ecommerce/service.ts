@@ -387,12 +387,12 @@ export async function googleAuthCustomer(idToken: string) {
   };
 }
 
-export function verifyCustomerToken(authHeader?: string) {
+export async function verifyCustomerToken(authHeader?: string) {
   if (!authHeader) return null;
   const [scheme, token] = authHeader.split(" ");
   if (scheme !== "Bearer" || !token) return null;
   try {
-    return verifyJwt(token);
+    return await verifyJwt(token);
   } catch {
     return null;
   }

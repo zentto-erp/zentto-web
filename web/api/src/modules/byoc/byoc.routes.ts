@@ -132,7 +132,7 @@ byocRouter.get("/stream/:jobId", async (req, res) => {
 
   try {
     const { verifyJwt } = await import("../../auth/jwt.js");
-    verifyJwt(token); // lanza si el token es inválido
+    await verifyJwt(token); // lanza si el token es inválido
   } catch {
     res.status(401).json({ error: "invalid_token" });
     return;
