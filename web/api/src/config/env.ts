@@ -1,5 +1,15 @@
 import path from "node:path";
 
+function requireEnv(name: string): string {
+  const value = process.env[name];
+  if (!value || value === "change_me" || value === "dev-secret-change-me") {
+    throw new Error(
+      `[env] ${name} is required and must not be a default placeholder. Set it in your .env or deployment environment.`
+    );
+  }
+  return value;
+}
+
 export const env = {
   nodeEnv: process.env.NODE_ENV || "development",
   /** "sqlserver" | "postgres" — conmutador de motor de BD */
@@ -25,7 +35,9 @@ export const env = {
     ssl: String(process.env.PG_SSL || "false").toLowerCase() === "true",
   },
   jwt: {
-    secret: process.env.JWT_SECRET || "change_me",
+    // OBLIGATORIO: debe coincidir con el JWT_SECRET de zentto-auth y de todos los API hijos.
+    // Fail-fast: lanza al cargar si no está seteado o es un placeholder.
+    secret: requireEnv("JWT_SECRET"),
     expires: process.env.JWT_EXPIRES || "12h",
   },
   redisUrl: process.env.REDIS_URL || "",
