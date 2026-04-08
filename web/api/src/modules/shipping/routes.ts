@@ -30,12 +30,12 @@ import {
 export const shippingRouter = Router();
 
 // ─── Middleware: verify shipping customer JWT ─────────────────
-function shippingAuth(req: Request, res: Response, next: NextFunction) {
+async function shippingAuth(req: Request, res: Response, next: NextFunction) {
   const header = req.headers.authorization;
   if (!header?.startsWith("Bearer ")) return res.status(401).json({ error: "No autorizado" });
   try {
-    const payload = verifyJwt(header.slice(7));
-    (req as any).shippingCustomerId = payload.userId;
+    const payload = await verifyJwt(header.slice(7));
+    (req as any).shippingCustomerId = (payload as any).userId;
     (req as any).shippingEmail = payload.email;
     next();
   } catch {
