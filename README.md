@@ -13,7 +13,7 @@ Facturación · Contabilidad · Inventario · Nómina · POS · Restaurante · E
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-336791)](https://www.postgresql.org)
 [![Docker](https://img.shields.io/badge/Docker-ready-2496ED)](https://www.docker.com)
 
-🌐 **[zentto.net](https://zentto.net)** · 📡 **[api.zentto.net](https://api.zentto.net)**
+🌐 **[zentto.net](https://zentto.net)** · 📡 **[api.zentto.net](https://api.zentto.net)** · 📚 **[docs.zentto.net](https://docs.zentto.net)**
 
 </div>
 
@@ -23,7 +23,7 @@ Facturación · Contabilidad · Inventario · Nómina · POS · Restaurante · E
 
 Zentto es un ERP SaaS multi-empresa, multi-país y multi-moneda diseñado para PYMEs. Nació como migración de un sistema legado VB6 y evolucionó a una plataforma web moderna con arquitectura de micro-frontends.
 
-### Módulos disponibles
+### Micro-apps (frontend)
 
 | Módulo | Puerto | Descripción |
 |--------|--------|-------------|
@@ -38,6 +38,31 @@ Zentto es un ERP SaaS multi-empresa, multi-país y multi-moneda diseñado para P
 | Restaurante | 3008 | Mesas, comandas, cocina |
 | Ecommerce | 3009 | Tienda online Zentto Store |
 | Auditoría | 3010 | Logs, trazabilidad, seguridad |
+
+### Schemas de dominio (API)
+
+| Schema | Área funcional |
+|--------|----------------|
+| `cfg` | Configuración de empresa, monedas, impuestos, sucursales |
+| `sec` | Seguridad, usuarios, roles, permisos |
+| `master` / `mstr` | Maestros (clientes, proveedores, productos) |
+| `doc` | Numeración fiscal y secuencias de documentos |
+| `ar` | Cuentas por cobrar (facturas, cobros, notas) |
+| `ap` | Cuentas por pagar (compras, pagos) |
+| `acct` | Contabilidad (plan, asientos, balances) |
+| `pay` | Pagos y conciliación bancaria |
+| `pos` | Punto de venta |
+| `rest` | Restaurante (mesas, comandas, cocina) |
+| `hr` | Recursos humanos y nómina |
+| `fin` | Finanzas (presupuestos, flujo de caja) |
+| `sys` / `zsys` | Sistema, auditoría, logs |
+| `store` | Ecommerce Zentto Store |
+| `fiscal` | Impresoras fiscales y reportes Z |
+| `inv` | Inventario y almacenes |
+| `logistics` | Despachos, rutas, flotas |
+| `crm` | Campañas, leads, oportunidades |
+| `mfg` | Manufactura y órdenes de producción |
+| `fleet` | Gestión de vehículos de empresa |
 
 ---
 
@@ -91,24 +116,44 @@ cd web/api && npm run dev
 cd web/modular-frontend && npm run dev:all
 ```
 
-### Base de datos
+### Arquitectura dual-database
 
-**SQL Server** (desarrollo Windows):
-```bash
-# Ejecutar en SSMS
-web/api/sqlweb/run_all.sql
+Zentto soporta **ambos motores** a través del switch `DB_TYPE` en `web/api/.env`. Todo cambio de esquema **debe aplicarse en ambos** motores sin excepción.
+
+```
+                    ┌──────────────────────┐
+                    │  API (Node/Express)  │
+                    │  web/api/src         │
+                    └──────────┬───────────┘
+                               │ DB_TYPE
+                 ┌─────────────┴─────────────┐
+                 ▼                           ▼
+   ┌──────────────────────┐    ┌──────────────────────┐
+   │  PostgreSQL 16       │    │  SQL Server 2012+    │
+   │  (producción)        │    │  (clientes on-prem)  │
+   │  sqlweb-pg/ (PL/pgSQL)│    │  sqlweb/ (T-SQL)    │
+   │  + migrations goose  │    │  sqlweb-mssql/       │
+   └──────────────────────┘    └──────────────────────┘
 ```
 
-**PostgreSQL** (desarrollo Linux/Mac o producción):
+**PostgreSQL** (producción, fuente de verdad vía migraciones goose):
 ```bash
-psql -U postgres -f web/api/sqlweb-pg/00_create_database.sql
-psql -U postgres -d datqboxweb -f web/api/sqlweb-pg/run_all.sql
+# Migraciones incrementales
+bash scripts/goose-deploy.sh
+```
+
+**SQL Server** (desarrollo / clientes on-prem):
+```bash
+# Bootstrap canónico zentto_dev
+cd web/api/sqlweb-mssql && node execute.cjs && node execute_sps.cjs
 ```
 
 Seleccionar motor en `web/api/.env`:
 ```env
-DB_TYPE=sqlserver   # o "postgres"
+DB_TYPE=postgres    # o "sqlserver"
 ```
+
+Ver [docs/wiki/11-dual-database.md](docs/wiki/11-dual-database.md) para detalles.
 
 ---
 
@@ -204,11 +249,36 @@ zentto-web/
 
 ## Convenciones de desarrollo
 
-- **Ramas:** `develop` (trabajo) → PR → `main` (producción)
-- **SPs:** `usp_[Schema]_[Entity]_[Action]` en ambos motores
-- **Fechas:** siempre UTC-0 en BD, conversión a timezone de empresa en display
-- **Secrets:** nunca en código — usar `.env` local o GitHub Secrets
-- **SQL:** todo cambio de BD va en `sqlweb/` **y** `sqlweb-pg/` sin excepción
+- **Ramas:** feature branch desde `developer` → PR a `developer` → PR final a `main`. Nunca commits directos a `main` ni `developer`.
+- **Commits:** sin coautores automáticos.
+- **SPs:** `usp_[Schema]_[Entity]_[Action]` en ambos motores.
+- **Fechas:** siempre UTC-0 en BD, conversión a timezone de empresa en display.
+- **Secrets:** nunca en código — usar `.env` local o GitHub Secrets.
+- **SQL:** todo cambio de BD va como migración goose en `web/api/migrations/postgres/` **y** equivalente T-SQL en `web/api/sqlweb/` sin excepción.
+- **UI:** nunca `<table>` HTML nativo — siempre `<ZenttoDataGrid>` de `@zentto/shared-ui`.
+- **Datos:** sin mocks en frontend — todo viene de la API.
+
+---
+
+## Ecosistema Zentto
+
+Este repositorio es el núcleo del ecosistema **Zentto**:
+
+| Repo | Descripción |
+|------|-------------|
+| [`zentto-auth`](https://github.com/zentto-erp/zentto-auth) | Servicio de autenticación centralizado |
+| [`zentto-notify`](https://github.com/zentto-erp/zentto-notify) | Notificaciones multicanal (email, SMS, push, OTP) |
+| [`zentto-broker`](https://github.com/zentto-erp/zentto-broker) | Plataforma B2B de intermediación |
+| [`zentto-hotel`](https://github.com/zentto-erp/zentto-hotel) | PMS hotelero |
+| [`zentto-medical`](https://github.com/zentto-erp/zentto-medical) | Gestión clínica |
+| [`zentto-education`](https://github.com/zentto-erp/zentto-education) | SIS educativo |
+| [`zentto-tickets`](https://github.com/zentto-erp/zentto-tickets) | Ticketing y eventos |
+| [`zentto-rental`](https://github.com/zentto-erp/zentto-rental) | Alquiler de vehículos |
+| [`zentto-inmobiliario`](https://github.com/zentto-erp/zentto-inmobiliario) | Bienes raíces |
+| [`zentto-studio`](https://github.com/zentto-erp/zentto-studio) | UI builder declarativo |
+| [`zentto-report`](https://github.com/zentto-erp/zentto-report) | Report engine (Crystal Reports alternative) |
+| [`zentto-fiscal-agent-releases`](https://github.com/zentto-erp/zentto-fiscal-agent-releases) | Servicio Windows para impresoras fiscales |
+| [`zentto-erp-docs`](https://github.com/zentto-erp/zentto-erp-docs) | Documentación oficial |
 
 ---
 

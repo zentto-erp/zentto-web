@@ -3,6 +3,8 @@ import Credentials from 'next-auth/providers/credentials';
 import Google from 'next-auth/providers/google';
 import type { Provider } from 'next-auth/providers';
 import { AuthError, CredentialsSignin } from 'next-auth';
+import { getAuthClient } from '@/lib/auth-client';
+import { AuthClientError } from '@zentto/auth-client';
 
 // ─── Server-side access token store ───────────────────────────────────────────
 // El accessToken de zentto-auth (~3KB) NO va en el JWT de NextAuth porque
@@ -57,23 +59,23 @@ async function loadIamClaimsForSession(
     return cached;
   }
 
-  const AUTH_SERVICE_URL =
-    process.env.AUTH_SERVICE_URL || process.env.NEXT_PUBLIC_AUTH_URL || '';
-  if (!AUTH_SERVICE_URL || !accessToken) return cached ?? null;
+  if (!accessToken) return cached ?? null;
 
   try {
-    // Server-to-server: usamos el accessToken slim como Bearer.
-    // zentto-auth acepta Bearer porque la request NO viene de un browser
-    // (es el server del shell hablando con el microservicio interno).
-    // Timeout 3s: si zentto-auth tarda, no bloqueamos auth() ni set-token.
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 3000);
-    const res = await fetch(`${AUTH_SERVICE_URL}/auth/me?appId=zentto-erp`, {
-      headers: { Authorization: `Bearer ${accessToken}` },
-      signal: controller.signal,
-    }).finally(() => clearTimeout(timeoutId));
-    if (!res.ok) return cached ?? null;
-    const data = await res.json();
+    // Server-to-server via @zentto/auth-client: pasamos el accessToken slim
+    // como Bearer. zentto-auth acepta Bearer porque la request NO viene de
+    // un browser (es el server del shell hablando con el microservicio).
+    // El SDK timeoutea internamente; aqui ademas envolvemos en try/catch.
+    const data = (await getAuthClient().me({
+      appId: 'zentto-erp',
+      accessToken,
+    })) as unknown as {
+      modulos?: IamClaimsCache['modulos'];
+      permisos?: IamClaimsCache['permisos'];
+      companyAccesses?: IamClaimsCache['companyAccesses'];
+      defaultCompany?: IamClaimsCache['defaultCompany'];
+    };
+
     const fresh: IamClaimsCache = {
       modulos: data.modulos ?? [],
       permisos: data.permisos ?? {},
@@ -84,6 +86,7 @@ async function loadIamClaimsForSession(
     iamCache.set(userId, fresh);
     return fresh;
   } catch {
+    // Fallback al cache anterior si zentto-auth no respondio o devolvio error
     return cached ?? null;
   }
 }
@@ -146,19 +149,10 @@ const providers: Provider[] = [
     },
     authorize: async (credentials) => {
       try {
-        // zentto-auth es OBLIGATORIO. Sin AUTH_SERVICE_URL no hay login.
-        // El ERP fallback fue eliminado porque inflaba la cookie de NextAuth
-        // con permisos/modulos/companyAccesses (~3-5KB) → error 400 Cloudflare.
-        // Los claims los carga loadIamClaimsForSession() server-side sin tocar la cookie.
-        const AUTH_SERVICE_URL =
-          process.env.AUTH_SERVICE_URL ||
-          process.env.NEXT_PUBLIC_AUTH_URL ||
-          '';
-
-        if (!AUTH_SERVICE_URL) {
-          throw new CustomAuthError('misconfiguration', 'AUTH_SERVICE_URL no configurado');
-        }
-
+        // zentto-auth es OBLIGATORIO. Toda la auth pasa por @zentto/auth-client
+        // (apps/shell/src/lib/auth-client.ts singleton).
+        // Los claims los carga loadIamClaimsForSession() server-side sin
+        // tocar la cookie de NextAuth.
         const incoming = credentials as
           | Partial<Record<'username' | 'password' | 'companyId' | 'branchId' | 'captchaToken', unknown>>
           | undefined;
@@ -169,20 +163,33 @@ const providers: Provider[] = [
           throw new CustomAuthError('invalid_credentials', 'Usuario es requerido');
         }
 
-        const authRes = await fetch(`${AUTH_SERVICE_URL}/auth/login`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
+        type AuthLoginData = {
+          user?: {
+            userId?: string | number;
+            username?: string;
+            displayName?: string;
+            email?: string | null;
+            isAdmin?: boolean;
+            userType?: string | null;
+          };
+          accessToken?: string;
+        };
+
+        let authData: AuthLoginData;
+        try {
+          authData = (await getAuthClient().login({
             username: username.trim().toUpperCase(),
             password: password || '',
-            appId: 'zentto-erp',
-          }),
-        });
+          })) as unknown as AuthLoginData;
+        } catch (err) {
+          // El SDK lanza AuthClientError con status. 401/403/etc => credenciales invalidas.
+          if (err instanceof AuthClientError) {
+            throw new CredentialsSignin();
+          }
+          throw new CustomAuthError('upstream_error', 'No se pudo contactar al servicio de autenticacion');
+        }
 
-        if (!authRes.ok) throw new CredentialsSignin();
-
-        const authData = await authRes.json();
-        if (!authData.user || !authData.accessToken) throw new CredentialsSignin();
+        if (!authData?.user || !authData?.accessToken || authData.user.userId == null) throw new CredentialsSignin();
 
         // JWT slim: solo id, name, email, token.
         // permisos/modulos/companyAccesses NO van aquí — los carga
@@ -200,8 +207,8 @@ const providers: Provider[] = [
         storeAccessToken(String(u.userId), authData.accessToken, expMs);
 
         return {
-          id: u.userId,
-          name: u.displayName || u.username,
+          id: String(u.userId),
+          name: u.displayName || u.username || null,
           email: u.email || null,
           token: authData.accessToken,
           isAdmin: u.isAdmin || false,
