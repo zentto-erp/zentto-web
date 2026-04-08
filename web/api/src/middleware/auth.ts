@@ -2,6 +2,7 @@
 import { verifyJwt, type JwtPayload, type CompanyAccessClaim } from "../auth/jwt.js";
 import { runWithRequestContext, type RequestScope } from "../context/request-context.js";
 import { env } from "../config/env.js";
+import { obs } from "../modules/integrations/observability.js";
 
 const PUBLIC_PATHS = new Set([
   "/auth/login",
@@ -181,6 +182,20 @@ export async function requireJwt(req: Request, res: Response, next: NextFunction
           const accesses = (payload.companyAccesses ?? []);
           const hasAccess = accesses.some((a) => Number(a.companyId) === subdomainCompanyId);
           if (!hasAccess) {
+            // Sprint 0 #5 — auditar intento de cross-tenant. Es señal fuerte
+            // de token robado o de un usuario malicioso probando subdominios.
+            try {
+              obs.audit("auth.tenant_mismatch", {
+                userId: payload.sub,
+                tenantCompanyId: subdomainCompanyId,
+                allowedCompanies: accesses.map((a) => Number(a.companyId)),
+                ip: req.ip,
+                ua: req.headers["user-agent"],
+                path: req.path,
+              });
+            } catch {
+              /* obs no debe romper la auth */
+            }
             return res.status(403).json({ error: "tenant_mismatch", message: "Tu cuenta no tiene acceso a este tenant" });
           }
           const tenantAccess = accesses.find((a) => Number(a.companyId) === subdomainCompanyId);
@@ -236,7 +251,19 @@ export async function requireJwt(req: Request, res: Response, next: NextFunction
     (req as AuthenticatedRequest).scope = scope;
 
     return runWithRequestContext({ user: scopedUser, scope, tenantPool }, () => next());
-  } catch {
+  } catch (err) {
+    // Sprint 0 #5 — auditar fallos de validación de token (firma inválida,
+    // expirado, claims malformados). Útil para detectar ataques de forgery.
+    try {
+      obs.audit("auth.token_invalid", {
+        reason: (err as Error)?.message,
+        ip: req.ip,
+        ua: req.headers["user-agent"],
+        path: req.path,
+      });
+    } catch {
+      /* obs no debe romper la auth */
+    }
     return res.status(401).json({ error: "invalid_token" });
   }
 }
