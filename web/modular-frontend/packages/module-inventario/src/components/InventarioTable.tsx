@@ -91,7 +91,6 @@ export default function InventarioTable() {
     <Box sx={{ p: 2 }}>
       {/* Header */}
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
-        <Typography variant="h5" fontWeight={600}>Inventario</Typography>
         <Box sx={{ display: "flex", gap: 1 }}>
           <Button
             variant="contained"

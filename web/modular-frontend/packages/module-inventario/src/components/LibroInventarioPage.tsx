@@ -7,7 +7,6 @@ import {
   Button,
   Paper,
   CircularProgress,
-  Typography,
   Alert,
 } from "@mui/material";
 import Grid from "@mui/material/Grid2";
@@ -102,10 +101,6 @@ export default function LibroInventarioPage() {
 
   return (
     <Box sx={{ p: 2 }}>
-      <Typography variant="h5" sx={{ mb: 3, fontWeight: 600, display: "flex", alignItems: "center", gap: 1 }}>
-        <MenuBookIcon /> Libro de Inventario
-      </Typography>
-
       {/* Filtros */}
       <Paper sx={{ p: 2, mb: 3 }}>
         <Grid container spacing={2} alignItems="center">

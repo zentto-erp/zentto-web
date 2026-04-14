@@ -127,7 +127,6 @@ export default function LotesPage() {
     <Box sx={{ p: 2 }}>
       {/* Header */}
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
-        <Typography variant="h5" fontWeight={600}>Lotes</Typography>
         <Button variant="contained" startIcon={<AddIcon />} onClick={() => setDialogOpen(true)}>
           Nuevo Lote
         </Button>

@@ -348,10 +348,6 @@ const { data: dashboard, isLoading: dashLoading } = useLogisticaDashboard();
 
   return (
     <Box>
-      <Typography variant="h5" sx={{ mb: 3, fontWeight: 700, color: "text.primary" }}>
-        Dashboard de Logistica
-      </Typography>
-
       {/* ─── KPI CARDS ──────────────────────────────────────── */}
       <Grid container spacing={2} sx={{ mb: 3 }}>
         {kpiCards.map((kpi, idx) => (

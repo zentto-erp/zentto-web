@@ -200,9 +200,6 @@ export default function AdminHome({ basePath = "" }: { basePath?: string }) {
       {/* -- Header ---------------------------------------------------------- */}
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", mb: 3, gap: 2 }}>
         <Box>
-          <Typography variant="h5" sx={{ fontWeight: 700, color: "text.primary" }}>
-            Ventas
-          </Typography>
           <Typography variant="body2" color="text.secondary">
             Dashboard de ventas, clientes y cuentas por cobrar
           </Typography>

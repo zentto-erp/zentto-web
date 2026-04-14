@@ -292,7 +292,6 @@ export default function CentrosCostoPage() {
   return (
     <Box>
       <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 3 }}>
-        <Typography variant="h5" fontWeight={700}>Centros de Costo</Typography>
         <Button variant="contained" startIcon={<AddIcon />} onClick={handleCreate}>Crear Centro</Button>
       </Stack>
 

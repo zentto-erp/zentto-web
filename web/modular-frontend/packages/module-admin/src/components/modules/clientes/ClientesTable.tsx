@@ -3,7 +3,7 @@
 
 import React, { useState, useMemo, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Box, Typography } from "@mui/material";
+import { Box } from "@mui/material";
 import { DeleteDialog } from "@zentto/shared-ui";
 import { useCrudGeneric } from "../../../hooks/useCrudGeneric";
 import { Cliente } from "@zentto/shared-api/types";
@@ -110,9 +110,6 @@ export default function ClientesTable() {
 
   return (
     <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-      <Typography variant="h5" fontWeight={600} sx={{ mb: 3 }}>
-        Gestion de Clientes
-      </Typography>
 
       {/* zentto-grid */}
       <Box sx={{ flex: 1, minHeight: 400 }}>

@@ -324,11 +324,6 @@ export default function OrdenesProduccionPage() {
 
   return (
     <Box sx={{ p: 2 }}>
-      {/* Header */}
-      <Typography variant="h5" fontWeight={600} sx={{ mb: 3 }}>
-        Ordenes de Produccion
-      </Typography>
-
       {/* DataGrid con master-detail */}
       <zentto-grid
         ref={gridRef}

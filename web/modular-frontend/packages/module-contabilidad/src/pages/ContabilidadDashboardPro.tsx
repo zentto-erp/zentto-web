@@ -15,14 +15,10 @@ import {
   TableHead,
   TableRow,
   Paper,
-  IconButton,
-  Tooltip,
   Stack,
-  LinearProgress,
 } from "@mui/material";
 import Grid from "@mui/material/Grid2";
-import TrendingUpIcon from "@mui/icons-material/TrendingUp";
-import TrendingDownIcon from "@mui/icons-material/TrendingDown";
+import SvgIcon from "@mui/material/SvgIcon";
 import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
 import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
 import PaidIcon from "@mui/icons-material/Paid";
@@ -34,15 +30,28 @@ import AssessmentIcon from "@mui/icons-material/Assessment";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
 import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
-import { formatCurrency, toDateOnly } from "@zentto/shared-api";
+import { formatCurrency } from "@zentto/shared-api";
 import { useTimezone } from "@zentto/shared-auth";
-import { brandColors } from "@zentto/shared-ui";
 import { useRouter } from "next/navigation";
 import { useDashboardResumen, useAsientosList } from "../hooks/useContabilidad";
 import {
   usePeriodosList,
   useDueRecurrentes,
 } from "../hooks/useContabilidadAdvanced";
+
+// ─── Custom Icons ───────────────────────────────────────────
+
+function ArrowUpFilledCircle(props: any) {
+  return (
+    <SvgIcon {...props} viewBox="0 0 24 24">
+      <path fillRule="evenodd" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4 10.5h-2.5V17h-3v-4.5H8L12 7l4 5.5z" fill="currentColor" />
+    </SvgIcon>
+  );
+}
+
+function ArrowDownFilledCircle(props: any) {
+  return <ArrowUpFilledCircle {...props} sx={{ ...props.sx, transform: "rotate(180deg)" }} />;
+}
 
 // ─── KPI Card ────────────────────────────────────────────────
 
@@ -69,36 +78,61 @@ function KpiCard({ title, value, previousValue, color, icon, isLoading, isPercen
         bgcolor: color,
         color: "white",
         borderRadius: 2,
+        border: "none",
+        backgroundImage: "none",
         boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-        transition: "transform 0.2s",
-        "&:hover": { transform: "translateY(-2px)" },
+        transition: "transform 0.2s, box-shadow 0.2s",
+        "&:hover": {
+          transform: "translateY(-2px)",
+          boxShadow: "0 8px 24px rgba(0,0,0,0.2)",
+        },
+        minWidth: 0,
       }}
     >
-      <CardContent sx={{ pb: "16px !important" }}>
-        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-          <Box sx={{ flex: 1 }}>
+      <CardContent sx={{ pb: "16px !important", px: { xs: 1.5, sm: 2 } }}>
+        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", minWidth: 0 }}>
+          <Box sx={{ flex: 1, minWidth: 0 }}>
+            <Typography
+              sx={{
+                mb: 0.5,
+                fontWeight: 500,
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                fontSize: "clamp(0.7rem, 0.9vw, 0.875rem)",
+              }}
+            >
+              {title}
+            </Typography>
             {isLoading ? (
               <Skeleton variant="text" width={100} height={40} sx={{ bgcolor: "rgba(255,255,255,0.3)" }} />
             ) : (
-              <Typography variant="h5" sx={{ fontWeight: 700, lineHeight: 1 }}>
+              <Typography
+                sx={{
+                  fontWeight: 700,
+                  lineHeight: 1,
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  fontSize: "clamp(0.95rem, 1.4vw, 1.5rem)",
+                  opacity: 0.75,
+                }}
+              >
                 {isPercent ? `${value.toFixed(1)}%` : formatCurrency(value)}
               </Typography>
             )}
-            <Typography variant="body2" sx={{ mt: 1, opacity: 0.9, fontWeight: 500 }}>
-              {title}
-            </Typography>
           </Box>
-          <Box sx={{ opacity: 0.5 }}>{icon}</Box>
+          <Box sx={{ opacity: 0.5, ml: 0.5, flexShrink: 0, "& .MuiSvgIcon-root": { fontSize: "clamp(0.95rem, 1.4vw, 1.5rem)" } }}>{icon}</Box>
         </Box>
         {trend != null && !isLoading && (
           <Stack direction="row" alignItems="center" spacing={0.5} sx={{ mt: 1 }}>
             {trendUp ? (
-              <ArrowUpwardIcon sx={{ fontSize: 16 }} />
+              <ArrowUpwardIcon sx={{ fontSize: 14 }} />
             ) : (
-              <ArrowDownwardIcon sx={{ fontSize: 16 }} />
+              <ArrowDownwardIcon sx={{ fontSize: 14 }} />
             )}
-            <Typography variant="caption" sx={{ opacity: 0.85, fontWeight: 600 }}>
-              {Math.abs(trend).toFixed(1)}% vs periodo anterior
+            <Typography sx={{ opacity: 0.85, fontWeight: 600, fontSize: "clamp(0.6rem, 0.75vw, 0.75rem)", whiteSpace: "nowrap" }}>
+              {Math.abs(trend).toFixed(1)}% vs anterior
             </Typography>
           </Stack>
         )}
@@ -277,46 +311,47 @@ export default function ContabilidadDashboardPro() {
     { label: "Otros", value: gastos * 0.20, color: "#9c27b0" },
   ];
 
+  // Paleta: semántico (verde=positivo, rojo=negativo), resto en escala cromática
   const kpiCards: KpiCardProps[] = [
     {
       title: "Ingresos del periodo",
       value: ingresos,
-      color: "#1565c0",
-      icon: <TrendingUpIcon sx={{ fontSize: 32 }} />,
+      color: "#27AE60",
+      icon: <ArrowUpFilledCircle sx={{ fontSize: 32 }} />,
       isLoading,
     },
     {
       title: "Gastos del periodo",
       value: gastos,
-      color: "#c62828",
-      icon: <TrendingDownIcon sx={{ fontSize: 32 }} />,
+      color: "#E74C3C",
+      icon: <ArrowDownFilledCircle sx={{ fontSize: 32 }} />,
       isLoading,
     },
     {
       title: "Utilidad neta",
       value: utilidad,
-      color: utilidad >= 0 ? "#2e7d32" : "#b71c1c",
+      color: utilidad >= 0 ? "#1ABC9C" : "#E74C3C",
       icon: <PaidIcon sx={{ fontSize: 32 }} />,
       isLoading,
     },
     {
       title: "Posición de caja",
       value: caja,
-      color: "#00695c",
+      color: "#00A09D",
       icon: <SavingsIcon sx={{ fontSize: 32 }} />,
       isLoading,
     },
     {
       title: "CxC Pendiente",
       value: cxc,
-      color: "#4527a0",
+      color: "#3498DB",
       icon: <ReceiptLongIcon sx={{ fontSize: 32 }} />,
       isLoading,
     },
     {
       title: "CxP Pendiente",
       value: cxp,
-      color: "#e65100",
+      color: "#0984E3",
       icon: <AccountBalanceWalletIcon sx={{ fontSize: 32 }} />,
       isLoading,
     },
@@ -335,34 +370,32 @@ export default function ContabilidadDashboardPro() {
     {
       label: "Nuevo asiento",
       icon: <AddCircleOutlineIcon />,
-      href: "/contabilidad/asientos/new",
-      color: "#2e7d32",
+      href: "/contabilidad/asientos/nuevo",
+      color: "#27AE60",
     },
     {
       label: "Conciliar banco",
       icon: <AccountBalanceIcon />,
       href: "/contabilidad/conciliacion",
-      color: "#1565c0",
+      color: "#1ABC9C",
     },
     {
       label: "Cerrar periodo",
       icon: <LockClockIcon />,
       href: "/contabilidad/cierre",
-      color: "#e65100",
+      color: "#00A09D",
     },
     {
       label: "Ver reportes",
       icon: <AssessmentIcon />,
       href: "/contabilidad/reportes",
-      color: "#6a1b9a",
+      color: "#3498DB",
     },
   ];
 
   return (
     <Box>
-      <Typography variant="h5" sx={{ mb: 3, fontWeight: 700, color: "text.primary" }}>
-        Dashboard contable pro
-      </Typography>
+      {/* Título omitido: el breadcrumb Home / Contabilidad ya identifica la página */}
 
       {error && (
         <Alert severity="warning" sx={{ mb: 2 }}>
@@ -371,13 +404,36 @@ export default function ContabilidadDashboardPro() {
       )}
 
       {/* ROW 1 - KPI Cards */}
-      <Grid container spacing={2} sx={{ mb: 3 }}>
+      <Box
+        sx={{
+          display: "flex",
+          gap: 2,
+          mb: 3,
+          flexWrap: { xs: "wrap", md: "nowrap" },
+          /* Cuando el container tiene hover, todos los hijos se encogen */
+          "&:hover > .kpi-slot": {
+            flex: { md: "0.6 1 0%" },
+          },
+          /* Excepto el que tiene hover directo: se expande */
+          "&:hover > .kpi-slot:hover": {
+            flex: { md: "1 1 0%" },
+          },
+        }}
+      >
         {kpiCards.map((kpi, idx) => (
-          <Grid size={{ xs: 12, sm: 6, md: 4, lg: 2 }} key={idx}>
+          <Box
+            key={idx}
+            className="kpi-slot"
+            sx={{
+              flex: { xs: "1 1 calc(50% - 8px)", md: "1 1 0%" },
+              minWidth: { xs: "calc(50% - 8px)", md: 0 },
+              transition: "flex 0.35s cubic-bezier(.4,0,.2,1)",
+            }}
+          >
             <KpiCard {...kpi} />
-          </Grid>
+          </Box>
         ))}
-      </Grid>
+      </Box>
 
       {/* ROW 2 - Charts */}
       <Grid container spacing={3} sx={{ mb: 3 }}>
@@ -421,11 +477,11 @@ export default function ContabilidadDashboardPro() {
         </Grid>
       </Grid>
 
-      {/* ROW 3 - Tables */}
-      <Grid container spacing={3} sx={{ mb: 3 }}>
+      {/* ROW 3 - Table + Sidebar */}
+      <Grid container spacing={3}>
         {/* Ultimos Asientos */}
         <Grid size={{ xs: 12, md: 8 }}>
-          <Paper sx={{ borderRadius: 2, overflow: "hidden" }}>
+          <Paper sx={{ borderRadius: 2, overflow: "hidden", height: "100%" }}>
             <Box sx={{ p: 2, borderBottom: "1px solid #eee" }}>
               <Typography variant="h6" fontWeight={600}>
                 Últimos asientos
@@ -449,7 +505,7 @@ export default function ContabilidadDashboardPro() {
                       key={a.asientoId ?? a.id ?? idx}
                       hover
                       sx={{ cursor: "pointer" }}
-                      onClick={() => router.push("/asientos")}
+                      onClick={() => router.push("/contabilidad/asientos")}
                     >
                       <TableCell sx={{ fontSize: "0.8rem" }}>{a.fecha}</TableCell>
                       <TableCell sx={{ fontSize: "0.8rem" }}>{a.tipoAsiento}</TableCell>
@@ -492,132 +548,76 @@ export default function ContabilidadDashboardPro() {
           </Paper>
         </Grid>
 
-        {/* Tareas Pendientes */}
+        {/* Tareas Pendientes + Acciones Rápidas */}
         <Grid size={{ xs: 12, md: 4 }}>
-          <Paper sx={{ borderRadius: 2, p: 3, height: "100%" }}>
-            <Typography variant="h6" fontWeight={600} sx={{ mb: 2 }}>
+          <Paper sx={{ borderRadius: 2, p: 3, height: "100%", display: "flex", flexDirection: "column" }}>
+            <Typography variant="h6" fontWeight={600} sx={{ mb: 1.5 }}>
               Tareas pendientes
             </Typography>
+            <Stack spacing={1.5} sx={{ mb: 3 }}>
+              {[
+                { label: "Recurrentes vencidos", icon: <WarningAmberIcon />, badge: recurrentesVencidos, href: "/contabilidad/recurrentes", color: "#E74C3C" },
+                { label: "Periodos sin cerrar", icon: <LockClockIcon />, badge: periodosAbiertos, href: "/contabilidad/cierre", color: "#E67E22" },
+                { label: "Partidas sin conciliar", icon: <AccountBalanceIcon />, badge: "--", href: "/contabilidad/conciliacion", color: "#3498DB" },
+              ].map((item, idx) => (
+                <Box
+                  key={idx}
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    p: 1.5,
+                    borderRadius: 1,
+                    bgcolor: item.color,
+                    color: "white",
+                    cursor: "pointer",
+                    "&:hover": { opacity: 0.85 },
+                  }}
+                  onClick={() => router.push(item.href)}
+                >
+                  <Stack direction="row" alignItems="center" spacing={1}>
+                    {item.icon}
+                    <Typography variant="body2" fontWeight={500}>
+                      {item.label}
+                    </Typography>
+                  </Stack>
+                  <Chip label={item.badge} size="small" sx={{ bgcolor: "rgba(255,255,255,0.2)", color: "white", fontWeight: 600, minWidth: 28 }} />
+                </Box>
+              ))}
+            </Stack>
 
-            <Stack spacing={2}>
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  p: 1.5,
-                  borderRadius: 1,
-                  bgcolor: periodosAbiertos > 0 ? "warning.light" : "success.light",
-                  cursor: "pointer",
-                  "&:hover": { opacity: 0.85 },
-                }}
-                onClick={() => router.push("/cierre")}
-              >
-                <Stack direction="row" alignItems="center" spacing={1}>
-                  <LockClockIcon sx={{ color: periodosAbiertos > 0 ? "warning.dark" : "success.dark" }} />
+            <Typography variant="h6" fontWeight={600} sx={{ mb: 1.5 }}>
+              Acciones rápidas
+            </Typography>
+            <Stack spacing={1.5}>
+              {quickActions.map((action, idx) => (
+                <Box
+                  key={idx}
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1.5,
+                    p: 1.5,
+                    borderRadius: 1,
+                    bgcolor: action.color,
+                    color: "white",
+                    cursor: "pointer",
+                    "&:hover": { opacity: 0.85 },
+                  }}
+                  onClick={() => router.push(action.href)}
+                >
+                  <Box sx={{ display: "flex", "& .MuiSvgIcon-root": { fontSize: 22 } }}>
+                    {action.icon}
+                  </Box>
                   <Typography variant="body2" fontWeight={500}>
-                    Periodos sin cerrar
+                    {action.label}
                   </Typography>
-                </Stack>
-                <Chip
-                  label={periodosAbiertos}
-                  size="small"
-                  color={periodosAbiertos > 0 ? "warning" : "success"}
-                />
-              </Box>
-
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  p: 1.5,
-                  borderRadius: 1,
-                  bgcolor: recurrentesVencidos > 0 ? "error.light" : "success.light",
-                  cursor: "pointer",
-                  "&:hover": { opacity: 0.85 },
-                }}
-                onClick={() => router.push("/recurrentes")}
-              >
-                <Stack direction="row" alignItems="center" spacing={1}>
-                  <WarningAmberIcon
-                    sx={{ color: recurrentesVencidos > 0 ? "error.dark" : "success.dark" }}
-                  />
-                  <Typography variant="body2" fontWeight={500}>
-                    Asientos recurrentes vencidos
-                  </Typography>
-                </Stack>
-                <Chip
-                  label={recurrentesVencidos}
-                  size="small"
-                  color={recurrentesVencidos > 0 ? "error" : "success"}
-                />
-              </Box>
-
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  p: 1.5,
-                  borderRadius: 1,
-                  bgcolor: "info.light",
-                  cursor: "pointer",
-                  "&:hover": { opacity: 0.85 },
-                }}
-                onClick={() => router.push("/conciliacion")}
-              >
-                <Stack direction="row" alignItems="center" spacing={1}>
-                  <AccountBalanceIcon sx={{ color: "info.dark" }} />
-                  <Typography variant="body2" fontWeight={500}>
-                    Partidas sin conciliar
-                  </Typography>
-                </Stack>
-                <Chip label="--" size="small" color="info" />
-              </Box>
+                </Box>
+              ))}
             </Stack>
           </Paper>
         </Grid>
       </Grid>
-
-      {/* ROW 4 - Quick Actions */}
-      <Paper sx={{ borderRadius: 2, p: 2 }}>
-        <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1.5, textTransform: "uppercase", letterSpacing: 1 }}>
-          Acciones rápidas
-        </Typography>
-        <Stack direction="row" spacing={2} flexWrap="wrap">
-          {quickActions.map((action, idx) => (
-            <Card
-              key={idx}
-              sx={{
-                flex: "1 1 180px",
-                cursor: "pointer",
-                borderRadius: 2,
-                transition: "transform 0.2s, box-shadow 0.2s",
-                "&:hover": { transform: "translateY(-2px)", boxShadow: "0 4px 12px rgba(0,0,0,0.15)" },
-              }}
-              onClick={() => router.push(action.href)}
-            >
-              <CardContent
-                sx={{
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  py: 2,
-                  px: 1,
-                }}
-              >
-                <Box sx={{ color: action.color, mb: 1 }}>
-                  {React.cloneElement(action.icon as React.ReactElement<any>, { sx: { fontSize: 36 } })}
-                </Box>
-                <Typography variant="body2" fontWeight={600} textAlign="center">
-                  {action.label}
-                </Typography>
-              </CardContent>
-            </Card>
-          ))}
-        </Stack>
-      </Paper>
     </Box>
   );
 }

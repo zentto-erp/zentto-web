@@ -148,10 +148,6 @@ export default function NominaHome({ basePath = "" }: { basePath?: string }) {
 
   return (
     <Box>
-      <Typography variant="h5" sx={{ mb: 3, fontWeight: 700, color: "text.primary" }}>
-        Dashboard de Recursos Humanos / Nómina
-      </Typography>
-
       {/* CORE-UI STYLE STATS CARDS */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
         {statsCards.map((s, idx) => (

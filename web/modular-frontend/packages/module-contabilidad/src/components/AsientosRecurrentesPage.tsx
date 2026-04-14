@@ -320,7 +320,6 @@ export default function AsientosRecurrentesPage() {
     <Box>
       <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 3 }}>
         <Stack direction="row" alignItems="center" spacing={2}>
-          <Typography variant="h5" fontWeight={700}>Asientos Recurrentes</Typography>
           {dueCount > 0 && (
             <Badge badgeContent={dueCount} color="error">
               <Chip icon={<ScheduleIcon />} label="Vencidos" color="warning" variant="outlined" />

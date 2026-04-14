@@ -197,11 +197,6 @@ export default function RutasProduccionPage() {
 
   return (
     <Box sx={{ p: 2 }}>
-      {/* Header */}
-      <Typography variant="h5" fontWeight={600} sx={{ mb: 3 }}>
-        Rutas de Produccion
-      </Typography>
-
       {/* BOM Selector */}
       <Grid container spacing={2} sx={{ mb: 2 }}>
         <Grid item xs={12} sm={8} md={6}>
