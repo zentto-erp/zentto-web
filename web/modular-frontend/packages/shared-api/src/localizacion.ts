@@ -9,6 +9,7 @@ import type { LocalizacionConfig } from './usePosStore';
 export interface CountryRecord {
   CountryCode: string;
   CountryName: string;
+  Iso3?: string;
   CurrencyCode: string;
   CurrencySymbol: string;
   ReferenceCurrency: string;
@@ -21,6 +22,7 @@ export interface CountryRecord {
   FiscalIdName: string | null;
   TimeZoneIana: string | null;
   PhonePrefix: string | null;
+  FlagEmoji?: string;
   SortOrder: number;
   IsActive: boolean;
 }

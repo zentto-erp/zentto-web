@@ -44,6 +44,17 @@ export {
 } from './localizacion';
 export type { CountryPreset, BcvRates, CountryRecord, StateRecord, LookupRecord } from './localizacion';
 
+// Catálogo unificado + registro + suscripciones
+export {
+  useCatalogPlans, useCatalogPlan, useCatalogProducts, useCheckSubdomain,
+  useStartTrial, useStartCheckout, useCaptureLead,
+  useMySubscription, useMyEntitlements, useAddSubscriptionItem,
+} from './useCatalog';
+export type {
+  PricingPlan, CatalogProduct, SubscriptionItem, SubscriptionSummary,
+  Entitlements, RegistroBody,
+} from './useCatalog';
+
 // Settings hydration
 export { useHydrateLocalizacion } from './useHydrateLocalizacion';
 export { useHydrateModuleSettings } from './useHydrateModuleSettings';
