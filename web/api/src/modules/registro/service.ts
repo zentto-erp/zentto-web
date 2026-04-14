@@ -107,7 +107,7 @@ export async function startTrial(input: RegistroBase): Promise<TrialResult> {
     baseCurrency: "USD",
     adminUserCode: "ADMIN",
     adminPassword: tempPassword,
-    plan: plan.ProductCode.toUpperCase(),
+    plan: (plan.ProductCode.toUpperCase() as "FREE" | "STARTER" | "PRO" | "ENTERPRISE"),
   });
 
   if (!provision.ok) {
@@ -185,13 +185,15 @@ export async function startTrial(input: RegistroBase): Promise<TrialResult> {
     magicLinkSent = Boolean(authResult.magicLinkUrl);
   } catch (err: any) {
     console.warn("[registro] authCreateOwner falló, fallback a welcome clásico:", err.message);
-    await sendWelcomeEmail({
-      companyId: provision.companyId,
-      ownerEmail: input.email,
+    const tenantUrl = input.subdomain ? `https://${input.subdomain.toLowerCase()}.zentto.net` : undefined;
+    await sendWelcomeEmail(
+      input.email,
+      input.companyName,
       tempPassword,
-      tenantSubdomain: input.subdomain.toLowerCase(),
-      legalName: input.companyName,
-    }).catch(() => {});
+      provision.companyId,
+      tenantUrl,
+      "ADMIN"
+    ).catch(() => {});
   }
 
   return {

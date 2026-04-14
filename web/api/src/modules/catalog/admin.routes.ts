@@ -63,7 +63,7 @@ catalogAdminRouter.post("/plans", async (req, res) => {
       sortOrder: Number(b.sortOrder || 100),
       isActive: b.isActive !== false,
     });
-    res.json({ ok: result?.ok ?? false, ...result });
+    res.json({ ...result, ok: Boolean(result?.ok) });
   } catch (err: any) {
     res.status(500).json({ ok: false, error: err.message });
   }
@@ -139,7 +139,7 @@ catalogAdminRouter.post("/paddle/sync/:planId", async (req, res) => {
 catalogAdminRouter.post("/paddle/sync-all", async (_req, res) => {
   try {
     const result = await syncAllPendingToPaddle();
-    res.json({ ok: true, ...result });
+    res.json({ ok: true, total: result.total, synced: result.ok, failed: result.failed, errors: result.errors });
   } catch (err: any) {
     res.status(500).json({ ok: false, error: err.message });
   }

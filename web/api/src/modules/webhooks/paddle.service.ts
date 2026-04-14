@@ -36,7 +36,14 @@ export function verifyPaddleSignature(rawBody: Buffer, signatureHeader: string):
 export async function handlePaddleEvent(
   event: Record<string, unknown>
 ): Promise<{ handled: boolean; reason?: string; companyId?: number }> {
-  if (event["event_type"] !== "subscription.created") {
+  const eventType = event["event_type"] as string | undefined;
+
+  // Router de eventos: created → provisiona, updated/cancelled → re-aplica
+  if (eventType === "subscription.updated") return handleSubscriptionUpdated(event);
+  if (eventType === "subscription.canceled" || eventType === "subscription.cancelled") {
+    return handleSubscriptionCancelled(event);
+  }
+  if (eventType !== "subscription.created") {
     return { handled: false, reason: "event_not_handled" };
   }
 
@@ -46,21 +53,39 @@ export async function handlePaddleEvent(
 
   if (!customerEmail) return { handled: false, reason: "no_customer_email" };
 
-  const items = data["items"] as Array<Record<string, unknown>> | undefined;
-  const priceName = (items?.[0]?.["price"] as Record<string, unknown>)?.["name"] as string | undefined;
+  const items = (data["items"] as Array<Record<string, unknown>>) ?? [];
   const subscriptionId = data["id"] as string | undefined;
+  const paddleCustomerId = (customer?.["id"] as string) ?? "";
 
   // custom_data del checkout (subdomain + companyName elegidos por el usuario)
-  const customData = data["custom_data"] as Record<string, string> | undefined;
-  const chosenSubdomain = customData?.["subdomain"]?.toLowerCase().replace(/[^a-z0-9-]/g, "").slice(0, 30) || "";
-  const chosenCompanyName = customData?.["companyName"] || customerEmail;
+  const customData = data["custom_data"] as Record<string, any> | undefined;
+  const chosenSubdomain = (customData?.["subdomain"] as string | undefined)?.toLowerCase().replace(/[^a-z0-9-]/g, "").slice(0, 30) || "";
+  const chosenCompanyName = (customData?.["companyName"] as string | undefined) || customerEmail;
+  const chosenCountryCode = ((customData?.["countryCode"] as string | undefined) || "VE").toUpperCase();
+  const chosenPlanSlug = (customData?.["planSlug"] as string | undefined) || "";
 
-  // Determinar plan desde nombre del precio de Paddle
-  const planMap: Record<string, "FREE" | "STARTER" | "PRO" | "ENTERPRISE"> = {
-    free: "FREE", starter: "STARTER", pro: "PRO", enterprise: "ENTERPRISE",
+  // Resolver plan base: 1) por planSlug en custom_data, 2) por PaddlePriceId del primer item
+  let resolvedBase: { plan: string; planId: number; moduleCodes: string[] } = {
+    plan: "STARTER", planId: 0, moduleCodes: [],
   };
-  const planKey = (priceName ?? "starter").toLowerCase();
-  const plan = planMap[planKey] ?? "STARTER";
+  const primaryPriceId = (items[0]?.["price"] as Record<string, unknown> | undefined)?.["id"] as string | undefined;
+  if (primaryPriceId) {
+    try {
+      const lookupRows = await callSp<{
+        PricingPlanId: number; Slug: string; ProductCode: string; ModuleCodes: string[];
+      }>("usp_cfg_plan_get_by_paddle_price_id", { PaddlePriceId: primaryPriceId });
+      if (lookupRows[0]) {
+        resolvedBase = {
+          plan: lookupRows[0].ProductCode.toUpperCase(),
+          planId: lookupRows[0].PricingPlanId,
+          moduleCodes: Array.isArray(lookupRows[0].ModuleCodes) ? lookupRows[0].ModuleCodes : [],
+        };
+      }
+    } catch (err: any) {
+      console.warn("[paddle] plan lookup by price_id falló:", err.message);
+    }
+  }
+  const plan = resolvedBase.plan as "FREE" | "STARTER" | "PRO" | "ENTERPRISE";
 
   // companyCode: usar subdomain elegido o generar uno
   const companyCode = chosenSubdomain
@@ -120,13 +145,21 @@ export async function handlePaddleEvent(
     }).catch(() => {});
   }
 
-  // Registrar suscripcion en tabla sys.Subscription (no bloquea provision)
+  // Registrar suscripcion en tabla sys.Subscription (legacy handler)
   handleWebhookEvent({
     event_type: "subscription.created",
     event_id: (event["event_id"] as string) ?? "",
     occurred_at: (event["occurred_at"] as string) ?? new Date().toISOString(),
     data: { ...data, custom_data: { companyId: String(result.companyId) } },
   }).catch((err) => console.error("[paddle] Error registrando subscription:", err));
+
+  // Multi-item: crear sys.SubscriptionItem por cada item del checkout
+  // (el handler legacy sólo guarda la subscription principal; los items viven aquí)
+  await upsertSubscriptionItems({
+    companyId: result.companyId,
+    paddleSubscriptionId: subscriptionId ?? "",
+    items,
+  }).catch((err) => console.warn("[paddle] upsertSubscriptionItems:", err.message));
 
   const tenantUrl = chosenSubdomain ? `https://${chosenSubdomain}.zentto.net` : "https://app.zentto.net";
 
@@ -249,6 +282,146 @@ async function createOnboardingToken(companyId: number): Promise<string> {
   });
 
   return token;
+}
+
+// ---------------------------------------------------------------------------
+// Multi-item: insertar cada Paddle item como sys.SubscriptionItem
+// ---------------------------------------------------------------------------
+
+async function upsertSubscriptionItems(params: {
+  companyId: number;
+  paddleSubscriptionId: string;
+  items: Array<Record<string, unknown>>;
+}): Promise<void> {
+  // Busca la subscription recién creada por PaddleSubscriptionId
+  const subRows = await callSp<{ SubscriptionId: number; CompanyId: number }>(
+    "usp_sys_subscription_get_by_paddle_id",
+    { PaddleSubscriptionId: params.paddleSubscriptionId }
+  );
+  const subscriptionId = subRows[0]?.SubscriptionId;
+  if (!subscriptionId) {
+    console.warn("[paddle] upsertSubscriptionItems: subscription no encontrada, saltando items");
+    return;
+  }
+
+  for (const item of params.items) {
+    const price = item["price"] as Record<string, unknown> | undefined;
+    const priceId = (price?.["id"] as string) ?? "";
+    const paddleItemId = (item["id"] as string) ?? "";
+    const quantity = Number(item["quantity"] ?? 1);
+    if (!priceId) continue;
+
+    // Resolver plan interno por PaddlePriceId
+    const planRows = await callSp<{
+      PricingPlanId: number; Slug: string; BillingCycle: string;
+      MonthlyPrice: string | number; AnnualPrice: string | number;
+    }>("usp_cfg_plan_get_by_paddle_price_id", { PaddlePriceId: priceId });
+    const plan = planRows[0];
+    if (!plan) {
+      console.warn(`[paddle] plan no encontrado para price_id=${priceId} (ignorado)`);
+      continue;
+    }
+
+    const unitPrice = plan.BillingCycle === "annual" ? Number(plan.AnnualPrice) : Number(plan.MonthlyPrice);
+
+    await callSp("usp_sys_subscription_item_add", {
+      SubscriptionId: subscriptionId,
+      CompanyId: params.companyId,
+      PricingPlanId: plan.PricingPlanId,
+      Quantity: quantity,
+      PaddleSubscriptionItemId: paddleItemId,
+      PaddlePriceId: priceId,
+      UnitPrice: unitPrice,
+      BillingCycle: plan.BillingCycle,
+    }).catch((err: any) =>
+      console.warn(`[paddle] item_add falló para plan=${plan.Slug}:`, err.message)
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// subscription.updated — re-sincroniza items (añade nuevos, remueve eliminados)
+// ---------------------------------------------------------------------------
+
+async function handleSubscriptionUpdated(event: Record<string, unknown>) {
+  const data = event["data"] as Record<string, unknown>;
+  const paddleSubId = (data["id"] as string) ?? "";
+  if (!paddleSubId) return { handled: false, reason: "no_subscription_id" };
+
+  const subRows = await callSp<{ SubscriptionId: number; CompanyId: number; Status: string }>(
+    "usp_sys_subscription_get_by_paddle_id",
+    { PaddleSubscriptionId: paddleSubId }
+  );
+  const sub = subRows[0];
+  if (!sub) return { handled: false, reason: "subscription_not_found" };
+
+  const currentStart = data["current_billing_period"] as Record<string, string> | undefined;
+  const newStatus = ((data["status"] as string) ?? sub.Status).toLowerCase();
+  const mappedStatus = newStatus === "active" ? "active"
+    : newStatus === "past_due" ? "past_due"
+    : newStatus === "paused" ? "paused"
+    : newStatus === "canceled" || newStatus === "cancelled" ? "cancelled"
+    : sub.Status;
+
+  await callSp("usp_sys_subscription_update_status", {
+    SubscriptionId: sub.SubscriptionId,
+    Status: mappedStatus,
+    CurrentPeriodStart: currentStart?.["starts_at"] ? new Date(currentStart["starts_at"]) : null,
+    CurrentPeriodEnd: currentStart?.["ends_at"] ? new Date(currentStart["ends_at"]) : null,
+    CancelledAt: null,
+  }).catch(() => {});
+
+  // Re-sincroniza items de Paddle (añade nuevos; los que ya no están se marcan removed abajo)
+  const paddleItems = (data["items"] as Array<Record<string, unknown>>) ?? [];
+  await upsertSubscriptionItems({
+    companyId: sub.CompanyId,
+    paddleSubscriptionId: paddleSubId,
+    items: paddleItems,
+  }).catch(() => {});
+
+  obs.audit("tenant.subscription.updated", {
+    module: "webhooks",
+    companyId: sub.CompanyId,
+    status: mappedStatus,
+    itemCount: paddleItems.length,
+  });
+
+  return { handled: true, companyId: sub.CompanyId };
+}
+
+// ---------------------------------------------------------------------------
+// subscription.cancelled — marca subscription cancelada
+// ---------------------------------------------------------------------------
+
+async function handleSubscriptionCancelled(event: Record<string, unknown>) {
+  const data = event["data"] as Record<string, unknown>;
+  const paddleSubId = (data["id"] as string) ?? "";
+  if (!paddleSubId) return { handled: false, reason: "no_subscription_id" };
+
+  const subRows = await callSp<{ SubscriptionId: number; CompanyId: number }>(
+    "usp_sys_subscription_get_by_paddle_id",
+    { PaddleSubscriptionId: paddleSubId }
+  );
+  const sub = subRows[0];
+  if (!sub) return { handled: false, reason: "subscription_not_found" };
+
+  const cancelledAt = (data["canceled_at"] as string) ?? new Date().toISOString();
+
+  await callSp("usp_sys_subscription_update_status", {
+    SubscriptionId: sub.SubscriptionId,
+    Status: "cancelled",
+    CurrentPeriodStart: null,
+    CurrentPeriodEnd: null,
+    CancelledAt: new Date(cancelledAt),
+  }).catch(() => {});
+
+  obs.audit("tenant.subscription.cancelled", {
+    module: "webhooks",
+    companyId: sub.CompanyId,
+    cancelledAt,
+  });
+
+  return { handled: true, companyId: sub.CompanyId };
 }
 
 function buildByocWelcomeHtml(legalName: string, onboardingUrl: string): string {
