@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   Box, Container, Typography, ToggleButtonGroup, ToggleButton,
   Card, CardContent, CardActions, Button, Chip, List, ListItem,
@@ -8,8 +8,7 @@ import {
 } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import RocketLaunchIcon from '@mui/icons-material/RocketLaunch';
-
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'https://api.zentto.net';
+import { useCatalogPlans } from '@zentto/shared-api';
 
 const COLORS = {
   darkPrimary: '#131921',
@@ -19,68 +18,53 @@ const COLORS = {
   white: '#ffffff',
 } as const;
 
+// Vertical 'erp' sección base; el resto son add-ons. 'all' muestra catálogo completo.
 const VERTICALS = [
   { key: 'erp', label: 'ERP' },
   { key: 'medical', label: 'Salud' },
   { key: 'tickets', label: 'Tickets' },
-  { key: 'hotel', label: 'Hoteleria' },
-  { key: 'education', label: 'Educacion' },
+  { key: 'hotel', label: 'Hotelería' },
+  { key: 'education', label: 'Educación' },
+  { key: 'rental', label: 'Rental' },
 ] as const;
 
-interface PricingPlan {
-  PricingPlanId: number;
-  Name: string;
-  Slug: string;
-  VerticalType: string;
-  MonthlyPrice: number;
-  AnnualPrice: number;
-  TransactionFeePercent: number;
-  MaxUsers: number;
-  MaxTransactions: number;
-  Features: string[];
-  IsActive: boolean;
-}
-
 export default function PricingPage() {
-  const [plans, setPlans] = useState<PricingPlan[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [billing, setBilling] = useState<'monthly' | 'annual'>('monthly');
-  const [vertical, setVertical] = useState('erp');
+  const [vertical, setVertical] = useState<(typeof VERTICALS)[number]['key']>('erp');
 
-  useEffect(() => {
-    setLoading(true);
-    setError(null);
-    fetch(`${API_BASE}/v1/pricing/plans?vertical=${vertical}`)
-      .then(async (res) => {
-        if (!res.ok) throw new Error('Error al cargar planes');
-        const data = await res.json();
-        setPlans(data);
-      })
-      .catch((err) => setError(err.message))
-      .finally(() => setLoading(false));
-  }, [vertical]);
+  const { data, isLoading, error } = useCatalogPlans({ vertical, includeTrial: true });
+  const allPlans = data?.plans ?? [];
+
+  // Separar trial (si existe) del resto de planes pagados
+  const trialPlan = allPlans.find((p) => p.IsTrialOnly);
+  const paidPlans = allPlans.filter((p) => !p.IsTrialOnly).sort((a, b) => a.SortOrder - b.SortOrder);
 
   const formatPrice = (price: number) =>
-    new Intl.NumberFormat('es', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(price);
+    new Intl.NumberFormat('es', { style: 'currency', currency: 'USD', minimumFractionDigits: 2 }).format(price);
+
+  const popularIdx = useMemo(() => {
+    if (paidPlans.length === 0) return -1;
+    // El más popular = el que tiene más features o el intermedio
+    return Math.min(1, paidPlans.length - 1);
+  }, [paidPlans.length]);
 
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: COLORS.bg, py: { xs: 4, md: 8 } }}>
       <Container maxWidth="lg">
-        {/* Header */}
         <Box sx={{ textAlign: 'center', mb: 5 }}>
           <Typography variant="h3" fontWeight={800} sx={{ color: COLORS.darkPrimary, mb: 1, fontSize: { xs: '1.8rem', md: '2.5rem' } }}>
             Planes y Precios
           </Typography>
           <Typography variant="h6" sx={{ color: 'text.secondary', mb: 3, fontWeight: 400 }}>
-            Elige el plan perfecto para tu negocio. Sin contratos, cancela cuando quieras.
+            Comienza gratis 30 días. Sin contratos, cancela cuando quieras.
           </Typography>
 
-          {/* Vertical tabs */}
           <Tabs
             value={vertical}
             onChange={(_, v) => setVertical(v)}
             centered
+            variant="scrollable"
+            scrollButtons="auto"
             sx={{ mb: 3, '& .MuiTab-root': { fontWeight: 600, textTransform: 'none', fontSize: '0.95rem' } }}
           >
             {VERTICALS.map((v) => (
@@ -88,7 +72,6 @@ export default function PricingPage() {
             ))}
           </Tabs>
 
-          {/* Billing toggle */}
           <ToggleButtonGroup
             value={billing}
             exclusive
@@ -105,28 +88,68 @@ export default function PricingPage() {
           </ToggleButtonGroup>
         </Box>
 
-        {/* Loading / Error */}
-        {loading && (
+        {isLoading && (
           <Box sx={{ textAlign: 'center', py: 6 }}>
             <CircularProgress sx={{ color: COLORS.purple }} />
           </Box>
         )}
         {error && (
-          <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>
+          <Alert severity="error" sx={{ mb: 3 }}>{(error as Error).message || 'Error al cargar planes'}</Alert>
         )}
 
-        {/* Plans grid */}
-        {!loading && !error && (
+        {/* Trial destacado arriba si hay */}
+        {!isLoading && !error && trialPlan && (
+          <Card
+            elevation={4}
+            sx={{
+              mb: 4,
+              borderRadius: 3,
+              border: `2px dashed ${COLORS.accent}`,
+              bgcolor: '#fffbf0',
+            }}
+          >
+            <CardContent sx={{ p: 3, display: 'flex', flexDirection: { xs: 'column', md: 'row' }, alignItems: 'center', gap: 2 }}>
+              <Box sx={{ flex: 1 }}>
+                <Chip label={`${trialPlan.TrialDays} días gratis`} color="warning" sx={{ fontWeight: 700, mb: 1 }} />
+                <Typography variant="h5" fontWeight={800} sx={{ color: COLORS.darkPrimary }}>
+                  {trialPlan.Name}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {trialPlan.Description}
+                </Typography>
+              </Box>
+              <Button
+                variant="contained"
+                size="large"
+                href={`/registro?plan=${trialPlan.Slug}&mode=trial`}
+                sx={{
+                  bgcolor: COLORS.accent,
+                  '&:hover': { bgcolor: '#e68a00' },
+                  fontWeight: 700,
+                  textTransform: 'none',
+                  px: 4,
+                  py: 1.5,
+                  borderRadius: 2,
+                }}
+              >
+                Comenzar prueba gratis
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
+        {!isLoading && !error && (
           <Box sx={{
             display: 'grid',
-            gridTemplateColumns: { xs: '1fr', md: `repeat(${Math.min(plans.length, 3)}, 1fr)` },
+            gridTemplateColumns: { xs: '1fr', md: `repeat(${Math.min(paidPlans.length, 3)}, 1fr)` },
             gap: 3,
             alignItems: 'stretch',
           }}>
-            {plans.map((plan, idx) => {
+            {paidPlans.map((plan, idx) => {
               const price = billing === 'monthly' ? plan.MonthlyPrice : plan.AnnualPrice;
               const perMonth = billing === 'annual' ? plan.AnnualPrice / 12 : plan.MonthlyPrice;
-              const isPopular = idx === Math.min(1, plans.length - 1);
+              const isPopular = idx === popularIdx;
+              const canCheckout = Boolean(billing === 'annual' ? plan.PaddlePriceIdAnnual : plan.PaddlePriceIdMonthly);
 
               return (
                 <Card
@@ -142,7 +165,7 @@ export default function PricingPage() {
                 >
                   {isPopular && (
                     <Chip
-                      label="Mas popular"
+                      label="Más popular"
                       size="small"
                       sx={{
                         position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)',
@@ -155,6 +178,11 @@ export default function PricingPage() {
                     <Typography variant="h5" fontWeight={700} sx={{ color: COLORS.darkPrimary, mb: 1 }}>
                       {plan.Name}
                     </Typography>
+                    {plan.Description && (
+                      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                        {plan.Description}
+                      </Typography>
+                    )}
 
                     <Box sx={{ mb: 2 }}>
                       <Typography component="span" variant="h3" fontWeight={800} sx={{ color: COLORS.purple }}>
@@ -172,22 +200,21 @@ export default function PricingPage() {
 
                     <Box sx={{ display: 'flex', gap: 1, mb: 2, flexWrap: 'wrap' }}>
                       <Chip label={`${plan.MaxUsers} usuarios`} size="small" variant="outlined" />
-                      <Chip label={`${plan.MaxTransactions.toLocaleString()} tx/mes`} size="small" variant="outlined" />
-                      {plan.TransactionFeePercent > 0 && (
-                        <Chip label={`${plan.TransactionFeePercent}% fee`} size="small" variant="outlined" />
+                      {plan.MaxTransactions > 0 && (
+                        <Chip label={`${plan.MaxTransactions.toLocaleString()} tx/mes`} size="small" variant="outlined" />
+                      )}
+                      {plan.IsAddon && (
+                        <Chip label="Add-on vertical" size="small" color="warning" />
                       )}
                     </Box>
 
                     <List dense disablePadding>
-                      {(plan.Features as string[]).map((feat, i) => (
+                      {plan.Features.map((feat, i) => (
                         <ListItem key={i} disableGutters sx={{ py: 0.3 }}>
                           <ListItemIcon sx={{ minWidth: 28 }}>
                             <CheckCircleIcon sx={{ fontSize: 18, color: '#4caf50' }} />
                           </ListItemIcon>
-                          <ListItemText
-                            primary={feat}
-                            primaryTypographyProps={{ variant: 'body2' }}
-                          />
+                          <ListItemText primary={feat} primaryTypographyProps={{ variant: 'body2' }} />
                         </ListItem>
                       ))}
                     </List>
@@ -199,7 +226,8 @@ export default function PricingPage() {
                       variant={isPopular ? 'contained' : 'outlined'}
                       size="large"
                       startIcon={<RocketLaunchIcon />}
-                      href={`/signup?plan=${plan.Slug}`}
+                      href={`/registro?plan=${plan.Slug}&mode=checkout&cycle=${billing}`}
+                      disabled={!canCheckout}
                       sx={{
                         py: 1.5,
                         fontWeight: 700,
@@ -211,7 +239,7 @@ export default function PricingPage() {
                           : { borderColor: COLORS.purple, color: COLORS.purple }),
                       }}
                     >
-                      Comenzar ahora
+                      {canCheckout ? 'Comenzar ahora' : 'Próximamente'}
                     </Button>
                   </CardActions>
                 </Card>
@@ -220,8 +248,7 @@ export default function PricingPage() {
           </Box>
         )}
 
-        {/* Empty state */}
-        {!loading && !error && plans.length === 0 && (
+        {!isLoading && !error && paidPlans.length === 0 && !trialPlan && (
           <Box sx={{ textAlign: 'center', py: 6 }}>
             <Typography variant="h6" color="text.secondary">
               No hay planes disponibles para esta vertical.

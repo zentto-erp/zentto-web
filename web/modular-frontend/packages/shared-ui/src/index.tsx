@@ -37,6 +37,10 @@ export { default as SettingsItem } from './components/SettingsItem';
 export { default as SettingsInputGroup } from './components/SettingsInputGroup';
 export { LocalizacionModal } from './components/LocalizacionModal';
 export type { LocalizacionConfig } from './components/LocalizacionModal';
+export { CountrySelect } from './components/CountrySelect';
+export type { CountrySelectProps } from './components/CountrySelect';
+export { PhoneInput } from './components/PhoneInput';
+export type { PhoneInputProps } from './components/PhoneInput';
 
 // Payment Gateway Components
 export { default as PaymentSettingsPanel } from './components/PaymentSettingsPanel';
