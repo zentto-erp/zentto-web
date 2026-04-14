@@ -16,7 +16,8 @@
  *   - Rate limit: 5 intentos/IP/15min en /login
  *   - Retardo constante en validaciones (anti-timing attacks)
  *   - JWT firmado con MASTER_API_KEY, expira en 8h, incluye jti único
- *   - Secret TOTP almacenado en BACKOFFICE_TOTP_SECRET (env var, nunca en BD)
+ *   - Secret TOTP persistido en cfg.BackofficeAuth (sobrevive deploys).
+ *     Fallback bootstrap a env BACKOFFICE_TOTP_SECRET sólo en primer arranque.
  */
 
 import { Router, type Request, type Response } from "express";
@@ -32,13 +33,22 @@ import {
 import QRCode from "qrcode";
 import { obs } from "../integrations/observability.js";
 import { validateCaptchaToken } from "../usuarios/captcha.service.js";
+import { callSp } from "../../db/query.js";
 
 const router = Router();
 
 const MASTER_KEY     = process.env.MASTER_API_KEY ?? "";
 const SESSION_SECRET = process.env.MASTER_API_KEY ?? "fallback-insecure";
 const SESSION_TTL    = 8 * 60 * 60;                     // 8 horas en segundos
-const TOTP_ISSUER    = "Zentto Backoffice";
+// Sufijo del issuer según ambiente — distingue dev/prod en Google Authenticator.
+// El usuario verá "Zentto Backoffice (dev)" y "Zentto Backoffice" como
+// entradas separadas con secrets independientes.
+const TOTP_ISSUER    = (() => {
+  const base = "Zentto Backoffice";
+  const env = (process.env.APP_ENV || process.env.NODE_ENV || "").toLowerCase();
+  if (env && env !== "production" && env !== "prod") return `${base} (${env})`;
+  return base;
+})();
 const TOTP_ACCOUNT   = process.env.BACKOFFICE_ADMIN_EMAIL ?? "admin@zentto.net";
 
 // TOTP plugins (otplib v13)
@@ -46,14 +56,52 @@ const otpCrypto = new NobleCryptoPlugin();
 const otpBase32 = new ScureBase32Plugin();
 const TOTP_OPTS = { crypto: otpCrypto, base32: otpBase32, period: 30, digits: 6 as const, algorithm: "sha1" as const, window: 2 };
 
+const TOTP_KEY = "totp_secret"; // clave en cfg.BackofficeAuth
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function getTotpSecret(): string {
-  return process.env.BACKOFFICE_TOTP_SECRET ?? "";
+// Cache en memoria para evitar hit a BD en cada request (TTL 60s).
+let cachedSecret: { value: string; loadedAt: number } | null = null;
+const CACHE_TTL_MS = 60_000;
+
+async function getTotpSecret(): Promise<string> {
+  const now = Date.now();
+  if (cachedSecret && (now - cachedSecret.loadedAt) < CACHE_TTL_MS) {
+    return cachedSecret.value;
+  }
+  // 1) BD (fuente de verdad)
+  try {
+    const rows = await callSp<{ Value: string }>("usp_cfg_backoffice_auth_get", { Key: TOTP_KEY });
+    if (rows[0]?.Value) {
+      cachedSecret = { value: rows[0].Value, loadedAt: now };
+      return rows[0].Value;
+    }
+  } catch (err: any) {
+    console.warn("[backoffice-auth] BD no disponible, fallback a env var:", err?.message);
+  }
+  // 2) Env var (bootstrap inicial — primera vez en un ambiente nuevo)
+  const envValue = process.env.BACKOFFICE_TOTP_SECRET ?? "";
+  // Auto-migra: si la env tiene secret y la BD está vacía, persistirlo.
+  if (envValue) {
+    try {
+      await callSp("usp_cfg_backoffice_auth_set", { Key: TOTP_KEY, Value: envValue });
+      cachedSecret = { value: envValue, loadedAt: now };
+    } catch {
+      // ignorar; al menos retornamos el valor para no romper el login
+    }
+  }
+  return envValue;
 }
 
-function isSetupDone(): boolean {
-  return !!getTotpSecret();
+async function setTotpSecret(secret: string): Promise<void> {
+  await callSp("usp_cfg_backoffice_auth_set", { Key: TOTP_KEY, Value: secret });
+  cachedSecret = { value: secret, loadedAt: Date.now() };
+  // Mantener process.env actualizado por compatibilidad con código que aún lo lea.
+  process.env.BACKOFFICE_TOTP_SECRET = secret;
+}
+
+async function isSetupDone(): Promise<boolean> {
+  return !!(await getTotpSecret());
 }
 
 // ─── Rate limiter en memoria (anti-brute-force login) ────────────────────────
@@ -92,8 +140,8 @@ async function constantDelay(): Promise<void> {
 // ─── GET /status — ¿ya está configurado el TOTP? ─────────────────────────────
 // No requiere autenticación — solo informa si el setup fue completado.
 
-router.get("/status", (_req, res) => {
-  res.json({ setupDone: isSetupDone() });
+router.get("/status", async (_req, res) => {
+  res.json({ setupDone: await isSetupDone() });
 });
 
 // ─── POST /setup — Genera secret + QR code ───────────────────────────────────
@@ -119,7 +167,7 @@ router.post("/setup", async (req: Request, res: Response) => {
     return;
   }
 
-  if (isSetupDone()) {
+  if (await isSetupDone()) {
     res.status(409).json({ error: "totp_already_configured" });
     return;
   }
@@ -169,7 +217,7 @@ router.post("/setup/confirm", async (req: Request, res: Response) => {
     return;
   }
 
-  if (isSetupDone()) {
+  if (await isSetupDone()) {
     res.status(409).json({ error: "totp_already_configured" });
     return;
   }
@@ -182,14 +230,21 @@ router.post("/setup/confirm", async (req: Request, res: Response) => {
     return;
   }
 
+  // Persistir en BD (sobrevive deploys/restarts del container)
+  try {
+    await setTotpSecret(secret);
+  } catch (err: any) {
+    obs.error(`backoffice.auth.totp.setup_persist_failed: ${err?.message}`, { module: "backoffice-auth" });
+    res.status(500).json({ error: "persist_failed", detail: err?.message });
+    return;
+  }
+
   obs.audit("backoffice.auth.totp.setup_confirmed", { module: "backoffice-auth" });
 
-  // El secret validado debe guardarse en la variable de entorno del servidor
   res.json({
     ok: true,
     secret,
-    message: "TOTP configurado correctamente. Guarda este secret en BACKOFFICE_TOTP_SECRET del servidor.",
-    envLine: `BACKOFFICE_TOTP_SECRET=${secret}`,
+    message: "TOTP configurado correctamente y persistido en BD. Sobrevivirá redeploys.",
   });
 });
 
@@ -230,7 +285,7 @@ router.post("/login", async (req: Request, res: Response) => {
   }
 
   // Si TOTP no está configurado aún → redirigir al setup
-  const totpSecret = getTotpSecret();
+  const totpSecret = await getTotpSecret();
   if (!totpSecret) {
     res.status(428).json({ error: "totp_not_configured", setupRequired: true });
     return;
@@ -338,26 +393,16 @@ router.post("/setup/regenerate/confirm", async (req: Request, res: Response) => 
     return;
   }
 
-  // Actualizar BACKOFFICE_TOTP_SECRET en el env del proceso actual
-  process.env.BACKOFFICE_TOTP_SECRET = secret;
-
-  // Intentar actualizar el archivo .env.api persistente
+  // Persistir nuevo secret en BD (sobrevive deploys/restarts del container).
+  // Antes intentaba escribir a /opt/zentto/.env.api desde DENTRO del container,
+  // pero ese path no era accesible → fallaba silenciosamente y al próximo deploy
+  // el container arrancaba con el secret viejo, obligando a regenerar de nuevo.
   try {
-    const fs = await import("node:fs");
-    const envFiles = ["/opt/zentto/.env.api", "/opt/zentto-dev/.env.api"];
-    for (const envFile of envFiles) {
-      if (fs.existsSync(envFile)) {
-        let content = fs.readFileSync(envFile, "utf-8");
-        if (content.includes("BACKOFFICE_TOTP_SECRET=")) {
-          content = content.replace(/^BACKOFFICE_TOTP_SECRET=.*/m, `BACKOFFICE_TOTP_SECRET=${secret}`);
-        } else {
-          content += `\nBACKOFFICE_TOTP_SECRET=${secret}\n`;
-        }
-        fs.writeFileSync(envFile, content);
-      }
-    }
-  } catch {
-    // En Docker el .env puede no ser escribible — el secret ya está en process.env
+    await setTotpSecret(secret);
+  } catch (err: any) {
+    obs.error(`backoffice.auth.totp.regenerate_persist_failed: ${err?.message}`, { module: "backoffice-auth" });
+    res.status(500).json({ error: "persist_failed", detail: err?.message });
+    return;
   }
 
   obs.audit("backoffice.auth.totp.regenerated", { module: "backoffice-auth" });
