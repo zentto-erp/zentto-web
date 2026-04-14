@@ -74,7 +74,9 @@ import { comprasAnalyticsRouter } from "./modules/compras/analytics.routes.js";
 import { ventasAnalyticsRouter } from "./modules/ventas/analytics.routes.js";
 import { tenantsRouter } from "./modules/tenants/tenant.routes.js";
 import { catalogRouter } from "./modules/catalog/routes.js";
+import { catalogAdminRouter } from "./modules/catalog/admin.routes.js";
 import { registroRouter } from "./modules/registro/routes.js";
+import { subscriptionsRouter } from "./modules/subscriptions/routes.js";
 import { paddleWebhookRouter } from "./modules/webhooks/paddle.routes.js";
 import { githubSupportWebhookRouter } from "./modules/webhooks/github-support.routes.js";
 import { billingRouter, billingWebhookHandler } from "./modules/billing/billing.routes.js";
@@ -298,6 +300,7 @@ export async function createApp() {
 
   // Backoffice Zentto — protegido por Master-Key, sin JWT
   app.use("/v1/backoffice/auth", backofficeAuthRouter); // sin master-key (es el endpoint de login)
+  app.use("/v1/backoffice/catalog", catalogAdminRouter);
   app.use("/v1/backoffice", backofficeRouter);
 
   // Paddle client token — público para inicializar checkout en frontend
@@ -417,6 +420,9 @@ export async function createApp() {
   const { auditTrailMiddleware } = await import("./middleware/audit-trail.js");
   app.use("/v1", auditTrailMiddleware);
   app.use("/v1/auth", authRouter);
+
+  // Subscription self-service del tenant (estado, entitlements, add/remove addons)
+  app.use("/v1/subscriptions", subscriptionsRouter);
 
   // Subscription check: se valida en el LOGIN, no por request.
   // La suscripción es del usuario, no de cada empresa.
