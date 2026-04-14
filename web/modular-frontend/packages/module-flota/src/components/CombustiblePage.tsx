@@ -177,18 +177,6 @@ export default function CombustiblePage() {
   return (
     <Box sx={{ p: 2 }}>
       {/* Header */}
-      <Box sx={{
-        display: "flex",
-        flexDirection: { xs: 'column', sm: 'row' },
-        justifyContent: "space-between",
-        alignItems: { xs: 'stretch', sm: 'center' },
-        gap: 2, mb: 3,
-      }}>
-        <Typography variant="h5" fontWeight={600}>
-          Control de Combustible
-        </Typography>
-      </Box>
-
       {/* DataGrid */}
       <zentto-grid
         ref={gridRef}

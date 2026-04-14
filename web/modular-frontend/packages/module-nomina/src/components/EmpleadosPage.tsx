@@ -157,8 +157,6 @@ export default function EmpleadosPage() {
 
   return (
     <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-      <Typography variant="h6" fontWeight={600} sx={{ mb: 2 }}>Empleados</Typography>
-
       <Box sx={{ flex: 1, minHeight: 0 }}>
         <zentto-grid ref={gridRef} height="calc(100vh - 200px)" show-totals enable-toolbar enable-header-menu enable-header-filters enable-clipboard enable-quick-search enable-context-menu enable-status-bar enable-configurator enable-grouping enable-pivot enable-create create-label="Nuevo Empleado" />
       </Box>

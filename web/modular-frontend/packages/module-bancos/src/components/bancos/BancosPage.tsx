@@ -87,8 +87,6 @@ export default function BancosPage() {
 
   return (
     <Box>
-      <Typography variant="h5" fontWeight={600} mb={2}>Entidades</Typography>
-
       <Box sx={{ minHeight: 400 }}>
         <zentto-grid ref={gridRef} grid-id={GRID_ID} height="400px" enable-create create-label="Nuevo Banco" enable-toolbar enable-header-menu enable-header-filters enable-clipboard enable-quick-search enable-context-menu enable-status-bar enable-configurator />
       </Box>

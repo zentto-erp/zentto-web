@@ -268,10 +268,6 @@ export default function CRMSettingsPage() {
 
   return (
     <Box>
-      <Typography variant="h5" fontWeight={700} sx={{ mb: 2 }}>
-        Configuracion CRM
-      </Typography>
-
       <Paper sx={{ borderRadius: 2 }}>
         <Tabs
           value={tab}

@@ -318,10 +318,6 @@ export default function ManufacturaHome({ basePath = "" }: { basePath?: string }
 
   return (
     <Box>
-      <Typography variant="h5" sx={{ mb: 3, fontWeight: 700, color: "text.primary" }}>
-        Dashboard de Manufactura
-      </Typography>
-
       {/* ─── KPI CARDS (6) ────────────────────────────────── */}
       <Grid container spacing={2} sx={{ mb: 3 }}>
         {kpiCards.map((kpi, idx) => (

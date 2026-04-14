@@ -202,11 +202,6 @@ export default function BOMPage() {
 
   return (
     <Box sx={{ p: 2 }}>
-      {/* Header */}
-      <Typography variant="h5" fontWeight={600} sx={{ mb: 3 }}>
-        Lista de Materiales (BOM)
-      </Typography>
-
       {/* DataGrid */}
       <zentto-grid
         ref={gridRef}

@@ -3,7 +3,7 @@
 
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Box, Typography } from "@mui/material";
+import { Box } from "@mui/material";
 import { ConfirmDialog } from "@zentto/shared-ui";
 import { useAbonosList, useDeleteAbono } from "../../../hooks/useAbonos";
 import { useTimezone } from "@zentto/shared-auth";
@@ -110,9 +110,6 @@ export default function AbonosTable() {
 
   return (
     <Box sx={{ p: 2, display: "flex", flexDirection: "column", height: "100%" }}>
-      <Typography variant="h5" fontWeight={600} sx={{ mb: 3 }}>
-        Abonos
-      </Typography>
 
       {/* zentto-grid */}
       <Box sx={{ flex: 1, minHeight: 400 }}>

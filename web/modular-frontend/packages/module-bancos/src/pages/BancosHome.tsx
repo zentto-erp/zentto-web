@@ -93,10 +93,6 @@ export default function BancosHome() {
 
   return (
     <Box>
-      <Typography variant="h5" sx={{ mb: 3, fontWeight: 600 }}>
-        Bancos
-      </Typography>
-
       {/* STATS CARDS */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
         {statsCards.map((s, idx) => (

@@ -35,8 +35,7 @@ export default function ShippingDashboard({ onNavigate }: Props) {
 
   return (
     <Box>
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
-        <Typography variant="h5" fontWeight={700}>Dashboard</Typography>
+      <Box sx={{ display: "flex", justifyContent: "flex-end", alignItems: "center", mb: 3 }}>
         <Button variant="contained" startIcon={<AddBoxIcon />} onClick={() => onNavigate("/envios/nuevo")}
           sx={{ bgcolor: "#1565c0" }}>
           Nuevo Envío

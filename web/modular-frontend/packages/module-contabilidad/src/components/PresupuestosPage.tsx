@@ -256,7 +256,6 @@ export default function PresupuestosPage() {
   return (
     <Box>
       <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 3 }}>
-        <Typography variant="h5" fontWeight={700}>Presupuestos</Typography>
         <Button variant="contained" startIcon={<AddIcon />} onClick={() => { setEditItem(null); setDialogOpen(true); }}>Crear Presupuesto</Button>
       </Stack>
       {error && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>{error}</Alert>}
