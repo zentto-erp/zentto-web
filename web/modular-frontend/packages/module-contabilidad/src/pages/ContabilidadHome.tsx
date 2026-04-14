@@ -108,10 +108,6 @@ export default function ContabilidadHome() {
 
   return (
     <Box>
-      <Typography variant="h5" sx={{ mb: 3, fontWeight: 700, color: "text.primary" }}>
-        Dashboard contable
-      </Typography>
-
       {error && (
         <Alert severity="warning" sx={{ mb: 2 }}>
           No se pudieron cargar los datos del dashboard. Verifique la conexi&oacute;n con el servidor.

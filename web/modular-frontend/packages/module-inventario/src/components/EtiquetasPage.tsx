@@ -12,7 +12,6 @@ import {
   CircularProgress,
 } from "@mui/material";
 import Grid from "@mui/material/Grid2";
-import LocalOfferIcon from "@mui/icons-material/LocalOffer";
 import PrintIcon from "@mui/icons-material/Print";
 import SearchIcon from "@mui/icons-material/Search";
 import { useInventarioList } from "../hooks/useInventario";
@@ -161,10 +160,6 @@ export default function EtiquetasPage() {
     <Box sx={{ p: 2 }}>
       {/* Screen content (hidden when printing) */}
       <Box className="no-print">
-        <Typography variant="h5" sx={{ mb: 3, fontWeight: 600, display: "flex", alignItems: "center", gap: 1 }}>
-          <LocalOfferIcon /> Generador de Etiquetas
-        </Typography>
-
         <Grid container spacing={3}>
           {/* Left: Search & add items */}
           <Grid size={{ xs: 12, md: 6 }}>

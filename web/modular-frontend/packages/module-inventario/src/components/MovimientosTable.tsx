@@ -138,8 +138,6 @@ export default function MovimientosTable() {
 
   return (
     <Box sx={{ p: 2 }}>
-      <Typography variant="h5" fontWeight={600} sx={{ mb: 3 }}>Movimientos de Inventario</Typography>
-
       <Grid container spacing={3}>
         <Grid size={{ xs: 12, md: 4 }}>
           <Paper sx={{ p: 2 }}>

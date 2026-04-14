@@ -230,10 +230,6 @@ export default function FlotaHome({ basePath = "" }: { basePath?: string }) {
 
   return (
     <Box>
-      <Typography variant="h5" sx={{ mb: 3, fontWeight: 700, color: "text.primary" }}>
-        Dashboard de Flota
-      </Typography>
-
       {/* ─── ALERTAS ────────────────────────────────────────── */}
       {hasAlerts && (
         <Grid container spacing={2} sx={{ mb: 3 }}>

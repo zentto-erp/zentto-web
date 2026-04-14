@@ -3,7 +3,6 @@
 import React, { useState } from "react";
 import {
   Box,
-  Typography,
   Paper,
   Tabs,
   Tab,
@@ -74,10 +73,6 @@ export default function CRMReportsPage() {
 
   return (
     <Box>
-      <Typography variant="h5" fontWeight={700} sx={{ mb: 2 }}>
-        Reportes CRM
-      </Typography>
-
       {/* ── Filtros globales ─────────────────────────────────────── */}
       <Paper sx={{ p: 2, mb: 2, borderRadius: 2 }}>
         <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap">

@@ -114,8 +114,6 @@ export default function ConciliacionBancariaPage() {
 
   return (
     <Box>
-      <Typography variant="h5" fontWeight={700} sx={{ mb: 3 }}>Conciliacion bancaria</Typography>
-
       <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 3 }}>
         <CuentaBancariaSelector cuentas={cuentas} selectedNroCta={selectedNroCta}
           onNroCtaChange={(v) => { setSelectedNroCta(v); setSelectedConciliacionId(null); }} />

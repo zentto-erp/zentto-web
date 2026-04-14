@@ -122,7 +122,6 @@ export default function CuentasBancariasPage() {
   return (
     <Box>
       <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
-        <Typography variant="h5" fontWeight={600}>Cuentas bancarias</Typography>
         <Box sx={{ display: "flex", gap: 1 }}>
           <Button variant="outlined" size="small" onClick={() => window.print()}>Imprimir</Button>
           <Button variant="outlined" size="small" onClick={() => { window.location.href = "/bancos/conciliacion"; }}>Nueva conciliación</Button>

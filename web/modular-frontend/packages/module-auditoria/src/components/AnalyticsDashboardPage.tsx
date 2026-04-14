@@ -57,7 +57,6 @@ export default function AnalyticsDashboardPage() {
     <Box sx={{ p: 3 }}>
       {/* Header */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h5" fontWeight={700}>Estadísticas y Analíticas</Typography>
         <ToggleButtonGroup
           value={range}
           exclusive

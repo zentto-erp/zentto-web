@@ -200,9 +200,6 @@ export default function ComprasHome({ basePath = "" }: { basePath?: string }) {
       {/* ── Header ──────────────────────────────────────────── */}
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", mb: 3, gap: 2 }}>
         <Box>
-          <Typography variant="h5" sx={{ fontWeight: 700, color: "text.primary" }}>
-            Compras
-          </Typography>
           <Typography variant="body2" color="text.secondary">
             Dashboard de compras, proveedores y cuentas por pagar
           </Typography>

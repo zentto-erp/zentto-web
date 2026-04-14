@@ -173,11 +173,6 @@ export default function CentrosTrabajoPage() {
 
   return (
     <Box sx={{ p: 2 }}>
-      {/* Header */}
-      <Typography variant="h5" fontWeight={600} sx={{ mb: 3 }}>
-        Centros de Trabajo
-      </Typography>
-
       {/* DataGrid */}
       <zentto-grid
         ref={gridRef}

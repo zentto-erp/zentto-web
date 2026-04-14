@@ -116,7 +116,6 @@ export default function AlmacenesWMSPage() {
     <Box sx={{ p: 2 }}>
       {/* Header */}
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
-        <Typography variant="h5" fontWeight={600}>Almacenes WMS</Typography>
         {!selectedWarehouse && (
           <Button variant="contained" startIcon={<AddIcon />} onClick={() => setCreateOpen(true)}>
             Nuevo Almacén

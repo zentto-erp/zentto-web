@@ -400,13 +400,6 @@ export default function CRMHome() {
           gap: 2,
         }}
       >
-        <Typography
-          variant="h5"
-          sx={{ fontWeight: 700, color: "text.primary" }}
-        >
-          CRM Dashboard
-        </Typography>
-
         <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
           {pipelines.length > 1 && (
             <FormControl size="small" sx={{ minWidth: 180 }}>
