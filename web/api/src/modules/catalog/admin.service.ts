@@ -55,7 +55,7 @@ export async function upsertPlan(input: PlanUpsertInput) {
 }
 
 export async function listPendingSync() {
-  return await callSp<{
+  const rows = await callSp<{
     PricingPlanId: number;
     Slug: string;
     Name: string;
@@ -67,6 +67,12 @@ export async function listPendingSync() {
     PaddlePriceIdAnnual: string;
     PaddleSyncStatus: string;
   }>("usp_cfg_plan_list_pending_sync");
+  // Normaliza NUMERIC (pg devuelve string) a number para que el frontend no muestre NaN
+  return rows.map((r) => ({
+    ...r,
+    MonthlyPrice: Number(r.MonthlyPrice ?? 0),
+    AnnualPrice: Number(r.AnnualPrice ?? 0),
+  }));
 }
 
 /**
