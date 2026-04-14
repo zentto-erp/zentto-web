@@ -133,7 +133,7 @@ function OverviewTab({ token, range }: { token: string; range: TimeRange }) {
           <KpiCard title="Errores" value={kpis?.errorCount || 0} subtitle={`Tasa: ${kpis?.errorRate || 0}%`} icon={<ErrorOutline />} color="#f44336" loading={loading} />
         </Grid>
         <Grid size={{ xs: 6, sm: 4, md: 2 }}>
-          <KpiCard title="Usuarios" value={kpis?.uniqueUsers || 0} subtitle="Únicos" icon={<People />} color="#00C9A7" loading={loading} />
+          <KpiCard title="Usuarios" value={kpis?.uniqueUsers || 0} subtitle="Únicos" icon={<PeopleIcon />} color="#00C9A7" loading={loading} />
         </Grid>
       </Grid>
 
