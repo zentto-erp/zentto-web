@@ -73,6 +73,7 @@ import { manufacturaRouter } from "./modules/manufactura/routes.js";
 import { comprasAnalyticsRouter } from "./modules/compras/analytics.routes.js";
 import { ventasAnalyticsRouter } from "./modules/ventas/analytics.routes.js";
 import { tenantsRouter } from "./modules/tenants/tenant.routes.js";
+import { catalogRouter } from "./modules/catalog/routes.js";
 import { paddleWebhookRouter } from "./modules/webhooks/paddle.routes.js";
 import { githubSupportWebhookRouter } from "./modules/webhooks/github-support.routes.js";
 import { billingRouter, billingWebhookHandler } from "./modules/billing/billing.routes.js";
@@ -281,9 +282,8 @@ export async function createApp() {
   // Tenant provisioning — protegido por master key, sin JWT
   app.use("/api/tenants", tenantsRouter);
 
-  // Onboarding self-service — público (signup, verify, status)
-  const { onboardingRouter } = await import("./modules/onboarding/onboarding.routes.js");
-  app.use("/v1/onboarding", onboardingRouter);
+  // Catálogo unificado de planes + subdominio check — público (sin JWT)
+  app.use("/v1/catalog", catalogRouter);
 
   // Status page — público (health check detallado)
   const { statusRouter } = await import("./modules/health/status.routes.js");
