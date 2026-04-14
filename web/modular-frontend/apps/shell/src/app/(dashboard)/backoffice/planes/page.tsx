@@ -18,6 +18,10 @@ import type { PlanAdmin, PendingSyncRow } from "./types";
 
 type TabKey = "catalog" | "paddle";
 
+// SVG inline para el botón de toggle (no existe en los defaults del datagrid).
+// El datagrid _resolveActionIcon detecta que empieza con '<' y lo renderiza tal cual.
+const VISIBILITY_SVG = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>';
+
 export default function PlanesPage() {
   const { token, isSet } = useBackoffice();
   const [tab, setTab] = useState<TabKey>("catalog");
@@ -34,7 +38,6 @@ export default function PlanesPage() {
   const pendingGridRef = useRef<any>(null);
 
   const [plans, setPlans] = useState<PlanAdmin[]>([]);
-  const [pending, setPending] = useState<PendingSyncRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
@@ -56,23 +59,16 @@ export default function PlanesPage() {
     } finally { setLoading(false); }
   }, [token, isSet]);
 
-  const reloadPending = useCallback(async () => {
-    if (!isSet) return;
-    setLoading(true); setError("");
-    try {
-      const res = await apiFetch<{ ok: boolean; pending: PendingSyncRow[] }>(
-        "/v1/backoffice/catalog/paddle/pending", token
-      );
-      setPending(res.pending ?? []);
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : String(e));
-    } finally { setLoading(false); }
-  }, [token, isSet]);
+  // El tab Paddle muestra TODOS los planes no-trial (incluyendo los ya
+  // sincronizados) para que sea visualmente útil después del sync. Se deriva
+  // del listado de catálogo, no necesita endpoint separado.
+  const paddleRows = plans.filter((p) => !p.IsTrialOnly);
+  const paddlePending = paddleRows.filter((p) => p.PaddleSyncStatus === "draft" || p.PaddleSyncStatus === "error");
 
   useEffect(() => {
     if (tab === "catalog" && catalogRegistered) void reloadCatalog();
-    if (tab === "paddle"  && pendingRegistered) void reloadPending();
-  }, [tab, catalogRegistered, pendingRegistered, reloadCatalog, reloadPending]);
+    if (tab === "paddle"  && pendingRegistered) void reloadCatalog(); // mismo endpoint, derivamos paddleRows localmente
+  }, [tab, catalogRegistered, pendingRegistered, reloadCatalog]);
 
   const handleEdit = (row: PlanAdmin) => { setEditing(row); setModalOpen(true); };
   const handleCreate = () => { setEditing(null); setModalOpen(true); };
@@ -99,7 +95,7 @@ export default function PlanesPage() {
       );
       if (res.ok) setInfo(`Plan sincronizado: ${res.mensaje}`);
       else setError(`Sync falló: ${res.mensaje}`);
-      await Promise.all([reloadPending(), reloadCatalog()]);
+      await reloadCatalog();
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : String(e));
     } finally { setSyncingId(null); }
@@ -112,7 +108,7 @@ export default function PlanesPage() {
         "/v1/backoffice/catalog/paddle/sync-all", token, { method: "POST" }
       );
       setInfo(`Sincronización: ${res.synced}/${res.total} OK, ${res.failed} fallaron${res.failed > 0 ? ` — ${res.errors.slice(0, 3).join("; ")}` : ""}`);
-      await Promise.all([reloadPending(), reloadCatalog()]);
+      await reloadCatalog();
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : String(e));
     } finally { setBulkSyncing(false); }
@@ -139,11 +135,11 @@ export default function PlanesPage() {
       statusVariant: "filled",
     },
     {
-      field: "actions", header: "Acciones", type: "actions", width: 130, pin: "right",
+      field: "actions", header: "Acciones", type: "actions", width: 140, pin: "right",
       actions: [
-        { icon: "edit",   label: "Editar",       action: "edit",   color: "#1976d2" },
-        { icon: "toggle", label: "Activar/Off",  action: "toggle", color: "#757575" },
-        { icon: "sync",   label: "Sync Paddle",  action: "sync",   color: "#7B1FA2" },
+        { icon: "edit",    label: "Editar",       action: "edit",   color: "#1976d2" },
+        { icon: VISIBILITY_SVG, label: "Activar/Desactivar", action: "toggle", color: "#757575" },
+        { icon: "refresh", label: "Sync Paddle",  action: "sync",   color: "#7B1FA2" },
       ],
     },
   ];
@@ -183,30 +179,32 @@ export default function PlanesPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [plans]);
 
-  // ── Columnas y datos para grid "paddle pending" ────────────────────────────
+  // ── Columnas y datos para grid "paddle" (todos los planes no-trial) ────────
   const pendingColumns: ColumnDef[] = [
     { field: "Slug", header: "Slug", width: 200, sortable: true },
     { field: "Name", header: "Nombre", width: 180, sortable: true },
-    { field: "ProductCode", header: "Producto", width: 120, sortable: true },
-    { field: "MonthlyPriceLabel", header: "Mensual", width: 110, sortable: true, type: "number" },
-    { field: "AnnualPriceLabel", header: "Anual", width: 110, sortable: true, type: "number" },
-    { field: "PaddleProductId", header: "Product ID", width: 220 },
+    { field: "ProductCode", header: "Producto", width: 120, sortable: true, groupable: true },
+    { field: "MonthlyPriceLabel", header: "Mensual", width: 110, sortable: true },
+    { field: "AnnualPriceLabel", header: "Anual", width: 110, sortable: true },
+    { field: "PaddleProductIdLabel", header: "Product ID", width: 220 },
+    { field: "PaddlePriceMonthlyLabel", header: "Price Mensual", width: 220 },
     {
-      field: "PaddleSyncStatus", header: "Estado", width: 110, sortable: true, groupable: true,
+      field: "PaddleSyncStatus", header: "Estado", width: 120, sortable: true, groupable: true,
       statusColors: { draft: "warning", syncing: "info", synced: "success", error: "error" },
       statusVariant: "filled",
     },
     {
-      field: "actions", header: "", type: "actions", width: 80, pin: "right",
-      actions: [{ icon: "sync", label: "Sync", action: "sync", color: "#7B1FA2" }],
+      field: "actions", header: "", type: "actions", width: 90, pin: "right",
+      actions: [{ icon: "refresh", label: "Sync", action: "sync", color: "#7B1FA2" }],
     },
   ];
 
-  const mappedPending = pending.map((p, i) => ({
+  const mappedPending = paddleRows.map((p, i) => ({
     ...p, id: i,
     MonthlyPriceLabel: `$${Number(p.MonthlyPrice).toFixed(2)}`,
     AnnualPriceLabel: `$${Number(p.AnnualPrice).toFixed(2)}`,
-    PaddleProductId: p.PaddleProductId || "—",
+    PaddleProductIdLabel: p.PaddleProductId || "—",
+    PaddlePriceMonthlyLabel: p.PaddlePriceIdMonthly || "—",
   }));
 
   useEffect(() => {
@@ -242,7 +240,7 @@ export default function PlanesPage() {
           <Typography variant="h5" fontWeight={700}>Catálogo de planes</Typography>
         </Stack>
         <Stack direction="row" spacing={1}>
-          <Button startIcon={<RefreshIcon />} onClick={() => tab === "catalog" ? reloadCatalog() : reloadPending()} disabled={loading}>
+          <Button startIcon={<RefreshIcon />} onClick={() => reloadCatalog()} disabled={loading}>
             Refrescar
           </Button>
           {tab === "catalog" && (
@@ -250,9 +248,9 @@ export default function PlanesPage() {
               Nuevo plan
             </Button>
           )}
-          {tab === "paddle" && pending.length > 0 && (
+          {tab === "paddle" && paddlePending.length > 0 && (
             <Button variant="contained" color="secondary" startIcon={<CloudSyncIcon />} disabled={bulkSyncing} onClick={handleSyncAll}>
-              {bulkSyncing ? "Sincronizando..." : `Sync todo (${pending.length})`}
+              {bulkSyncing ? "Sincronizando..." : `Sync pendientes (${paddlePending.length})`}
             </Button>
           )}
           {syncingId !== null && <CircularProgress size={20} sx={{ ml: 1, alignSelf: "center" }} />}
