@@ -74,6 +74,7 @@ import { comprasAnalyticsRouter } from "./modules/compras/analytics.routes.js";
 import { ventasAnalyticsRouter } from "./modules/ventas/analytics.routes.js";
 import { tenantsRouter } from "./modules/tenants/tenant.routes.js";
 import { catalogRouter } from "./modules/catalog/routes.js";
+import { registroRouter } from "./modules/registro/routes.js";
 import { paddleWebhookRouter } from "./modules/webhooks/paddle.routes.js";
 import { githubSupportWebhookRouter } from "./modules/webhooks/github-support.routes.js";
 import { billingRouter, billingWebhookHandler } from "./modules/billing/billing.routes.js";
@@ -284,6 +285,9 @@ export async function createApp() {
 
   // Catálogo unificado de planes + subdominio check — público (sin JWT)
   app.use("/v1/catalog", catalogRouter);
+
+  // Registro unificado (trial + checkout Paddle) — público (sin JWT)
+  app.use("/v1/registro", registroRouter);
 
   // Status page — público (health check detallado)
   const { statusRouter } = await import("./modules/health/status.routes.js");
