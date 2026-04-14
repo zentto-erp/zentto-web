@@ -1,36 +1,38 @@
 -- +goose Up
 -- +goose StatementBegin
 
--- Tabla de leads capturados desde la landing / widget de chat / formularios públicos.
--- NO es multi-tenant (CompanyId=0) porque se captura ANTES de provisioning.
--- Un backoffice user los promueve luego a crm.Lead con el pipeline adecuado.
-CREATE TABLE IF NOT EXISTS public."LandingLead" (
-  "LandingLeadId" BIGSERIAL PRIMARY KEY,
-  "Email" VARCHAR(150) NOT NULL,
-  "FullName" VARCHAR(200) NOT NULL,
-  "Company" VARCHAR(500),
-  "Country" VARCHAR(10),
-  "Source" VARCHAR(80) NOT NULL DEFAULT 'zentto-landing',
-  "Status" VARCHAR(20) NOT NULL DEFAULT 'NEW',
-  "Notes" TEXT,
-  "IpAddress" VARCHAR(45),
-  "UserAgent" VARCHAR(500),
-  "ContactedAt" TIMESTAMP,
-  "ConvertedToLeadId" BIGINT,
-  "CreatedAt" TIMESTAMP NOT NULL DEFAULT (now() AT TIME ZONE 'UTC'),
-  "UpdatedAt" TIMESTAMP NOT NULL DEFAULT (now() AT TIME ZONE 'UTC'),
-  CONSTRAINT "UQ_LandingLead_Email_Source" UNIQUE ("Email", "Source")
-);
+-- Fix del SP usp_sys_lead_upsert: la versión previa devolvía TABLE(ok,mensaje)
+-- y el API (callSpOut en landing/service.ts) espera OUT params (Resultado,
+-- Mensaje). El mismatch causaba 500 en /api/landing/register.
+--
+-- La tabla public."Lead" ya existe en baseline (003_tables.sql) — reusamos.
+-- Añadimos UNIQUE (Email, Source) para hacer el upsert idempotente correcto.
 
-CREATE INDEX IF NOT EXISTS "IX_LandingLead_Email" ON public."LandingLead" ("Email");
-CREATE INDEX IF NOT EXISTS "IX_LandingLead_Source" ON public."LandingLead" ("Source");
-CREATE INDEX IF NOT EXISTS "IX_LandingLead_CreatedAt" ON public."LandingLead" ("CreatedAt" DESC);
+-- Drop del SP previo (cualquier signatura)
+DROP FUNCTION IF EXISTS public.usp_sys_lead_upsert(character varying, character varying, character varying, character varying, character varying) CASCADE;
 
 -- +goose StatementEnd
 
 -- +goose StatementBegin
--- Upsert idempotente por (Email, Source): si el mismo lead viene varias veces,
--- actualizamos FullName / Company / Country. Devuelve Resultado=1 OK, 0 error.
+-- Unique constraint para permitir ON CONFLICT upsert (si no existe ya)
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint
+    WHERE conname = 'UQ_Lead_Email_Source' AND conrelid = 'public."Lead"'::regclass
+  ) THEN
+    -- Limpia duplicados previos (mantiene el más reciente) antes de agregar el unique
+    DELETE FROM public."Lead" a USING public."Lead" b
+    WHERE a."LeadId" < b."LeadId"
+      AND a."Email" = b."Email"
+      AND COALESCE(a."Source",'') = COALESCE(b."Source",'');
+    ALTER TABLE public."Lead" ADD CONSTRAINT "UQ_Lead_Email_Source" UNIQUE ("Email", "Source");
+  END IF;
+END $$;
+-- +goose StatementEnd
+
+-- +goose StatementBegin
+-- Recreate con OUT params compatible con callSpOut()
 CREATE OR REPLACE FUNCTION public.usp_sys_lead_upsert(
   p_email    VARCHAR,
   p_fullname VARCHAR,
@@ -43,7 +45,7 @@ CREATE OR REPLACE FUNCTION public.usp_sys_lead_upsert(
 LANGUAGE plpgsql
 AS $$
 DECLARE
-  v_email_clean VARCHAR;
+  v_email_clean  VARCHAR;
   v_source_clean VARCHAR;
 BEGIN
   v_email_clean  := LOWER(TRIM(COALESCE(p_email, '')));
@@ -61,7 +63,7 @@ BEGIN
     RETURN;
   END IF;
 
-  INSERT INTO public."LandingLead" ("Email", "FullName", "Company", "Country", "Source")
+  INSERT INTO public."Lead" ("Email", "FullName", "Company", "Country", "Source")
   VALUES (
     v_email_clean,
     TRIM(p_fullname),
@@ -71,8 +73,8 @@ BEGIN
   )
   ON CONFLICT ("Email", "Source") DO UPDATE SET
     "FullName"  = EXCLUDED."FullName",
-    "Company"   = COALESCE(EXCLUDED."Company", public."LandingLead"."Company"),
-    "Country"   = COALESCE(EXCLUDED."Country", public."LandingLead"."Country"),
+    "Company"   = COALESCE(EXCLUDED."Company", public."Lead"."Company"),
+    "Country"   = COALESCE(EXCLUDED."Country", public."Lead"."Country"),
     "UpdatedAt" = (now() AT TIME ZONE 'UTC');
 
   p_resultado := 1;
@@ -87,5 +89,5 @@ $$;
 -- +goose Down
 -- +goose StatementBegin
 DROP FUNCTION IF EXISTS public.usp_sys_lead_upsert(VARCHAR, VARCHAR, VARCHAR, VARCHAR, VARCHAR);
-DROP TABLE IF EXISTS public."LandingLead";
+ALTER TABLE public."Lead" DROP CONSTRAINT IF EXISTS "UQ_Lead_Email_Source";
 -- +goose StatementEnd
