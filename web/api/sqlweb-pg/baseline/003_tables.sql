@@ -1058,6 +1058,32 @@ CREATE TABLE cfg."TaxUnit" (
 );
 
 
+CREATE TABLE cfg."PlanDefinition" (
+    "PlanCode" character varying(30) NOT NULL,
+    "PlanName" character varying(100) NOT NULL,
+    "MaxUsers" integer,
+    "MaxCompanies" integer,
+    "MaxBranches" integer,
+    "MultiCompanyEnabled" boolean DEFAULT false,
+    "MonthlyPriceUsd" numeric(10,2),
+    "AnnualPriceUsd" numeric(10,2),
+    "IsActive" boolean DEFAULT true,
+    "SortOrder" integer DEFAULT 0,
+    "CreatedAt" timestamp without time zone DEFAULT (now() AT TIME ZONE 'UTC'::text) NOT NULL,
+    "UpdatedAt" timestamp without time zone DEFAULT (now() AT TIME ZONE 'UTC'::text) NOT NULL
+);
+
+
+CREATE TABLE cfg."PlanModule" (
+    "PlanModuleId" bigint NOT NULL,
+    "PlanCode" character varying(30) NOT NULL,
+    "ModuleCode" character varying(60) NOT NULL,
+    "IsEnabled" boolean DEFAULT true,
+    "SortOrder" integer DEFAULT 0,
+    "CreatedAt" timestamp without time zone DEFAULT (now() AT TIME ZONE 'UTC'::text) NOT NULL
+);
+
+
 CREATE TABLE crm."Activity" (
     "ActivityId" bigint NOT NULL,
     "CompanyId" integer NOT NULL,
@@ -2970,6 +2996,19 @@ CREATE TABLE logistics."GoodsReturnLine" (
 );
 
 
+CREATE TABLE logistics."CarrierConfig" (
+    "CarrierConfigId" bigint NOT NULL,
+    "CompanyId" integer NOT NULL,
+    "CarrierCode" character varying(50) NOT NULL,
+    "CarrierName" character varying(200) NOT NULL,
+    "CarrierType" character varying(50),
+    "SupportedCountries" character varying(500),
+    "IsActive" boolean DEFAULT true NOT NULL,
+    "CreatedAt" timestamp without time zone DEFAULT (now() AT TIME ZONE 'UTC'::text) NOT NULL,
+    "UpdatedAt" timestamp without time zone DEFAULT (now() AT TIME ZONE 'UTC'::text) NOT NULL
+);
+
+
 CREATE TABLE master."AlternateStock" (
     "AlternateStockId" integer NOT NULL,
     "ProductCode" character varying(80) NOT NULL,
@@ -4102,7 +4141,8 @@ CREATE TABLE sec."User" (
 CREATE TABLE public._migrations (
     id integer NOT NULL,
     name character varying(255) NOT NULL,
-    applied_at timestamp without time zone DEFAULT now()
+    applied_at timestamp without time zone DEFAULT now(),
+    duration_ms bigint DEFAULT 0
 );
 
 
@@ -4816,6 +4856,42 @@ CREATE TABLE sys."TenantResourceLog" (
     "LastLoginAt" timestamp without time zone,
     "UserCount" integer,
     "RecordedAt" timestamp without time zone DEFAULT now() NOT NULL
+);
+
+
+CREATE TABLE sys."ByocDeployJob" (
+    "JobId" bigint NOT NULL,
+    "CompanyId" bigint NOT NULL,
+    "Provider" character varying(50) NOT NULL,
+    "Status" character varying(30) DEFAULT 'PENDING'::character varying NOT NULL,
+    "DeployConfig" jsonb DEFAULT '{}'::jsonb,
+    "ServerIp" character varying(100),
+    "TenantUrl" character varying(500),
+    "LogOutput" text,
+    "ErrorMessage" text,
+    "StartedAt" timestamp without time zone DEFAULT (now() AT TIME ZONE 'UTC'::text) NOT NULL,
+    "CompletedAt" timestamp without time zone,
+    "CreatedAt" timestamp without time zone DEFAULT (now() AT TIME ZONE 'UTC'::text) NOT NULL
+);
+
+
+CREATE TABLE zsys."StudioAddon" (
+    "AddonId" character varying(100) NOT NULL,
+    "CompanyId" integer NOT NULL,
+    "Name" character varying(200) NOT NULL,
+    "Description" character varying(500),
+    "Icon" character varying(100),
+    "Config" text DEFAULT '{}'::text NOT NULL,
+    "IsActive" boolean DEFAULT true NOT NULL,
+    "CreatedBy" integer DEFAULT 0 NOT NULL,
+    "CreatedAt" timestamp without time zone DEFAULT (now() AT TIME ZONE 'UTC'::text) NOT NULL,
+    "UpdatedAt" timestamp without time zone DEFAULT (now() AT TIME ZONE 'UTC'::text) NOT NULL
+);
+
+
+CREATE TABLE zsys."StudioAddonModule" (
+    "AddonId" character varying(100) NOT NULL,
+    "ModuleId" character varying(100) NOT NULL
 );
 
 

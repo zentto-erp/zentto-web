@@ -67,8 +67,11 @@ if [ "$BASELINE_APPLIED" = "0" ]; then
 fi
 
 # Ejecutar migraciones pendientes (solo las que vengan después de baseline)
+# -allow-missing: permite aplicar migraciones out-of-order que aparecen
+# tarde (e.g. PR mergeado después de versiones más altas). Útil con varios
+# devs trabajando en paralelo en developer.
 echo "→ Ejecutando goose up..."
-su -c "goose -dir ${GOOSE_DIR} postgres '${GOOSE_URL}' up" postgres 2>&1
+su -c "goose -allow-missing -dir ${GOOSE_DIR} postgres '${GOOSE_URL}' up" postgres 2>&1
 
 echo ""
 echo "→ Estado de migraciones:"
