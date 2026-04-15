@@ -11,9 +11,12 @@ Toda la configuracion de infraestructura vive en un repo dedicado:
 
 | Recurso | Valor |
 |---|---|
-| Proveedor | Hetzner CX33, Nuremberg |
+| Proveedor | Hetzner Cloud, Nuremberg |
 | IP | `178.104.56.185` |
 | OS | Ubuntu 24.04 |
+| CPU | `16 vCPU` AMD EPYC (validado por SSH el 2026-04-15) |
+| RAM | `30 GiB` (validado por SSH el 2026-04-15) |
+| Disco | `301 GiB` total, `218 GiB` libres al 2026-04-15 |
 | Dominio | `zentto.net` (Cloudflare) |
 | SSL | Let's Encrypt (certbot) |
 | Reverse proxy | Nginx |
@@ -28,6 +31,8 @@ Toda la configuracion de infraestructura vive en un repo dedicado:
 | zentto-frontend | 3000-3010 | app.zentto.net | zentto-web |
 | zentto-notify | 5000 | notify.zentto.net | zentto-notify |
 | notify-dashboard | 3100 | notify-dash.zentto.net | zentto-notify |
+| zentto-support-ai | 5300 | interno via notify.zentto.net | zentto-notify |
+| zentto-ollama | 11434 | interno | ollama/ollama |
 | broker-api | 4100 | broker.zentto.net | zentto-broker |
 
 ## CI/CD
