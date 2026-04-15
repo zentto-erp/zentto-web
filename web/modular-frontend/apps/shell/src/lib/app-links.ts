@@ -9,8 +9,14 @@ const DEV_APP_ORIGINS: Record<string, string> = {
   restaurante: process.env.NEXT_PUBLIC_APP_URL_RESTAURANTE || 'http://localhost:3008',
   ecommerce: process.env.NEXT_PUBLIC_APP_URL_ECOMMERCE || 'http://localhost:3009',
   auditoria: process.env.NEXT_PUBLIC_APP_URL_AUDITORIA || 'http://localhost:3010',
+  logistica: process.env.NEXT_PUBLIC_APP_URL_LOGISTICA || 'http://localhost:3011',
+  crm: process.env.NEXT_PUBLIC_APP_URL_CRM || 'http://localhost:3012',
+  manufactura: process.env.NEXT_PUBLIC_APP_URL_MANUFACTURA || 'http://localhost:3013',
+  flota: process.env.NEXT_PUBLIC_APP_URL_FLOTA || 'http://localhost:3014',
   shipping: process.env.NEXT_PUBLIC_APP_URL_SHIPPING || 'http://localhost:3015',
+  lab: process.env.NEXT_PUBLIC_APP_URL_LAB || 'http://localhost:3016',
   'report-studio': process.env.NEXT_PUBLIC_APP_URL_REPORT_STUDIO || 'http://localhost:3017',
+  panel: process.env.NEXT_PUBLIC_APP_URL_PANEL || 'http://localhost:3018',
 };
 
 const SHELL_LOCAL_PATHS = new Set([
