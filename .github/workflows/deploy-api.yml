@@ -132,9 +132,7 @@ jobs:
             psql -h 127.0.0.1 -U zentto_app -d zentto_test -v ON_ERROR_STOP=1 < "$f"
           done
           echo "==> Applying seeds..."
-          psql -h 127.0.0.1 -U zentto_app -d zentto_test -c "SET session_replication_role = 'replica';"
-          psql -h 127.0.0.1 -U zentto_app -d zentto_test < seeds/001_seed_data.sql || true
-          psql -h 127.0.0.1 -U zentto_app -d zentto_test -c "SET session_replication_role = 'origin';"
+          { echo "SET session_replication_role = 'replica';"; cat seeds/001_seed_data.sql; echo "SET session_replication_role = 'origin';"; } | psql -h 127.0.0.1 -U zentto_app -d zentto_test || true
 
       - name: Run SP contract tests
         working-directory: web/api
