@@ -28,9 +28,10 @@ jobs:
       - name: Install
         run: npm install
 
-      - name: Typecheck + build
+      - name: Typecheck + test + build
         run: |
           npx tsc --noEmit
+          npm test
           npm run build
 
       # Salta silenciosamente si la versión del package.json ya está publicada.

@@ -1,6 +1,8 @@
 # @zentto/platform-client
 
-Cliente oficial tipado para los servicios de plataforma Zentto: **notify**, **auth**, **cache**, **landing**.
+Cliente oficial tipado para los servicios de plataforma Zentto: **notify**, **auth**, **cache**, **landing**, **events**.
+
+Incluye circuit breaker, auto-refresh de JWT, errores tipados (AuthError, RateLimitedError, ServiceError, etc.) y event bus sobre Kafka.
 
 Úsalo desde el ERP, cualquier vertical (hotel, medical, tickets, rental, education, inmobiliario…) o un sitio externo de un tenant cliente.
 
@@ -65,6 +67,52 @@ const c = cacheFromEnv(); // lee CACHE_URL + CACHE_APP_KEY
 await c.gridLayouts.put("invoices-list", layoutJson, { companyId, userId });
 const res = await c.gridLayouts.get("invoices-list", { companyId, userId });
 // res.data.layout → layout guardado
+```
+
+### Events (bus Kafka)
+
+Requiere `kafkajs` como peer dependency (opcional):
+
+```bash
+npm install kafkajs
+```
+
+```ts
+import { EventBusClient } from "@zentto/platform-client/events";
+
+const bus = new EventBusClient({
+  brokers: ["kafka:9092"],
+  source: "zentto-hotel",
+  tenantCode: "ACME",
+});
+
+await bus.connect();
+
+// Producer
+await bus.publish({
+  eventType: "hotel.reservation.confirmed",
+  data: { reservationId: 42, guest: "Juan" },
+  correlationId: req.headers["x-request-id"],
+});
+
+// Consumer (otro proceso)
+bus.on(/^crm\..+/, async (evt) => {
+  console.log("got", evt.eventType, evt.data);
+});
+await bus.start();
+```
+
+Topic: `zentto.acme.hotel.reservation.confirmed`. Envelope estándar con `eventId` (dedup automática), `timestamp`, `source`, `correlationId`, `version`.
+
+### Errores tipados
+
+```ts
+import { AuthError, RateLimitedError, ServiceError } from "@zentto/platform-client";
+
+const r = await notify.email.send(...);
+if (!r.ok && r.errorInstance instanceof RateLimitedError) {
+  await wait(r.errorInstance.retryAfterSec ?? 30);
+}
 ```
 
 ### Landing (leads de tenants clientes)

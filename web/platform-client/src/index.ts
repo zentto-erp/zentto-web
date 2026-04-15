@@ -6,3 +6,7 @@ export * as notify from "./notify/index.js";
 export * as auth from "./auth/index.js";
 export * as cache from "./cache/index.js";
 export * as landing from "./landing/index.js";
+export * as events from "./events/index.js";
+
+// Tipos de error compartidos (útiles para `instanceof` en callers).
+export * from "./internal/errors.js";
