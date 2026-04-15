@@ -14,13 +14,18 @@ interface RegisterLead {
 }
 
 // Resuelve una `X-Tenant-Key` (header) a CompanyId o null si inválida.
+// La función scalar devuelve una fila con una única columna cuyo nombre el
+// normalizador de query.ts convierte a PascalCase → la leemos por Object.values
+// para no acoplarnos a la transformación exacta.
 export async function resolvePublicApiKey(keyPlain: string | undefined): Promise<number | null> {
   if (!keyPlain || !keyPlain.trim()) return null;
-  const rows = await callSp<{ usp_cfg_publicapikey_verify: number | null }>(
+  const rows = await callSp<Record<string, unknown>>(
     "cfg.usp_cfg_publicapikey_verify",
     { KeyPlain: keyPlain.trim() },
   );
-  const raw = rows?.[0]?.usp_cfg_publicapikey_verify;
+  const first = rows?.[0];
+  if (!first) return null;
+  const raw = Object.values(first)[0];
   return typeof raw === "number" && raw > 0 ? raw : null;
 }
 
