@@ -9,7 +9,8 @@
  *
  * setPassword es público (magic-link consumo), no requiere auth.
  */
-import { defaultHttpConfig, httpRequest, type HttpConfig, type HttpResult } from "../internal/http.js";
+import { defaultHttpConfig, httpRequest, type HttpConfig, type HttpConfigInput, type HttpResult } from "../internal/http.js";
+import { TtlCache, memoAsync } from "../internal/cache.js";
 
 export interface AuthConfig {
   baseUrl?: string;
@@ -20,6 +21,10 @@ export interface AuthConfig {
   timeoutMs?: number;
   retries?: number;
   onError?: HttpConfig["onError"];
+  /** TTL del cache de `me()`. Default 15s. Pasar 0 para desactivar. */
+  meCacheTtlMs?: number;
+  /** Rate limit client-side (opcional). */
+  rateLimit?: HttpConfigInput["rateLimit"];
 }
 
 // ── User shapes ─────────────────────────────────────────────────────────────
@@ -85,6 +90,7 @@ export class AuthClient {
   private readonly serviceKey?: string;
   private accessToken?: string;
   private refreshInFlight?: Promise<string | undefined>;
+  private readonly meCache: TtlCache<HttpResult<MeResponse>> | null;
 
   constructor(opts: AuthConfig) {
     this.cfg = defaultHttpConfig({
@@ -92,6 +98,7 @@ export class AuthClient {
       timeoutMs: opts.timeoutMs,
       retries: opts.retries,
       onError: opts.onError,
+      rateLimit: opts.rateLimit,
       // Intercepta 401 → intenta refresh + reintenta UNA vez con el nuevo Bearer.
       // Evita que cada caller tenga que saber manejar expiración de tokens.
       beforeRetry: async (err, ctx) => {
@@ -99,11 +106,15 @@ export class AuthClient {
         if (ctx.path === "/auth/refresh") return { retry: false }; // no refresh durante refresh
         const newToken = await this.tryRefresh();
         if (!newToken) return { retry: false };
+        // Invalidate me cache on token change (identity may have changed).
+        this.meCache?.clear();
         return { retry: true, headers: { Authorization: `Bearer ${newToken}` } };
       },
     });
     this.accessToken = opts.accessToken;
     this.serviceKey = opts.serviceKey;
+    const ttl = opts.meCacheTtlMs ?? 15_000;
+    this.meCache = ttl > 0 ? new TtlCache<HttpResult<MeResponse>>({ ttlMs: ttl, maxEntries: 16 }) : null;
   }
 
   setAccessToken(token: string | undefined): void {
@@ -180,13 +191,22 @@ export class AuthClient {
   }
 
   async me(appId?: string): Promise<HttpResult<MeResponse>> {
-    return httpRequest<MeResponse>(this.cfg, {
+    const fn = () => httpRequest<MeResponse>(this.cfg, {
       method: "GET",
       path: "/auth/me",
       query: { appId },
       headers: this.bearer(),
       credentials: "include",
     });
+    if (!this.meCache) return fn();
+    // key = token + appId — cambios de cualquiera invalidan la entrada.
+    const key = `${this.accessToken ?? "anon"}:${appId ?? ""}`;
+    return memoAsync(this.meCache, key, fn);
+  }
+
+  /** Purga manualmente el cache de `me()`. Útil tras cambios de permisos. */
+  invalidateMeCache(): void {
+    this.meCache?.clear();
   }
 
   async registerForApp(params: {
