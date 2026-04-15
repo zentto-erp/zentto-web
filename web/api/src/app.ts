@@ -62,6 +62,7 @@ import { mediaRouter } from "./modules/media/routes.js";
 import { supervisionRouter } from "./modules/supervision/routes.js";
 import { storeRouter } from "./modules/ecommerce/routes.js";
 import { landingRouter } from "./modules/landing/routes.js";
+import { tenantPublicRouter } from "./modules/tenant-public/routes.js";
 import rrhhRouter from "./modules/rrhh/routes.js";
 import { flotaRouter } from "./modules/flota/routes.js";
 import { permisosRouter } from "./modules/permisos/routes.js";
@@ -276,6 +277,10 @@ export async function createApp() {
 
   // Landing page — público (sin JWT)
   app.use("/api/landing", landingRouter);
+
+  // Endpoints públicos para sitios externos de tenants clientes — se autentican
+  // con X-Tenant-Key (PublicApiKey). Cada endpoint exige un scope específico.
+  app.use("/api/tenant-public", tenantPublicRouter);
 
   // Ecommerce storefront — público (sin JWT)
   app.use("/store", storeRouter);
