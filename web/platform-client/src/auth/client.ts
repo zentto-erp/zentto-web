@@ -138,6 +138,11 @@ export class AuthClient {
     return { "x-service-key": this.serviceKey };
   }
 
+  // ── Health ───────────────────────────────────────────────────────────────
+  async health(): Promise<HttpResult<{ ok: boolean; checks?: Record<string, unknown> }>> {
+    return httpRequest(this.cfg, { method: "GET", path: "/health" });
+  }
+
   // ── User-facing ──────────────────────────────────────────────────────────
   async login(params: { username: string; password: string; appId?: string }): Promise<HttpResult<LoginResponse>> {
     return httpRequest<LoginResponse>(this.cfg, {

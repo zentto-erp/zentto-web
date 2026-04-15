@@ -52,6 +52,10 @@ export class CacheClient {
     return { "x-client-key": this.clientKey };
   }
 
+  async health(): Promise<HttpResult<{ ok: boolean }>> {
+    return httpRequest(this.cfg, { method: "GET", path: "/health" });
+  }
+
   private resource<TValue = unknown>(name: Resource) {
     return {
       list: (id: CacheIdentity): Promise<HttpResult<{ ok: boolean } & Record<string, string[]>>> =>
