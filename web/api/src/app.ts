@@ -76,6 +76,7 @@ import { tenantsRouter } from "./modules/tenants/tenant.routes.js";
 import { catalogRouter } from "./modules/catalog/routes.js";
 import { catalogAdminRouter } from "./modules/catalog/admin.routes.js";
 import { registroRouter } from "./modules/registro/routes.js";
+import { setPasswordRouter } from "./modules/registro/set-password.routes.js";
 import { subscriptionsRouter } from "./modules/subscriptions/routes.js";
 import { paddleWebhookRouter } from "./modules/webhooks/paddle.routes.js";
 import { githubSupportWebhookRouter } from "./modules/webhooks/github-support.routes.js";
@@ -291,6 +292,10 @@ export async function createApp() {
   // Registro unificado (trial + checkout Paddle) — público (sin JWT)
   app.use("/v1/registro", registroRouter);
 
+  // Set-password vía magic-link (fallback local; el primario es zentto-auth)
+  // Endpoints: POST /v1/auth/set-password, GET /v1/auth/set-password/validate
+  app.use("/v1/auth", setPasswordRouter);
+
   // Status page — público (health check detallado)
   const { statusRouter } = await import("./modules/health/status.routes.js");
   app.use("/v1/status", statusRouter);
@@ -309,6 +314,18 @@ export async function createApp() {
     if (!clientToken) { res.status(500).json({ error: "paddle_not_configured" }); return; }
     res.json({ ok: true, clientToken, environment: "production" });
   });
+
+  // Sweeper de provisioning jobs (BD tenant, DNS, welcome email pendientes)
+  // Se ejecuta cada 60s en cada instancia. Procesa jobs de sys.ProvisioningJob
+  // que quedaron pending tras reintentos fallidos del flujo principal.
+  (async () => {
+    try {
+      const { startProvisioningSweeperCron } = await import("./modules/webhooks/provisioning-sweeper.js");
+      startProvisioningSweeperCron();
+    } catch (err) {
+      console.warn("[startup] No se pudo iniciar provisioning-sweeper:", err);
+    }
+  })();
 
   // Startup: fix funciones sec si tienen type mismatch (text vs varchar)
   (async () => {
