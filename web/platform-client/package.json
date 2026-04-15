@@ -1,0 +1,55 @@
+{
+  "name": "@zentto/platform-client",
+  "version": "0.1.0",
+  "description": "Cliente tipado para los servicios de plataforma Zentto (notify, cache, auth, landing). Uso oficial en ERP, verticals y sitios de tenants clientes.",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./notify": {
+      "types": "./dist/notify/index.d.ts",
+      "import": "./dist/notify/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist",
+    "prepublishOnly": "npm run clean && npm run build"
+  },
+  "keywords": [
+    "zentto",
+    "erp",
+    "notify",
+    "sdk",
+    "platform"
+  ],
+  "author": "Zentto ERP",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/zentto-erp/zentto-web.git",
+    "directory": "web/platform-client"
+  },
+  "homepage": "https://zentto.net",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
+  },
+  "devDependencies": {
+    "@types/node": "^25.6.0",
+    "typescript": "^5.7.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

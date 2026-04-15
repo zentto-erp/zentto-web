@@ -1,0 +1,50 @@
+name: Publish @zentto/platform-client
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "web/platform-client/**"
+      - ".github/workflows/publish-platform-client.yml"
+  workflow_dispatch:
+
+jobs:
+  publish:
+    name: Build & publish to npm
+    runs-on: ubuntu-22.04
+    defaults:
+      run:
+        working-directory: web/platform-client
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Install
+        run: npm install
+
+      - name: Typecheck + build
+        run: |
+          npx tsc --noEmit
+          npm run build
+
+      # Salta silenciosamente si la versión del package.json ya está publicada.
+      # Solo publica cuando alguien bumpeó web/platform-client/package.json.
+      - name: Publish if new version
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN_PLATFORM_CLIENT || secrets.NPM_TOKEN }}
+        run: |
+          PKG_VERSION=$(node -p "require('./package.json').version")
+          PUBLISHED=$(npm view @zentto/platform-client version 2>/dev/null || echo "")
+          echo "Local: $PKG_VERSION | Published: $PUBLISHED"
+          if [ "$PKG_VERSION" = "$PUBLISHED" ]; then
+            echo "✓ Version $PKG_VERSION ya publicada — skip."
+            exit 0
+          fi
+          npm publish --access public
+          echo "✓ Publicado @zentto/platform-client@$PKG_VERSION"
