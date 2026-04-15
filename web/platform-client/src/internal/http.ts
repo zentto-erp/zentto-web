@@ -1,19 +1,27 @@
 /**
  * HTTP helper compartido entre submódulos.
  *
- * - Retries con backoff exponencial ante errores de red o 5xx.
- * - Sin retry en 4xx (es error del caller).
- * - Timeout por request.
- * - onError hook para observability.
- * - No lanza: siempre retorna Result<T> (ok/error). Los callers deciden si
- *   propagar o no.
+ * Features:
+ *   - Retries con backoff exponencial ante errores de red o 5xx.
+ *   - Sin retry en 4xx (es error del caller).
+ *   - Timeout por request.
+ *   - Circuit breaker por (baseUrl): evita cascade cuando upstream cae.
+ *   - Errores tipados (AuthError, RateLimitedError, ServiceError, etc.) en `errorInstance`.
+ *   - Hook `beforeRetry` (ej. AuthClient lo usa para auto-refresh del JWT).
+ *   - No lanza: siempre retorna Result<T> (ok/error).
  */
+import { CircuitBreaker, type CircuitOptions } from "./circuit.js";
+import { CircuitOpenError, NetworkError, mapHttpError, type PlatformError } from "./errors.js";
 
 export interface HttpConfig {
   baseUrl: string;
   timeoutMs: number;
   retries: number;
   onError: (err: Error, ctx: { path: string; attempt: number }) => void;
+  /** Opcional: permite al AuthClient interceptar 401 para refresh + retry. */
+  beforeRetry?: (err: PlatformError, ctx: { path: string; attempt: number }) => Promise<{ retry: boolean; headers?: Record<string, string> }>;
+  /** Circuit breaker compartido entre requests del mismo cliente. */
+  breaker: CircuitBreaker;
 }
 
 export interface HttpResult<T = unknown> {
@@ -21,6 +29,7 @@ export interface HttpResult<T = unknown> {
   status?: number;
   data?: T;
   error?: string;
+  errorInstance?: PlatformError;
 }
 
 export interface RequestOptions {
@@ -29,7 +38,6 @@ export interface RequestOptions {
   body?: object;
   headers?: Record<string, string>;
   query?: Record<string, string | number | undefined | null>;
-  /** Enviar cookies (para endpoints que usan cookie httpOnly). */
   credentials?: "include" | "omit";
 }
 
@@ -50,11 +58,16 @@ export async function httpRequest<T = unknown>(
   opts: RequestOptions,
 ): Promise<HttpResult<T>> {
   const url = buildUrl(cfg.baseUrl, opts.path, opts.query);
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-    ...opts.headers,
-  };
-  let lastErr: Error | undefined;
+  const breakerKey = cfg.baseUrl;
+
+  if (!cfg.breaker.allow(breakerKey)) {
+    const err = new CircuitOpenError(`Circuit open for ${cfg.baseUrl}`, { path: opts.path, attempt: 0 });
+    cfg.onError(err, { path: opts.path, attempt: 0 });
+    return { ok: false, error: err.message, errorInstance: err };
+  }
+
+  let headers: Record<string, string> = { "Content-Type": "application/json", ...opts.headers };
+  let lastErr: PlatformError | undefined;
 
   for (let attempt = 0; attempt <= cfg.retries; attempt++) {
     try {
@@ -66,36 +79,64 @@ export async function httpRequest<T = unknown>(
         signal: AbortSignal.timeout(cfg.timeoutMs),
       });
       const json = (await res.json().catch(() => ({}))) as Record<string, unknown>;
+
       if (res.ok) {
+        cfg.breaker.recordSuccess(breakerKey);
         return { ok: true, status: res.status, data: json as T };
       }
-      // 4xx: sin retry — es error del caller / auth / validación.
+
+      const err = mapHttpError(res.status, json, opts.path, attempt);
+      lastErr = err;
+
+      // 4xx: sin retry por default. Pero beforeRetry puede pedir retry
+      // (ej. AuthClient refresca token y reintenta 401 una vez).
       if (res.status >= 400 && res.status < 500) {
-        return {
-          ok: false,
-          status: res.status,
-          error: (json.error as string) ?? (json.message as string) ?? `HTTP ${res.status}`,
-        };
+        const shouldRetry = cfg.beforeRetry && attempt < cfg.retries
+          ? await cfg.beforeRetry(err, { path: opts.path, attempt })
+          : { retry: false };
+        if (!shouldRetry.retry) {
+          // 4xx → NO toca el breaker (es error del caller, no del servicio).
+          return { ok: false, status: res.status, error: err.message, errorInstance: err };
+        }
+        if (shouldRetry.headers) headers = { ...headers, ...shouldRetry.headers };
+        continue;
       }
-      lastErr = new Error(`HTTP ${res.status}`);
-    } catch (err) {
-      lastErr = err as Error;
+
+      // 5xx → cuenta para el breaker
+      cfg.breaker.recordFailure(breakerKey);
+    } catch (netErr) {
+      const err = new NetworkError((netErr as Error).message, { path: opts.path, attempt, cause: netErr });
+      lastErr = err;
+      cfg.breaker.recordFailure(breakerKey);
     }
+
     if (attempt < cfg.retries) {
-      cfg.onError(lastErr, { path: opts.path, attempt });
+      cfg.onError(lastErr!, { path: opts.path, attempt });
       await new Promise((r) => setTimeout(r, 250 * Math.pow(2, attempt)));
     }
   }
-  const err = lastErr ?? new Error("unknown error");
+
+  const err = lastErr ?? new NetworkError("unknown error", { path: opts.path, attempt: cfg.retries });
   cfg.onError(err, { path: opts.path, attempt: cfg.retries });
-  return { ok: false, error: err.message };
+  return { ok: false, error: err.message, errorInstance: err };
 }
 
-export function defaultHttpConfig(overrides: Partial<HttpConfig> & { baseUrl: string }): HttpConfig {
+export interface HttpConfigInput {
+  baseUrl: string;
+  timeoutMs?: number;
+  retries?: number;
+  onError?: HttpConfig["onError"];
+  circuit?: CircuitOptions;
+  beforeRetry?: HttpConfig["beforeRetry"];
+}
+
+export function defaultHttpConfig(overrides: HttpConfigInput): HttpConfig {
   return {
     baseUrl: overrides.baseUrl,
     timeoutMs: overrides.timeoutMs ?? 10_000,
     retries: Math.max(0, overrides.retries ?? 1),
     onError: overrides.onError ?? (() => {}),
+    beforeRetry: overrides.beforeRetry,
+    breaker: new CircuitBreaker(overrides.circuit ?? {}),
   };
 }

@@ -84,6 +84,7 @@ export class AuthClient {
   private readonly cfg: HttpConfig;
   private readonly serviceKey?: string;
   private accessToken?: string;
+  private refreshInFlight?: Promise<string | undefined>;
 
   constructor(opts: AuthConfig) {
     this.cfg = defaultHttpConfig({
@@ -91,6 +92,15 @@ export class AuthClient {
       timeoutMs: opts.timeoutMs,
       retries: opts.retries,
       onError: opts.onError,
+      // Intercepta 401 → intenta refresh + reintenta UNA vez con el nuevo Bearer.
+      // Evita que cada caller tenga que saber manejar expiración de tokens.
+      beforeRetry: async (err, ctx) => {
+        if (err.name !== "AuthError") return { retry: false };
+        if (ctx.path === "/auth/refresh") return { retry: false }; // no refresh durante refresh
+        const newToken = await this.tryRefresh();
+        if (!newToken) return { retry: false };
+        return { retry: true, headers: { Authorization: `Bearer ${newToken}` } };
+      },
     });
     this.accessToken = opts.accessToken;
     this.serviceKey = opts.serviceKey;
@@ -102,6 +112,25 @@ export class AuthClient {
 
   private bearer(): Record<string, string> {
     return this.accessToken ? { Authorization: `Bearer ${this.accessToken}` } : {};
+  }
+
+  /**
+   * Refresh coalescido: si varios requests 401 caen a la vez, solo uno
+   * llama a /auth/refresh y los demás esperan el mismo resultado.
+   */
+  private async tryRefresh(): Promise<string | undefined> {
+    if (!this.refreshInFlight) {
+      this.refreshInFlight = (async () => {
+        const res = await this.refresh();
+        const newToken = res.ok ? res.data?.accessToken : undefined;
+        if (newToken) this.accessToken = newToken;
+        return newToken;
+      })().finally(() => {
+        // Limpiar tras la resolución (con un tick de margen).
+        setTimeout(() => { this.refreshInFlight = undefined; }, 0);
+      });
+    }
+    return this.refreshInFlight;
   }
 
   private service(): Record<string, string> {
