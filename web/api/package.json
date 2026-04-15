@@ -25,7 +25,7 @@
     "@types/multer": "^2.0.0",
     "@types/pg": "^8.18.0",
     "@zentto/obs": "^1.0.0",
-    "@zentto/platform-client": "^0.2.0",
+    "@zentto/platform-client": "^0.4.0",
     "bcrypt": "^6.0.0",
     "bcryptjs": "^3.0.3",
     "cheerio": "^1.2.0",
