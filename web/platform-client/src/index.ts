@@ -1,9 +1,8 @@
-// Barrel del platform-client. Cada submódulo expone su propia API; acá
-// re-exportamos en namespaces para llamadas tipo `platform.notify.email.send(...)`.
+// Barrel de @zentto/platform-client. Un submódulo por servicio de plataforma.
+// Uso: `import { notify } from "@zentto/platform-client"` o import directo
+// del subpath `@zentto/platform-client/notify`.
 
 export * as notify from "./notify/index.js";
-
-// Placeholders — se llenan cuando se migren cache/auth/landing al mismo patrón.
-// export * as cache from "./cache/index.js";
-// export * as auth from "./auth/index.js";
-// export * as landing from "./landing/index.js";
+export * as auth from "./auth/index.js";
+export * as cache from "./cache/index.js";
+export * as landing from "./landing/index.js";
