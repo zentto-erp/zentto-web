@@ -45,6 +45,7 @@ export const brandColors = {
   shortcutSlate: '#37475a',
   shortcutNavy: '#131921',
   shortcutOrange: '#FFB547',
+  shortcutViolet: '#6B3FA0',
 };
 
 const baseThemeOptions = {
@@ -59,6 +60,7 @@ const baseThemeOptions = {
         error: { main: red.A400 },
         background: { default: brandColors.bgPage, paper: brandColors.bgCard },
         text: { primary: brandColors.textDark, secondary: brandColors.textMuted },
+        divider: brandColors.border,
       }
     },
     dark: {
@@ -173,7 +175,7 @@ const baseThemeOptions = {
         root: {
           borderRadius: 12,
           boxShadow: '0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04)',
-          border: `1px solid ${brandColors.border}`,
+          border: '1px solid var(--mui-palette-divider)',
         },
       },
     },
