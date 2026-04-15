@@ -6,7 +6,7 @@
  * archivo existe solo para no romper los ~10 callers legacy (OTP auth,
  * CRM notifications, invoice events, etc.) durante la migración.
  */
-import { notifyFromEnv, type NotifyResult as PlatformNotifyResult } from "../../lib/platform-client/notify/index.js";
+import { notifyFromEnv, type NotifyResult as PlatformNotifyResult } from "@zentto/platform-client/notify";
 
 const client = notifyFromEnv({
   onError: (err, ctx) => {
