@@ -6,6 +6,7 @@ import { warmUp } from "./modules/inventario/inventario-cache.js";
 import { getTasasBCV, triggerSyncTasas } from "./modules/config/service.js";
 import { attachFiscalRelayWs } from "./modules/pos/fiscal-relay.js";
 import { startNotificationConsumer, stopNotificationConsumer } from "./modules/integrations/kafka-notification-consumer.js";
+import { startWebhookDispatcher, stopWebhookDispatcher } from "./modules/webhooks/dispatcher.js";
 
 const port = Number(process.env.PORT || 4000);
 const app = await createApp();
@@ -39,6 +40,12 @@ httpServer.listen(port, () => {
   // Kafka notification consumer — best-effort, no bloquea
   startNotificationConsumer().catch(err =>
     console.warn('[kafka-consumer] Failed to start:', err.message || err)
+  );
+
+  // Webhook dispatcher — enruta eventos Kafka a los webhooks de cada tenant.
+  // Activado por WEBHOOK_DISPATCHER_ENABLED=true.
+  startWebhookDispatcher().catch(err =>
+    console.warn('[webhook-dispatcher] Failed to start:', err.message || err)
   );
 
   // Alertas automáticas del sistema — cada hora (minuto 15)
