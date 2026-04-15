@@ -12,6 +12,7 @@
  */
 import { CircuitBreaker, type CircuitOptions } from "./circuit.js";
 import { CircuitOpenError, NetworkError, mapHttpError, type PlatformError } from "./errors.js";
+import { TokenBucket, type TokenBucketOptions } from "./ratelimit.js";
 
 export interface HttpConfig {
   baseUrl: string;
@@ -22,6 +23,8 @@ export interface HttpConfig {
   beforeRetry?: (err: PlatformError, ctx: { path: string; attempt: number }) => Promise<{ retry: boolean; headers?: Record<string, string> }>;
   /** Circuit breaker compartido entre requests del mismo cliente. */
   breaker: CircuitBreaker;
+  /** Rate limiter opcional — bloquea antes del fetch si no hay tokens. */
+  rateLimiter?: TokenBucket;
 }
 
 export interface HttpResult<T = unknown> {
@@ -64,6 +67,11 @@ export async function httpRequest<T = unknown>(
     const err = new CircuitOpenError(`Circuit open for ${cfg.baseUrl}`, { path: opts.path, attempt: 0 });
     cfg.onError(err, { path: opts.path, attempt: 0 });
     return { ok: false, error: err.message, errorInstance: err };
+  }
+
+  // Rate limit cliente (token bucket). Bloquea hasta tener tokens.
+  if (cfg.rateLimiter) {
+    await cfg.rateLimiter.take();
   }
 
   let headers: Record<string, string> = { "Content-Type": "application/json", ...opts.headers };
@@ -128,6 +136,8 @@ export interface HttpConfigInput {
   onError?: HttpConfig["onError"];
   circuit?: CircuitOptions;
   beforeRetry?: HttpConfig["beforeRetry"];
+  /** Si se pasa, activa rate limit client-side (token bucket). */
+  rateLimit?: TokenBucketOptions;
 }
 
 export function defaultHttpConfig(overrides: HttpConfigInput): HttpConfig {
@@ -138,5 +148,6 @@ export function defaultHttpConfig(overrides: HttpConfigInput): HttpConfig {
     onError: overrides.onError ?? (() => {}),
     beforeRetry: overrides.beforeRetry,
     breaker: new CircuitBreaker(overrides.circuit ?? {}),
+    rateLimiter: overrides.rateLimit ? new TokenBucket(overrides.rateLimit) : undefined,
   };
 }
