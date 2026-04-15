@@ -143,6 +143,18 @@ export class NotifyClient {
     return { ok: false, error: err.message };
   }
 
+  // ── Health ───────────────────────────────────────────────────────────────
+  async health(): Promise<{ ok: boolean; latencyMs?: number; error?: string }> {
+    const t0 = Date.now();
+    try {
+      const res = await fetch(`${this.baseUrl}/health`, { signal: AbortSignal.timeout(this.timeoutMs) });
+      if (!res.ok) return { ok: false, latencyMs: Date.now() - t0, error: `HTTP ${res.status}` };
+      return { ok: true, latencyMs: Date.now() - t0 };
+    } catch (err) {
+      return { ok: false, latencyMs: Date.now() - t0, error: (err as Error).message };
+    }
+  }
+
   // ── Email ────────────────────────────────────────────────────────────────
   email = {
     send: (params: SendEmailParams): Promise<NotifyResult> =>
