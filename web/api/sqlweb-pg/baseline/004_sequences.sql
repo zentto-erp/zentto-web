@@ -503,6 +503,16 @@ ALTER TABLE cfg."TaxUnit" ALTER COLUMN "TaxUnitId" ADD GENERATED ALWAYS AS IDENT
 );
 
 
+ALTER TABLE cfg."PlanModule" ALTER COLUMN "PlanModuleId" ADD GENERATED ALWAYS AS IDENTITY (
+    SEQUENCE NAME cfg."PlanModule_PlanModuleId_seq"
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
 ALTER TABLE crm."Activity" ALTER COLUMN "ActivityId" ADD GENERATED ALWAYS AS IDENTITY (
     SEQUENCE NAME crm."Activity_ActivityId_seq"
     START WITH 1
@@ -1407,6 +1417,16 @@ ALTER TABLE logistics."GoodsReturnLine" ALTER COLUMN "GoodsReturnLineId" ADD GEN
 
 ALTER TABLE logistics."GoodsReturn" ALTER COLUMN "GoodsReturnId" ADD GENERATED ALWAYS AS IDENTITY (
     SEQUENCE NAME logistics."GoodsReturn_GoodsReturnId_seq"
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+ALTER TABLE logistics."CarrierConfig" ALTER COLUMN "CarrierConfigId" ADD GENERATED ALWAYS AS IDENTITY (
+    SEQUENCE NAME logistics."CarrierConfig_CarrierConfigId_seq"
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -2490,6 +2510,24 @@ ALTER TABLE sys."TenantResourceLog" ALTER COLUMN "LogId" ADD GENERATED ALWAYS AS
     NO MAXVALUE
     CACHE 1
 );
+
+
+ALTER TABLE sys."ByocDeployJob" ALTER COLUMN "JobId" ADD GENERATED ALWAYS AS IDENTITY (
+    SEQUENCE NAME sys."ByocDeployJob_JobId_seq"
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+CREATE SEQUENCE zsys."StudioAddonModule_Id_seq"
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
 
 
 -- Sequence ownership
