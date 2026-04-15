@@ -1,7 +1,0 @@
-"use client";
-
-import { OrdenesMedicasPage } from "@zentto/module-nomina";
-
-export default function OrdenesMedicasRoute() {
-  return <OrdenesMedicasPage />;
-}

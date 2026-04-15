@@ -370,25 +370,25 @@ export default function ContabilidadDashboardPro() {
     {
       label: "Nuevo asiento",
       icon: <AddCircleOutlineIcon />,
-      href: "/contabilidad/asientos/nuevo",
+      href: "/asientos/nuevo",
       color: "#27AE60",
     },
     {
       label: "Conciliar banco",
       icon: <AccountBalanceIcon />,
-      href: "/contabilidad/conciliacion",
+      href: "/conciliacion",
       color: "#1ABC9C",
     },
     {
       label: "Cerrar periodo",
       icon: <LockClockIcon />,
-      href: "/contabilidad/cierre",
+      href: "/cierre",
       color: "#00A09D",
     },
     {
       label: "Ver reportes",
       icon: <AssessmentIcon />,
-      href: "/contabilidad/reportes",
+      href: "/reportes",
       color: "#3498DB",
     },
   ];
@@ -505,7 +505,7 @@ export default function ContabilidadDashboardPro() {
                       key={a.asientoId ?? a.id ?? idx}
                       hover
                       sx={{ cursor: "pointer" }}
-                      onClick={() => router.push("/contabilidad/asientos")}
+                      onClick={() => router.push("/asientos")}
                     >
                       <TableCell sx={{ fontSize: "0.8rem" }}>{a.fecha}</TableCell>
                       <TableCell sx={{ fontSize: "0.8rem" }}>{a.tipoAsiento}</TableCell>
@@ -556,9 +556,9 @@ export default function ContabilidadDashboardPro() {
             </Typography>
             <Stack spacing={1.5} sx={{ mb: 3 }}>
               {[
-                { label: "Recurrentes vencidos", icon: <WarningAmberIcon />, badge: recurrentesVencidos, href: "/contabilidad/recurrentes", color: "#E74C3C" },
-                { label: "Periodos sin cerrar", icon: <LockClockIcon />, badge: periodosAbiertos, href: "/contabilidad/cierre", color: "#E67E22" },
-                { label: "Partidas sin conciliar", icon: <AccountBalanceIcon />, badge: "--", href: "/contabilidad/conciliacion", color: "#3498DB" },
+                { label: "Recurrentes vencidos", icon: <WarningAmberIcon />, badge: recurrentesVencidos, href: "/recurrentes", color: "#E74C3C" },
+                { label: "Periodos sin cerrar", icon: <LockClockIcon />, badge: periodosAbiertos, href: "/cierre", color: "#E67E22" },
+                { label: "Partidas sin conciliar", icon: <AccountBalanceIcon />, badge: "--", href: "/conciliacion", color: "#3498DB" },
               ].map((item, idx) => (
                 <Box
                   key={idx}
