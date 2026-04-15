@@ -87,17 +87,29 @@ export async function resolveTenantBySubdomain(subdomain: string) {
   return rows[0] ?? null;
 }
 
+/**
+ * Envía welcome email al owner del tenant.
+ *
+ * Modo preferido (B3): si se pasa `magicLinkUrl`, se manda como link de
+ * uso único para fijar password (sin password plaintext en el correo).
+ * Modo legacy: si no, manda tempPassword (compatibilidad con flujos viejos).
+ *
+ * Reintentos (F4): hasta 3 intentos con backoff exponencial al fallar el
+ * envío via Notify (errores transitorios de red o 5xx).
+ */
 export async function sendWelcomeEmail(
   ownerEmail: string,
   legalName: string,
   tempPassword: string,
   companyId: number,
   tenantUrl?: string,
-  adminUserCode: string = "ADMIN"
+  adminUserCode: string = "ADMIN",
+  magicLinkUrl?: string
 ): Promise<void> {
   const notifyUrl = process.env.NOTIFY_BASE_URL ?? "https://notify.zentto.net";
   const notifyKey = process.env.NOTIFY_API_KEY;
   const loginUrl = `${tenantUrl || "https://app.zentto.net"}/authentication/login`;
+  const useMagicLink = Boolean(magicLinkUrl);
 
   if (!notifyKey) {
     console.warn("[welcome-email] NOTIFY_API_KEY no configurada — email NO enviado a", ownerEmail);
@@ -121,9 +133,9 @@ export async function sendWelcomeEmail(
         Tu cuenta ha sido creada y tu entorno esta listo. A continuacion encontraras todo lo que necesitas para comenzar.
       </p>
 
-      <!-- Credenciales -->
+      <!-- Credenciales / Magic-link -->
       <div style="background:#1a1a2e;border-radius:10px;padding:24px;margin-bottom:28px">
-        <div style="color:#ff9900;font-weight:700;font-size:12px;letter-spacing:2px;margin-bottom:16px;text-transform:uppercase">Tus credenciales de acceso</div>
+        <div style="color:#ff9900;font-weight:700;font-size:12px;letter-spacing:2px;margin-bottom:16px;text-transform:uppercase">${useMagicLink ? "Configura tu contraseña" : "Tus credenciales de acceso"}</div>
         <table style="width:100%;border-collapse:collapse">
           <tr>
             <td style="color:#aaa;font-size:13px;padding:6px 0;width:40%">Tu URL exclusiva</td>
@@ -133,17 +145,24 @@ export async function sendWelcomeEmail(
             <td style="color:#aaa;font-size:13px;padding:6px 0">Usuario</td>
             <td style="color:#fff;font-weight:700;font-family:monospace;font-size:16px;letter-spacing:2px;padding:6px 0">${adminUserCode}</td>
           </tr>
+          ${useMagicLink ? `
           <tr>
-            <td style="color:#aaa;font-size:13px;padding:6px 0">Contrasena temporal</td>
+            <td style="color:#aaa;font-size:13px;padding:6px 0">Acción</td>
+            <td style="color:#ff9900;font-weight:700;font-size:14px;padding:6px 0">Click el botón abajo para fijar tu contraseña (válido 24h)</td>
+          </tr>
+          ` : `
+          <tr>
+            <td style="color:#aaa;font-size:13px;padding:6px 0">Contraseña temporal</td>
             <td style="color:#ff9900;font-weight:700;font-family:monospace;font-size:16px;letter-spacing:2px;padding:6px 0">${tempPassword}</td>
           </tr>
+          `}
         </table>
       </div>
 
-      <!-- Boton -->
+      <!-- Botón -->
       <div style="text-align:center;margin-bottom:36px">
-        <a href="${loginUrl}" style="background:#ff9900;color:#fff;padding:16px 40px;border-radius:8px;text-decoration:none;font-weight:700;font-size:16px;display:inline-block;letter-spacing:1px">
-          Iniciar sesion ahora &rarr;
+        <a href="${useMagicLink ? magicLinkUrl : loginUrl}" style="background:#ff9900;color:#fff;padding:16px 40px;border-radius:8px;text-decoration:none;font-weight:700;font-size:16px;display:inline-block;letter-spacing:1px">
+          ${useMagicLink ? "Fijar mi contraseña &rarr;" : "Iniciar sesión ahora &rarr;"}
         </a>
       </div>
 
@@ -194,28 +213,37 @@ export async function sendWelcomeEmail(
     </div>
   </div>`;
 
+  // Reintentos: 3 intentos con backoff exponencial. Solo reintenta errores
+  // transitorios (red, 5xx). 4xx (auth/payload inválido) NO se reintenta.
+  const { withRetry, isHttp4xx } = await import("../_shared/retry.js");
   try {
-    const res = await fetch(`${notifyUrl}/api/email/send`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-API-Key": notifyKey,
-      },
-      body: JSON.stringify({
-        to: ownerEmail,
-        subject: `Bienvenido a Zentto — Tu cuenta ${legalName} esta lista`,
-        html,
-        from: "Zentto <no-reply@zentto.net>",
-      }),
+    await withRetry(async () => {
+      const res = await fetch(`${notifyUrl}/api/email/send`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-API-Key": notifyKey,
+        },
+        body: JSON.stringify({
+          to: ownerEmail,
+          subject: `Bienvenido a Zentto — Tu cuenta ${legalName} está lista`,
+          html,
+          from: "Zentto <no-reply@zentto.net>",
+        }),
+      });
+      if (!res.ok) {
+        const body = await res.text().catch(() => "");
+        throw new Error(`notify_${res.status}: ${body.slice(0, 200)}`);
+      }
+    }, {
+      attempts: 3,
+      isPermanent: isHttp4xx,
+      onAttemptFailed: (err, attempt) =>
+        console.warn(`[welcome-email] intento ${attempt} falló:`, err instanceof Error ? err.message : err),
     });
-
-    if (!res.ok) {
-      const body = await res.text().catch(() => "");
-      console.error(`[welcome-email] Notify respondio ${res.status} para ${ownerEmail}:`, body);
-    } else {
-      console.log(`[welcome-email] Email enviado exitosamente a ${ownerEmail}`);
-    }
+    console.log(`[welcome-email] Email enviado exitosamente a ${ownerEmail}`);
   } catch (err) {
-    console.error("[welcome-email] Error enviando email a", ownerEmail, err);
+    console.error("[welcome-email] FALLÓ tras reintentos para", ownerEmail, err);
+    throw err; // que el caller decida si encolar reintento async vía sys.ProvisioningJob
   }
 }
