@@ -10,6 +10,7 @@ const TimelineIcon = dynamic(() => import('@mui/icons-material/Timeline'), { ssr
 const SmartToyIcon = dynamic(() => import('@mui/icons-material/SmartToy'), { ssr: false });
 const PrintIcon = dynamic(() => import('@mui/icons-material/Print'), { ssr: false });
 const TrendingUpIcon = dynamic(() => import('@mui/icons-material/TrendingUp'), { ssr: false });
+const WebhookIcon = dynamic(() => import('@mui/icons-material/Webhook'), { ssr: false });
 
 export function buildNav(isAdmin: boolean, modulos: string[]): Array<Record<string, unknown>> {
     const nav: Array<Record<string, unknown>> = [];
@@ -44,6 +45,9 @@ export function buildNav(isAdmin: boolean, modulos: string[]): Array<Record<stri
                 { kind: 'page', segment: 'configuracion', title: 'Configuración', icon: <SettingsIcon /> },
             ],
         });
+
+        // ── Integraciones (webhooks + API keys públicas del tenant)
+        nav.push({ kind: 'page', segment: 'integraciones', title: 'Integraciones', icon: <WebhookIcon /> });
 
         // ── Reportes
         nav.push({ kind: 'page', segment: 'reportes', title: 'Reportes', icon: <PrintIcon /> });
