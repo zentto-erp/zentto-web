@@ -7,6 +7,9 @@ interface RegisterLead {
   company?: string;
   country?: string;
   source?: string;
+  topic?: string;
+  message?: string;
+  phone?: string;
 }
 
 export async function registerLead(data: RegisterLead) {
@@ -16,6 +19,9 @@ export async function registerLead(data: RegisterLead) {
     Company: data.company || null,
     Country: data.country || null,
     Source: data.source || "zentto-landing",
+    Topic: data.topic || null,
+    Message: data.message || null,
+    Phone: data.phone || null,
   }, {
     Resultado: { type: sql.Int, value: 0 },
     Mensaje: { type: sql.NVarChar(500), value: "" },
