@@ -14,14 +14,24 @@ interface RegisterLead {
 }
 
 // Resuelve una `X-Tenant-Key` (header) a CompanyId o null si inválida.
-// La función scalar devuelve una fila con una única columna cuyo nombre el
-// normalizador de query.ts convierte a PascalCase → la leemos por Object.values
-// para no acoplarnos a la transformación exacta.
+// Usa el verify-by-scope con el scope default de leads.
 export async function resolvePublicApiKey(keyPlain: string | undefined): Promise<number | null> {
+  return resolvePublicApiKeyScope(keyPlain, "landing:lead:create");
+}
+
+/**
+ * Verifica que la key sea válida Y tenga un scope específico. Usa
+ * `cfg.usp_cfg_publicapikey_verify_scope`. Útil para endpoints públicos
+ * que no sean leads (p.ej. `notify:email:send`).
+ */
+export async function resolvePublicApiKeyScope(
+  keyPlain: string | undefined,
+  scope: string,
+): Promise<number | null> {
   if (!keyPlain || !keyPlain.trim()) return null;
   const rows = await callSp<Record<string, unknown>>(
-    "cfg.usp_cfg_publicapikey_verify",
-    { KeyPlain: keyPlain.trim() },
+    "cfg.usp_cfg_publicapikey_verify_scope",
+    { KeyPlain: keyPlain.trim(), Scope: scope },
   );
   const first = rows?.[0];
   if (!first) return null;
