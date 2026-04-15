@@ -6,6 +6,10 @@ import { provisionTenantDatabase } from "../../db/provision-tenant-db.js";
 import { createSubdomainDns } from "../../lib/cloudflare.client.js";
 import { obs } from "../integrations/observability.js";
 import { callSp } from "../../db/query.js";
+import { dedupWebhookEvent, completeWebhookEvent } from "../_shared/webhook-dedup.js";
+import { createPasswordResetToken, buildSetPasswordUrl } from "../_shared/password-reset.js";
+import { authCreateOwner } from "../_shared/zentto-auth.client.js";
+import { withRetry, isHttp4xx } from "../_shared/retry.js";
 
 export function verifyPaddleSignature(rawBody: Buffer, signatureHeader: string): boolean {
   const secret = process.env.PADDLE_WEBHOOK_SECRET ?? "";
@@ -37,6 +41,7 @@ export async function handlePaddleEvent(
   event: Record<string, unknown>
 ): Promise<{ handled: boolean; reason?: string; companyId?: number }> {
   const eventType = event["event_type"] as string | undefined;
+  const eventId = (event["event_id"] as string | undefined) ?? "";
 
   // Router de eventos: created → provisiona, updated/cancelled → re-aplica
   if (eventType === "subscription.updated") return handleSubscriptionUpdated(event);
@@ -47,11 +52,32 @@ export async function handlePaddleEvent(
     return { handled: false, reason: "event_not_handled" };
   }
 
+  // ── B1: Idempotencia — dedup por event_id antes de procesar ───────────────
+  // Si Paddle reenvía el webhook (timeout/retry), el dedup retorna isNew=false
+  // y skip todo el provisioning para evitar duplicar Company, BD, DNS, email.
+  if (eventId) {
+    const dedup = await dedupWebhookEvent({
+      eventId,
+      eventType,
+      source: "paddle",
+    }).catch((err) => {
+      console.warn("[paddle] dedup falló (continuando como nuevo):", err?.message);
+      return { isNew: true, previousStatus: undefined as string | undefined };
+    });
+    if (!dedup.isNew) {
+      obs.audit("paddle.webhook.duplicate_skipped", { module: "webhooks", eventId, previousStatus: dedup.previousStatus });
+      return { handled: true, reason: "duplicate_skipped" };
+    }
+  }
+
   const data = event["data"] as Record<string, unknown>;
   const customer = data["customer"] as Record<string, unknown> | undefined;
   const customerEmail = customer?.["email"] as string | undefined;
 
-  if (!customerEmail) return { handled: false, reason: "no_customer_email" };
+  if (!customerEmail) {
+    await completeWebhookEvent({ eventId, status: "skipped", errorMessage: "no_customer_email" });
+    return { handled: false, reason: "no_customer_email" };
+  }
 
   const items = (data["items"] as Array<Record<string, unknown>>) ?? [];
   const subscriptionId = data["id"] as string | undefined;
@@ -64,10 +90,12 @@ export async function handlePaddleEvent(
   const chosenCountryCode = ((customData?.["countryCode"] as string | undefined) || "VE").toUpperCase();
   const chosenPlanSlug = (customData?.["planSlug"] as string | undefined) || "";
 
-  // Resolver plan base: 1) por planSlug en custom_data, 2) por PaddlePriceId del primer item
-  let resolvedBase: { plan: string; planId: number; moduleCodes: string[] } = {
-    plan: "STARTER", planId: 0, moduleCodes: [],
-  };
+  // ── F1: Resolver plan base sin fallback silencioso ────────────────────────
+  // Antes: si el lookup por PaddlePriceId fallaba, se usaba STARTER hardcoded.
+  // Cliente podía pagar PRO y recibir STARTER. Ahora: si el price_id no resuelve
+  // ni hay planSlug en custom_data → marcar webhook como error y NO provisionar.
+  // Operador debe sincronizar el plan a Paddle desde backoffice antes de retry.
+  let resolvedBase: { plan: string; planId: number; moduleCodes: string[] } | null = null;
   const primaryPriceId = (items[0]?.["price"] as Record<string, unknown> | undefined)?.["id"] as string | undefined;
   if (primaryPriceId) {
     try {
@@ -84,6 +112,26 @@ export async function handlePaddleEvent(
     } catch (err: any) {
       console.warn("[paddle] plan lookup by price_id falló:", err.message);
     }
+  }
+  if (!resolvedBase && chosenPlanSlug) {
+    try {
+      const slugRows = await callSp<{
+        PricingPlanId: number; Slug: string; ProductCode: string; ModuleCodes: string[];
+      }>("usp_cfg_plan_get_by_slug", { Slug: chosenPlanSlug });
+      if (slugRows[0]) {
+        resolvedBase = {
+          plan: slugRows[0].ProductCode.toUpperCase(),
+          planId: slugRows[0].PricingPlanId,
+          moduleCodes: Array.isArray(slugRows[0].ModuleCodes) ? slugRows[0].ModuleCodes : [],
+        };
+      }
+    } catch { /* falla → manejada abajo */ }
+  }
+  if (!resolvedBase) {
+    const err = `plan_not_resolved (priceId=${primaryPriceId ?? "n/a"}, slug=${chosenPlanSlug || "n/a"})`;
+    obs.error(`paddle.webhook.${err}`, { module: "webhooks", eventId, ownerEmail: customerEmail });
+    await completeWebhookEvent({ eventId, status: "error", errorMessage: err });
+    return { handled: false, reason: err };
   }
   const plan = resolvedBase.plan as "FREE" | "STARTER" | "PRO" | "ENTERPRISE";
 
@@ -125,6 +173,7 @@ export async function handlePaddleEvent(
       companyCode,
       ownerEmail: customerEmail,
     });
+    await completeWebhookEvent({ eventId, status: "error", errorMessage: `provision_failed: ${result.mensaje}` });
     return { handled: true, companyId: 0 };
   }
 
@@ -137,35 +186,77 @@ export async function handlePaddleEvent(
     plan,
   });
 
-  // Actualizar subdomain si el usuario eligió uno personalizado
+  // ── B2: SetSubdomain ruidoso (no .catch silencioso) ───────────────────────
+  // Si falla (colisión de subdomain o constraint), Notificamos error explícito
+  // y dejamos el webhook como error → operador puede investigar.
   if (chosenSubdomain) {
-    await callSp("usp_Cfg_Tenant_SetSubdomain", {
-      CompanyId: result.companyId,
-      Subdomain: chosenSubdomain,
-    }).catch(() => {});
+    try {
+      await callSp("usp_Cfg_Tenant_SetSubdomain", {
+        CompanyId: result.companyId,
+        Subdomain: chosenSubdomain,
+      });
+      obs.audit("tenant.subdomain.set", { module: "webhooks", companyId: result.companyId, subdomain: chosenSubdomain });
+    } catch (err: any) {
+      obs.error(`tenant.subdomain.failed: ${err?.message}`, {
+        module: "webhooks",
+        companyId: result.companyId,
+        companyCode,
+        subdomain: chosenSubdomain,
+      });
+      await completeWebhookEvent({
+        eventId,
+        status: "error",
+        companyId: result.companyId,
+        errorMessage: `subdomain_failed: ${err?.message}`.slice(0, 500),
+      });
+      // Continuamos para al menos crear la BD y mandar email — pero el operador
+      // sabe que el subdomain no se asignó (debe corregir manualmente).
+    }
   }
 
-  // Registrar suscripcion en tabla sys.Subscription (legacy handler)
-  handleWebhookEvent({
-    event_type: "subscription.created",
-    event_id: (event["event_id"] as string) ?? "",
-    occurred_at: (event["occurred_at"] as string) ?? new Date().toISOString(),
-    data: { ...data, custom_data: { companyId: String(result.companyId) } },
-  }).catch((err) => console.error("[paddle] Error registrando subscription:", err));
-
-  // Multi-item: crear sys.SubscriptionItem por cada item del checkout
-  // (el handler legacy sólo guarda la subscription principal; los items viven aquí)
-  await upsertSubscriptionItems({
-    companyId: result.companyId,
-    paddleSubscriptionId: subscriptionId ?? "",
-    items,
-  }).catch((err) => console.warn("[paddle] upsertSubscriptionItems:", err.message));
+  // ── F5: Orden secuencial — antes handleWebhookEvent y upsertSubscriptionItems
+  // corrían concurrentemente y podían crear duplicados de sys.Subscription.
+  // Ahora primero registramos la subscription (handler legacy) y solo después
+  // insertamos los items, garantizando que sys.SubscriptionItem ya tiene un
+  // SubscriptionId válido al que adjuntarse.
+  try {
+    await handleWebhookEvent({
+      event_type: "subscription.created",
+      event_id: eventId,
+      occurred_at: (event["occurred_at"] as string) ?? new Date().toISOString(),
+      data: { ...data, custom_data: { companyId: String(result.companyId) } },
+    });
+  } catch (err: any) {
+    obs.error(`paddle.webhook.subscription_register_failed: ${err?.message}`, {
+      module: "webhooks", companyId: result.companyId,
+    });
+  }
+  try {
+    await upsertSubscriptionItems({
+      companyId: result.companyId,
+      paddleSubscriptionId: subscriptionId ?? "",
+      items,
+    });
+  } catch (err: any) {
+    obs.error(`paddle.webhook.items_register_failed: ${err?.message}`, {
+      module: "webhooks", companyId: result.companyId,
+    });
+  }
 
   const tenantUrl = chosenSubdomain ? `https://${chosenSubdomain}.zentto.net` : "https://app.zentto.net";
 
-  // Crear DNS en Cloudflare (no bloquea — si falla se puede crear manualmente)
+  // ── F2: Crear DNS en Cloudflare con retry exponencial ────────────────────
+  // Antes: una sola llamada, si Cloudflare estaba lento o rate-limited el
+  // tenant quedaba sin DNS y operador debía crearlo a mano.
+  // Ahora: 3 intentos con backoff. Si tras 3 sigue fallando, se encola un job
+  // en sys.ProvisioningJob para reintento por el sweeper.
   if (chosenSubdomain) {
-    createSubdomainDns(chosenSubdomain)
+    withRetry(() => createSubdomainDns(chosenSubdomain), {
+      attempts: 3,
+      isPermanent: isHttp4xx,
+      onAttemptFailed: (err, attempt) =>
+        console.warn(`[paddle] Cloudflare DNS intento ${attempt} falló:`, err instanceof Error ? err.message : err),
+    })
       .then((dns) => {
         if (dns.ok) {
           obs.audit("tenant.dns.created", {
@@ -175,14 +266,22 @@ export async function handlePaddleEvent(
             url: tenantUrl,
           });
         } else {
-          obs.error(`tenant.dns.failed: ${dns.error}`, {
-            module: "webhooks",
-            companyId: result.companyId,
-            subdomain: chosenSubdomain,
-          });
+          throw new Error(dns.error || "dns_unknown_error");
         }
       })
-      .catch((err) => console.error("[paddle] Error DNS Cloudflare:", err));
+      .catch(async (err) => {
+        obs.error(`tenant.dns.failed_after_retries: ${err?.message ?? err}`, {
+          module: "webhooks",
+          companyId: result.companyId,
+          subdomain: chosenSubdomain,
+        });
+        await callSp("usp_sys_provisioning_job_enqueue", {
+          CompanyId: result.companyId,
+          CompanyCode: companyCode,
+          Step: "cloudflare_dns",
+          PayloadJson: JSON.stringify({ subdomain: chosenSubdomain }),
+        }).catch(() => {});
+      });
   }
 
   // Flujo BYOC: en lugar de provisionar BD, generar token de onboarding
@@ -226,9 +325,11 @@ export async function handlePaddleEvent(
     return { handled: true, companyId: result.companyId };
   }
 
-  // Provisionar BD del tenant (no bloquea — proceso largo ~2 min)
+  // ── F3: Provisionar BD del tenant — fallback a job queue si falla ─────────
+  // Sigue siendo async (proceso largo ~2 min), pero si falla queda registrado
+  // en sys.ProvisioningJob para que el sweeper retry sin intervención manual.
   provisionTenantDatabase(result.companyId, companyCode)
-    .then((db) => {
+    .then(async (db) => {
       if (db.ok) {
         obs.audit("tenant.db.provisioned", {
           module: "webhooks",
@@ -241,28 +342,109 @@ export async function handlePaddleEvent(
           companyId: result.companyId,
           companyCode,
         });
+        await callSp("usp_sys_provisioning_job_enqueue", {
+          CompanyId: result.companyId,
+          CompanyCode: companyCode,
+          Step: "provision_database",
+          PayloadJson: JSON.stringify({ error: db.error }),
+        }).catch(() => {});
       }
     })
-    .catch((err) => console.error("[paddle] Error provision BD:", err));
+    .catch(async (err) => {
+      console.error("[paddle] Error provision BD:", err);
+      await callSp("usp_sys_provisioning_job_enqueue", {
+        CompanyId: result.companyId,
+        CompanyCode: companyCode,
+        Step: "provision_database",
+        PayloadJson: JSON.stringify({ error: err?.message ?? String(err) }),
+      }).catch(() => {});
+    });
 
-  // Enviar email de bienvenida
+  // ── B3: Magic-link set-password (sin password plaintext en email) ─────────
+  // Estrategia preferida: zentto-auth (microservicio centralizado) emite el
+  // token y lo administra junto con la identidad del owner. Si zentto-auth
+  // no está disponible o aún no tiene el endpoint, fallback al token local
+  // (sec.PasswordResetToken en BD master). Esto garantiza que la primera
+  // prueba funcione SIEMPRE.
   console.log(`[paddle] Tenant provisionado OK — companyId=${result.companyId}, email=${customerEmail}, subdomain=${chosenSubdomain || "(ninguno)"}`);
-  sendWelcomeEmail(customerEmail, chosenCompanyName, tempPassword, result.companyId, tenantUrl, adminUserCode)
+  let magicLinkUrl: string | undefined;
+
+  // 1) Camino preferido: zentto-auth /admin/users/provision-owner
+  try {
+    const authRes = await authCreateOwner({
+      email: customerEmail,
+      fullName: chosenCompanyName,
+      companyId: result.companyId,
+      companyCode,
+      tenantSubdomain: chosenSubdomain || "app",
+      role: "owner",
+      sendMagicLink: true,
+    });
+    if (authRes.magicLinkUrl) {
+      magicLinkUrl = authRes.magicLinkUrl;
+      obs.audit("tenant.auth.owner_provisioned", {
+        module: "webhooks",
+        companyId: result.companyId,
+        userId: authRes.userId,
+        alreadyExisted: authRes.alreadyExisted,
+      });
+    }
+  } catch (err: any) {
+    console.warn("[paddle] zentto-auth provision-owner falló, fallback local:", err?.message);
+    obs.error(`tenant.auth.provision_failed: ${err?.message}`, { module: "webhooks", companyId: result.companyId });
+  }
+
+  // 2) Fallback local (sec.PasswordResetToken en master) si zentto-auth no respondió
+  if (!magicLinkUrl) {
+    try {
+      const tokenInfo = await createPasswordResetToken({
+        companyId: result.companyId,
+        userCode: adminUserCode,
+        email: customerEmail,
+        ttlHours: 24,
+        fromIp: "paddle-webhook",
+      });
+      magicLinkUrl = buildSetPasswordUrl({ subdomain: chosenSubdomain || undefined, token: tokenInfo.token });
+      obs.audit("tenant.password_reset_token.created_local", {
+        module: "webhooks", companyId: result.companyId, expiresAt: tokenInfo.expiresAt,
+      });
+    } catch (err: any) {
+      console.warn("[paddle] Local password-reset token también falló, fallback a tempPassword:", err?.message);
+      obs.error(`tenant.password_reset_token.failed: ${err?.message}`, { module: "webhooks", companyId: result.companyId });
+    }
+  }
+
+  sendWelcomeEmail(customerEmail, chosenCompanyName, tempPassword, result.companyId, tenantUrl, adminUserCode, magicLinkUrl)
     .then(() => {
       obs.audit("tenant.welcome_email.sent", {
         module: "webhooks",
         companyId: result.companyId,
         ownerEmail: customerEmail,
+        usedMagicLink: Boolean(magicLinkUrl),
       });
     })
-    .catch((err) => {
-      console.error("[paddle] Error enviando welcome email:", err);
+    .catch(async (err) => {
+      console.error("[paddle] Welcome email falló tras 3 reintentos:", err);
       obs.error(`tenant.welcome_email.failed: ${err.message}`, {
         module: "webhooks",
         companyId: result.companyId,
         ownerEmail: customerEmail,
       });
+      // Encolar reintento async para que el sweeper lo intente de nuevo
+      await callSp("usp_sys_provisioning_job_enqueue", {
+        CompanyId: result.companyId,
+        CompanyCode: companyCode,
+        Step: "welcome_email",
+        PayloadJson: JSON.stringify({ ownerEmail: customerEmail, magicLinkUrl, tenantUrl }),
+      }).catch(() => {});
     });
+
+  // Marcar webhook como done — todo el flujo principal completó OK
+  await completeWebhookEvent({
+    eventId,
+    status: "done",
+    companyId: result.companyId,
+  });
 
   return { handled: true, companyId: result.companyId };
 }
