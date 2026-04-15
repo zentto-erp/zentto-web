@@ -1,6 +1,6 @@
 {
   "name": "@zentto/platform-client",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Cliente tipado para los servicios de plataforma Zentto (notify, cache, auth, landing). Uso oficial en ERP, verticals y sitios de tenants clientes.",
   "type": "module",
   "main": "dist/index.js",
@@ -13,6 +13,18 @@
     "./notify": {
       "types": "./dist/notify/index.d.ts",
       "import": "./dist/notify/index.js"
+    },
+    "./auth": {
+      "types": "./dist/auth/index.d.ts",
+      "import": "./dist/auth/index.js"
+    },
+    "./cache": {
+      "types": "./dist/cache/index.d.ts",
+      "import": "./dist/cache/index.js"
+    },
+    "./landing": {
+      "types": "./dist/landing/index.d.ts",
+      "import": "./dist/landing/index.js"
     }
   },
   "files": [

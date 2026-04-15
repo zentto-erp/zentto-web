@@ -1,6 +1,6 @@
 # @zentto/platform-client
 
-Cliente oficial tipado para los servicios de plataforma Zentto: **notify**, **cache** (pronto), **auth** (pronto), **landing** (pronto).
+Cliente oficial tipado para los servicios de plataforma Zentto: **notify**, **auth**, **cache**, **landing**.
 
 Úsalo desde el ERP, cualquier vertical (hotel, medical, tickets, rental, education, inmobiliario…) o un sitio externo de un tenant cliente.
 
@@ -40,7 +40,46 @@ Variables de entorno:
 | `NOTIFY_API_KEY` | — | Master key del servicio (server-to-server) |
 | `API_MASTER_KEY` | — | Fallback legacy |
 
-### Construcción manual (multi-tenant, tests)
+### Auth (zentto-auth)
+
+```ts
+import { authFromEnv, AuthClient } from "@zentto/platform-client/auth";
+
+// Service-to-service (backend) — provisioning de owners desde el ERP
+const svc = authFromEnv(); // lee AUTH_SERVICE_URL + AUTH_SERVICE_KEY
+await svc.admin.provisionOwner({
+  email, fullName, companyId, companyCode, sendMagicLink: true,
+});
+
+// User-facing (con JWT del usuario)
+const user = new AuthClient({ accessToken: jwt });
+const me = await user.me();
+```
+
+### Cache (zentto-cache)
+
+```ts
+import { cacheFromEnv } from "@zentto/platform-client/cache";
+const c = cacheFromEnv(); // lee CACHE_URL + CACHE_APP_KEY
+
+await c.gridLayouts.put("invoices-list", layoutJson, { companyId, userId });
+const res = await c.gridLayouts.get("invoices-list", { companyId, userId });
+// res.data.layout → layout guardado
+```
+
+### Landing (leads de tenants clientes)
+
+```ts
+import { LandingClient } from "@zentto/platform-client/landing";
+const landing = new LandingClient({ tenantKey: "zk_<prefix>_<secret>" });
+
+await landing.registerLead({
+  email, name, phone, topic: "sales", message, source: "acme.com",
+});
+// Cae en el crm.Lead del tenant dueño de la key.
+```
+
+### Construcción manual
 
 ```ts
 import { notify } from "@zentto/platform-client";
