@@ -137,6 +137,7 @@ reportesRouter.post("/crystal/render", async (req: Request, res: Response) => {
         if (contentDisposition) res.setHeader("Content-Disposition", contentDisposition);
 
         const buffer = await response.arrayBuffer();
+        // nosemgrep: javascript.express.security.audit.xss.direct-response-write — binary report proxy, not user input
         res.send(Buffer.from(buffer));
     } catch (error: any) {
         res.status(502).json({ success: false, message: error?.message, hint: "Crystal Server no disponible" });
@@ -201,6 +202,7 @@ reportesRouter.post("/jsreport/render", async (req: Request, res: Response) => {
         if (contentDisposition) res.setHeader("Content-Disposition", contentDisposition);
 
         const buffer = await response.arrayBuffer();
+        // nosemgrep: javascript.express.security.audit.xss.direct-response-write — binary report proxy, not user input
         res.send(Buffer.from(buffer));
     } catch (error: any) {
         res.status(502).json({ success: false, message: error?.message, hint: "jsreport no disponible" });
@@ -261,6 +263,7 @@ reportesRouter.post("/render", async (req: Request, res: Response) => {
         if (contentDisposition) res.setHeader("Content-Disposition", contentDisposition);
 
         const buffer = await response.arrayBuffer();
+        // nosemgrep: javascript.express.security.audit.xss.direct-response-write — binary report proxy, not user input
         res.send(Buffer.from(buffer));
     } catch (error: any) {
         res.status(502).json({ success: false, message: error?.message });
