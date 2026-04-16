@@ -6,10 +6,13 @@ import type { TenantProvisionInput, TenantProvisionResult, TenantInfo } from "./
 export async function provisionTenant(
   input: TenantProvisionInput
 ): Promise<TenantProvisionResult> {
-  // Validate company limit before provisioning
-  const limitCheck = await validateCompanyLimit();
-  if (!limitCheck.allowed) {
-    return { ok: false, mensaje: limitCheck.reason ?? "company_limit_exceeded", companyId: 0, userId: 0 };
+  // Validate company limit before provisioning (solo para empresas hijas,
+  // NO para nuevos tenants independientes — registro público pasa skipCompanyLimit)
+  if (!input.skipCompanyLimit) {
+    const limitCheck = await validateCompanyLimit();
+    if (!limitCheck.allowed) {
+      return { ok: false, mensaje: limitCheck.reason ?? "company_limit_exceeded", companyId: 0, userId: 0 };
+    }
   }
 
   const passwordHash = await hashPassword(input.adminPassword);

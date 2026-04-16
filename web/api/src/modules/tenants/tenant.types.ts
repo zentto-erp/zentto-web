@@ -8,6 +8,8 @@ export interface TenantProvisionInput {
   adminPassword: string;   // password en claro — service hace bcrypt
   plan: "FREE" | "STARTER" | "PRO" | "ENTERPRISE";
   paddleSubscriptionId?: string;
+  /** Skip company limit check (nuevo tenant independiente, no empresa hija) */
+  skipCompanyLimit?: boolean;
 }
 
 export interface TenantProvisionResult {
