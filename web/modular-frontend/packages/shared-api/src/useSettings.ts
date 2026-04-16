@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiGet, apiPut } from './api';
 
@@ -38,6 +39,47 @@ export interface SettingMeta {
 
 const QK = 'app-settings';
 const BASE = '/v1/settings';
+const SETTINGS_CHANNEL = 'zentto-settings-sync';
+
+// ─── Cross-tab sync via BroadcastChannel ─────────────────────────
+// Cuando un tab guarda settings, notifica a los demás tabs del mismo
+// dominio para que invaliden su cache de React Query y re-hidraten.
+
+function broadcastSettingsChange(mod: string, companyId: number) {
+  if (typeof window === 'undefined') return;
+  try {
+    const bc = new BroadcastChannel(SETTINGS_CHANNEL);
+    bc.postMessage({ mod, companyId, ts: Date.now() });
+    bc.close();
+  } catch {
+    // BroadcastChannel no soportado — silenciar
+  }
+}
+
+/**
+ * Hook que escucha cambios de settings desde otros tabs y los aplica
+ * invalidando el cache de React Query. Llamar una vez en el layout
+ * de cada app (ya integrado en useModuleSettings automáticamente).
+ */
+export function useSettingsSync() {
+  const qc = useQueryClient();
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const bc = new BroadcastChannel(SETTINGS_CHANNEL);
+      bc.onmessage = (ev: MessageEvent) => {
+        const { mod: changedMod, companyId: cid } = ev.data ?? {};
+        if (changedMod) {
+          qc.invalidateQueries({ queryKey: [QK, changedMod, cid] });
+        }
+        qc.invalidateQueries({ queryKey: [QK, 'all', cid] });
+      };
+      return () => bc.close();
+    } catch {
+      // BroadcastChannel no soportado
+    }
+  }, [qc]);
+}
 
 // ─── Hooks ────────────────────────────────────────────────────────
 
@@ -46,6 +88,7 @@ const BASE = '/v1/settings';
  * Returns: { general: { pais, ... }, contabilidad: { ... }, ... }
  */
 export function useAllSettings(companyId = 1) {
+  useSettingsSync();
   return useQuery<AllSettings>({
     queryKey: [QK, 'all', companyId],
     queryFn: () => apiGet(`${BASE}?companyId=${companyId}`),
@@ -57,6 +100,7 @@ export function useAllSettings(companyId = 1) {
  * Get settings for a single module.
  */
 export function useModuleSettings(mod: SettingsModule, companyId = 1, enabled = true) {
+  useSettingsSync();
   return useQuery<Record<string, unknown>>({
     queryKey: [QK, mod, companyId],
     queryFn: () => apiGet(`${BASE}/${mod}?companyId=${companyId}`),
@@ -79,6 +123,7 @@ export function useModuleSettingsMeta(mod: SettingsModule, companyId = 1) {
 /**
  * Save (UPSERT) settings for a module.
  * Accepts a flat object: { key1: value1, key2: value2, ... }
+ * Notifica a otros tabs via BroadcastChannel para sincronización.
  */
 export function useSaveModuleSettings(mod: SettingsModule, companyId = 1) {
   const qc = useQueryClient();
@@ -86,9 +131,9 @@ export function useSaveModuleSettings(mod: SettingsModule, companyId = 1) {
     mutationFn: (settings: Record<string, unknown>) =>
       apiPut(`${BASE}/${mod}?companyId=${companyId}`, settings),
     onSuccess: () => {
-      // Invalidate both the module-specific and the all-settings queries
       qc.invalidateQueries({ queryKey: [QK, mod, companyId] });
       qc.invalidateQueries({ queryKey: [QK, 'all', companyId] });
+      broadcastSettingsChange(mod, companyId);
     },
   });
 }
