@@ -158,6 +158,7 @@ $$;
 -- Actualizar usp_CFG_Country_List para exponer todos los campos fiscales
 -- +goose StatementBegin
 DROP FUNCTION IF EXISTS public.usp_cfg_country_list(integer);
+DROP FUNCTION IF EXISTS public.usp_cfg_country_list(boolean);
 -- +goose StatementEnd
 
 -- +goose StatementBegin
