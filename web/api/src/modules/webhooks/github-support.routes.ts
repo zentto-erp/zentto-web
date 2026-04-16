@@ -5,6 +5,16 @@ import { notifyEmail } from '../_shared/notify.js';
 
 export const githubSupportWebhookRouter = Router();
 
+/** Escapa caracteres HTML para prevenir XSS en emails de notificación */
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 const WEBHOOK_SECRET = process.env.GITHUB_WEBHOOK_SECRET || '';
 
 function verifySignature(rawBody: Buffer, signature: string | undefined): boolean {
@@ -65,7 +75,7 @@ githubSupportWebhookRouter.post(
             `Ticket #${payload.issue.number} resuelto`,
             buildNotificationHtml(
               `Ticket #${payload.issue.number} resuelto`,
-              `Tu ticket "<strong>${payload.issue.title}</strong>" ha sido cerrado. Si el problema persiste, puedes reabrir el ticket desde la plataforma.`,
+              `Tu ticket "<strong>${escapeHtml(String(payload.issue.title))}</strong>" ha sido cerrado. Si el problema persiste, puedes reabrir el ticket desde la plataforma.`,
               payload.issue.number,
             ),
           );
@@ -81,7 +91,7 @@ githubSupportWebhookRouter.post(
             `IA creó una corrección para Ticket #${payload.issue.number}`,
             buildNotificationHtml(
               `Corrección automática en progreso`,
-              `Nuestro agente de IA ha analizado tu reporte "<strong>${payload.issue.title}</strong>" y ha creado una propuesta de corrección. El equipo de desarrollo la revisará próximamente.`,
+              `Nuestro agente de IA ha analizado tu reporte "<strong>${escapeHtml(String(payload.issue.title))}</strong>" y ha creado una propuesta de corrección. El equipo de desarrollo la revisará próximamente.`,
               payload.issue.number,
             ),
           );
@@ -94,13 +104,13 @@ githubSupportWebhookRouter.post(
         if (!isBot) {
           const email = extractEmailFromBody(payload.issue?.body);
           if (email) {
-            const commentPreview = (payload.comment.body || '').slice(0, 300);
+            const commentPreview = escapeHtml((payload.comment.body || '').slice(0, 300));
             await notifyEmail(
               email,
               `Nuevo comentario en Ticket #${payload.issue.number}`,
               buildNotificationHtml(
                 `Nuevo comentario en Ticket #${payload.issue.number}`,
-                `<strong>${payload.comment.user.login}</strong> comentó:<br><br><blockquote style="border-left:3px solid #ddd;padding-left:12px;color:#555">${commentPreview}</blockquote>`,
+                `<strong>${escapeHtml(String(payload.comment.user.login))}</strong> comentó:<br><br><blockquote style="border-left:3px solid #ddd;padding-left:12px;color:#555">${commentPreview}</blockquote>`,
                 payload.issue.number,
               ),
             );

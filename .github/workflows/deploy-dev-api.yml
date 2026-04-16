@@ -205,6 +205,11 @@ jobs:
               systemctl reload postgresql
             }
 
+            # Limpiar _deploy_tmp para evitar archivos stale de deploys anteriores
+            # (scp-action copia pero NO elimina archivos que ya no estan en source)
+            rm -rf /opt/zentto-dev/_deploy_tmp
+            mkdir -p /opt/zentto-dev/_deploy_tmp
+
             echo "==> Dev environment ready"
 
       - name: Copy migrations to server
@@ -361,6 +366,9 @@ jobs:
 
             # Cache URL — dev uses same cache container (shared network)
             sed -i 's|^ZENTTO_CACHE_URL=.*|ZENTTO_CACHE_URL=http://zentto-cache:4100|' /opt/zentto-dev/.env.api
+
+            # Auth Service URL — dev uses auth-dev container
+            sed -i 's|^AUTH_SERVICE_URL=.*|AUTH_SERVICE_URL=http://zentto-auth-dev:4600|' /opt/zentto-dev/.env.api
 
             # Login to GHCR
             echo "$GHCR_TOKEN" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin

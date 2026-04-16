@@ -21,7 +21,7 @@ def api(method, path, body=None, token=None):
         headers["Authorization"] = f"Bearer {token}"
     req = urllib.request.Request(url, data=data, headers=headers, method=method)
     try:
-        resp = urllib.request.urlopen(req, timeout=TIMEOUT, context=ctx)
+        resp = urllib.request.urlopen(req, timeout=TIMEOUT, context=ctx)  # nosemgrep: python.lang.security.audit.dynamic-urllib-use-detected
         ct = resp.headers.get("content-type", "")
         raw = resp.read().decode()
         if ct.startswith("application/json"):

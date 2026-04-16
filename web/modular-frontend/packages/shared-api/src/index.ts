@@ -25,8 +25,6 @@ export type {
   LocalizacionConfig,
 } from './usePosStore';
 export { calcTotals } from './usePosStore';
-/** @deprecated Use useModuleSettings + useHydrateLocalizacion instead */
-export * from './useConfigStore';
 export { loadFrontendAddons, listAddons, getAddon, createAddon, updateAddon, deleteAddon } from './addons';
 export { listSavedReports, listPublicReports, getSavedReport, getPublicReport, createSavedReport, updateSavedReport, deleteSavedReport } from './reports';
 export type { SavedReport, SaveReportInput } from './reports';

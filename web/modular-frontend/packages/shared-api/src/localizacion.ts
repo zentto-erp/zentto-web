@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiGet, apiPost } from './api';
+import { apiGet, apiPost, apiPublicGet } from './api';
 import type { LocalizacionConfig } from './usePosStore';
 
 // ─── CountryRecord (mirrors cfg.Country table) ─────────────────────────────
@@ -28,6 +28,8 @@ export interface CountryRecord {
 }
 
 // ─── Country Presets ────────────────────────────────────────────────────────
+// DEPRECATED: La fuente de verdad es cfg.Country en BD.
+// Mantener vacío para retrocompatibilidad con código legacy que lo importa.
 
 export interface CountryPreset {
   code: string;
@@ -35,24 +37,16 @@ export interface CountryPreset {
   defaults: Omit<LocalizacionConfig, 'pais'>;
 }
 
-/**
- * @deprecated Use useCountries() hook instead. Kept as offline/fallback only.
- */
-export const PREDEFINED_COUNTRIES: CountryPreset[] = [
-  { code: 'VE', name: 'Venezuela', defaults: { preciosIncluyenIva: true, tasaCambio: 45.0, monedaPrincipal: 'Bs', monedaReferencia: '$', tasaIgtf: 3, aplicarIgtf: true } },
-  { code: 'CO', name: 'Colombia', defaults: { preciosIncluyenIva: false, tasaCambio: 4000, monedaPrincipal: '$', monedaReferencia: 'USD', tasaIgtf: 0, aplicarIgtf: false } },
-  { code: 'MX', name: 'Mexico', defaults: { preciosIncluyenIva: false, tasaCambio: 18.0, monedaPrincipal: '$', monedaReferencia: 'USD', tasaIgtf: 0, aplicarIgtf: false } },
-  { code: 'ES', name: 'Espana', defaults: { preciosIncluyenIva: true, tasaCambio: 1.0, monedaPrincipal: '\u20ac', monedaReferencia: '$', tasaIgtf: 0, aplicarIgtf: false } },
-  { code: 'US', name: 'Estados Unidos', defaults: { preciosIncluyenIva: false, tasaCambio: 1.0, monedaPrincipal: '$', monedaReferencia: 'EUR', tasaIgtf: 0, aplicarIgtf: false } },
-];
+/** @deprecated Usar useCountries() — la verdad viene de cfg.Country en BD. */
+export const PREDEFINED_COUNTRIES: CountryPreset[] = [];
 
 // ─── Hooks ──────────────────────────────────────────────────────────────────
 
-/** Fetch active countries from cfg.Country via API. */
+/** Fetch active countries from cfg.Country via API. Público (sin auth). */
 export function useCountries() {
   return useQuery<CountryRecord[]>({
     queryKey: ['config', 'countries'],
-    queryFn: () => apiGet('/v1/config/countries'),
+    queryFn: () => apiPublicGet('/v1/config/countries'),
     staleTime: 5 * 60 * 1000, // 5 min
   });
 }
@@ -147,18 +141,22 @@ export async function fetchBcvRates(): Promise<BcvRates> {
 
 // ─── Settings <-> LocalizacionConfig mappers ────────────────────────────────
 
-/** Map flat DB settings keys to the runtime LocalizacionConfig shape. */
+/**
+ * Map flat DB settings keys to the runtime LocalizacionConfig shape.
+ * Los valores vienen 100% desde cfg.AppSetting (seedeado desde cfg.Country
+ * al provisionar tenant). Sin hardcode de país/moneda/tasa.
+ */
 export function settingsToLocalizacion(
   settings: Record<string, unknown>,
 ): LocalizacionConfig {
   return {
-    pais: String(settings['localizacion.pais'] ?? 'VE'),
-    preciosIncluyenIva: Boolean(settings['localizacion.preciosIncluyenIva'] ?? true),
+    pais: String(settings['localizacion.pais'] ?? ''),
+    preciosIncluyenIva: Boolean(settings['localizacion.preciosIncluyenIva'] ?? false),
     tasaCambio: Number(settings['localizacion.tasaCambio'] ?? 1),
-    monedaPrincipal: String(settings['localizacion.monedaPrincipal'] ?? 'Bs'),
-    monedaReferencia: String(settings['localizacion.monedaReferencia'] ?? '$'),
-    tasaIgtf: Number(settings['localizacion.tasaIgtf'] ?? 3),
-    aplicarIgtf: Boolean(settings['localizacion.aplicarIgtf'] ?? true),
+    monedaPrincipal: String(settings['localizacion.monedaPrincipal'] ?? ''),
+    monedaReferencia: String(settings['localizacion.monedaReferencia'] ?? ''),
+    tasaIgtf: Number(settings['localizacion.tasaIgtf'] ?? 0),
+    aplicarIgtf: Boolean(settings['localizacion.aplicarIgtf'] ?? false),
   };
 }
 

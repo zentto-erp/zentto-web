@@ -180,6 +180,16 @@ jobs:
         with:
           token: ${{ secrets.GHCR_PAT }}
 
+      - name: Clean _deploy_tmp on server
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            rm -rf /opt/zentto/_deploy_tmp
+            mkdir -p /opt/zentto/_deploy_tmp
+
       - name: Copy migrations and script to server
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -259,11 +269,12 @@ jobs:
           HETZNER_S3_REGION: ${{ secrets.HETZNER_S3_REGION }}
           MASTER_KEY: ${{ secrets.MASTER_KEY }}
           GH_SUPPORT_WEBHOOK_SECRET: ${{ secrets.GH_SUPPORT_WEBHOOK_SECRET }}
+          AUTH_SERVICE_KEY: ${{ secrets.AUTH_SERVICE_KEY }}
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          envs: GHCR_TOKEN,GITHUB_ACTOR,NOTIFY_API_KEY,CF_API_KEY,CF_ZONE_ID,CF_EMAIL,HETZNER_S3_ENDPOINT,HETZNER_S3_BUCKET,HETZNER_S3_ACCESS_KEY,HETZNER_S3_SECRET_KEY,HETZNER_S3_REGION,MASTER_KEY,GH_SUPPORT_WEBHOOK_SECRET
+          envs: GHCR_TOKEN,GITHUB_ACTOR,NOTIFY_API_KEY,CF_API_KEY,CF_ZONE_ID,CF_EMAIL,HETZNER_S3_ENDPOINT,HETZNER_S3_BUCKET,HETZNER_S3_ACCESS_KEY,HETZNER_S3_SECRET_KEY,HETZNER_S3_REGION,MASTER_KEY,GH_SUPPORT_WEBHOOK_SECRET,AUTH_SERVICE_KEY
           script: |
             set -e
             NEW_KEY="ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ/QVi9dbf2PRV73J9LvxyMAVp9/RQDFL/sfd2hLhsPg zentto-server"
@@ -367,6 +378,24 @@ jobs:
               grep -q '^GITHUB_WEBHOOK_SECRET=' "$ENV_API" \
                 && sed -i "s|^GITHUB_WEBHOOK_SECRET=.*|GITHUB_WEBHOOK_SECRET=$GH_SUPPORT_WEBHOOK_SECRET|" "$ENV_API" \
                 || echo "GITHUB_WEBHOOK_SECRET=$GH_SUPPORT_WEBHOOK_SECRET" >> "$ENV_API"
+            fi
+
+            # ── Auth Service Key (S2S entre API y zentto-auth para trial/provisioning) ──
+            if [ -f "$ENV_API" ] && [ -n "$AUTH_SERVICE_KEY" ]; then
+              grep -q '^AUTH_SERVICE_KEY=' "$ENV_API" \
+                && sed -i "s|^AUTH_SERVICE_KEY=.*|AUTH_SERVICE_KEY=$AUTH_SERVICE_KEY|" "$ENV_API" \
+                || echo "AUTH_SERVICE_KEY=$AUTH_SERVICE_KEY" >> "$ENV_API"
+              grep -q '^AUTH_SERVICE_URL=' "$ENV_API" \
+                && sed -i "s|^AUTH_SERVICE_URL=.*|AUTH_SERVICE_URL=http://zentto-auth:4600|" "$ENV_API" \
+                || echo "AUTH_SERVICE_URL=http://zentto-auth:4600" >> "$ENV_API"
+            fi
+
+            # ── Auth Service Key en zentto-auth ──
+            AUTH_ENV="/opt/zentto-sites/prod/.env.auth"
+            if [ -f "$AUTH_ENV" ] && [ -n "$AUTH_SERVICE_KEY" ]; then
+              grep -q '^AUTH_SERVICE_KEY=' "$AUTH_ENV" \
+                && sed -i "s|^AUTH_SERVICE_KEY=.*|AUTH_SERVICE_KEY=$AUTH_SERVICE_KEY|" "$AUTH_ENV" \
+                || echo "AUTH_SERVICE_KEY=$AUTH_SERVICE_KEY" >> "$AUTH_ENV"
             fi
 
             # ── Zentto Cache URL (microservicio de caché) ──
