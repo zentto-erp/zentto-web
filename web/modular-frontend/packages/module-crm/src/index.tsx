@@ -65,6 +65,12 @@ export type {
 // ─── Components ──────────────────────────────────────────────
 export { default as PipelineKanban } from "./components/PipelineKanban";
 export { default as LeadsPage } from "./components/LeadsPage";
+export { default as IntegrationsPage } from "./components/IntegrationsPage";
+export {
+  useWebhooksList, useCreateWebhook, useRevokeWebhook,
+  usePublicKeysList, useCreatePublicKey, useRevokePublicKey,
+} from "./hooks/useIntegrations";
+export type { TenantWebhook, PublicApiKey } from "./hooks/useIntegrations";
 export { default as ActividadesPage } from "./components/ActividadesPage";
 export { default as LeadDetailPanel } from "./components/LeadDetailPanel";
 export { LeadTimeline } from "./components/LeadTimeline";

@@ -3,6 +3,9 @@ name: Certbot — Expand SSL cert
 on:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   certbot:
     name: Expand Let's Encrypt cert

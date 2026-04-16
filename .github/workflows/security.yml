@@ -1,0 +1,21 @@
+name: Security
+
+on:
+  push:
+    branches: [main, developer, master]
+  pull_request:
+    branches: [main, developer, master]
+  schedule:
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  security:
+    uses: zentto-erp/.github/.github/workflows/security.yml@main
+    with:
+      fail-on: high
+    secrets: inherit

@@ -17,6 +17,9 @@ on:
           - frontend
           - all
 
+permissions:
+  contents: read
+
 jobs:
   hotfix:
     name: Restart ${{ inputs.service }} on server
