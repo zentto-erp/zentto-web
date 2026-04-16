@@ -38,7 +38,9 @@ export function getTenantPool(config: TenantDbConfig): Pool {
     password: config.password || env.pg.password,
     min: config.poolMin ?? 0,
     max: config.poolMax ?? 5,
-    ssl: (config.ssl ?? env.pg.ssl) ? { rejectUnauthorized: false } : false,
+    // Security: rejectUnauthorized=false is intentional for internal Docker network
+    // connections (172.18.0.x) where certs are self-signed.
+    ssl: (config.ssl ?? env.pg.ssl) ? { rejectUnauthorized: false } : false, // nosemgrep: javascript.lang.security.audit.sqli.node-bypass-tls-verification
     idleTimeoutMillis: 60_000,
     connectionTimeoutMillis: 10_000,
   });

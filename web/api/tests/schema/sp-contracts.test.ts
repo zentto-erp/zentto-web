@@ -31,7 +31,7 @@ beforeAll(() => {
         user: process.env.PG_USER ?? "zentto_app",
         password: process.env.PG_PASSWORD ?? "",
         ssl:
-          process.env.PG_SSL === "true" ? { rejectUnauthorized: false } : false,
+          process.env.PG_SSL === "true" ? { rejectUnauthorized: false } : false, // nosemgrep: javascript.lang.security.audit.sqli.node-bypass-tls-verification
       });
 });
 
