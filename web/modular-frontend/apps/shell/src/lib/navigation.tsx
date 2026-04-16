@@ -73,6 +73,9 @@ import EventNoteIcon from '@mui/icons-material/EventNote';
 import TimelineIcon from '@mui/icons-material/Timeline';
 import SmartToyIcon from '@mui/icons-material/SmartToy';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
+import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium';
+import BusinessIcon from '@mui/icons-material/Business';
+import PaletteIcon from '@mui/icons-material/Palette';
 
 export function has(modulos: string[], mod: SystemModule): boolean {
     return modulos.includes(mod);
@@ -566,6 +569,8 @@ export function buildNavigation(isAdmin: boolean, modulos: string[], pathname: s
     if (isAdmin && (isApp('/configuracion') || isApp('/maestros'))) {
         nav.push({ kind: 'header', title: 'Configuración' });
         nav.push({ kind: 'page', segment: 'configuracion', title: 'Configuración Global', icon: <SettingsIcon /> });
+        nav.push({ kind: 'page', segment: 'configuracion/mi-plan', title: 'Mi Plan', icon: <WorkspacePremiumIcon /> });
+        nav.push({ kind: 'page', segment: 'configuracion/empresas', title: 'Empresas', icon: <BusinessIcon /> });
         nav.push({ kind: 'page', segment: 'configuracion/formas-pago', title: 'Formas de Pago', icon: <PaymentsIcon /> });
         if (has(modulos, 'usuarios')) {
             nav.push({ kind: 'page', segment: 'configuracion/usuarios', title: 'Usuarios', icon: <ManageAccountsIcon /> });
@@ -573,6 +578,7 @@ export function buildNavigation(isAdmin: boolean, modulos: string[], pathname: s
         if (isAdmin) {
             nav.push({ kind: 'page', segment: 'configuracion/roles', title: 'Roles y Permisos', icon: <SecurityIcon /> });
         }
+        nav.push({ kind: 'page', segment: 'configuracion/marca', title: 'Marca', icon: <PaletteIcon /> });
         nav.push({ kind: 'header', title: 'Maestros' });
         nav.push({ kind: 'page', segment: 'maestros/empresa', title: 'Empresa', icon: <SettingsIcon /> });
         nav.push({ kind: 'page', segment: 'maestros/correlativo', title: 'Correlativos', icon: <SettingsIcon /> });

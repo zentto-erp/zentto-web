@@ -4,7 +4,7 @@ import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react'
 import {
   Box, Typography, Button, IconButton, Chip, Dialog, DialogTitle,
   DialogContent, DialogActions, TextField, FormControlLabel, Switch,
-  Alert, CircularProgress, Tooltip, MenuItem,
+  Alert, CircularProgress, Tooltip, MenuItem, LinearProgress,
   Checkbox, FormGroup, Divider, Stack,
 } from '@mui/material';
 import { useAuth } from '@zentto/shared-auth';
@@ -14,6 +14,7 @@ import {
   useUsuariosList, useCreateUsuario, useUpdateUsuario, useDeleteUsuario,
   useResetPassword, useUsuarioModulos, useSetUsuarioModulos, useSystemModules,
   useRolesList, useUserRoles, useAssignUserRole,
+  useLicenseLimits,
 } from '@zentto/shared-api';
 import type { Role } from '@zentto/shared-api';
 import { useGridLayoutSync } from '@zentto/shared-api';
@@ -60,6 +61,7 @@ export default function UsuariosPage() {
   const { showToast } = useToast();
   const { data, isLoading, error } = useUsuariosList();
   const deleteMutation = useDeleteUsuario();
+  const { data: licenseLimits } = useLicenseLimits();
 
   // Dialogs
   const { data: rolesData } = useRolesList();
@@ -184,6 +186,32 @@ export default function UsuariosPage() {
 
   return (
     <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+      {/* Banner de limites */}
+      {licenseLimits && (
+        <Box sx={{ mb: 2, p: 2, bgcolor: 'background.paper', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+            <Typography variant="subtitle2">Usuarios</Typography>
+            <Chip
+              label={`${licenseLimits.currentUsers}/${licenseLimits.maxUsers === -1 ? '∞' : licenseLimits.maxUsers}`}
+              size="small"
+              color={licenseLimits.maxUsers !== -1 && licenseLimits.currentUsers >= licenseLimits.maxUsers ? 'error' : 'primary'}
+            />
+          </Box>
+          <LinearProgress
+            variant="determinate"
+            value={licenseLimits.maxUsers === -1 ? 0 : Math.min((licenseLimits.currentUsers / licenseLimits.maxUsers) * 100, 100)}
+            sx={{ height: 8, borderRadius: 4 }}
+            color={licenseLimits.maxUsers !== -1 && licenseLimits.currentUsers >= licenseLimits.maxUsers ? 'error' : 'primary'}
+          />
+          {licenseLimits.maxUsers !== -1 && licenseLimits.currentUsers >= licenseLimits.maxUsers && (
+            <Alert severity="error" sx={{ mt: 1, py: 0 }}>
+              Has alcanzado el limite de usuarios de tu plan.
+              <Button size="small" href="/configuracion/mi-plan" sx={{ ml: 1 }}>Mejorar plan</Button>
+            </Alert>
+          )}
+        </Box>
+      )}
+
       {error && <Alert severity="error" sx={{ mb: 2 }}>Error al cargar usuarios</Alert>}
 
       {!layoutReady || !registered ? (
