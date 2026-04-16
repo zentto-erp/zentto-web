@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { apiGet, apiPost } from './api';
+import { apiGet, apiPost, apiPublicGet, apiPublicPost } from './api';
 
 // ─── Tipos ──────────────────────────────────────────────────────────────────
 
@@ -85,7 +85,7 @@ export function useCatalogPlans(opts: { vertical?: string; product?: string; inc
   const qs = params.toString();
   return useQuery<{ ok: boolean; plans: PricingPlan[] }>({
     queryKey: ['catalog', 'plans', opts],
-    queryFn: () => apiGet(`/v1/catalog/plans${qs ? `?${qs}` : ''}`),
+    queryFn: () => apiPublicGet(`/v1/catalog/plans${qs ? `?${qs}` : ''}`),
     staleTime: 5 * 60 * 1000,
   });
 }
@@ -93,7 +93,7 @@ export function useCatalogPlans(opts: { vertical?: string; product?: string; inc
 export function useCatalogPlan(slug: string | undefined) {
   return useQuery<{ ok: boolean; plan: PricingPlan }>({
     queryKey: ['catalog', 'plan', slug],
-    queryFn: () => apiGet(`/v1/catalog/plans/${slug}`),
+    queryFn: () => apiPublicGet(`/v1/catalog/plans/${slug}`),
     enabled: Boolean(slug),
     staleTime: 5 * 60 * 1000,
   });
@@ -103,7 +103,7 @@ export function useCatalogProducts(vertical?: string) {
   const qs = vertical ? `?vertical=${vertical}` : '';
   return useQuery<{ ok: boolean; products: CatalogProduct[] }>({
     queryKey: ['catalog', 'products', vertical],
-    queryFn: () => apiGet(`/v1/catalog/products${qs}`),
+    queryFn: () => apiPublicGet(`/v1/catalog/products${qs}`),
     staleTime: 5 * 60 * 1000,
   });
 }
@@ -111,7 +111,7 @@ export function useCatalogProducts(vertical?: string) {
 export function useCheckSubdomain(slug: string) {
   return useQuery<{ ok: boolean; available: boolean; mensaje: string }>({
     queryKey: ['catalog', 'subdomain-check', slug],
-    queryFn: () => apiGet(`/v1/catalog/subdomain-check/${slug}`),
+    queryFn: () => apiPublicGet(`/v1/catalog/subdomain-check/${slug}`),
     enabled: slug.length >= 3,
     staleTime: 30 * 1000,
     retry: false,
@@ -138,7 +138,7 @@ export function useStartTrial() {
     Error,
     RegistroBody
   >({
-    mutationFn: (body) => apiPost('/v1/registro/trial', body),
+    mutationFn: (body) => apiPublicPost('/v1/registro/trial', body),
   });
 }
 
@@ -148,7 +148,7 @@ export function useStartCheckout() {
     Error,
     RegistroBody & { billingCycle: 'monthly' | 'annual' }
   >({
-    mutationFn: (body) => apiPost('/v1/registro/checkout', body),
+    mutationFn: (body) => apiPublicPost('/v1/registro/checkout', body),
   });
 }
 
@@ -158,7 +158,7 @@ export function useCaptureLead() {
     Error,
     Partial<RegistroBody> & { source?: string }
   >({
-    mutationFn: (body) => apiPost('/v1/registro/lead', body),
+    mutationFn: (body) => apiPublicPost('/v1/registro/lead', body),
   });
 }
 
