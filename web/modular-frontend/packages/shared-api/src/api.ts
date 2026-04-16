@@ -212,6 +212,37 @@ async function handleUnauthorized(res: Response) {
   }
 }
 
+// ─── Public API helpers (sin auth, sin fetchWithRefresh) ────────────────────
+// Para endpoints públicos como /v1/catalog/* y /v1/registro/* que NO requieren
+// sesión. Usan fetch nativo — nunca disparan forceSignOut.
+
+export async function apiPublicGet(path: string, params?: Record<string, unknown>) {
+  let fullUrl = `${API_BASE}${path}`;
+  if (params) {
+    const query = Object.entries(params)
+      .filter(([, v]) => v !== undefined && v !== null && v !== '')
+      .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`)
+      .join('&');
+    if (query) fullUrl += `?${query}`;
+  }
+  const res = await fetch(fullUrl);
+  const responseData = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(responseData?.message || responseData?.error || res.statusText);
+  return responseData;
+}
+
+export async function apiPublicPost(path: string, body: unknown) {
+  const fullUrl = `${API_BASE}${path}`;
+  const res = await fetch(fullUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  const responseData = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(responseData?.message || responseData?.error || res.statusText);
+  return responseData;
+}
+
 export async function apiGet(path: string, params?: Record<string, unknown>) {
   let fullUrl = `${API_BASE}${path}`;
   if (params) {

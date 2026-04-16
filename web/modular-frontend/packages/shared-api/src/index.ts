@@ -2,6 +2,7 @@
 
 export {
   apiGet, apiPost, apiPut, apiPatch, apiDelete,
+  apiPublicGet, apiPublicPost,
   iamGet, iamPost, iamPut, iamDelete,
   resolveAssetUrl, setActiveCompanyForApi,
 } from './api';
