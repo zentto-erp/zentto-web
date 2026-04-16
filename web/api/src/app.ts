@@ -52,7 +52,7 @@ import { posRouter } from "./modules/pos/routes.js";
 import { posEsperaRouter } from "./modules/pos/espera.routes.js";
 import { restauranteRouter } from "./modules/restaurante/routes.js";
 import { restauranteAdminRouter } from "./modules/restaurante/admin.routes.js";
-import { configRouter } from "./modules/config/routes.js";
+import { configRouter, configPublicRouter } from "./modules/config/routes.js";
 import { reportesRouter } from "./modules/reportes/routes.js";
 import { sistemaRouter } from "./modules/sistema/sistema.routes.js";
 import { fiscalRouter } from "./modules/fiscal/routes.js";
@@ -290,6 +290,9 @@ export async function createApp() {
 
   // Tenant provisioning — protegido por master key, sin JWT
   app.use("/api/tenants", tenantsRouter);
+
+  // Config público (countries, states) — requerido por registro sin JWT
+  app.use("/v1/config", configPublicRouter);
 
   // Catálogo unificado de planes + subdominio check — público (sin JWT)
   app.use("/v1/catalog", catalogRouter);

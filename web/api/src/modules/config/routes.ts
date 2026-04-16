@@ -4,6 +4,40 @@ import { callSp, callSpOut, sql } from "../../db/query.js";
 
 export const configRouter = Router();
 
+// Router público para endpoints de config que NO requieren JWT.
+// Usado por el formulario de registro (CountrySelect, PhoneInput).
+// Se monta ANTES del middleware requireJwt en app.ts.
+export const configPublicRouter = Router();
+
+configPublicRouter.get("/countries", async (_req, res) => {
+    try {
+        const rows = await callSp("usp_CFG_Country_List", { ActiveOnly: 1 });
+        res.json(rows);
+    } catch (err: any) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+configPublicRouter.get("/states/:countryCode", async (req, res) => {
+    try {
+        const rows = await callSp("usp_CFG_State_ListByCountry", {
+            CountryCode: req.params.countryCode.toUpperCase(),
+        });
+        res.json(rows);
+    } catch (err: any) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+configPublicRouter.get("/states", async (_req, res) => {
+    try {
+        const rows = await callSp("usp_CFG_State_List", {});
+        res.json(rows);
+    } catch (err: any) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // /api/config/tasas
 configRouter.get("/tasas", async (_req, res) => {
     try {
