@@ -8,11 +8,14 @@ import { apiGet } from './api';
 import type { SettingsModule } from './useSettings';
 
 /**
- * Hydrates `usePosStore.localizacion` from DB settings on mount,
- * then auto-fetches the latest BCV exchange rate and updates tasaCambio.
+ * Hidrata usePosStore.localizacion desde cfg.AppSetting (via API).
  *
- * Re-hidrata automáticamente cuando los settings cambian (por ejemplo,
- * si otro tab guarda configuración y el BroadcastChannel invalida el cache).
+ * Los settings son seedeados automaticamente al provisionar el tenant
+ * (fn_seed_localizacion_settings lee de cfg.Country). El store siempre
+ * refleja los datos reales del pais configurado.
+ *
+ * Re-hidrata automaticamente cuando los settings cambian (por ejemplo,
+ * si otro tab guarda configuracion y el BroadcastChannel invalida el cache).
  *
  * @param mod  Settings module whose keys contain `localizacion.*`
  * @param companyId  Company id (defaults to 1)
@@ -23,17 +26,15 @@ export function useHydrateLocalizacion(mod: SettingsModule, companyId = 1) {
   const bcvFetched = useRef(false);
   const lastDataRef = useRef<string>('');
 
-  // 1. Hydrate from DB settings — siempre que los datos cambien.
-  // No requiere localizacion.pais para hidratar — si hay cualquier key
-  // de localizacion (tasaCambio, moneda, etc.), la aplicamos.
+  // 1. Hidratar desde DB settings — siempre que los datos cambien.
+  // Si hay cualquier key de localizacion.*, aplicar (no requiere campo especifico).
   useEffect(() => {
     if (!data || isLoading || error) return;
 
-    // Verificar que hay al menos una key de localizacion
     const hasLocKeys = Object.keys(data).some((k) => k.startsWith('localizacion.'));
     if (!hasLocKeys) return;
 
-    // Solo actualizar si los datos realmente cambiaron (evita loops)
+    // Evitar loops: solo actualizar si los datos realmente cambiaron
     const dataHash = JSON.stringify(data);
     if (dataHash === lastDataRef.current) return;
     lastDataRef.current = dataHash;
@@ -42,12 +43,12 @@ export function useHydrateLocalizacion(mod: SettingsModule, companyId = 1) {
   }, [data, isLoading, error, setLocalizacion]);
 
   // 2. Auto-fetch BCV rate una vez al boot (no en cada cambio de settings)
-  const hasLocData = Boolean(
+  const hydrated = Boolean(
     data && !isLoading && !error &&
     Object.keys(data).some((k) => k.startsWith('localizacion.'))
   );
   useEffect(() => {
-    if (!hasLocData || bcvFetched.current) return;
+    if (!hydrated || bcvFetched.current) return;
     bcvFetched.current = true;
 
     (async () => {
@@ -74,13 +75,13 @@ export function useHydrateLocalizacion(mod: SettingsModule, companyId = 1) {
         console.warn('[POS] No se pudo obtener tasa BCV al iniciar:', e);
       }
     })();
-  }, [hasLocData, setLocalizacion]);
+  }, [hydrated, setLocalizacion]);
 
-  // Reset BCV flag when company changes
+  // Reset flags when company changes
   useEffect(() => {
     bcvFetched.current = false;
     lastDataRef.current = '';
   }, [companyId]);
 
-  return { isLoading, error, hydrated: hasLocData };
+  return { isLoading, error, hydrated };
 }
