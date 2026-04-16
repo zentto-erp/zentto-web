@@ -1,13 +1,4 @@
-# ─────────────────────────────────────────────────────────────────────
-#  Deploy Frontend → DEV environment (appdev.zentto.net)
-#
-#  Trigger: push to developer branch (web/modular-frontend/**)
-#  Target: Same Hetzner server, separate containers + ports
-#  Image: ghcr.io/zentto-erp/zentto-web/frontend:dev
-# ─────────────────────────────────────────────────────────────────────
-
 name: Deploy Frontend (DEV)
-
 on:
   push:
     branches: [developer]
@@ -17,7 +8,6 @@ on:
       - 'docker/pm2.config.cjs'
       # docker-compose.dev.yml y nginx ahora viven en zentto-infra
   workflow_dispatch:
-
 concurrency:
   group: deploy-dev-frontend
   cancel-in-progress: true
@@ -25,6 +15,8 @@ concurrency:
 env:
   REPO: zentto-erp/zentto-web
 
+permissions:
+  contents: read
 jobs:
   # ── 1. Build Docker image (:dev tag) ───────────────────────────────
   build:
@@ -68,6 +60,9 @@ jobs:
   # ── 2. Deploy DEV container ────────────────────────────────────────
   deploy:
     needs: build
+    permissions:
+      contents: read
+      packages: write
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
