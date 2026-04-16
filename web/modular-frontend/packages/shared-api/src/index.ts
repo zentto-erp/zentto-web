@@ -92,7 +92,7 @@ export type { BrandConfig, BrandConfigInput } from './useBrandConfig';
 // Unified Settings hooks
 export {
   useAllSettings, useModuleSettings, useModuleSettingsMeta,
-  useSaveModuleSettings, useSettingModules,
+  useSaveModuleSettings, useSettingModules, useSettingsSync,
 } from './useSettings';
 export type { SettingsModule, AllSettings, SettingMeta } from './useSettings';
 
