@@ -17,6 +17,9 @@ on:
       - "web/api/package.json"
       - ".github/workflows/db-governance.yml"
 
+permissions:
+  contents: read
+
 jobs:
   governance-report:
     name: Governance Readiness Report
