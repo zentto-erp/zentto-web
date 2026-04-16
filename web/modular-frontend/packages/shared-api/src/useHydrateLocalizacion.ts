@@ -23,12 +23,15 @@ export function useHydrateLocalizacion(mod: SettingsModule, companyId = 1) {
   const bcvFetched = useRef(false);
   const lastDataRef = useRef<string>('');
 
-  // 1. Hydrate from DB settings — siempre que los datos cambien
+  // 1. Hydrate from DB settings — siempre que los datos cambien.
+  // No requiere localizacion.pais para hidratar — si hay cualquier key
+  // de localizacion (tasaCambio, moneda, etc.), la aplicamos.
   useEffect(() => {
     if (!data || isLoading || error) return;
 
-    const pais = data['localizacion.pais'];
-    if (pais === undefined || pais === null) return;
+    // Verificar que hay al menos una key de localizacion
+    const hasLocKeys = Object.keys(data).some((k) => k.startsWith('localizacion.'));
+    if (!hasLocKeys) return;
 
     // Solo actualizar si los datos realmente cambiaron (evita loops)
     const dataHash = JSON.stringify(data);
@@ -39,9 +42,12 @@ export function useHydrateLocalizacion(mod: SettingsModule, companyId = 1) {
   }, [data, isLoading, error, setLocalizacion]);
 
   // 2. Auto-fetch BCV rate una vez al boot (no en cada cambio de settings)
-  const hydrated = Boolean(data && !isLoading && !error && data['localizacion.pais']);
+  const hasLocData = Boolean(
+    data && !isLoading && !error &&
+    Object.keys(data).some((k) => k.startsWith('localizacion.'))
+  );
   useEffect(() => {
-    if (!hydrated || bcvFetched.current) return;
+    if (!hasLocData || bcvFetched.current) return;
     bcvFetched.current = true;
 
     (async () => {
@@ -68,7 +74,7 @@ export function useHydrateLocalizacion(mod: SettingsModule, companyId = 1) {
         console.warn('[POS] No se pudo obtener tasa BCV al iniciar:', e);
       }
     })();
-  }, [hydrated, setLocalizacion]);
+  }, [hasLocData, setLocalizacion]);
 
   // Reset BCV flag when company changes
   useEffect(() => {
@@ -76,5 +82,5 @@ export function useHydrateLocalizacion(mod: SettingsModule, companyId = 1) {
     lastDataRef.current = '';
   }, [companyId]);
 
-  return { isLoading, error, hydrated };
+  return { isLoading, error, hydrated: hasLocData };
 }

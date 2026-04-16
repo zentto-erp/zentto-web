@@ -147,18 +147,32 @@ export async function fetchBcvRates(): Promise<BcvRates> {
 
 // ─── Settings <-> LocalizacionConfig mappers ────────────────────────────────
 
-/** Map flat DB settings keys to the runtime LocalizacionConfig shape. */
+/**
+ * Map flat DB settings keys to the runtime LocalizacionConfig shape.
+ * Si falta el pais, intenta inferirlo con un fallback razonable segun
+ * la moneda principal. Multi-pais: cada tenant puede operar en su propio
+ * pais, con su propia moneda principal y tasa vs moneda de referencia.
+ */
 export function settingsToLocalizacion(
   settings: Record<string, unknown>,
+  countryFallback?: string,
 ): LocalizacionConfig {
+  const paisRaw = settings['localizacion.pais'];
+  const pais = paisRaw != null && String(paisRaw).trim() !== ''
+    ? String(paisRaw)
+    : (countryFallback || 'VE');
+
+  const preset = PREDEFINED_COUNTRIES.find((c) => c.code === pais.toUpperCase());
+  const fallback = preset?.defaults ?? PREDEFINED_COUNTRIES[0].defaults;
+
   return {
-    pais: String(settings['localizacion.pais'] ?? 'VE'),
-    preciosIncluyenIva: Boolean(settings['localizacion.preciosIncluyenIva'] ?? true),
-    tasaCambio: Number(settings['localizacion.tasaCambio'] ?? 1),
-    monedaPrincipal: String(settings['localizacion.monedaPrincipal'] ?? 'Bs'),
-    monedaReferencia: String(settings['localizacion.monedaReferencia'] ?? '$'),
-    tasaIgtf: Number(settings['localizacion.tasaIgtf'] ?? 3),
-    aplicarIgtf: Boolean(settings['localizacion.aplicarIgtf'] ?? true),
+    pais,
+    preciosIncluyenIva: Boolean(settings['localizacion.preciosIncluyenIva'] ?? fallback.preciosIncluyenIva),
+    tasaCambio: Number(settings['localizacion.tasaCambio'] ?? fallback.tasaCambio),
+    monedaPrincipal: String(settings['localizacion.monedaPrincipal'] ?? fallback.monedaPrincipal),
+    monedaReferencia: String(settings['localizacion.monedaReferencia'] ?? fallback.monedaReferencia),
+    tasaIgtf: Number(settings['localizacion.tasaIgtf'] ?? fallback.tasaIgtf),
+    aplicarIgtf: Boolean(settings['localizacion.aplicarIgtf'] ?? fallback.aplicarIgtf),
   };
 }
 
