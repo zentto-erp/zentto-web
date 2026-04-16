@@ -17,5 +17,5 @@ jobs:
   security:
     uses: zentto-erp/.github/.github/workflows/security.yml@main
     with:
-      fail-on: critical
+      fail-on: high
     secrets: inherit
