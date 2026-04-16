@@ -1,0 +1,4 @@
+# Nginx configs: $host and h2c upgrade patterns are intentional in reverse proxy
+# Risk accepted: Cloudflare proxy validates Host headers before reaching nginx
+# Risk accepted: h2c/websocket upgrade is intentional for real-time features
+nginx/
