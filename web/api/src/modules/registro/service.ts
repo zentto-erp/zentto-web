@@ -108,6 +108,7 @@ export async function startTrial(input: RegistroBase): Promise<TrialResult> {
     adminUserCode: "ADMIN",
     adminPassword: tempPassword,
     plan: (plan.ProductCode.toUpperCase() as "FREE" | "STARTER" | "PRO" | "ENTERPRISE"),
+    skipCompanyLimit: true,
   });
 
   if (!provision.ok) {
