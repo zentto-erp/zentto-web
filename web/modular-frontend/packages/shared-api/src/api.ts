@@ -44,8 +44,15 @@ async function reSetTokenCookie(): Promise<void> {
   }
 }
 
+// Rutas públicas donde NO se debe forzar signOut al fallar un refresh de token.
+// En estas rutas el usuario no tiene sesión — disparar signOut causaría un
+// redirect al login que impide completar el flujo (ej. registro de nuevas cuentas).
+const PUBLIC_CLIENT_ROUTES = ['/registro', '/authentication/', '/pricing'];
+
 async function forceSignOut(): Promise<void> {
   if (typeof window === 'undefined') return;
+  const path = window.location.pathname;
+  if (PUBLIC_CLIENT_ROUTES.some((r) => path.startsWith(r))) return;
   try {
     const loginUrl = `${window.location.origin}/authentication/login`;
     await signOut({ callbackUrl: loginUrl });
@@ -187,6 +194,10 @@ async function authHeader(): Promise<Record<string, string>> {
 
 async function handleUnauthorized(res: Response) {
   if (res.status === 401) {
+    if (typeof window !== 'undefined') {
+      const path = window.location.pathname;
+      if (PUBLIC_CLIENT_ROUTES.some((r) => path.startsWith(r))) return;
+    }
     try {
       const loginUrl = typeof window !== 'undefined'
         ? `${window.location.origin}/authentication/login`
