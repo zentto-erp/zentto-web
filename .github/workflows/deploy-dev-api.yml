@@ -205,6 +205,11 @@ jobs:
               systemctl reload postgresql
             }
 
+            # Limpiar _deploy_tmp para evitar archivos stale de deploys anteriores
+            # (scp-action copia pero NO elimina archivos que ya no estan en source)
+            rm -rf /opt/zentto-dev/_deploy_tmp
+            mkdir -p /opt/zentto-dev/_deploy_tmp
+
             echo "==> Dev environment ready"
 
       - name: Copy migrations to server
