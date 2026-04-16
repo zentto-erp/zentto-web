@@ -126,6 +126,7 @@ const PUBLIC_ROUTES = [
   '/api/auth',
   '/api/register',
   '/api/auth-test',
+  '/registro',
 ];
 
 const providers: Provider[] = [
