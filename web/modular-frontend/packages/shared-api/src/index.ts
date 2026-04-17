@@ -46,7 +46,7 @@ export type { CountryPreset, BcvRates, CountryRecord, StateRecord, LookupRecord 
 // Catálogo unificado + registro + suscripciones
 export {
   useCatalogPlans, useCatalogPlan, useCatalogProducts, useCheckSubdomain,
-  useStartTrial, useStartCheckout, useCaptureLead,
+  useStartTrial, useStartCheckout, useCaptureLead, useResendMagicLink,
   useMySubscription, useMyEntitlements, useAddSubscriptionItem,
 } from './useCatalog';
 export type {
