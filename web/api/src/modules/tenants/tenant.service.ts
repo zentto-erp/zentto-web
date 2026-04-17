@@ -139,7 +139,7 @@ export async function sendWelcomeEmail(
 
       <!-- Credenciales / Magic-link -->
       <div style="background:#1a1a2e;border-radius:10px;padding:24px;margin-bottom:28px">
-        <div style="color:#ff9900;font-weight:700;font-size:12px;letter-spacing:2px;margin-bottom:16px;text-transform:uppercase">${useMagicLink ? "Configura tu contraseña" : "Tus credenciales de acceso"}</div>
+        <div style="color:#ff9900;font-weight:700;font-size:12px;letter-spacing:2px;margin-bottom:16px;text-transform:uppercase">Tus credenciales de acceso</div>
         <table style="width:100%;border-collapse:collapse">
           <tr>
             <td style="color:#aaa;font-size:13px;padding:6px 0;width:40%">Tu URL exclusiva</td>
@@ -149,24 +149,22 @@ export async function sendWelcomeEmail(
             <td style="color:#aaa;font-size:13px;padding:6px 0">Usuario</td>
             <td style="color:#fff;font-weight:700;font-family:monospace;font-size:16px;letter-spacing:2px;padding:6px 0">${adminUserCode}</td>
           </tr>
-          ${useMagicLink ? `
-          <tr>
-            <td style="color:#aaa;font-size:13px;padding:6px 0">Acción</td>
-            <td style="color:#ff9900;font-weight:700;font-size:14px;padding:6px 0">Click el botón abajo para fijar tu contraseña (válido 24h)</td>
-          </tr>
-          ` : `
           <tr>
             <td style="color:#aaa;font-size:13px;padding:6px 0">Contraseña temporal</td>
             <td style="color:#ff9900;font-weight:700;font-family:monospace;font-size:16px;letter-spacing:2px;padding:6px 0">${tempPassword}</td>
           </tr>
-          `}
+          ${useMagicLink ? `
+          <tr>
+            <td style="color:#aaa;font-size:13px;padding:6px 0;padding-top:12px" colspan="2" style="color:#aaa;font-size:12px">O usa el enlace de abajo para configurar tu propia contraseña (válido 24h).</td>
+          </tr>
+          ` : ""}
         </table>
       </div>
 
       <!-- Botón -->
       <div style="text-align:center;margin-bottom:36px">
         <a href="${useMagicLink ? magicLinkUrl : loginUrl}" style="background:#ff9900;color:#fff;padding:16px 40px;border-radius:8px;text-decoration:none;font-weight:700;font-size:16px;display:inline-block;letter-spacing:1px">
-          ${useMagicLink ? "Fijar mi contraseña &rarr;" : "Iniciar sesión ahora &rarr;"}
+          ${useMagicLink ? "Configurar mi contraseña &rarr;" : "Iniciar sesión ahora &rarr;"}
         </a>
       </div>
 
