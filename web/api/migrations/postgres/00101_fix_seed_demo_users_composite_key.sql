@@ -1,8 +1,9 @@
 -- +goose Up
 -- Fix: seed_demo_users usa ON CONFLICT("UserCode") pero el constraint es
 -- ahora UNIQUE(UserCode, CompanyId). Actualizar los seeds para usar la key
--- composite. Migración idempotente (DO bloque standalone).
+-- composite. Migración idempotente.
 
+-- +goose StatementBegin
 DO $$
 DECLARE
   v_company_id INT := 1;
@@ -49,6 +50,7 @@ BEGIN
 
   RAISE NOTICE '✓ Usuarios demo creados/actualizados con composite key';
 END $$;
+-- +goose StatementEnd
 
 -- +goose Down
 -- No-op: los usuarios demo permanecen. La migración es idempotente.
