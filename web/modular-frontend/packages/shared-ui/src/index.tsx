@@ -18,6 +18,14 @@ export type { BrandingConfig, BrandingContextValue } from './providers/BrandingP
 export { default as BrandedThemeProvider } from './components/BrandedThemeProvider';
 export { useBranding } from './hooks/useBranding';
 
+// Dashboard cards
+export { default as DashboardShortcutCard } from './components/DashboardShortcutCard';
+export type { DashboardShortcutCardProps } from './components/DashboardShortcutCard';
+export { default as DashboardKpiCard } from './components/DashboardKpiCard';
+export type { DashboardKpiCardProps } from './components/DashboardKpiCard';
+export { default as DashboardSection } from './components/DashboardSection';
+export type { DashboardSectionProps } from './components/DashboardSection';
+
 // Components
 export { default as Copyright } from './components/Copyright';
 export { default as Logo } from './components/Logo';

@@ -9,7 +9,7 @@ import {
     Badge,
 } from '@mui/material';
 import { useDraggable, useDroppable } from '@dnd-kit/core';
-import { Mesa } from '@/hooks/useRestaurante';
+import { Mesa } from '../hooks/useRestaurante';
 
 interface MesaCardProps {
     mesa: Mesa;

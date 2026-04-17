@@ -11,7 +11,7 @@
 
 import { callSp } from "../../db/query.js";
 import { getPlanBySlug } from "../catalog/service.js";
-import { provisionTenant, sendWelcomeEmail } from "../tenants/tenant.service.js";
+import { provisionTenant, sendWelcomeEmail, resolveTenantByEmail } from "../tenants/tenant.service.js";
 import { paddleApi } from "../billing/paddle.client.js";
 import { authCreateOwner } from "../_shared/zentto-auth.client.js";
 import crypto from "node:crypto";
@@ -75,6 +75,44 @@ async function upsertLead(input: RegistroBase & { source: string; intent: string
 }
 
 /**
+ * Reenvía el magic-link a un owner que ya tiene tenant pero no recibió el email.
+ * Usado como fallback cuando EMAIL_ALREADY_EXISTS o trial_already_used.
+ */
+async function resendMagicLinkToExisting(
+  email: string,
+  companyName: string,
+): Promise<{ ok: boolean; magicLinkSent: boolean; companyId: number; subdomain: string; expiresAt?: string }> {
+  const tenant = await resolveTenantByEmail(email);
+  if (!tenant) {
+    return { ok: false, magicLinkSent: false, companyId: 0, subdomain: "" };
+  }
+
+  let magicLinkSent = false;
+  const subdomain = tenant.TenantSubdomain || "";
+  const tenantUrl = subdomain ? `https://${subdomain}.zentto.net` : undefined;
+
+  try {
+    const authResult = await authCreateOwner({
+      email,
+      fullName: email,
+      companyId: tenant.CompanyId,
+      companyCode: tenant.CompanyCode,
+      tenantSubdomain: subdomain,
+      role: "owner",
+      sendMagicLink: true,
+    });
+    magicLinkSent = Boolean(authResult.magicLinkUrl);
+    if (magicLinkSent) {
+      await sendWelcomeEmail(email, companyName || tenant.LegalName, "", tenant.CompanyId, tenantUrl, "ADMIN", authResult.magicLinkUrl).catch(() => {});
+    }
+  } catch {
+    await sendWelcomeEmail(email, companyName || tenant.LegalName, "", tenant.CompanyId, tenantUrl, "ADMIN").catch(() => {});
+  }
+
+  return { ok: true, magicLinkSent, companyId: tenant.CompanyId, subdomain };
+}
+
+/**
  * Inicia un trial: provisiona tenant sin cobro, registra TrialUsage y
  * crea al owner en zentto-auth con magic-link.
  */
@@ -92,7 +130,18 @@ export async function startTrial(input: RegistroBase): Promise<TrialResult> {
     { Email: input.email, ProductCode: plan.ProductCode }
   );
   if (!trialCheck[0]?.available) {
-    return { ok: false, mensaje: trialCheck[0]?.mensaje || "trial_already_used" };
+    // El email ya tiene un trial → intentar reenviar magic-link al tenant existente
+    const resend = await resendMagicLinkToExisting(input.email, input.companyName);
+    if (resend.ok) {
+      return {
+        ok: true,
+        mensaje: "account_exists_link_resent",
+        companyId: resend.companyId,
+        subdomain: resend.subdomain,
+        magicLinkSent: resend.magicLinkSent,
+      };
+    }
+    return { ok: false, mensaje: "trial_already_used" };
   }
 
   // Provisiona tenant con un password temporal (se reemplaza por magic-link)
@@ -112,6 +161,19 @@ export async function startTrial(input: RegistroBase): Promise<TrialResult> {
   });
 
   if (!provision.ok) {
+    // Email ya existe en otro tenant → reenviar magic-link
+    if (provision.mensaje === "EMAIL_ALREADY_EXISTS") {
+      const resend = await resendMagicLinkToExisting(input.email, input.companyName);
+      if (resend.ok) {
+        return {
+          ok: true,
+          mensaje: "account_exists_link_resent",
+          companyId: resend.companyId,
+          subdomain: resend.subdomain,
+          magicLinkSent: resend.magicLinkSent,
+        };
+      }
+    }
     return { ok: false, mensaje: provision.mensaje };
   }
 
@@ -171,7 +233,8 @@ export async function startTrial(input: RegistroBase): Promise<TrialResult> {
     CompanyId: provision.companyId,
   }).catch(() => {});
 
-  // Crear identidad en zentto-auth + magic-link welcome
+  // Crear identidad en zentto-auth + enviar email de bienvenida con magic-link
+  const tenantUrl = input.subdomain ? `https://${input.subdomain.toLowerCase()}.zentto.net` : undefined;
   let magicLinkSent = false;
   try {
     const authResult = await authCreateOwner({
@@ -183,10 +246,19 @@ export async function startTrial(input: RegistroBase): Promise<TrialResult> {
       role: "owner",
       sendMagicLink: true,
     });
+    // authCreateOwner devuelve magicLinkUrl — usarlo para el email de bienvenida
+    await sendWelcomeEmail(
+      input.email,
+      input.companyName,
+      tempPassword,
+      provision.companyId,
+      tenantUrl,
+      "ADMIN",
+      authResult.magicLinkUrl,
+    ).catch((err: any) => console.warn("[registro] sendWelcomeEmail (magic-link) falló:", err.message));
     magicLinkSent = Boolean(authResult.magicLinkUrl);
   } catch (err: any) {
     console.warn("[registro] authCreateOwner falló, fallback a welcome clásico:", err.message);
-    const tenantUrl = input.subdomain ? `https://${input.subdomain.toLowerCase()}.zentto.net` : undefined;
     await sendWelcomeEmail(
       input.email,
       input.companyName,
@@ -205,6 +277,36 @@ export async function startTrial(input: RegistroBase): Promise<TrialResult> {
     expiresAt: trialStart[0]?.ExpiresAt,
     magicLinkSent,
   };
+}
+
+/**
+ * API pública para reenviar magic-link a usuarios que ya tienen cuenta.
+ * Usado por el flujo de recuperación desde el registro.
+ */
+export async function resendMagicLink(email: string): Promise<{ ok: boolean; mensaje: string; magicLinkSent?: boolean }> {
+  const tenant = await resolveTenantByEmail(email.toLowerCase());
+  if (!tenant) return { ok: false, mensaje: "email_not_found" };
+
+  const subdomain = tenant.TenantSubdomain || "";
+  const tenantUrl = subdomain ? `https://${subdomain}.zentto.net` : undefined;
+
+  try {
+    const authResult = await authCreateOwner({
+      email: email.toLowerCase(),
+      fullName: email,
+      companyId: tenant.CompanyId,
+      companyCode: tenant.CompanyCode,
+      tenantSubdomain: subdomain,
+      role: "owner",
+      sendMagicLink: true,
+    });
+    const magicLinkSent = Boolean(authResult.magicLinkUrl);
+    await sendWelcomeEmail(email, tenant.LegalName, "", tenant.CompanyId, tenantUrl, "ADMIN", authResult.magicLinkUrl ?? undefined).catch(() => {});
+    return { ok: true, mensaje: "magic_link_sent", magicLinkSent };
+  } catch {
+    await sendWelcomeEmail(email, tenant.LegalName, "", tenant.CompanyId, tenantUrl, "ADMIN").catch(() => {});
+    return { ok: true, mensaje: "welcome_email_sent", magicLinkSent: false };
+  }
 }
 
 /**

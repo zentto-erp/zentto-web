@@ -70,7 +70,7 @@
   },
   "homepage": "https://zentto.net",
   "publishConfig": {
-    "access": "public",
+    "access": "restricted",
     "registry": "https://registry.npmjs.org"
   },
   "devDependencies": {

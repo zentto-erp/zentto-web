@@ -313,9 +313,16 @@ jobs:
                 echo '' >> "$ENV_API"
                 echo 'AUTH_MAIL_WEBHOOK_URL=https://notify.zentto.net/api/email/send' >> "$ENV_API"
                 echo "AUTH_MAIL_WEBHOOK_TOKEN=$NOTIFY_API_KEY" >> "$ENV_API"
+                echo "NOTIFY_API_KEY=$NOTIFY_API_KEY" >> "$ENV_API"
+                echo 'NOTIFY_BASE_URL=https://notify.zentto.net' >> "$ENV_API"
                 echo 'MAIL_FROM=Zentto <no-reply@zentto.net>' >> "$ENV_API"
               else
                 sed -i "s|^AUTH_MAIL_WEBHOOK_TOKEN=.*|AUTH_MAIL_WEBHOOK_TOKEN=$NOTIFY_API_KEY|" "$ENV_API"
+                grep -q '^NOTIFY_API_KEY=' "$ENV_API" \
+                  && sed -i "s|^NOTIFY_API_KEY=.*|NOTIFY_API_KEY=$NOTIFY_API_KEY|" "$ENV_API" \
+                  || echo "NOTIFY_API_KEY=$NOTIFY_API_KEY" >> "$ENV_API"
+                grep -q '^NOTIFY_BASE_URL=' "$ENV_API" \
+                  || echo 'NOTIFY_BASE_URL=https://notify.zentto.net' >> "$ENV_API"
               fi
               if ! grep -q '^STORE_URL=' "$ENV_API"; then
                 echo 'STORE_URL=https://app.zentto.net' >> "$ENV_API"

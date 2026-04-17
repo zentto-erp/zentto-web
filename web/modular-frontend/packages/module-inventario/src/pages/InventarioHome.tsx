@@ -29,7 +29,7 @@ import WarehouseIcon from "@mui/icons-material/Warehouse";
 import { useRouter } from "next/navigation";
 import { useInventarioDashboard, useMovimientosList } from "../hooks/useInventario";
 import { formatCurrency, useGridLayoutSync } from "@zentto/shared-api";
-import { brandColors } from "@zentto/shared-ui";
+import { brandColors, DashboardShortcutCard, DashboardKpiCard } from "@zentto/shared-ui";
 import { useInventarioGridRegistration } from "../components/zenttoGridPersistence";
 import type { ColumnDef } from "@zentto/datagrid-core";
 
@@ -63,8 +63,24 @@ export default function InventarioHome({ basePath = "" }: { basePath?: string })
       value: dashboard ? String(dashboard.TotalArticulos) : "\u2014",
       subtitle: "En sistema",
       loading: dashLoading,
-      color: brandColors.statBlue,
-      chartType: "bar" as const,
+      color: brandColors.shortcutDark,
+      icon: <InventoryIcon />,
+    },
+    {
+      title: "Categorias",
+      value: dashboard ? String(dashboard.TotalCategorias) : "\u2014",
+      subtitle: "Catalogos",
+      loading: dashLoading,
+      color: brandColors.shortcutTeal,
+      icon: <CategoryIcon />,
+    },
+    {
+      title: "Valor Inventario",
+      value: dashboard ? formatCurrency(dashboard.ValorInventario) : "\u2014",
+      subtitle: "Costo total",
+      loading: dashLoading,
+      color: brandColors.shortcutViolet,
+      icon: <AttachMoneyIcon />,
     },
     {
       title: "Bajo Stock",
@@ -72,36 +88,22 @@ export default function InventarioHome({ basePath = "" }: { basePath?: string })
       subtitle: "Requieren atencion",
       loading: dashLoading,
       color: brandColors.statRed,
-      chartType: "line" as const,
-    },
-    {
-      title: "Categorias",
-      value: dashboard ? String(dashboard.TotalCategorias) : "\u2014",
-      subtitle: "Catalogos",
-      loading: dashLoading,
-      color: brandColors.statTeal,
-      chartType: "bar" as const,
-    },
-    {
-      title: "Valor Inventario",
-      value: dashboard ? formatCurrency(dashboard.ValorInventario) : "\u2014",
-      subtitle: "Costo total",
-      loading: dashLoading,
-      color: brandColors.statOrange,
-      chartType: "line" as const,
+      icon: <WarningAmberIcon />,
     },
   ];
 
-  const shortcuts = [
-    { title: "Articulos", description: "Gestion de productos", icon: <InventoryIcon sx={{ fontSize: 32 }} />, href: `${bp}/articulos`, bg: brandColors.shortcutGreen },
-    { title: "Ajuste Inventario", description: "Entradas y salidas", icon: <TuneIcon sx={{ fontSize: 32 }} />, href: `${bp}/ajuste`, bg: brandColors.shortcutDark },
-    { title: "Movimientos", description: "Historial completo", icon: <HistoryIcon sx={{ fontSize: 32 }} />, href: `${bp}/movimientos`, bg: brandColors.shortcutNavy },
-    { title: "Traslados", description: "Entre almacenes", icon: <SwapHorizIcon sx={{ fontSize: 32 }} />, href: `${bp}/traslados`, bg: brandColors.danger },
-    { title: "Libro Inventario", description: "Reporte mensual", icon: <MenuBookIcon sx={{ fontSize: 32 }} />, href: `${bp}/reportes/libro`, bg: brandColors.success },
-    { title: "Etiquetas", description: "Generador", icon: <LocalOfferIcon sx={{ fontSize: 32 }} />, href: `${bp}/etiquetas`, bg: brandColors.shortcutSlate },
-    { title: "Categorias", description: "Catalogo", icon: <CategoryIcon sx={{ fontSize: 32 }} />, href: `${bp}/catalogos/categorias`, bg: brandColors.shortcutTeal },
-    { title: "Almacenes", description: "Catalogo", icon: <WarehouseIcon sx={{ fontSize: 32 }} />, href: `${bp}/catalogos/almacenes`, bg: brandColors.shortcutSlate },
+  const PALETTE = [brandColors.shortcutDark, brandColors.shortcutTeal, brandColors.shortcutViolet, brandColors.statRed];
+  const shortcutItems = [
+    { title: "Articulos", description: "Gestion de productos", icon: <InventoryIcon sx={{ fontSize: 32 }} />, href: `${bp}/articulos` },
+    { title: "Ajuste Inventario", description: "Entradas y salidas", icon: <TuneIcon sx={{ fontSize: 32 }} />, href: `${bp}/ajuste` },
+    { title: "Movimientos", description: "Historial completo", icon: <HistoryIcon sx={{ fontSize: 32 }} />, href: `${bp}/movimientos` },
+    { title: "Traslados", description: "Entre almacenes", icon: <SwapHorizIcon sx={{ fontSize: 32 }} />, href: `${bp}/traslados` },
+    { title: "Libro Inventario", description: "Reporte mensual", icon: <MenuBookIcon sx={{ fontSize: 32 }} />, href: `${bp}/reportes/libro` },
+    { title: "Etiquetas", description: "Generador", icon: <LocalOfferIcon sx={{ fontSize: 32 }} />, href: `${bp}/etiquetas` },
+    { title: "Categorias", description: "Catalogo", icon: <CategoryIcon sx={{ fontSize: 32 }} />, href: `${bp}/catalogos/categorias` },
+    { title: "Almacenes", description: "Catalogo", icon: <WarehouseIcon sx={{ fontSize: 32 }} />, href: `${bp}/catalogos/almacenes` },
   ];
+  const shortcuts = shortcutItems.map((sc, i) => ({ ...sc, bg: PALETTE[i % PALETTE.length] }));
 
   const movRows = (ultMovs?.rows ?? []) as Record<string, unknown>[];
 
@@ -129,43 +131,14 @@ export default function InventarioHome({ basePath = "" }: { basePath?: string })
       <Grid container spacing={3} sx={{ mb: 4 }}>
         {statsCards.map((s, idx) => (
           <Grid size={{ xs: 12, sm: 6, md: 3 }} key={idx}>
-            <Card
-              sx={{
-                height: "100%", bgcolor: s.color, color: "white", borderRadius: 2,
-                position: "relative", overflow: "hidden", boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
-              }}
-            >
-              <CardContent sx={{ pb: "16px !important" }}>
-                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                  <Box>
-                    {s.loading ? (
-                      <Skeleton variant="text" width={80} sx={{ bgcolor: "rgba(255,255,255,0.3)", fontSize: "2rem" }} />
-                    ) : (
-                      <Typography variant="h4" sx={{ fontWeight: 700, lineHeight: 1 }}>{s.value}</Typography>
-                    )}
-                    <Typography variant="body1" sx={{ mt: 1, opacity: 0.9, fontWeight: 500 }}>{s.title}</Typography>
-                  </Box>
-                  <IconButton size="small" sx={{ color: "white", opacity: 0.8, p: 0 }}>
-                    <MoreVertIcon />
-                  </IconButton>
-                </Box>
-                <Box sx={{ mt: 3, height: 40, width: "100%" }}>
-                  {s.chartType === "line" ? (
-                    <svg viewBox="0 0 100 30" width="100%" height="100%" preserveAspectRatio="none">
-                      <path d="M0,20 Q10,10 20,25 T40,15 T60,20 T80,5 T100,10 L100,30 L0,30 Z" fill="rgba(255,255,255,0.1)" />
-                      <path d="M0,20 Q10,10 20,25 T40,15 T60,20 T80,5 T100,10" fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="2" />
-                    </svg>
-                  ) : (
-                    <svg viewBox="0 0 100 30" width="100%" height="100%" preserveAspectRatio="none">
-                      <rect x="5" y="10" width="15" height="20" fill="rgba(255,255,255,0.4)" rx="2" />
-                      <rect x="30" y="5" width="15" height="25" fill="rgba(255,255,255,0.6)" rx="2" />
-                      <rect x="55" y="15" width="15" height="15" fill="rgba(255,255,255,0.3)" rx="2" />
-                      <rect x="80" y="8" width="15" height="22" fill="rgba(255,255,255,0.5)" rx="2" />
-                    </svg>
-                  )}
-                </Box>
-              </CardContent>
-            </Card>
+            <DashboardKpiCard
+              title={s.title}
+              value={s.value}
+              color={s.color}
+              icon={s.icon}
+              subtitle={s.subtitle}
+              loading={s.loading}
+            />
           </Grid>
         ))}
       </Grid>
@@ -173,21 +146,14 @@ export default function InventarioHome({ basePath = "" }: { basePath?: string })
       {/* SHORTCUTS */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
         {shortcuts.map((sc, idx) => (
-          <Grid size={{ xs: 6, sm: 4, md: 3 }} key={idx}>
-            <Card sx={{ borderRadius: 2, overflow: "hidden", boxShadow: "0 2px 4px rgba(0,0,0,0.05)" }}>
-              <CardActionArea onClick={() => router.push(sc.href)}>
-                <Box sx={{ bgcolor: sc.bg, color: "white", display: "flex", justifyContent: "center", py: 3, position: "relative" }}>
-                  {sc.icon}
-                  <svg preserveAspectRatio="none" style={{ position: "absolute", bottom: 0, left: 0, width: "100%", height: "30px" }} viewBox="0 0 100 100">
-                    <path d="M0,100 C20,0 50,0 100,100 Z" fill="rgba(255,255,255,0.15)" />
-                  </svg>
-                </Box>
-                <CardContent sx={{ textAlign: "center", py: 1.5 }}>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 700, color: "text.primary", mb: 0, lineHeight: 1.3 }}>{sc.title}</Typography>
-                  <Typography variant="caption" color="text.secondary" sx={{ textTransform: "uppercase", fontWeight: 600, letterSpacing: 1 }}>{sc.description}</Typography>
-                </CardContent>
-              </CardActionArea>
-            </Card>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }} key={idx}>
+            <DashboardShortcutCard
+              title={sc.title}
+              description={sc.description}
+              icon={sc.icon}
+              href={sc.href}
+              color={sc.bg}
+            />
           </Grid>
         ))}
       </Grid>

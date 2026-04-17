@@ -1,5 +1,5 @@
 import { Router, Request, Response, NextFunction } from "express";
-import { startTrial, startCheckout } from "./service.js";
+import { startTrial, startCheckout, resendMagicLink } from "./service.js";
 import { callSp } from "../../db/query.js";
 
 export const registroRouter = Router();
@@ -86,18 +86,40 @@ registroRouter.post("/trial", async (req, res) => {
   try {
     const validation = validateRegistroBody(req.body);
     if (!validation.ok) {
-      res.status(400).json({ ok: false, error: validation.error });
+      res.status(400).json({ ok: false, error: validation.error, message: validation.error });
       return;
     }
     const result = await startTrial(req.body);
     if (!result.ok) {
-      res.status(400).json(result);
+      res.status(400).json({ ...result, message: result.mensaje });
       return;
     }
     res.status(201).json(result);
   } catch (err: any) {
     console.error("[registro/trial]", err);
-    res.status(500).json({ ok: false, error: err.message });
+    res.status(500).json({ ok: false, error: err.message, message: err.message });
+  }
+});
+
+// POST /v1/registro/resend-magic-link
+// Reenvía el magic-link de bienvenida a usuarios que ya tienen cuenta
+// pero no recibieron el email (NOTIFY_API_KEY no configurada previamente, etc.)
+registroRouter.post("/resend-magic-link", async (req, res) => {
+  try {
+    const email = req.body?.email;
+    if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+      res.status(400).json({ ok: false, error: "email_inválido", message: "email_inválido" });
+      return;
+    }
+    const result = await resendMagicLink(email);
+    if (!result.ok) {
+      res.status(404).json({ ...result, message: result.mensaje });
+      return;
+    }
+    res.json(result);
+  } catch (err: any) {
+    console.error("[registro/resend-magic-link]", err);
+    res.status(500).json({ ok: false, error: err.message, message: err.message });
   }
 });
 

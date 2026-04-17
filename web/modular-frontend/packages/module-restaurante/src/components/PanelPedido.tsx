@@ -44,7 +44,7 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import CancelPresentationIcon from '@mui/icons-material/CancelPresentation';
-import { Mesa, ProductoMenu, ItemPedido, ComponenteProducto } from '@/hooks/useRestaurante';
+import { Mesa, ProductoMenu, ItemPedido, ComponenteProducto } from '../hooks/useRestaurante';
 import { usePosStore } from '@zentto/shared-api';
 
 interface PanelPedidoProps {

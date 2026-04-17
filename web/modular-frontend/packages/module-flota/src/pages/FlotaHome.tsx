@@ -38,7 +38,7 @@ import {
   useNextMaintenance,
   useFlotaTrends,
 } from "../hooks/useFlota";
-import { brandColors } from "@zentto/shared-ui";
+import { brandColors, DashboardShortcutCard, DashboardKpiCard } from "@zentto/shared-ui";
 import type { ColumnDef } from "@zentto/datagrid-core";
 
 /* ─── Helpers ─────────────────────────────────────────────── */
@@ -186,35 +186,35 @@ export default function FlotaHome({ basePath = "" }: { basePath?: string }) {
       title: "Vehiculos Activos",
       value: String(db?.VehiculosActivos ?? db?.TotalActiveVehicles ?? 0),
       icon: <DirectionsCarIcon />,
-      color: "#1976d2",
+      color: brandColors.shortcutDark,
     },
     {
       title: "Km Total Mes",
       value: db ? Number(db.KmTotalMes ?? trends?.KmThisMonth ?? 0).toLocaleString("es") : "\u2014",
       icon: <SpeedIcon />,
-      color: "#00897b",
+      color: brandColors.shortcutTeal,
       change: kmChange,
-    },
-    {
-      title: "Costo Combustible Mes",
-      value: db ? formatCurrency(Number(db.CostoCombustibleMes ?? db.FuelCostThisMonth ?? 0)) : "\u2014",
-      icon: <LocalGasStationIcon />,
-      color: "#f44336",
-      change: fuelChange,
     },
     {
       title: "Mant. Pendientes",
       value: String(db?.MantenimientosPendientes ?? db?.MaintenancePending ?? 0),
       icon: <BuildIcon />,
-      color: "#ff9800",
+      color: brandColors.shortcutViolet,
+    },
+    {
+      title: "Costo Combustible Mes",
+      value: db ? formatCurrency(Number(db.CostoCombustibleMes ?? db.FuelCostThisMonth ?? 0)) : "\u2014",
+      icon: <LocalGasStationIcon />,
+      color: brandColors.statRed,
+      change: fuelChange,
     },
   ];
 
   const shortcuts = [
-    { title: "Vehiculos", description: "Catalogo de vehiculos", icon: <DirectionsCarIcon sx={{ fontSize: 32 }} />, href: `${bp}/vehiculos`, bg: brandColors.shortcutGreen },
-    { title: "Combustible", description: "Control de cargas", icon: <LocalGasStationIcon sx={{ fontSize: 32 }} />, href: `${bp}/combustible`, bg: brandColors.shortcutDark },
-    { title: "Mantenimiento", description: "Ordenes de servicio", icon: <BuildIcon sx={{ fontSize: 32 }} />, href: `${bp}/mantenimiento`, bg: brandColors.shortcutNavy },
-    { title: "Viajes", description: "Control de rutas", icon: <RouteIcon sx={{ fontSize: 32 }} />, href: `${bp}/viajes`, bg: brandColors.shortcutSlate },
+    { title: "Vehiculos", description: "Catalogo de vehiculos", icon: <DirectionsCarIcon sx={{ fontSize: 32 }} />, href: `${bp}/vehiculos`, bg: brandColors.shortcutDark },
+    { title: "Combustible", description: "Control de cargas", icon: <LocalGasStationIcon sx={{ fontSize: 32 }} />, href: `${bp}/combustible`, bg: brandColors.shortcutTeal },
+    { title: "Mantenimiento", description: "Ordenes de servicio", icon: <BuildIcon sx={{ fontSize: 32 }} />, href: `${bp}/mantenimiento`, bg: brandColors.shortcutViolet },
+    { title: "Viajes", description: "Control de rutas", icon: <RouteIcon sx={{ fontSize: 32 }} />, href: `${bp}/viajes`, bg: brandColors.statRed },
   ];
 
   const maintRows = nextMaint.map((m, i) => ({ id: m.MaintenanceOrderId ?? i, ...m }));
@@ -291,7 +291,7 @@ export default function FlotaHome({ basePath = "" }: { basePath?: string }) {
       <Grid container spacing={2} sx={{ mb: 3 }}>
         {kpiCards.map((kpi, idx) => (
           <Grid size={{ xs: 12, sm: 6, md: 3 }} key={idx}>
-            <KPICard
+            <DashboardKpiCard
               title={kpi.title}
               value={kpi.value}
               icon={kpi.icon}
@@ -306,21 +306,14 @@ export default function FlotaHome({ basePath = "" }: { basePath?: string }) {
       {/* ─── SHORTCUTS ──────────────────────────────────────── */}
       <Grid container spacing={2} sx={{ mb: 3 }}>
         {shortcuts.map((sc, idx) => (
-          <Grid size={{ xs: 6, sm: 4, md: 3 }} key={idx}>
-            <Card sx={{ borderRadius: 2, overflow: "hidden", boxShadow: "0 2px 4px rgba(0,0,0,0.05)" }}>
-              <CardActionArea onClick={() => router.push(sc.href)}>
-                <Box sx={{ bgcolor: sc.bg, color: "white", display: "flex", justifyContent: "center", py: 3, position: "relative" }}>
-                  {sc.icon}
-                  <svg preserveAspectRatio="none" style={{ position: "absolute", bottom: 0, left: 0, width: "100%", height: "30px" }} viewBox="0 0 100 100">
-                    <path d="M0,100 C20,0 50,0 100,100 Z" fill="rgba(255,255,255,0.15)" />
-                  </svg>
-                </Box>
-                <CardContent sx={{ textAlign: "center", py: 1.5 }}>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 700, color: "text.primary", mb: 0, lineHeight: 1.3 }}>{sc.title}</Typography>
-                  <Typography variant="caption" color="text.secondary" sx={{ textTransform: "uppercase", fontWeight: 600, letterSpacing: 1 }}>{sc.description}</Typography>
-                </CardContent>
-              </CardActionArea>
-            </Card>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }} key={idx}>
+            <DashboardShortcutCard
+              title={sc.title}
+              description={sc.description}
+              icon={sc.icon}
+              href={sc.href}
+              color={sc.bg}
+            />
           </Grid>
         ))}
       </Grid>

@@ -14,7 +14,7 @@ import {
 } from '@mui/material';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import { ComandaCocina } from '@/hooks/useRestaurante';
+import { ComandaCocina } from '../hooks/useRestaurante';
 
 interface VistaCocinaProps {
     comandas: ComandaCocina[];

@@ -1,0 +1,28 @@
+{
+  "name": "@zentto/module-restaurante",
+  "version": "0.1.1",
+  "private": true,
+  "main": "src/index.tsx",
+  "types": "src/index.tsx",
+  "exports": {
+    ".": "./src/index.tsx",
+    "./hooks/*": "./src/hooks/*",
+    "./components/*": "./src/components/*",
+    "./pages/*": "./src/pages/*",
+    "./lib/*": "./src/lib/*"
+  },
+  "dependencies": {
+    "@emotion/cache": "^11.14.0",
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.0",
+    "@mui/icons-material": "^6.5.0",
+    "@mui/material": "^6.5.0",
+    "@mui/x-date-pickers": "^7.26.0",
+    "@tanstack/react-query": "^5.64.2",
+    "@zentto/shared-api": "0.1.0",
+    "@zentto/shared-auth": "0.1.0",
+    "@zentto/shared-ui": "0.1.0",
+    "dayjs": "^1.11.13",
+    "react": "^19.2.4"
+  }
+}

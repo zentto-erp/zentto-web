@@ -1,7 +1,11 @@
+// Puertos alineados con docker/pm2.config.cjs (nomina=3002, pos=3003).
+// Se usan SOLO cuando el dev corre el shell en su máquina (localhost) con
+// cada micro-app en su propio puerto. En deploys (appdev/prod) se ignora
+// y resolveAppHref devuelve path relativo para que nginx/PM2 rutee.
 const DEV_APP_ORIGINS: Record<string, string> = {
   contabilidad: process.env.NEXT_PUBLIC_APP_URL_CONTABILIDAD || 'http://localhost:3001',
-  pos: process.env.NEXT_PUBLIC_APP_URL_POS || 'http://localhost:3002',
-  nomina: process.env.NEXT_PUBLIC_APP_URL_NOMINA || 'http://localhost:3003',
+  nomina: process.env.NEXT_PUBLIC_APP_URL_NOMINA || 'http://localhost:3002',
+  pos: process.env.NEXT_PUBLIC_APP_URL_POS || 'http://localhost:3003',
   bancos: process.env.NEXT_PUBLIC_APP_URL_BANCOS || 'http://localhost:3004',
   inventario: process.env.NEXT_PUBLIC_APP_URL_INVENTARIO || 'http://localhost:3005',
   ventas: process.env.NEXT_PUBLIC_APP_URL_VENTAS || 'http://localhost:3006',
@@ -41,6 +45,18 @@ export function resolveAppHref(appId: string, path: string): string {
   }
 
   if (process.env.NODE_ENV !== 'development') {
+    return path;
+  }
+
+  // En SSR (sin window) o cuando el browser NO está en localhost,
+  // devolver path relativo — nginx/PM2 hacen el ruteo. Solo usar
+  // URLs absolutas http://localhost:PORT cuando el dev corre el shell
+  // localmente con cada micro-app en su propio puerto.
+  if (typeof window === 'undefined') {
+    return path;
+  }
+  const host = window.location.hostname;
+  if (host !== 'localhost' && host !== '127.0.0.1') {
     return path;
   }
 

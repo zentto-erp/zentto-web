@@ -24,7 +24,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import BlockIcon from "@mui/icons-material/Block";
 import LoginIcon from "@mui/icons-material/Login";
 import { formatCurrency, toDateOnly, formatDateTime, useGridLayoutSync } from "@zentto/shared-api";
-import { ContextActionHeader } from "@zentto/shared-ui";
+import { ContextActionHeader, DashboardKpiCard } from "@zentto/shared-ui";
 import { useTimezone } from "@zentto/shared-auth";
 import { useAuditDashboard } from "../hooks/useAuditoria";
 import { brandColors } from "@zentto/shared-ui";
@@ -88,10 +88,10 @@ export default function AuditoriaHome() {
   }));
 
   const stats = [
-    { label: "Logs (24h)", value: data?.logsUltimas24h ?? 0, color: brandColors.statBlue },
-    { label: "Creaciones", value: data?.totalCreates ?? 0, color: brandColors.success },
-    { label: "Actualizaciones", value: data?.totalUpdates ?? 0, color: brandColors.statOrange },
-    { label: "Eliminaciones", value: data?.totalDeletes ?? 0, color: brandColors.statRed },
+    { label: "Logs (24h)", value: data?.logsUltimas24h ?? 0, color: brandColors.shortcutDark, icon: <ListAltIcon /> },
+    { label: "Creaciones", value: data?.totalCreates ?? 0, color: brandColors.shortcutTeal, icon: <AddCircleOutlineIcon /> },
+    { label: "Actualizaciones", value: data?.totalUpdates ?? 0, color: brandColors.shortcutViolet, icon: <EditIcon /> },
+    { label: "Eliminaciones", value: data?.totalDeletes ?? 0, color: brandColors.statRed, icon: <DeleteIcon /> },
   ];
 
   const shortcuts = [
@@ -126,17 +126,15 @@ export default function AuditoriaHome() {
         {/* Stats Cards */}
         <Stack direction="row" spacing={2} mb={3} flexWrap="wrap" useFlexGap>
           {stats.map((s) => (
-            <Paper
-              key={s.label}
-              sx={{ p: 2, minWidth: 160, flex: "1 1 160px", borderTop: `3px solid ${s.color}` }}
-            >
-              <Typography variant="body2" color="text.secondary">{s.label}</Typography>
-              {isLoading ? (
-                <Skeleton width={60} height={36} />
-              ) : (
-                <Typography variant="h5" fontWeight={700}>{s.value}</Typography>
-              )}
-            </Paper>
+            <Box key={s.label} sx={{ flex: "1 1 160px", minWidth: 160 }}>
+              <DashboardKpiCard
+                title={s.label}
+                value={String(s.value)}
+                color={s.color}
+                icon={s.icon}
+                loading={isLoading}
+              />
+            </Box>
           ))}
         </Stack>
 

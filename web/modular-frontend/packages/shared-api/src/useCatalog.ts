@@ -152,6 +152,16 @@ export function useStartCheckout() {
   });
 }
 
+export function useResendMagicLink() {
+  return useMutation<
+    { ok: boolean; mensaje: string; magicLinkSent?: boolean },
+    Error,
+    { email: string }
+  >({
+    mutationFn: (body) => apiPublicPost('/v1/registro/resend-magic-link', body),
+  });
+}
+
 export function useCaptureLead() {
   return useMutation<
     { ok: boolean; leadId?: number },
