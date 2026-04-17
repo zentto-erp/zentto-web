@@ -25,7 +25,7 @@ import {
     useSensors,
 } from '@dnd-kit/core';
 import { MesaCard } from './MesaCard';
-import { Ambiente, Mesa, ClienteMesa } from '@/hooks/useRestaurante';
+import { Ambiente, Mesa, ClienteMesa } from '../hooks/useRestaurante';
 
 interface MapaMesasProps {
     ambientes: Ambiente[];
