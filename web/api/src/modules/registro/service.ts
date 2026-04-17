@@ -233,7 +233,8 @@ export async function startTrial(input: RegistroBase): Promise<TrialResult> {
     CompanyId: provision.companyId,
   }).catch(() => {});
 
-  // Crear identidad en zentto-auth + magic-link welcome
+  // Crear identidad en zentto-auth + enviar email de bienvenida con magic-link
+  const tenantUrl = input.subdomain ? `https://${input.subdomain.toLowerCase()}.zentto.net` : undefined;
   let magicLinkSent = false;
   try {
     const authResult = await authCreateOwner({
@@ -245,10 +246,19 @@ export async function startTrial(input: RegistroBase): Promise<TrialResult> {
       role: "owner",
       sendMagicLink: true,
     });
+    // authCreateOwner devuelve magicLinkUrl — usarlo para el email de bienvenida
+    await sendWelcomeEmail(
+      input.email,
+      input.companyName,
+      tempPassword,
+      provision.companyId,
+      tenantUrl,
+      "ADMIN",
+      authResult.magicLinkUrl,
+    ).catch((err: any) => console.warn("[registro] sendWelcomeEmail (magic-link) falló:", err.message));
     magicLinkSent = Boolean(authResult.magicLinkUrl);
   } catch (err: any) {
     console.warn("[registro] authCreateOwner falló, fallback a welcome clásico:", err.message);
-    const tenantUrl = input.subdomain ? `https://${input.subdomain.toLowerCase()}.zentto.net` : undefined;
     await sendWelcomeEmail(
       input.email,
       input.companyName,
