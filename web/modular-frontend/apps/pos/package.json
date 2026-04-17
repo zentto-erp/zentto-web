@@ -18,6 +18,7 @@
     "@mui/system": "^6.4.6",
     "@mui/x-date-pickers": "^7.26.0",
     "@tanstack/react-query": "^5.64.1",
+    "@zentto/module-pos": "*",
     "@zentto/shared-api": "*",
     "@zentto/shared-auth": "*",
     "@zentto/shared-reports": "*",
