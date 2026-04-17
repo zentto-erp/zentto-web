@@ -2,6 +2,9 @@
 FROM node:20-alpine AS builder
 WORKDIR /app
 
+ARG NPM_TOKEN
+ENV NPM_TOKEN=$NPM_TOKEN
+
 COPY web/api/package.json web/api/package-lock.json web/api/.npmrc ./
 RUN npm ci
 
@@ -12,6 +15,9 @@ RUN npm run build
 FROM node:20-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
+
+ARG NPM_TOKEN
+ENV NPM_TOKEN=$NPM_TOKEN
 
 # postgresql-client: provee pg_dump y pg_restore para el sistema de respaldos
 RUN apk add --no-cache postgresql-client
@@ -29,8 +35,8 @@ COPY web/api/migrations/postgres ./migrations/postgres
 COPY web/api/sqlweb-pg ./sqlweb-pg
 COPY scripts/bootstrap-db.sh ./scripts/bootstrap-db.sh
 
-# Reinstalar solo dependencias de producción
-RUN npm ci --omit=dev
+# Reinstalar solo dependencias de producción y limpiar token
+RUN npm ci --omit=dev && rm -f .npmrc
 
 # Carpeta de media persistente + directorio de backups locales
 RUN mkdir -p /app/storage/media /backups/zentto

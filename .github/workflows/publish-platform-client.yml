@@ -27,6 +27,8 @@ jobs:
 
       - name: Install
         run: npm install
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Typecheck + test + build
         run: |

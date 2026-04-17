@@ -2,6 +2,9 @@
 FROM node:20-alpine AS builder
 WORKDIR /app
 
+ARG NPM_TOKEN
+ENV NPM_TOKEN=$NPM_TOKEN
+
 # Build-time variables (NEXT_PUBLIC_* se bakean en el bundle JS)
 ARG NEXT_PUBLIC_API_BASE_URL=http://localhost:4000
 ARG NEXT_PUBLIC_API_BASE=http://localhost:4000
@@ -22,8 +25,8 @@ ENV NEXT_PUBLIC_PADDLE_CLIENT_TOKEN=$NEXT_PUBLIC_PADDLE_CLIENT_TOKEN
 # Copiar workspace completo
 COPY web/modular-frontend/ .
 
-# Instalar dependencias
-RUN npm ci
+# Instalar dependencias y limpiar token
+RUN npm ci && rm -f .npmrc
 
 # Build de las 16 apps
 RUN npm run build:all

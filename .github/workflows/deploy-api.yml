@@ -67,6 +67,8 @@ jobs:
       - name: Install dependencies
         working-directory: web/api
         run: npm ci
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: TypeScript build check
         working-directory: web/api
@@ -111,6 +113,8 @@ jobs:
       - name: Install dependencies
         working-directory: web/api
         run: npm ci
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Bootstrap schema (goose-style cold bootstrap)
         working-directory: web/api
@@ -170,6 +174,8 @@ jobs:
           tags: ${{ env.IMAGE }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          build-args: |
+            NPM_TOKEN=${{ secrets.NPM_TOKEN }}
 
   migrate-pg:
     name: Run PostgreSQL migrations (goose)
