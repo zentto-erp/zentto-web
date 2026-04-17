@@ -101,21 +101,21 @@ const shortcuts = [
   {
     title: "Pipeline",
     description: "Tablero Kanban",
-    icon: <ViewKanbanIcon sx={{ fontSize: 28 }} />,
+    icon: <ViewKanbanIcon sx={{ fontSize: 32 }} />,
     href: "/crm/pipeline",
     bg: brandColors.shortcutDark,
   },
   {
     title: "Leads",
     description: "Lista completa",
-    icon: <FormatListBulletedIcon sx={{ fontSize: 28 }} />,
+    icon: <FormatListBulletedIcon sx={{ fontSize: 32 }} />,
     href: "/crm/leads",
     bg: brandColors.shortcutTeal,
   },
   {
     title: "Actividades",
     description: "Tareas y seguimiento",
-    icon: <EventNoteIcon sx={{ fontSize: 28 }} />,
+    icon: <EventNoteIcon sx={{ fontSize: 32 }} />,
     href: "/crm/actividades",
     bg: brandColors.shortcutViolet,
   },
@@ -435,49 +435,17 @@ export default function CRMHome() {
       </Box>
 
       {/* ─── SHORTCUTS ───────────────────────────────────────── */}
-      <Grid container spacing={2} sx={{ mb: 3 }}>
+      <Grid container spacing={3} sx={{ mb: 3 }}>
         {shortcuts.map((sc, idx) => (
-          <Grid size={{ xs: 12, sm: 4 }} key={idx}>
-            <Card
-              sx={{
-                borderRadius: 2,
-                overflow: "hidden",
-                cursor: "pointer",
-                transition: "transform 0.2s, box-shadow 0.2s",
-                "&:hover": {
-                  transform: "translateY(-2px)",
-                  boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-                },
-              }}
-              onClick={() => router.push(sc.href)}
-            >
-              <Box
-                sx={{
-                  bgcolor: sc.bg,
-                  color: "white",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 1.5,
-                  px: 2,
-                  py: 1.5,
-                }}
-              >
+          <Grid size={{ xs: 12, sm: 6, md: 3 }} key={idx}>
+            <Card sx={{ borderRadius: 2, overflow: "hidden", boxShadow: "0 2px 4px rgba(0,0,0,0.05)", height: "100%", cursor: "pointer", transition: "transform 0.2s, box-shadow 0.2s", "&:hover": { transform: "translateY(-2px)", boxShadow: "0 4px 12px rgba(0,0,0,0.15)" } }} onClick={() => router.push(sc.href)}>
+              <Box sx={(t) => ({ bgcolor: sc.bg, backgroundImage: t.palette.mode === 'dark' ? 'linear-gradient(rgba(255,255,255,0.05), rgba(255,255,255,0.05))' : 'none', color: "white", display: "flex", justifyContent: "center", py: 3 })}>
                 {sc.icon}
-                <Box>
-                  <Typography
-                    variant="subtitle2"
-                    sx={{ fontWeight: 700, color: "white" }}
-                  >
-                    {sc.title}
-                  </Typography>
-                  <Typography
-                    variant="caption"
-                    sx={{ color: "rgba(255,255,255,0.8)" }}
-                  >
-                    {sc.description}
-                  </Typography>
-                </Box>
               </Box>
+              <CardContent sx={{ textAlign: "center", py: 2, flex: 1 }}>
+                <Typography variant="h6" sx={{ fontWeight: 700, color: "text.primary", mb: 0 }}>{sc.title}</Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ textTransform: "uppercase", fontWeight: 600, fontSize: "0.75rem", letterSpacing: 1 }}>{sc.description}</Typography>
+              </CardContent>
             </Card>
           </Grid>
         ))}

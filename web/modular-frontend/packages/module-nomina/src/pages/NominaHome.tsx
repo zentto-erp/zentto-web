@@ -139,12 +139,12 @@ export default function NominaHome({ basePath = "" }: { basePath?: string }) {
       <Grid container spacing={3} sx={{ mb: 4 }}>
         {shortcuts.map((sc, idx) => (
           <Grid size={{ xs: 12, sm: 6, md: 3 }} key={idx}>
-            <Card sx={{ borderRadius: 2, overflow: "hidden", boxShadow: "0 2px 4px rgba(0,0,0,0.05)" }}>
-              <CardActionArea onClick={() => router.push(sc.href)}>
+            <Card sx={{ borderRadius: 2, overflow: "hidden", boxShadow: "0 2px 4px rgba(0,0,0,0.05)", height: "100%" }}>
+              <CardActionArea onClick={() => router.push(sc.href)} sx={{ height: "100%", display: "flex", flexDirection: "column", alignItems: "stretch" }}>
                 <Box sx={(t) => ({ bgcolor: sc.bg, backgroundImage: t.palette.mode === 'dark' ? 'linear-gradient(rgba(255,255,255,0.05), rgba(255,255,255,0.05))' : 'none', color: "white", display: "flex", justifyContent: "center", py: 3 })}>
                   {sc.icon}
                 </Box>
-                <CardContent sx={{ textAlign: "center", py: 2 }}>
+                <CardContent sx={{ textAlign: "center", py: 2, flex: 1 }}>
                   <Typography variant="h6" sx={{ fontWeight: 700, color: "text.primary", mb: 0 }}>
                     {sc.title}
                   </Typography>
