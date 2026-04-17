@@ -23,10 +23,10 @@ function normalizeTimeZone(value: unknown): string {
  * Authenticate user using bcrypt only.
  * Plaintext or legacy ciphered passwords are rejected.
  */
-export async function authenticateUsuario(usuario: string, clave: string) {
+export async function authenticateUsuario(usuario: string, clave: string, companyId?: number) {
   const rows = await callSp<UsuarioRecord>(
     "usp_Sec_User_Authenticate",
-    { CodUsuario: usuario }
+    { CodUsuario: usuario, ...(companyId ? { CompanyId: companyId } : {}) }
   );
 
   if (rows.length === 0) return null;
@@ -111,47 +111,53 @@ async function listDefaultCompanyAccesses(): Promise<UserCompanyAccess[]> {
 
 export async function getUserCompanyAccesses(
   codUsuario: string,
-  isAdmin: boolean
+  isAdmin: boolean,
+  tenantCompanyId?: number
 ): Promise<UserCompanyAccess[]> {
+  let accesses: UserCompanyAccess[];
+
   if (isAdmin) {
-    return listDefaultCompanyAccesses();
+    accesses = await listDefaultCompanyAccesses();
+  } else {
+    try {
+      const rows = await callSp<{
+        companyId: number;
+        companyCode: string;
+        companyName: string;
+        branchId: number;
+        branchCode: string;
+        branchName: string;
+        countryCode: string;
+        timeZone: string;
+        isDefault: boolean;
+      }>("usp_Sec_User_GetCompanyAccesses", { CodUsuario: codUsuario });
+
+      const mapped = rows.map((row) => ({
+        companyId: Number(row.companyId),
+        companyCode: String(row.companyCode),
+        companyName: String(row.companyName),
+        branchId: Number(row.branchId),
+        branchCode: String(row.branchCode),
+        branchName: String(row.branchName),
+        countryCode: normalizeCountryCode(row.countryCode),
+        timeZone: normalizeTimeZone(row.timeZone),
+        isDefault: Boolean(row.isDefault),
+      }));
+
+      accesses = mapped.length > 0 ? mapped : await listDefaultCompanyAccesses();
+    } catch {
+      const defaults = await listDefaultCompanyAccesses();
+      accesses = defaults.slice(0, 1).map((row) => ({ ...row, isDefault: true }));
+    }
   }
 
-  try {
-    const rows = await callSp<{
-      companyId: number;
-      companyCode: string;
-      companyName: string;
-      branchId: number;
-      branchCode: string;
-      branchName: string;
-      countryCode: string;
-      timeZone: string;
-      isDefault: boolean;
-    }>(
-      "usp_Sec_User_GetCompanyAccesses",
-      { CodUsuario: codUsuario }
-    );
-
-    const mapped = rows.map((row) => ({
-      companyId: Number(row.companyId),
-      companyCode: String(row.companyCode),
-      companyName: String(row.companyName),
-      branchId: Number(row.branchId),
-      branchCode: String(row.branchCode),
-      branchName: String(row.branchName),
-      countryCode: normalizeCountryCode(row.countryCode),
-      timeZone: normalizeTimeZone(row.timeZone),
-      isDefault: Boolean(row.isDefault),
-    }));
-
-    if (mapped.length > 0) return mapped;
-  } catch {
-    // Tabla no desplegada aun. Se usa fallback.
+  // Aislamiento multi-tenant: cuando el login viene de un subdomain de tenant,
+  // mostrar solo las empresas/sucursales de ese tenant.
+  if (tenantCompanyId) {
+    return accesses.filter((a) => a.companyId === tenantCompanyId);
   }
 
-  const defaults = await listDefaultCompanyAccesses();
-  return defaults.slice(0, 1).map((row) => ({ ...row, isDefault: true }));
+  return accesses;
 }
 
 export function resolveActiveCompanyAccess(

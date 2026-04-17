@@ -279,7 +279,8 @@ authRouter.get("/login-options", loginOptionsLimiter, async (req, res) => {
     user.tipo === "SUP" ||
     user.codUsuario.toUpperCase() === "SUP";
 
-  const companyAccesses = await getUserCompanyAccesses(user.codUsuario, isAdmin);
+  const tenantCompanyId = (req as any)._tenantCompanyId as number | undefined;
+  const companyAccesses = await getUserCompanyAccesses(user.codUsuario, isAdmin, tenantCompanyId);
   const activeCompany = resolveActiveCompanyAccess(companyAccesses);
 
   return res.json({ rows: companyAccesses, active: activeCompany });
@@ -320,7 +321,8 @@ authRouter.post("/login", loginLimiter, async (req, res) => {
     });
   }
 
-  const record = await authenticateUsuario(normalizedUser, clave);
+  const tenantCompanyId = (req as any)._tenantCompanyId as number | undefined;
+  const record = await authenticateUsuario(normalizedUser, clave, tenantCompanyId);
 
   if (!record) {
     await registerLoginFailure(normalizedUser, getClientIp(req));
@@ -351,7 +353,7 @@ authRouter.post("/login", loginLimiter, async (req, res) => {
     }
   }
 
-  const companyAccesses = await getUserCompanyAccesses(record.Cod_Usuario, isAdmin);
+  const companyAccesses = await getUserCompanyAccesses(record.Cod_Usuario, isAdmin, tenantCompanyId);
 
   // ── Verificar suscripción del usuario (se valida en login, no por request) ──
   const { checkUserSubscription } = await import("../../middleware/subscription.js");
