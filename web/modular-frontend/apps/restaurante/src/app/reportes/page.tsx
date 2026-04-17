@@ -1,12 +1,7 @@
 'use client';
 
-import { ModuleReportsPage } from '@zentto/shared-reports';
+import { ReportesPage } from '@zentto/module-restaurante';
 
-export default function ReportesPage() {
-  return (
-    <ModuleReportsPage
-      moduleId="restaurante"
-      moduleName="Restaurante"
-    />
-  );
+export default function Page() {
+  return <ReportesPage />;
 }
