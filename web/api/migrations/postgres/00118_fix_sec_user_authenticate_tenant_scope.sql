@@ -1,7 +1,5 @@
 -- +goose Up
--- Añade p_company_id opcional a usp_Sec_User_Authenticate para
--- restringir la búsqueda al tenant correcto en entornos multi-tenant.
--- Retrocompatible: si p_company_id es NULL (callers existentes) funciona igual que antes.
+-- +goose StatementBegin
 CREATE OR REPLACE FUNCTION public.usp_Sec_User_Authenticate(
     p_cod_usuario  VARCHAR,
     p_company_id   INTEGER DEFAULT NULL
@@ -37,12 +35,14 @@ BEGIN
     WHERE  u."UserCode"  = p_cod_usuario
       AND  u."IsDeleted" = FALSE
       AND  (p_company_id IS NULL OR u."CompanyId" = p_company_id)
-    ORDER BY u."CompanyId"   -- determinístico: empresa más antigua primero
+    ORDER BY u."CompanyId"
     LIMIT 1;
 END;
 $$;
+-- +goose StatementEnd
 
 -- +goose Down
+-- +goose StatementBegin
 CREATE OR REPLACE FUNCTION public.usp_Sec_User_Authenticate(
     p_cod_usuario  VARCHAR
 )
@@ -79,3 +79,4 @@ BEGIN
     LIMIT 1;
 END;
 $$;
+-- +goose StatementEnd
