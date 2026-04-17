@@ -24,7 +24,7 @@ import { useRouter } from "next/navigation";
 import { useCuentasBancarias, useMovimientosCuenta } from "../hooks/useBancosAuxiliares";
 import { useConciliaciones } from "../hooks/useConciliacionBancaria";
 import { formatCurrency } from "@zentto/shared-api";
-import { brandColors } from "@zentto/shared-ui";
+import { brandColors, DashboardKpiCard, DashboardSection } from "@zentto/shared-ui";
 
 export default function BancosHome() {
   const router = useRouter();
@@ -66,24 +66,28 @@ export default function BancosHome() {
       value: cuentasData.length > 0 ? formatCurrency(saldoTotal) : "—",
       loading: cuentas.isLoading,
       color: brandColors.shortcutDark,
+      icon: <AccountBalanceIcon />,
     },
     {
       title: "Cuentas activas",
       value: cuentasData.length > 0 ? String(cuentasData.length) : "—",
       loading: cuentas.isLoading,
       color: brandColors.shortcutTeal,
+      icon: <TrendingUpIcon />,
     },
     {
       title: "Movimientos del mes",
       value: totalMovimientosMes,
       loading: cuentas.isLoading || movimientosMes.isLoading,
       color: brandColors.shortcutViolet,
+      icon: <TrendingDownIcon />,
     },
     {
       title: "Conciliaciones pendientes",
       value: String(conciliacionesPendientes),
       loading: conciliaciones.isLoading,
       color: brandColors.statRed,
+      icon: <CompareArrowsIcon />,
     },
   ];
 
@@ -93,28 +97,13 @@ export default function BancosHome() {
       <Grid container spacing={3} sx={{ mb: 4 }}>
         {statsCards.map((s, idx) => (
           <Grid size={{ xs: 12, sm: 6, md: 3 }} key={idx}>
-            <Card
-              sx={{
-                height: "100%",
-                bgcolor: s.color,
-                color: "white",
-                borderRadius: 2,
-                boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
-              }}
-            >
-              <CardContent sx={{ pb: "16px !important" }}>
-                <Typography variant="body2" sx={{ mb: 0.5, opacity: 0.9, fontWeight: 500 }}>
-                  {s.title}
-                </Typography>
-                {s.loading ? (
-                  <Skeleton variant="text" width={120} height={32} sx={{ bgcolor: "rgba(255,255,255,0.3)" }} />
-                ) : (
-                  <Typography variant="h5" sx={{ fontWeight: 700, lineHeight: 1.1 }}>
-                    {s.value}
-                  </Typography>
-                )}
-              </CardContent>
-            </Card>
+            <DashboardKpiCard
+              title={s.title}
+              value={s.value}
+              color={s.color}
+              icon={s.icon}
+              loading={s.loading}
+            />
           </Grid>
         ))}
       </Grid>
@@ -123,12 +112,7 @@ export default function BancosHome() {
       <Grid container spacing={3}>
         {/* Cuentas bancarias */}
         <Grid size={{ xs: 12, md: 8 }}>
-          <Paper sx={{ borderRadius: 2, overflow: "hidden" }}>
-            <Box sx={(t) => ({ p: 2, borderBottom: `1px solid ${t.palette.divider}` })}>
-              <Typography variant="h6" fontWeight={600}>
-                Cuentas bancarias
-              </Typography>
-            </Box>
+          <DashboardSection title="Cuentas bancarias" padded={false}>
             {cuentas.isLoading ? (
               <Box p={3}><Skeleton variant="rectangular" height={120} /></Box>
             ) : cuentasData.length > 0 ? (
@@ -174,15 +158,12 @@ export default function BancosHome() {
                 </Typography>
               </Box>
             )}
-          </Paper>
+          </DashboardSection>
         </Grid>
 
         {/* Resumen */}
         <Grid size={{ xs: 12, md: 4 }}>
-          <Paper sx={{ borderRadius: 2, p: 3 }}>
-            <Typography variant="h6" fontWeight={600} mb={2}>
-              Resumen general
-            </Typography>
+          <DashboardSection title="Resumen general">
             <Box sx={{ borderLeft: `4px solid ${brandColors.shortcutTeal}`, pl: 2, mb: 3 }}>
               <Typography variant="body2" color="text.secondary">Depósitos del mes</Typography>
               {movimientosMes.isLoading ? (
@@ -213,7 +194,7 @@ export default function BancosHome() {
                 </Typography>
               )}
             </Box>
-          </Paper>
+          </DashboardSection>
         </Grid>
       </Grid>
     </Box>

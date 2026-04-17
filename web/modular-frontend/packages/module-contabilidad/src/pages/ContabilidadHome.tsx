@@ -25,7 +25,10 @@ import MenuBookIcon from "@mui/icons-material/MenuBook";
 import BarChartIcon from "@mui/icons-material/BarChart";
 import AccountTreeIcon from "@mui/icons-material/AccountTree";
 import { formatCurrency } from "@zentto/shared-api";
-import { brandColors, DashboardShortcutCard } from "@zentto/shared-ui";
+import { brandColors, DashboardShortcutCard, DashboardKpiCard, DashboardSection } from "@zentto/shared-ui";
+import TrendingUpIcon from "@mui/icons-material/TrendingUp";
+import TrendingDownIcon from "@mui/icons-material/TrendingDown";
+import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
 import { useRouter } from "next/navigation";
 import { useDashboardResumen, useAsientosList } from "../hooks/useContabilidad";
 
@@ -62,18 +65,15 @@ const shortcuts = [
 
 type StatField = "totalIngresos" | "totalGastos" | "margenPorcentaje" | "cuentasPorPagar";
 
-const STATS_CONFIG: Array<{ title: string; color: string; field: StatField; isPercent?: boolean }> = [
-  { title: "Ingresos", color: brandColors.shortcutDark, field: "totalIngresos" },
-  { title: "Gastos", color: brandColors.shortcutTeal, field: "totalGastos" },
-  { title: "Margen", color: brandColors.shortcutViolet, field: "margenPorcentaje", isPercent: true },
-  { title: "Cuentas por pagar", color: brandColors.statRed, field: "cuentasPorPagar" },
+const STATS_CONFIG: Array<{ title: string; color: string; field: StatField; icon: React.ReactNode; isPercent?: boolean }> = [
+  { title: "Ingresos", color: brandColors.shortcutDark, field: "totalIngresos", icon: <TrendingUpIcon /> },
+  { title: "Gastos", color: brandColors.shortcutTeal, field: "totalGastos", icon: <TrendingDownIcon /> },
+  { title: "Margen", color: brandColors.shortcutViolet, field: "margenPorcentaje", icon: <BarChartIcon />, isPercent: true },
+  { title: "Cuentas por pagar", color: brandColors.statRed, field: "cuentasPorPagar", icon: <ReceiptLongIcon /> },
 ];
 
 const DATE_INPUT_SX: SxProps<Theme> = {
-  "& input": { color: "white", py: 0.5, fontSize: "0.75rem" },
-  "& fieldset": { borderColor: "rgba(255,255,255,0.3)" },
-  "&:hover fieldset": { borderColor: "rgba(255,255,255,0.5)" },
-  "& input::-webkit-calendar-picker-indicator": { filter: "brightness(0) invert(1)", opacity: 1, cursor: "pointer" },
+  "& input": { py: 0.5, fontSize: "0.75rem" },
   maxWidth: 130,
 };
 
@@ -81,6 +81,7 @@ function StatCard({
   title,
   color,
   field,
+  icon,
   isPercent,
   defaultDesde,
   defaultHasta,
@@ -88,6 +89,7 @@ function StatCard({
   title: string;
   color: string;
   field: StatField;
+  icon: React.ReactNode;
   isPercent?: boolean;
   defaultDesde: string;
   defaultHasta: string;
@@ -95,30 +97,19 @@ function StatCard({
   const [desde, setDesde] = useState(defaultDesde);
   const [hasta, setHasta] = useState(defaultHasta);
   const { data: resumen, isLoading } = useDashboardResumen(desde, hasta);
-  const value = (resumen?.[field] as number | undefined) ?? 0;
+  const raw = (resumen?.[field] as number | undefined) ?? 0;
+  const value = isPercent ? raw : formatCurrency(raw);
 
   return (
-    <Card
-      sx={{
-        height: "100%",
-        bgcolor: color,
-        color: "white",
-        borderRadius: 2,
-        boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
-      }}
-    >
-      <CardContent sx={{ pb: "16px !important" }}>
-        <Typography variant="body2" sx={{ mb: 0.5, opacity: 0.9, fontWeight: 500 }}>
-          {title}
-        </Typography>
-        {isLoading ? (
-          <Skeleton variant="text" width={120} height={32} sx={{ bgcolor: "rgba(255,255,255,0.3)" }} />
-        ) : (
-          <Typography variant="h5" sx={{ fontWeight: 700, lineHeight: 1.1 }}>
-            {isPercent ? `${Number(value).toFixed(1)}%` : formatCurrency(value)}
-          </Typography>
-        )}
-        <Stack direction="row" spacing={1} sx={{ mt: 1.5 }}>
+    <DashboardKpiCard
+      title={title}
+      value={value}
+      color={color}
+      icon={icon}
+      isPercent={isPercent}
+      loading={isLoading}
+      footer={
+        <Stack direction="row" spacing={1}>
           <TextField
             type="date"
             size="small"
@@ -142,8 +133,8 @@ function StatCard({
             sx={DATE_INPUT_SX}
           />
         </Stack>
-      </CardContent>
-    </Card>
+      }
+    />
   );
 }
 
@@ -179,6 +170,7 @@ export default function ContabilidadHome() {
               title={s.title}
               color={s.color}
               field={s.field}
+              icon={s.icon}
               isPercent={s.isPercent}
               defaultDesde={defaultDesde}
               defaultHasta={defaultHasta}
@@ -206,12 +198,7 @@ export default function ContabilidadHome() {
       <Grid container spacing={3} alignItems="stretch">
         {/* Ultimos Asientos */}
         <Grid size={{ xs: 12, md: 8 }}>
-          <Paper sx={{ borderRadius: 2, overflow: "hidden", height: "100%", display: "flex", flexDirection: "column" }}>
-            <Box sx={(t) => ({ p: 2, borderBottom: `1px solid ${t.palette.divider}` })}>
-              <Typography variant="h6" fontWeight={600}>
-                Últimos asientos
-              </Typography>
-            </Box>
+          <DashboardSection title="Últimos asientos" padded={false}>
             {ultimosAsientos.length > 0 ? (
               <Table size="small">
                 <TableHead>
@@ -257,18 +244,12 @@ export default function ContabilidadHome() {
                 </Typography>
               </Box>
             )}
-          </Paper>
+          </DashboardSection>
         </Grid>
 
         {/* Contadores */}
         <Grid size={{ xs: 12, md: 4 }}>
-          <Paper sx={{ borderRadius: 2, overflow: "hidden", height: "100%", display: "flex", flexDirection: "column" }}>
-            <Box sx={(t) => ({ p: 2, borderBottom: `1px solid ${t.palette.divider}` })}>
-              <Typography variant="h6" fontWeight={600}>
-                Resumen general
-              </Typography>
-            </Box>
-            <Box sx={{ p: 3, flex: 1 }}>
+          <DashboardSection title="Resumen general">
             <Box sx={{ borderLeft: `4px solid ${brandColors.shortcutTeal}`, pl: 2, mb: 3 }}>
               <Typography variant="body2" color="text.secondary">Total asientos</Typography>
               <Typography variant="h5" sx={{ fontWeight: 700 }}>
@@ -287,8 +268,7 @@ export default function ContabilidadHome() {
                 {isLoading ? <Skeleton width={60} /> : resumen?.totalAnulados ?? 0}
               </Typography>
             </Box>
-            </Box>
-          </Paper>
+          </DashboardSection>
         </Grid>
       </Grid>
     </Box>

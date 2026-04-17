@@ -34,7 +34,7 @@ import { BarChart } from "@mui/x-charts/BarChart";
 import { LineChart } from "@mui/x-charts/LineChart";
 import { useRouter } from "next/navigation";
 import { formatCurrency } from "@zentto/shared-api";
-import { brandColors } from "@zentto/shared-ui";
+import { brandColors, DashboardKpiCard } from "@zentto/shared-ui";
 import {
   usePurchaseKPIs,
   usePurchasesByMonth,
@@ -116,16 +116,18 @@ function KPICard({ title, value, subtitle, icon, color, loading, trend }: KPIPro
             {title}
           </Typography>
           <Box
-            sx={{
-              width: 40,
-              height: 40,
-              borderRadius: 1.5,
+            sx={(t) => ({
+              width: 48,
+              height: 48,
+              borderRadius: 3,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              bgcolor: alpha(color, 0.1),
+              bgcolor: t.palette.mode === "dark" ? "rgba(255,255,255,0.08)" : "#fff",
+              border: `1px solid ${t.palette.divider}`,
+              boxShadow: t.palette.mode === "dark" ? "none" : "0 2px 8px rgba(0,0,0,0.12)",
               color: color,
-            }}
+            })}
           >
             {icon}
           </Box>
@@ -243,7 +245,7 @@ export default function ComprasHome({ basePath = "" }: { basePath?: string }) {
       {/* ── KPI Cards ───────────────────────────────────────── */}
       <Grid container spacing={2.5} sx={{ mb: 3 }}>
         <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-          <KPICard
+          <DashboardKpiCard
             title="Compras del Mes"
             value={isLoading ? "..." : String(k?.ComprasMes ?? 0)}
             subtitle="vs mes anterior"
@@ -254,7 +256,7 @@ export default function ComprasHome({ basePath = "" }: { basePath?: string }) {
           />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-          <KPICard
+          <DashboardKpiCard
             title="Monto Total"
             value={isLoading ? "..." : formatCurrency(k?.MontoTotal ?? 0)}
             subtitle={`${k?.TotalCompras ?? 0} documentos`}
@@ -264,7 +266,7 @@ export default function ComprasHome({ basePath = "" }: { basePath?: string }) {
           />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-          <KPICard
+          <DashboardKpiCard
             title="Proveedores Activos"
             value={isLoading ? "..." : String(k?.ProveedoresActivos ?? 0)}
             subtitle={k?.TopProveedor ? `Top: ${k.TopProveedor}` : undefined}
@@ -274,7 +276,7 @@ export default function ComprasHome({ basePath = "" }: { basePath?: string }) {
           />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-          <KPICard
+          <DashboardKpiCard
             title="CxP Pendiente"
             value={isLoading ? "..." : formatCurrency(k?.CxPPendiente ?? 0)}
             subtitle="saldo total"
@@ -284,7 +286,7 @@ export default function ComprasHome({ basePath = "" }: { basePath?: string }) {
           />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-          <KPICard
+          <DashboardKpiCard
             title="CxP Vencida"
             value={isLoading ? "..." : formatCurrency(k?.CxPVencida ?? 0)}
             subtitle="requiere atencion"
@@ -294,7 +296,7 @@ export default function ComprasHome({ basePath = "" }: { basePath?: string }) {
           />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-          <KPICard
+          <DashboardKpiCard
             title="Promedio por Compra"
             value={isLoading ? "..." : formatCurrency(k?.PromedioCompra ?? 0)}
             subtitle={k?.DiasPromPago ? `~${k.DiasPromPago} dias prom. pago` : undefined}
