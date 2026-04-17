@@ -4,12 +4,24 @@
 -- IsRecurring=TRUE: la UI/SPs reproducen la fecha para cada ano.
 -- EXCLUYE feriados moviles (Semana Santa, Carnavales, fechas trasladadas a lunes).
 -- Excluye ES (cubierto por migracion del agente Espana).
--- Fuente: legislacion laboral vigente de cada pais.
--- Idempotente: DELETE por CountryCode + INSERT.
+--
+-- IDEMPOTENCIA: UPSERT con ON CONFLICT (CountryCode, HolidayDate).
+-- Preventivo: no usar DELETE por posibles FK entrantes (AttendancePolicy u otros).
+-- Se agrega UK (CountryCode, HolidayDate) si no existe.
 
+-- Agregar UK (CountryCode, HolidayDate) si no existe para permitir UPSERT
 -- +goose StatementBegin
-DELETE FROM cfg."Holiday"
-WHERE "CountryCode" IN ('VE','CO','MX','AR','CL','PE','EC','BO','UY','PY','PA','CR','DO','GT','HN','NI','SV','PR','CU','US');
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint
+    WHERE conname = 'UQ_cfg_Holiday_Country_Date'
+      AND conrelid = 'cfg."Holiday"'::regclass
+  ) THEN
+    ALTER TABLE cfg."Holiday"
+    ADD CONSTRAINT "UQ_cfg_Holiday_Country_Date" UNIQUE ("CountryCode","HolidayDate");
+  END IF;
+END $$;
 -- +goose StatementEnd
 
 -- Venezuela
@@ -24,7 +36,9 @@ INSERT INTO cfg."Holiday" ("CountryCode","HolidayDate","HolidayName","IsRecurrin
   ('VE','2026-10-12','Dia de la Resistencia Indigena',  TRUE, TRUE),
   ('VE','2026-12-24','Nochebuena',                      TRUE, TRUE),
   ('VE','2026-12-25','Navidad',                         TRUE, TRUE),
-  ('VE','2026-12-31','Fin de Ano',                      TRUE, TRUE);
+  ('VE','2026-12-31','Fin de Ano',                      TRUE, TRUE)
+ON CONFLICT ("CountryCode","HolidayDate") DO UPDATE SET
+  "HolidayName"=EXCLUDED."HolidayName","IsRecurring"=EXCLUDED."IsRecurring","IsActive"=EXCLUDED."IsActive";
 -- +goose StatementEnd
 
 -- Argentina
@@ -41,7 +55,9 @@ INSERT INTO cfg."Holiday" ("CountryCode","HolidayDate","HolidayName","IsRecurrin
   ('AR','2026-10-12','Dia del Respeto a la Diversidad Cultural',     TRUE, TRUE),
   ('AR','2026-11-20','Dia de la Soberania Nacional',                 TRUE, TRUE),
   ('AR','2026-12-08','Inmaculada Concepcion de Maria',               TRUE, TRUE),
-  ('AR','2026-12-25','Navidad',                                      TRUE, TRUE);
+  ('AR','2026-12-25','Navidad',                                      TRUE, TRUE)
+ON CONFLICT ("CountryCode","HolidayDate") DO UPDATE SET
+  "HolidayName"=EXCLUDED."HolidayName","IsRecurring"=EXCLUDED."IsRecurring","IsActive"=EXCLUDED."IsActive";
 -- +goose StatementEnd
 
 -- Colombia
@@ -52,7 +68,9 @@ INSERT INTO cfg."Holiday" ("CountryCode","HolidayDate","HolidayName","IsRecurrin
   ('CO','2026-07-20','Dia de la Independencia',    TRUE, TRUE),
   ('CO','2026-08-07','Batalla de Boyaca',          TRUE, TRUE),
   ('CO','2026-12-08','Inmaculada Concepcion',      TRUE, TRUE),
-  ('CO','2026-12-25','Navidad',                    TRUE, TRUE);
+  ('CO','2026-12-25','Navidad',                    TRUE, TRUE)
+ON CONFLICT ("CountryCode","HolidayDate") DO UPDATE SET
+  "HolidayName"=EXCLUDED."HolidayName","IsRecurring"=EXCLUDED."IsRecurring","IsActive"=EXCLUDED."IsActive";
 -- +goose StatementEnd
 
 -- Mexico (Art. 74 LFT - obligatorios + religioso Virgen Guadalupe)
@@ -65,7 +83,9 @@ INSERT INTO cfg."Holiday" ("CountryCode","HolidayDate","HolidayName","IsRecurrin
   ('MX','2026-09-16','Dia de la Independencia',        TRUE, TRUE),
   ('MX','2026-11-20','Dia de la Revolucion Mexicana',  TRUE, TRUE),
   ('MX','2026-12-12','Virgen de Guadalupe',            TRUE, TRUE),
-  ('MX','2026-12-25','Navidad',                        TRUE, TRUE);
+  ('MX','2026-12-25','Navidad',                        TRUE, TRUE)
+ON CONFLICT ("CountryCode","HolidayDate") DO UPDATE SET
+  "HolidayName"=EXCLUDED."HolidayName","IsRecurring"=EXCLUDED."IsRecurring","IsActive"=EXCLUDED."IsActive";
 -- +goose StatementEnd
 
 -- Peru
@@ -84,7 +104,9 @@ INSERT INTO cfg."Holiday" ("CountryCode","HolidayDate","HolidayName","IsRecurrin
   ('PE','2026-11-01','Todos los Santos',              TRUE, TRUE),
   ('PE','2026-12-08','Inmaculada Concepcion',         TRUE, TRUE),
   ('PE','2026-12-09','Batalla de Ayacucho',           TRUE, TRUE),
-  ('PE','2026-12-25','Navidad',                       TRUE, TRUE);
+  ('PE','2026-12-25','Navidad',                       TRUE, TRUE)
+ON CONFLICT ("CountryCode","HolidayDate") DO UPDATE SET
+  "HolidayName"=EXCLUDED."HolidayName","IsRecurring"=EXCLUDED."IsRecurring","IsActive"=EXCLUDED."IsActive";
 -- +goose StatementEnd
 
 -- Ecuador
@@ -98,7 +120,9 @@ INSERT INTO cfg."Holiday" ("CountryCode","HolidayDate","HolidayName","IsRecurrin
   ('EC','2026-11-02','Dia de los Difuntos',              TRUE, TRUE),
   ('EC','2026-11-03','Independencia de Cuenca',          TRUE, TRUE),
   ('EC','2026-12-06','Fundacion de Quito',               TRUE, TRUE),
-  ('EC','2026-12-25','Navidad',                          TRUE, TRUE);
+  ('EC','2026-12-25','Navidad',                          TRUE, TRUE)
+ON CONFLICT ("CountryCode","HolidayDate") DO UPDATE SET
+  "HolidayName"=EXCLUDED."HolidayName","IsRecurring"=EXCLUDED."IsRecurring","IsActive"=EXCLUDED."IsActive";
 -- +goose StatementEnd
 
 -- Chile
@@ -115,7 +139,9 @@ INSERT INTO cfg."Holiday" ("CountryCode","HolidayDate","HolidayName","IsRecurrin
   ('CL','2026-10-12','Encuentro de Dos Mundos',        TRUE, TRUE),
   ('CL','2026-11-01','Dia de Todos los Santos',        TRUE, TRUE),
   ('CL','2026-12-08','Inmaculada Concepcion',          TRUE, TRUE),
-  ('CL','2026-12-25','Navidad',                        TRUE, TRUE);
+  ('CL','2026-12-25','Navidad',                        TRUE, TRUE)
+ON CONFLICT ("CountryCode","HolidayDate") DO UPDATE SET
+  "HolidayName"=EXCLUDED."HolidayName","IsRecurring"=EXCLUDED."IsRecurring","IsActive"=EXCLUDED."IsActive";
 -- +goose StatementEnd
 
 -- Bolivia
@@ -127,7 +153,9 @@ INSERT INTO cfg."Holiday" ("CountryCode","HolidayDate","HolidayName","IsRecurrin
   ('BO','2026-06-21','Ano Nuevo Andino Amazonico',        TRUE, TRUE),
   ('BO','2026-08-06','Dia de la Independencia',           TRUE, TRUE),
   ('BO','2026-11-02','Dia de Todos los Difuntos',         TRUE, TRUE),
-  ('BO','2026-12-25','Navidad',                           TRUE, TRUE);
+  ('BO','2026-12-25','Navidad',                           TRUE, TRUE)
+ON CONFLICT ("CountryCode","HolidayDate") DO UPDATE SET
+  "HolidayName"=EXCLUDED."HolidayName","IsRecurring"=EXCLUDED."IsRecurring","IsActive"=EXCLUDED."IsActive";
 -- +goose StatementEnd
 
 -- Uruguay
@@ -143,7 +171,9 @@ INSERT INTO cfg."Holiday" ("CountryCode","HolidayDate","HolidayName","IsRecurrin
   ('UY','2026-08-25','Declaratoria de Independencia',TRUE,TRUE),
   ('UY','2026-10-12','Dia de la Raza',              TRUE, TRUE),
   ('UY','2026-11-02','Dia de los Difuntos',         TRUE, TRUE),
-  ('UY','2026-12-25','Dia de la Familia',           TRUE, TRUE);
+  ('UY','2026-12-25','Dia de la Familia',           TRUE, TRUE)
+ON CONFLICT ("CountryCode","HolidayDate") DO UPDATE SET
+  "HolidayName"=EXCLUDED."HolidayName","IsRecurring"=EXCLUDED."IsRecurring","IsActive"=EXCLUDED."IsActive";
 -- +goose StatementEnd
 
 -- Paraguay
@@ -152,13 +182,15 @@ INSERT INTO cfg."Holiday" ("CountryCode","HolidayDate","HolidayName","IsRecurrin
   ('PY','2026-01-01','Ano Nuevo',                    TRUE, TRUE),
   ('PY','2026-03-01','Dia de los Heroes',            TRUE, TRUE),
   ('PY','2026-05-01','Dia del Trabajador',           TRUE, TRUE),
-  ('PY','2026-05-14','Independencia Nacional',       TRUE, TRUE),
-  ('PY','2026-05-15','Independencia Nacional',       TRUE, TRUE),
+  ('PY','2026-05-14','Independencia Nacional Dia 1', TRUE, TRUE),
+  ('PY','2026-05-15','Independencia Nacional Dia 2', TRUE, TRUE),
   ('PY','2026-06-12','Paz del Chaco',                TRUE, TRUE),
   ('PY','2026-08-15','Fundacion de Asuncion',        TRUE, TRUE),
   ('PY','2026-09-29','Victoria de Boqueron',         TRUE, TRUE),
   ('PY','2026-12-08','Virgen de Caacupe',            TRUE, TRUE),
-  ('PY','2026-12-25','Navidad',                      TRUE, TRUE);
+  ('PY','2026-12-25','Navidad',                      TRUE, TRUE)
+ON CONFLICT ("CountryCode","HolidayDate") DO UPDATE SET
+  "HolidayName"=EXCLUDED."HolidayName","IsRecurring"=EXCLUDED."IsRecurring","IsActive"=EXCLUDED."IsActive";
 -- +goose StatementEnd
 
 -- Panama
@@ -173,7 +205,9 @@ INSERT INTO cfg."Holiday" ("CountryCode","HolidayDate","HolidayName","IsRecurrin
   ('PA','2026-11-10','Grito Independencia Villa Los Santos', TRUE, TRUE),
   ('PA','2026-11-28','Independencia de Espana',              TRUE, TRUE),
   ('PA','2026-12-08','Dia de las Madres',                    TRUE, TRUE),
-  ('PA','2026-12-25','Navidad',                              TRUE, TRUE);
+  ('PA','2026-12-25','Navidad',                              TRUE, TRUE)
+ON CONFLICT ("CountryCode","HolidayDate") DO UPDATE SET
+  "HolidayName"=EXCLUDED."HolidayName","IsRecurring"=EXCLUDED."IsRecurring","IsActive"=EXCLUDED."IsActive";
 -- +goose StatementEnd
 
 -- Costa Rica
@@ -187,7 +221,9 @@ INSERT INTO cfg."Holiday" ("CountryCode","HolidayDate","HolidayName","IsRecurrin
   ('CR','2026-08-15','Dia de la Madre',               TRUE, TRUE),
   ('CR','2026-09-15','Dia de la Independencia',       TRUE, TRUE),
   ('CR','2026-12-01','Abolicion del Ejercito',        TRUE, TRUE),
-  ('CR','2026-12-25','Navidad',                       TRUE, TRUE);
+  ('CR','2026-12-25','Navidad',                       TRUE, TRUE)
+ON CONFLICT ("CountryCode","HolidayDate") DO UPDATE SET
+  "HolidayName"=EXCLUDED."HolidayName","IsRecurring"=EXCLUDED."IsRecurring","IsActive"=EXCLUDED."IsActive";
 -- +goose StatementEnd
 
 -- Republica Dominicana
@@ -202,7 +238,9 @@ INSERT INTO cfg."Holiday" ("CountryCode","HolidayDate","HolidayName","IsRecurrin
   ('DO','2026-08-16','Dia de la Restauracion',         TRUE, TRUE),
   ('DO','2026-09-24','Virgen de las Mercedes',         TRUE, TRUE),
   ('DO','2026-11-06','Dia de la Constitucion',         TRUE, TRUE),
-  ('DO','2026-12-25','Navidad',                        TRUE, TRUE);
+  ('DO','2026-12-25','Navidad',                        TRUE, TRUE)
+ON CONFLICT ("CountryCode","HolidayDate") DO UPDATE SET
+  "HolidayName"=EXCLUDED."HolidayName","IsRecurring"=EXCLUDED."IsRecurring","IsActive"=EXCLUDED."IsActive";
 -- +goose StatementEnd
 
 -- Guatemala
@@ -216,7 +254,9 @@ INSERT INTO cfg."Holiday" ("CountryCode","HolidayDate","HolidayName","IsRecurrin
   ('GT','2026-11-01','Dia de Todos los Santos',         TRUE, TRUE),
   ('GT','2026-12-24','Nochebuena (medio dia)',          TRUE, TRUE),
   ('GT','2026-12-25','Navidad',                         TRUE, TRUE),
-  ('GT','2026-12-31','Fin de Ano (medio dia)',          TRUE, TRUE);
+  ('GT','2026-12-31','Fin de Ano (medio dia)',          TRUE, TRUE)
+ON CONFLICT ("CountryCode","HolidayDate") DO UPDATE SET
+  "HolidayName"=EXCLUDED."HolidayName","IsRecurring"=EXCLUDED."IsRecurring","IsActive"=EXCLUDED."IsActive";
 -- +goose StatementEnd
 
 -- Honduras
@@ -229,7 +269,9 @@ INSERT INTO cfg."Holiday" ("CountryCode","HolidayDate","HolidayName","IsRecurrin
   ('HN','2026-10-03','Dia del Soldado (Morazan)',       TRUE, TRUE),
   ('HN','2026-10-12','Dia de la Hispanidad (Colon)',    TRUE, TRUE),
   ('HN','2026-10-21','Dia de las Fuerzas Armadas',      TRUE, TRUE),
-  ('HN','2026-12-25','Navidad',                         TRUE, TRUE);
+  ('HN','2026-12-25','Navidad',                         TRUE, TRUE)
+ON CONFLICT ("CountryCode","HolidayDate") DO UPDATE SET
+  "HolidayName"=EXCLUDED."HolidayName","IsRecurring"=EXCLUDED."IsRecurring","IsActive"=EXCLUDED."IsActive";
 -- +goose StatementEnd
 
 -- Nicaragua
@@ -241,7 +283,9 @@ INSERT INTO cfg."Holiday" ("CountryCode","HolidayDate","HolidayName","IsRecurrin
   ('NI','2026-09-14','Batalla de San Jacinto',             TRUE, TRUE),
   ('NI','2026-09-15','Dia de la Independencia',            TRUE, TRUE),
   ('NI','2026-12-08','Purisima Concepcion',                TRUE, TRUE),
-  ('NI','2026-12-25','Navidad',                            TRUE, TRUE);
+  ('NI','2026-12-25','Navidad',                            TRUE, TRUE)
+ON CONFLICT ("CountryCode","HolidayDate") DO UPDATE SET
+  "HolidayName"=EXCLUDED."HolidayName","IsRecurring"=EXCLUDED."IsRecurring","IsActive"=EXCLUDED."IsActive";
 -- +goose StatementEnd
 
 -- El Salvador
@@ -253,7 +297,9 @@ INSERT INTO cfg."Holiday" ("CountryCode","HolidayDate","HolidayName","IsRecurrin
   ('SV','2026-06-17','Dia del Padre',               TRUE, TRUE),
   ('SV','2026-09-15','Dia de la Independencia',     TRUE, TRUE),
   ('SV','2026-11-02','Dia de los Difuntos',         TRUE, TRUE),
-  ('SV','2026-12-25','Navidad',                     TRUE, TRUE);
+  ('SV','2026-12-25','Navidad',                     TRUE, TRUE)
+ON CONFLICT ("CountryCode","HolidayDate") DO UPDATE SET
+  "HolidayName"=EXCLUDED."HolidayName","IsRecurring"=EXCLUDED."IsRecurring","IsActive"=EXCLUDED."IsActive";
 -- +goose StatementEnd
 
 -- Puerto Rico (feriados fijos estatales + federales no-lunes)
@@ -267,7 +313,9 @@ INSERT INTO cfg."Holiday" ("CountryCode","HolidayDate","HolidayName","IsRecurrin
   ('PR','2026-07-25','Dia de la Constitucion',          TRUE, TRUE),
   ('PR','2026-11-11','Dia de los Veteranos',            TRUE, TRUE),
   ('PR','2026-11-19','Dia del Descubrimiento',          TRUE, TRUE),
-  ('PR','2026-12-25','Navidad',                         TRUE, TRUE);
+  ('PR','2026-12-25','Navidad',                         TRUE, TRUE)
+ON CONFLICT ("CountryCode","HolidayDate") DO UPDATE SET
+  "HolidayName"=EXCLUDED."HolidayName","IsRecurring"=EXCLUDED."IsRecurring","IsActive"=EXCLUDED."IsActive";
 -- +goose StatementEnd
 
 -- Cuba
@@ -280,7 +328,9 @@ INSERT INTO cfg."Holiday" ("CountryCode","HolidayDate","HolidayName","IsRecurrin
   ('CU','2026-07-26','Dia de la Rebeldia Nacional',    TRUE, TRUE),
   ('CU','2026-07-27','Conmemoracion Moncada',          TRUE, TRUE),
   ('CU','2026-10-10','Inicio Guerras Independencia',   TRUE, TRUE),
-  ('CU','2026-12-25','Navidad',                        TRUE, TRUE);
+  ('CU','2026-12-25','Navidad',                        TRUE, TRUE)
+ON CONFLICT ("CountryCode","HolidayDate") DO UPDATE SET
+  "HolidayName"=EXCLUDED."HolidayName","IsRecurring"=EXCLUDED."IsRecurring","IsActive"=EXCLUDED."IsActive";
 -- +goose StatementEnd
 
 -- Estados Unidos (federales FIJAS; moviles como Memorial Day, Labor Day, Thanksgiving se omiten)
@@ -290,11 +340,18 @@ INSERT INTO cfg."Holiday" ("CountryCode","HolidayDate","HolidayName","IsRecurrin
   ('US','2026-06-19','Juneteenth',              TRUE, TRUE),
   ('US','2026-07-04','Independence Day',        TRUE, TRUE),
   ('US','2026-11-11','Veterans Day',            TRUE, TRUE),
-  ('US','2026-12-25','Christmas Day',           TRUE, TRUE);
+  ('US','2026-12-25','Christmas Day',           TRUE, TRUE)
+ON CONFLICT ("CountryCode","HolidayDate") DO UPDATE SET
+  "HolidayName"=EXCLUDED."HolidayName","IsRecurring"=EXCLUDED."IsRecurring","IsActive"=EXCLUDED."IsActive";
 -- +goose StatementEnd
 
 -- +goose Down
 -- +goose StatementBegin
 DELETE FROM cfg."Holiday"
 WHERE "CountryCode" IN ('VE','CO','MX','AR','CL','PE','EC','BO','UY','PY','PA','CR','DO','GT','HN','NI','SV','PR','CU','US');
+-- +goose StatementEnd
+
+-- +goose StatementBegin
+ALTER TABLE cfg."Holiday"
+DROP CONSTRAINT IF EXISTS "UQ_cfg_Holiday_Country_Date";
 -- +goose StatementEnd
