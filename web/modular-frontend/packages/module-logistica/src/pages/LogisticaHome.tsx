@@ -256,47 +256,47 @@ const { data: dashboard, isLoading: dashLoading } = useLogisticaDashboard();
       title: "Recepciones Pendientes",
       value: String(d?.RecepcionesPendientes ?? d?.recepcionesPendientes ?? 0),
       icon: <ReceiptLongIcon />,
-      color: "#1976d2",
+      color: brandColors.shortcutDark,
       change: receiptChange,
     },
     {
       title: "Devoluciones en Proceso",
       value: String(d?.DevolucionesEnProceso ?? d?.devolucionesEnProceso ?? 0),
       icon: <AssignmentReturnIcon />,
-      color: "#f44336",
+      color: brandColors.statRed,
     },
     {
       title: "Albaranes en Transito",
       value: String(d?.AlbaranesEnTransito ?? d?.albaranesEnTransito ?? 0),
       icon: <LocalShippingIcon />,
-      color: "#00897b",
+      color: brandColors.shortcutTeal,
       change: deliveryChange,
     },
     {
       title: "Entregas Completadas Mes",
       value: String(entregasCompletadasMes),
       icon: <CheckCircleIcon />,
-      color: "#4caf50",
+      color: brandColors.success,
     },
     {
       title: "Transportistas Activos",
       value: String(d?.TransportistasActivos ?? d?.transportistasActivos ?? 0),
       icon: <PeopleIcon />,
-      color: "#ff9800",
+      color: brandColors.shortcutViolet,
     },
     {
       title: "Valor Recepciones Mes",
       value: formatCurrency(valorRecepcionesMes),
       icon: <AttachMoneyIcon />,
-      color: "#7b1fa2",
+      color: brandColors.shortcutSlate,
     },
   ];
 
   const shortcuts = [
-    { title: "Recepciones", description: "Recepcion de mercancia", icon: <ReceiptLongIcon sx={{ fontSize: 32 }} />, href: `${bp}/recepciones`, bg: brandColors.shortcutGreen },
-    { title: "Devoluciones", description: "Gestionar devoluciones", icon: <AssignmentReturnIcon sx={{ fontSize: 32 }} />, href: `${bp}/devoluciones`, bg: brandColors.shortcutDark },
-    { title: "Albaranes", description: "Notas de entrega", icon: <DescriptionIcon sx={{ fontSize: 32 }} />, href: `${bp}/albaranes`, bg: brandColors.shortcutNavy },
-    { title: "Transportistas", description: "Catalogo", icon: <LocalShippingIcon sx={{ fontSize: 32 }} />, href: `${bp}/transportistas`, bg: brandColors.shortcutSlate },
+    { title: "Recepciones", description: "Recepcion de mercancia", icon: <ReceiptLongIcon sx={{ fontSize: 32 }} />, href: `${bp}/recepciones`, bg: brandColors.shortcutDark },
+    { title: "Devoluciones", description: "Gestionar devoluciones", icon: <AssignmentReturnIcon sx={{ fontSize: 32 }} />, href: `${bp}/devoluciones`, bg: brandColors.shortcutTeal },
+    { title: "Albaranes", description: "Notas de entrega", icon: <DescriptionIcon sx={{ fontSize: 32 }} />, href: `${bp}/albaranes`, bg: brandColors.shortcutViolet },
+    { title: "Transportistas", description: "Catalogo", icon: <LocalShippingIcon sx={{ fontSize: 32 }} />, href: `${bp}/transportistas`, bg: brandColors.statRed },
   ];
 
   const activityRows = activity.map((a, i) => ({ id: a.ActivityId ?? i, ...a }));
@@ -370,11 +370,8 @@ const { data: dashboard, isLoading: dashLoading } = useLogisticaDashboard();
           <Grid size={{ xs: 6, sm: 4, md: 3 }} key={idx}>
             <Card sx={{ borderRadius: 2, overflow: "hidden", boxShadow: "0 2px 4px rgba(0,0,0,0.05)" }}>
               <CardActionArea onClick={() => router.push(sc.href)}>
-                <Box sx={{ bgcolor: sc.bg, color: "white", display: "flex", justifyContent: "center", py: 3, position: "relative" }}>
+                <Box sx={(t) => ({ bgcolor: sc.bg, backgroundImage: t.palette.mode === 'dark' ? 'linear-gradient(rgba(255,255,255,0.05), rgba(255,255,255,0.05))' : 'none', color: "white", display: "flex", justifyContent: "center", py: 3 })}>
                   {sc.icon}
-                  <svg preserveAspectRatio="none" style={{ position: "absolute", bottom: 0, left: 0, width: "100%", height: "30px" }} viewBox="0 0 100 100">
-                    <path d="M0,100 C20,0 50,0 100,100 Z" fill="rgba(255,255,255,0.15)" />
-                  </svg>
                 </Box>
                 <CardContent sx={{ textAlign: "center", py: 1.5 }}>
                   <Typography variant="subtitle1" sx={{ fontWeight: 700, color: "text.primary", mb: 0, lineHeight: 1.3 }}>{sc.title}</Typography>

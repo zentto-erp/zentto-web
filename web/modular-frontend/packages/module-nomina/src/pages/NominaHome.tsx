@@ -58,7 +58,7 @@ export default function NominaHome({ basePath = "" }: { basePath?: string }) {
       value: nominaTotal,
       subtitle: "Total Pagos",
       loading: nominas.isLoading,
-      color: brandColors.statBlue,
+      color: brandColors.shortcutDark,
       chartType: "line" as const,
     },
     {
@@ -66,7 +66,7 @@ export default function NominaHome({ basePath = "" }: { basePath?: string }) {
       value: String(totalEmpleados),
       subtitle: "Staffing",
       loading: empleados.isLoading,
-      color: brandColors.statTeal,
+      color: brandColors.shortcutTeal,
       chartType: "bar" as const,
     },
     {
@@ -74,7 +74,7 @@ export default function NominaHome({ basePath = "" }: { basePath?: string }) {
       value: "—",
       subtitle: "Este Mes",
       loading: false,
-      color: brandColors.statOrange,
+      color: brandColors.shortcutViolet,
       chartType: "bar" as const,
     },
     {
@@ -87,64 +87,18 @@ export default function NominaHome({ basePath = "" }: { basePath?: string }) {
     },
   ];
 
-  const shortcuts = [
-    {
-      title: "Empleados",
-      description: "Gestión RRHH",
-      icon: <PeopleIcon sx={{ fontSize: 32 }} />,
-      href: `${bp}/empleados`,
-      bg: brandColors.shortcutGreen,
-    },
-    {
-      title: "Nóminas",
-      description: "Procesos y Lotes",
-      icon: <SupervisorAccountIcon sx={{ fontSize: 32 }} />,
-      href: `${bp}/nominas`,
-      bg: brandColors.shortcutDark,
-    },
-    {
-      title: "Conceptos",
-      description: "Asignaciones",
-      icon: <ListAltIcon sx={{ fontSize: 32 }} />,
-      href: `${bp}/conceptos`,
-      bg: brandColors.shortcutTeal,
-    },
-    {
-      title: "Vacaciones",
-      description: "Calendario",
-      icon: <BeachAccessIcon sx={{ fontSize: 32 }} />,
-      href: `${bp}/vacaciones`,
-      bg: brandColors.shortcutSlate,
-    },
-    {
-      title: "Solicitar Vacaciones",
-      description: "Solicitudes",
-      icon: <EventIcon sx={{ fontSize: 32 }} />,
-      href: `${bp}/vacaciones/solicitar`,
-      bg: brandColors.success,
-    },
-    {
-      title: "Aprobar Solicitudes",
-      description: "Revisión",
-      icon: <ReceiptLongIcon sx={{ fontSize: 32 }} />,
-      href: `${bp}/vacaciones/solicitudes`,
-      bg: brandColors.accent,
-    },
-    {
-      title: "Liquidaciones",
-      description: "Retiros",
-      icon: <ExitToAppIcon sx={{ fontSize: 32 }} />,
-      href: `${bp}/liquidaciones`,
-      bg: brandColors.shortcutOrange,
-    },
-    {
-      title: "Constantes",
-      description: "Configuración",
-      icon: <SettingsIcon sx={{ fontSize: 32 }} />,
-      href: `${bp}/constantes`,
-      bg: brandColors.statBlue,
-    },
+  const PALETTE = [brandColors.shortcutDark, brandColors.shortcutTeal, brandColors.shortcutViolet, brandColors.statRed];
+  const shortcutItems = [
+    { title: "Empleados", description: "Gestión RRHH", icon: <PeopleIcon sx={{ fontSize: 32 }} />, href: `${bp}/empleados` },
+    { title: "Nóminas", description: "Procesos y Lotes", icon: <SupervisorAccountIcon sx={{ fontSize: 32 }} />, href: `${bp}/nominas` },
+    { title: "Conceptos", description: "Asignaciones", icon: <ListAltIcon sx={{ fontSize: 32 }} />, href: `${bp}/conceptos` },
+    { title: "Vacaciones", description: "Calendario", icon: <BeachAccessIcon sx={{ fontSize: 32 }} />, href: `${bp}/vacaciones` },
+    { title: "Solicitar Vacaciones", description: "Solicitudes", icon: <EventIcon sx={{ fontSize: 32 }} />, href: `${bp}/vacaciones/solicitar` },
+    { title: "Aprobar Solicitudes", description: "Revisión", icon: <ReceiptLongIcon sx={{ fontSize: 32 }} />, href: `${bp}/vacaciones/solicitudes` },
+    { title: "Liquidaciones", description: "Retiros", icon: <ExitToAppIcon sx={{ fontSize: 32 }} />, href: `${bp}/liquidaciones` },
+    { title: "Constantes", description: "Configuración", icon: <SettingsIcon sx={{ fontSize: 32 }} />, href: `${bp}/constantes` },
   ];
+  const shortcuts = shortcutItems.map((sc, i) => ({ ...sc, bg: PALETTE[i % PALETTE.length] }));
 
   return (
     <Box>
@@ -164,39 +118,17 @@ export default function NominaHome({ basePath = "" }: { basePath?: string }) {
               }}
             >
               <CardContent sx={{ pb: "16px !important" }}>
-                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                  <Box>
-                    {s.loading ? (
-                      <Skeleton variant="text" width={80} sx={{ bgcolor: "rgba(255,255,255,0.3)", fontSize: "2rem" }} />
-                    ) : (
-                      <Typography variant="h4" sx={{ fontWeight: 700, lineHeight: 1 }}>
-                        {s.value}
-                      </Typography>
-                    )}
-                    <Typography variant="body1" sx={{ mt: 1, opacity: 0.9, fontWeight: 500 }}>
-                      {s.title}
-                    </Typography>
-                  </Box>
-                  <IconButton size="small" sx={{ color: "white", opacity: 0.8, p: 0 }}>
-                    <MoreVertIcon />
-                  </IconButton>
-                </Box>
+                <Typography variant="body2" sx={{ mb: 0.5, opacity: 0.9, fontWeight: 500 }}>
+                  {s.title}
+                </Typography>
+                {s.loading ? (
+                  <Skeleton variant="text" width={80} height={32} sx={{ bgcolor: "rgba(255,255,255,0.3)" }} />
+                ) : (
+                  <Typography variant="h5" sx={{ fontWeight: 700, lineHeight: 1.1 }}>
+                    {s.value}
+                  </Typography>
+                )}
 
-                <Box sx={{ mt: 3, height: 40, width: "100%" }}>
-                  {s.chartType === "line" ? (
-                    <svg viewBox="0 0 100 30" width="100%" height="100%" preserveAspectRatio="none">
-                      <path d="M0,20 Q10,10 20,25 T40,15 T60,20 T80,5 T100,10 L100,30 L0,30 Z" fill="rgba(255,255,255,0.1)" />
-                      <path d="M0,20 Q10,10 20,25 T40,15 T60,20 T80,5 T100,10" fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="2" />
-                    </svg>
-                  ) : (
-                    <svg viewBox="0 0 100 30" width="100%" height="100%" preserveAspectRatio="none">
-                      <rect x="5" y="10" width="15" height="20" fill="rgba(255,255,255,0.4)" rx="2" />
-                      <rect x="30" y="5" width="15" height="25" fill="rgba(255,255,255,0.6)" rx="2" />
-                      <rect x="55" y="15" width="15" height="15" fill="rgba(255,255,255,0.3)" rx="2" />
-                      <rect x="80" y="8" width="15" height="22" fill="rgba(255,255,255,0.5)" rx="2" />
-                    </svg>
-                  )}
-                </Box>
               </CardContent>
             </Card>
           </Grid>
@@ -209,11 +141,8 @@ export default function NominaHome({ basePath = "" }: { basePath?: string }) {
           <Grid size={{ xs: 12, sm: 6, md: 3 }} key={idx}>
             <Card sx={{ borderRadius: 2, overflow: "hidden", boxShadow: "0 2px 4px rgba(0,0,0,0.05)" }}>
               <CardActionArea onClick={() => router.push(sc.href)}>
-                <Box sx={{ bgcolor: sc.bg, color: "white", display: "flex", justifyContent: "center", py: 3, position: "relative" }}>
+                <Box sx={(t) => ({ bgcolor: sc.bg, backgroundImage: t.palette.mode === 'dark' ? 'linear-gradient(rgba(255,255,255,0.05), rgba(255,255,255,0.05))' : 'none', color: "white", display: "flex", justifyContent: "center", py: 3 })}>
                   {sc.icon}
-                  <svg preserveAspectRatio="none" style={{ position: "absolute", bottom: 0, left: 0, width: "100%", height: "30px" }} viewBox="0 0 100 100">
-                    <path d="M0,100 C20,0 50,0 100,100 Z" fill="rgba(255,255,255,0.15)" />
-                  </svg>
                 </Box>
                 <CardContent sx={{ textAlign: "center", py: 2 }}>
                   <Typography variant="h6" sx={{ fontWeight: 700, color: "text.primary", mb: 0 }}>
@@ -238,7 +167,7 @@ export default function NominaHome({ basePath = "" }: { basePath?: string }) {
 
           <Grid container spacing={4}>
             <Grid size={{ xs: 12, md: 4 }}>
-              <Box sx={{ borderLeft: `4px solid ${brandColors.statBlue}`, pl: 2, mb: 3 }}>
+              <Box sx={{ borderLeft: `4px solid ${brandColors.shortcutTeal}`, pl: 2, mb: 3 }}>
                 <Typography variant="body2" color="text.secondary">Total Asignaciones</Typography>
                 {nominas.isLoading ? (
                   <Skeleton variant="text" width={120} />
@@ -254,7 +183,7 @@ export default function NominaHome({ basePath = "" }: { basePath?: string }) {
                   <Typography variant="h5" sx={{ fontWeight: 700 }}>{impuestosYss}</Typography>
                 )}
               </Box>
-              <Box sx={{ borderLeft: `4px solid ${brandColors.statOrange}`, pl: 2 }}>
+              <Box sx={{ borderLeft: `4px solid ${brandColors.success}`, pl: 2 }}>
                 <Typography variant="body2" color="text.secondary">Neto a Pagar</Typography>
                 {nominas.isLoading ? (
                   <Skeleton variant="text" width={120} />

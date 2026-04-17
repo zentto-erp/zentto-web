@@ -189,10 +189,10 @@ export default function AdminHome({ basePath = "" }: { basePath?: string }) {
 
   /* --- Shortcuts --- */
   const shortcuts = [
-    { label: "Nueva Factura", icon: <AddCircleOutlineIcon fontSize="small" />, href: `${bp}/facturas/new`, color: brandColors.success },
-    { label: "Clientes", icon: <PeopleIcon fontSize="small" />, href: `${bp}/clientes`, color: brandColors.teal },
-    { label: "CxC", icon: <AccountBalanceIcon fontSize="small" />, href: `${bp}/cxc`, color: brandColors.statBlue },
-    { label: "Cobros", icon: <PaymentIcon fontSize="small" />, href: `${bp}/abonos`, color: brandColors.accent },
+    { label: "Nueva Factura", icon: <AddCircleOutlineIcon fontSize="small" />, href: `${bp}/facturas/new`, color: brandColors.shortcutDark },
+    { label: "Clientes", icon: <PeopleIcon fontSize="small" />, href: `${bp}/clientes`, color: brandColors.shortcutTeal },
+    { label: "CxC", icon: <AccountBalanceIcon fontSize="small" />, href: `${bp}/cxc`, color: brandColors.shortcutViolet },
+    { label: "Cobros", icon: <PaymentIcon fontSize="small" />, href: `${bp}/abonos`, color: brandColors.statRed },
   ];
 
   return (

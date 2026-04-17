@@ -117,7 +117,7 @@ const shortcuts = [
     description: "Tareas y seguimiento",
     icon: <EventNoteIcon sx={{ fontSize: 28 }} />,
     href: "/crm/actividades",
-    bg: brandColors.shortcutSlate,
+    bg: brandColors.shortcutViolet,
   },
 ];
 
@@ -309,7 +309,7 @@ export default function CRMHome() {
       value: String(kpis?.OpenCount ?? 0),
       subtitle: kpis ? formatCurrency(kpis.OpenValue) : undefined,
       icon: <PeopleIcon />,
-      color: "#1976d2",
+      color: brandColors.shortcutDark,
       change: leadsChange,
     },
     {
@@ -317,35 +317,35 @@ export default function CRMHome() {
       value: String(kpis?.WonCount ?? 0),
       subtitle: kpis ? formatCurrency(kpis.WonValue) : undefined,
       icon: <EmojiEventsIcon />,
-      color: "#4caf50",
+      color: brandColors.success,
     },
     {
       title: "Perdidos",
       value: String(kpis?.LostCount ?? 0),
       subtitle: undefined,
       icon: <ThumbDownIcon />,
-      color: "#f44336",
+      color: brandColors.statRed,
     },
     {
       title: "Tasa Conversion",
       value: `${Number(kpis?.ConversionRate ?? 0).toFixed(1)}%`,
       subtitle: undefined,
       icon: <PercentIcon />,
-      color: "#9c27b0",
+      color: brandColors.shortcutViolet,
     },
     {
       title: "Ticket Promedio",
       value: formatCurrency(kpis?.AvgDealSize ?? 0),
       subtitle: undefined,
       icon: <AttachMoneyIcon />,
-      color: "#00897b",
+      color: brandColors.shortcutTeal,
     },
     {
       title: "Dias Cierre Prom",
       value: `${Number(kpis?.AvgDaysToClose ?? 0).toFixed(0)}d`,
       subtitle: undefined,
       icon: <TimerIcon />,
-      color: "#ff9800",
+      color: brandColors.shortcutSlate,
     },
   ];
 
