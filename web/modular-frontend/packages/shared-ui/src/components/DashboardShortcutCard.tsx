@@ -34,12 +34,24 @@ export default function DashboardShortcutCard({
 
   return (
     <Card
-      sx={{
+      elevation={0}
+      sx={(t) => ({
         borderRadius: 2,
         overflow: "hidden",
-        boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
+        bgcolor: "background.paper",
+        backgroundImage: "none",
+        border: `1px solid ${t.palette.divider}`,
+        boxShadow: "none",
         height: "100%",
-      }}
+        transition: "transform 0.2s, box-shadow 0.2s, border-color 0.2s",
+        "&:hover": {
+          transform: "translateY(-2px)",
+          boxShadow: t.palette.mode === "dark"
+            ? "0 4px 20px rgba(0,0,0,0.25)"
+            : "0 4px 20px rgba(0,0,0,0.08)",
+          borderColor: t.palette.mode === "dark" ? "rgba(255,255,255,0.2)" : t.palette.divider,
+        },
+      })}
     >
       <CardActionArea
         onClick={() => router.push(href)}

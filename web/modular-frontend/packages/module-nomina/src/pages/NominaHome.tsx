@@ -27,7 +27,7 @@ import { useRouter } from "next/navigation";
 import { useEmpleadosList } from "../hooks/useEmpleados";
 import { useNominasList } from "../hooks/useNomina";
 import { formatCurrency } from "@zentto/shared-api";
-import { brandColors, DashboardShortcutCard } from "@zentto/shared-ui";
+import { brandColors, DashboardShortcutCard, DashboardKpiCard } from "@zentto/shared-ui";
 
 export default function NominaHome({ basePath = "" }: { basePath?: string }) {
   const router = useRouter();
@@ -59,7 +59,7 @@ export default function NominaHome({ basePath = "" }: { basePath?: string }) {
       subtitle: "Total Pagos",
       loading: nominas.isLoading,
       color: brandColors.shortcutDark,
-      chartType: "line" as const,
+      icon: <SupervisorAccountIcon />,
     },
     {
       title: "Empleados Activos",
@@ -67,7 +67,7 @@ export default function NominaHome({ basePath = "" }: { basePath?: string }) {
       subtitle: "Staffing",
       loading: empleados.isLoading,
       color: brandColors.shortcutTeal,
-      chartType: "bar" as const,
+      icon: <PeopleIcon />,
     },
     {
       title: "Horas Extras",
@@ -75,7 +75,7 @@ export default function NominaHome({ basePath = "" }: { basePath?: string }) {
       subtitle: "Este Mes",
       loading: false,
       color: brandColors.shortcutViolet,
-      chartType: "bar" as const,
+      icon: <EventIcon />,
     },
     {
       title: "Ausentismo",
@@ -83,7 +83,7 @@ export default function NominaHome({ basePath = "" }: { basePath?: string }) {
       subtitle: "Rate",
       loading: false,
       color: brandColors.statRed,
-      chartType: "line" as const,
+      icon: <BeachAccessIcon />,
     },
   ];
 
@@ -102,35 +102,18 @@ export default function NominaHome({ basePath = "" }: { basePath?: string }) {
 
   return (
     <Box>
-      {/* CORE-UI STYLE STATS CARDS */}
+      {/* STATS CARDS */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
         {statsCards.map((s, idx) => (
           <Grid size={{ xs: 12, sm: 6, md: 3 }} key={idx}>
-            <Card
-              sx={{
-                height: "100%",
-                bgcolor: s.color,
-                color: "white",
-                borderRadius: 2,
-                position: "relative",
-                overflow: "hidden",
-                boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
-              }}
-            >
-              <CardContent sx={{ pb: "16px !important" }}>
-                <Typography variant="body2" sx={{ mb: 0.5, opacity: 0.9, fontWeight: 500 }}>
-                  {s.title}
-                </Typography>
-                {s.loading ? (
-                  <Skeleton variant="text" width={80} height={32} sx={{ bgcolor: "rgba(255,255,255,0.3)" }} />
-                ) : (
-                  <Typography variant="h5" sx={{ fontWeight: 700, lineHeight: 1.1 }}>
-                    {s.value}
-                  </Typography>
-                )}
-
-              </CardContent>
-            </Card>
+            <DashboardKpiCard
+              title={s.title}
+              value={s.value}
+              color={s.color}
+              icon={s.icon}
+              subtitle={s.subtitle}
+              loading={s.loading}
+            />
           </Grid>
         ))}
       </Grid>

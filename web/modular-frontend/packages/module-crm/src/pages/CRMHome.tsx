@@ -36,7 +36,7 @@ import ViewKanbanIcon from "@mui/icons-material/ViewKanban";
 import FormatListBulletedIcon from "@mui/icons-material/FormatListBulleted";
 import EventNoteIcon from "@mui/icons-material/EventNote";
 import { formatCurrency } from "@zentto/shared-api";
-import { brandColors, DashboardShortcutCard } from "@zentto/shared-ui";
+import { brandColors, DashboardShortcutCard, DashboardKpiCard } from "@zentto/shared-ui";
 import { useRouter } from "next/navigation";
 import { usePipelinesList } from "../hooks/useCRM";
 import {
@@ -456,7 +456,7 @@ export default function CRMHome() {
       <Grid container spacing={2} sx={{ mb: 3 }}>
         {kpiCards.map((kpi, idx) => (
           <Grid size={{ xs: 12, sm: 6, md: 4 }} key={idx}>
-            <KPICard
+            <DashboardKpiCard
               title={kpi.title}
               value={kpi.value}
               subtitle={kpi.subtitle}

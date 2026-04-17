@@ -36,7 +36,7 @@ import {
   useRecentOrders,
   useBOMList,
 } from "../hooks/useManufactura";
-import { brandColors, DashboardShortcutCard } from "@zentto/shared-ui";
+import { brandColors, DashboardShortcutCard, DashboardKpiCard } from "@zentto/shared-ui";
 import type { ColumnDef } from "@zentto/datagrid-core";
 import { useGridLayoutSync } from "@zentto/shared-api";
 import { useManufacturaGridRegistration } from "../components/zenttoGridPersistence";
@@ -324,7 +324,7 @@ export default function ManufacturaHome({ basePath = "" }: { basePath?: string }
       <Grid container spacing={2} sx={{ mb: 3 }}>
         {kpiCards.map((kpi, idx) => (
           <Grid size={{ xs: 12, sm: 6, md: 4, lg: 2 }} key={idx}>
-            <KPICard
+            <DashboardKpiCard
               title={kpi.title}
               value={kpi.value}
               subtitle={kpi.subtitle}

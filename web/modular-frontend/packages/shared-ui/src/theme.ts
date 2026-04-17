@@ -176,6 +176,7 @@ const baseThemeOptions = {
           borderRadius: 12,
           boxShadow: '0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04)',
           border: '1px solid var(--mui-palette-divider)',
+          backgroundImage: 'none',
         },
       },
     },
@@ -194,6 +195,29 @@ const baseThemeOptions = {
       styleOverrides: {
         root: {
           borderRadius: 12,
+          backgroundImage: 'none',
+          border: '1px solid var(--mui-palette-divider)',
+        },
+      },
+    },
+    MuiDialog: {
+      styleOverrides: {
+        paper: {
+          border: 'none',
+        },
+      },
+    },
+    MuiMenu: {
+      styleOverrides: {
+        paper: {
+          border: 'none',
+        },
+      },
+    },
+    MuiPopover: {
+      styleOverrides: {
+        paper: {
+          border: 'none',
         },
       },
     },

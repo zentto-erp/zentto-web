@@ -29,7 +29,7 @@ import WarehouseIcon from "@mui/icons-material/Warehouse";
 import { useRouter } from "next/navigation";
 import { useInventarioDashboard, useMovimientosList } from "../hooks/useInventario";
 import { formatCurrency, useGridLayoutSync } from "@zentto/shared-api";
-import { brandColors, DashboardShortcutCard } from "@zentto/shared-ui";
+import { brandColors, DashboardShortcutCard, DashboardKpiCard } from "@zentto/shared-ui";
 import { useInventarioGridRegistration } from "../components/zenttoGridPersistence";
 import type { ColumnDef } from "@zentto/datagrid-core";
 
@@ -64,7 +64,7 @@ export default function InventarioHome({ basePath = "" }: { basePath?: string })
       subtitle: "En sistema",
       loading: dashLoading,
       color: brandColors.shortcutDark,
-      chartType: "bar" as const,
+      icon: <InventoryIcon />,
     },
     {
       title: "Categorias",
@@ -72,7 +72,7 @@ export default function InventarioHome({ basePath = "" }: { basePath?: string })
       subtitle: "Catalogos",
       loading: dashLoading,
       color: brandColors.shortcutTeal,
-      chartType: "bar" as const,
+      icon: <CategoryIcon />,
     },
     {
       title: "Valor Inventario",
@@ -80,7 +80,7 @@ export default function InventarioHome({ basePath = "" }: { basePath?: string })
       subtitle: "Costo total",
       loading: dashLoading,
       color: brandColors.shortcutViolet,
-      chartType: "line" as const,
+      icon: <AttachMoneyIcon />,
     },
     {
       title: "Bajo Stock",
@@ -88,7 +88,7 @@ export default function InventarioHome({ basePath = "" }: { basePath?: string })
       subtitle: "Requieren atencion",
       loading: dashLoading,
       color: brandColors.statRed,
-      chartType: "line" as const,
+      icon: <WarningAmberIcon />,
     },
   ];
 
@@ -131,21 +131,14 @@ export default function InventarioHome({ basePath = "" }: { basePath?: string })
       <Grid container spacing={3} sx={{ mb: 4 }}>
         {statsCards.map((s, idx) => (
           <Grid size={{ xs: 12, sm: 6, md: 3 }} key={idx}>
-            <Card
-              sx={{
-                height: "100%", bgcolor: s.color, color: "white", borderRadius: 2,
-                position: "relative", overflow: "hidden", boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
-              }}
-            >
-              <CardContent sx={{ pb: "16px !important" }}>
-                <Typography variant="body2" sx={{ mb: 0.5, opacity: 0.9, fontWeight: 500 }}>{s.title}</Typography>
-                {s.loading ? (
-                  <Skeleton variant="text" width={80} height={32} sx={{ bgcolor: "rgba(255,255,255,0.3)" }} />
-                ) : (
-                  <Typography variant="h5" sx={{ fontWeight: 700, lineHeight: 1.1 }}>{s.value}</Typography>
-                )}
-              </CardContent>
-            </Card>
+            <DashboardKpiCard
+              title={s.title}
+              value={s.value}
+              color={s.color}
+              icon={s.icon}
+              subtitle={s.subtitle}
+              loading={s.loading}
+            />
           </Grid>
         ))}
       </Grid>

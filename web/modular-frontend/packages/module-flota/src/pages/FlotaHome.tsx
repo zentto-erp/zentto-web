@@ -38,7 +38,7 @@ import {
   useNextMaintenance,
   useFlotaTrends,
 } from "../hooks/useFlota";
-import { brandColors, DashboardShortcutCard } from "@zentto/shared-ui";
+import { brandColors, DashboardShortcutCard, DashboardKpiCard } from "@zentto/shared-ui";
 import type { ColumnDef } from "@zentto/datagrid-core";
 
 /* ─── Helpers ─────────────────────────────────────────────── */
@@ -291,7 +291,7 @@ export default function FlotaHome({ basePath = "" }: { basePath?: string }) {
       <Grid container spacing={2} sx={{ mb: 3 }}>
         {kpiCards.map((kpi, idx) => (
           <Grid size={{ xs: 12, sm: 6, md: 3 }} key={idx}>
-            <KPICard
+            <DashboardKpiCard
               title={kpi.title}
               value={kpi.value}
               icon={kpi.icon}
