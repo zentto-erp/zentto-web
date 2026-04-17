@@ -58,6 +58,8 @@ jobs:
           cache: npm
           cache-dependency-path: web/api/package-lock.json
       - run: npm ci
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
       - run: npx tsc -p tsconfig.build.json --noEmit
 
   # ── 2. Schema tests ───────────────────────────────────────────────
@@ -90,6 +92,8 @@ jobs:
           cache: npm
           cache-dependency-path: web/api/package-lock.json
       - run: npm ci
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Bootstrap schema from baseline
         env:
@@ -149,6 +153,8 @@ jobs:
           tags: ghcr.io/zentto-erp/zentto-web/api:dev
           cache-from: type=gha,scope=api-dev
           cache-to: type=gha,mode=max,scope=api-dev
+          build-args: |
+            NPM_TOKEN=${{ secrets.NPM_TOKEN }}
 
   # ── 4. Setup + Migrate DEV database ─────────────────────────────────
   migrate-pg:
