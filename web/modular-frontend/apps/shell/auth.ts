@@ -223,6 +223,11 @@ const providers: Provider[] = [
   }),
 ];
 
+// Cookie domain para que la sesión sea accesible desde sub-apps en *.zentto.net
+// (por ejemplo posdev.zentto.net usa auth-proxy-route que necesita la cookie).
+// En local/CI el NEXTAUTH_COOKIE_DOMAIN no está → sin domain (solo localhost).
+const COOKIE_DOMAIN = process.env.NEXTAUTH_COOKIE_DOMAIN || undefined;
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   providers,
   secret: process.env.AUTH_SECRET,
@@ -230,6 +235,20 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     signIn: '/authentication/login',
     error: '/authentication/login',
   },
+  ...(COOKIE_DOMAIN && {
+    cookies: {
+      sessionToken: {
+        name: '__Secure-next-auth.session-token',
+        options: {
+          httpOnly: true,
+          sameSite: 'lax' as const,
+          path: '/',
+          secure: true,
+          domain: COOKIE_DOMAIN,
+        },
+      },
+    },
+  }),
   callbacks: {
     async jwt({ token, user, account, trigger, session: updateData }) {
       // Switch company: actualizar store con nuevo accessToken
