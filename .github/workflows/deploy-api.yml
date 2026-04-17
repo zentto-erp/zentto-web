@@ -212,8 +212,9 @@ jobs:
           script: |
             set -e
             mkdir -p /opt/zentto/migrations/postgres /opt/zentto/sqlweb-pg
-            cp -f /opt/zentto/_deploy_tmp/web/api/migrations/postgres/* /opt/zentto/migrations/postgres/
-            cp -rf /opt/zentto/_deploy_tmp/web/api/sqlweb-pg/* /opt/zentto/sqlweb-pg/
+            # rsync --delete asegura que archivos borrados del repo se eliminen del servidor
+            rsync -a --delete /opt/zentto/_deploy_tmp/web/api/migrations/postgres/ /opt/zentto/migrations/postgres/
+            rsync -a --delete /opt/zentto/_deploy_tmp/web/api/sqlweb-pg/ /opt/zentto/sqlweb-pg/
             # goose-deploy scripts vienen de zentto-infra (ya en /opt/zentto-infra/scripts/)
             cp -f /opt/zentto/_deploy_tmp/scripts/hotfix-sec-functions.sql /opt/zentto/hotfix-sec-functions.sql 2>/dev/null || true
             cp -f /opt/zentto/_deploy_tmp/scripts/debug-sec-function.sql /opt/zentto/debug-sec-function.sql 2>/dev/null || true
