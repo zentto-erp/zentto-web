@@ -10,7 +10,7 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import RocketLaunchIcon from '@mui/icons-material/RocketLaunch';
 import {
-  useCatalogPlan, useCheckSubdomain, useStartTrial, useStartCheckout, useCaptureLead,
+  useCatalogPlan, useCheckSubdomain, useStartTrial, useStartCheckout, useCaptureLead, useResendMagicLink,
 } from '@zentto/shared-api';
 import { CountrySelect, PhoneInput } from '@zentto/shared-ui';
 
@@ -71,9 +71,26 @@ export default function RegistroPage() {
   const captureLead = useCaptureLead();
   const startTrial = useStartTrial();
   const startCheckout = useStartCheckout();
+  const resendMagicLink = useResendMagicLink();
 
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [resendDone, setResendDone] = useState(false);
+
+  const ERROR_MESSAGES: Record<string, string> = {
+    plan_not_found: 'El plan seleccionado no existe. Por favor vuelve a la página de precios.',
+    plan_not_trial: 'Este plan no es de prueba. Por favor selecciona otro plan.',
+    plan_inactive: 'El plan seleccionado no está disponible en este momento.',
+    trial_already_used: 'Ya tienes una cuenta con este email. Revisa tu bandeja de entrada o usa "Reenviar email".',
+    EMAIL_ALREADY_EXISTS: 'Ya tienes una cuenta con este email. Revisa tu bandeja de entrada o usa "Reenviar email".',
+    COMPANY_CODE_ALREADY_EXISTS: 'El subdominio elegido ya está en uso. Por favor elige otro.',
+    subdomain_inválido: 'El subdominio solo puede contener letras minúsculas, números y guiones (mínimo 3 caracteres).',
+    email_inválido: 'El email ingresado no es válido.',
+    fullName_required: 'El nombre completo es obligatorio (mínimo 2 caracteres).',
+    companyName_required: 'El nombre de empresa es obligatorio (mínimo 2 caracteres).',
+    planSlug_required: 'No se ha seleccionado ningún plan.',
+    rate_limited: 'Has realizado demasiados intentos. Espera 1 hora antes de volver a intentarlo.',
+  };
 
   const utm = {
     source: params.get('utm_source') || undefined,
@@ -104,16 +121,36 @@ export default function RegistroPage() {
   const step1Valid = Boolean(plan);
   const step2Valid = emailValid && fullName.length >= 2 && companyName.length >= 2 && subdomain.length >= 3 && subdomainAvailable;
 
+  function friendlyError(raw: string): string {
+    return ERROR_MESSAGES[raw] || raw || 'Error al procesar el registro. Por favor intenta de nuevo.';
+  }
+
+  const showResendButton = submitError != null && (
+    submitError.includes('Ya tienes una cuenta') || submitError.includes('email')
+  );
+
+  async function handleResend() {
+    setResendDone(false);
+    try {
+      await resendMagicLink.mutateAsync({ email });
+      setSubmitError(null);
+      setResendDone(true);
+    } catch {
+      setSubmitError('No pudimos reenviar el email. Escribe a soporte@zentto.net.');
+    }
+  }
+
   async function handleSubmit() {
     setSubmitting(true);
     setSubmitError(null);
+    setResendDone(false);
     try {
       if (intendedMode === 'trial') {
         const result = await startTrial.mutateAsync({
           email, fullName, companyName, countryCode, subdomain, planSlug, addonSlugs, utm, vertical: plan?.VerticalType,
         });
         if (!result.ok) {
-          setSubmitError(result.mensaje);
+          setSubmitError(friendlyError(result.mensaje));
           return;
         }
         router.push(`/registro/exito?subdomain=${result.subdomain}&trial=1&magic=${result.magicLinkSent ? 1 : 0}&expires=${encodeURIComponent(result.expiresAt || '')}`);
@@ -122,7 +159,7 @@ export default function RegistroPage() {
           email, fullName, companyName, countryCode, subdomain, planSlug, addonSlugs, utm, vertical: plan?.VerticalType, billingCycle: billing,
         });
         if (!result.ok) {
-          setSubmitError(result.mensaje);
+          setSubmitError(friendlyError(result.mensaje));
           return;
         }
         if (result.checkoutUrl) {
@@ -132,7 +169,8 @@ export default function RegistroPage() {
         }
       }
     } catch (err: any) {
-      setSubmitError(err?.message || 'Error al procesar registro');
+      const rawMsg = err?.message || '';
+      setSubmitError(friendlyError(rawMsg));
     } finally {
       setSubmitting(false);
     }
@@ -329,7 +367,29 @@ export default function RegistroPage() {
                   </Alert>
                 )}
 
-                {submitError && <Alert severity="error" sx={{ mb: 2 }}>{submitError}</Alert>}
+                {resendDone && (
+                  <Alert severity="success" sx={{ mb: 2 }}>
+                    Email reenviado. Revisa tu bandeja de entrada (y la carpeta de spam).
+                  </Alert>
+                )}
+                {submitError && (
+                  <Alert severity="error" sx={{ mb: 2 }}>
+                    {submitError}
+                    {showResendButton && email && (
+                      <Box sx={{ mt: 1 }}>
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          color="error"
+                          disabled={resendMagicLink.isPending}
+                          onClick={handleResend}
+                        >
+                          {resendMagicLink.isPending ? 'Reenviando...' : '¿No recibiste el email? Reenviar'}
+                        </Button>
+                      </Box>
+                    )}
+                  </Alert>
+                )}
 
                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                   <Button onClick={() => setStep(1)} disabled={submitting}>Atrás</Button>
