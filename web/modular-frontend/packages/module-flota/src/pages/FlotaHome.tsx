@@ -196,17 +196,17 @@ export default function FlotaHome({ basePath = "" }: { basePath?: string }) {
       change: kmChange,
     },
     {
+      title: "Mant. Pendientes",
+      value: String(db?.MantenimientosPendientes ?? db?.MaintenancePending ?? 0),
+      icon: <BuildIcon />,
+      color: brandColors.shortcutViolet,
+    },
+    {
       title: "Costo Combustible Mes",
       value: db ? formatCurrency(Number(db.CostoCombustibleMes ?? db.FuelCostThisMonth ?? 0)) : "\u2014",
       icon: <LocalGasStationIcon />,
       color: brandColors.statRed,
       change: fuelChange,
-    },
-    {
-      title: "Mant. Pendientes",
-      value: String(db?.MantenimientosPendientes ?? db?.MaintenancePending ?? 0),
-      icon: <BuildIcon />,
-      color: brandColors.shortcutViolet,
     },
   ];
 

@@ -67,14 +67,6 @@ export default function InventarioHome({ basePath = "" }: { basePath?: string })
       chartType: "bar" as const,
     },
     {
-      title: "Bajo Stock",
-      value: dashboard ? String(dashboard.BajoStock) : "\u2014",
-      subtitle: "Requieren atencion",
-      loading: dashLoading,
-      color: brandColors.statRed,
-      chartType: "line" as const,
-    },
-    {
       title: "Categorias",
       value: dashboard ? String(dashboard.TotalCategorias) : "\u2014",
       subtitle: "Catalogos",
@@ -88,6 +80,14 @@ export default function InventarioHome({ basePath = "" }: { basePath?: string })
       subtitle: "Costo total",
       loading: dashLoading,
       color: brandColors.shortcutViolet,
+      chartType: "line" as const,
+    },
+    {
+      title: "Bajo Stock",
+      value: dashboard ? String(dashboard.BajoStock) : "\u2014",
+      subtitle: "Requieren atencion",
+      loading: dashLoading,
+      color: brandColors.statRed,
       chartType: "line" as const,
     },
   ];

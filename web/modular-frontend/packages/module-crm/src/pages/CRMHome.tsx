@@ -320,13 +320,6 @@ export default function CRMHome() {
       color: brandColors.success,
     },
     {
-      title: "Perdidos",
-      value: String(kpis?.LostCount ?? 0),
-      subtitle: undefined,
-      icon: <ThumbDownIcon />,
-      color: brandColors.statRed,
-    },
-    {
       title: "Tasa Conversion",
       value: `${Number(kpis?.ConversionRate ?? 0).toFixed(1)}%`,
       subtitle: undefined,
@@ -346,6 +339,13 @@ export default function CRMHome() {
       subtitle: undefined,
       icon: <TimerIcon />,
       color: brandColors.shortcutSlate,
+    },
+    {
+      title: "Perdidos",
+      value: String(kpis?.LostCount ?? 0),
+      subtitle: undefined,
+      icon: <ThumbDownIcon />,
+      color: brandColors.statRed,
     },
   ];
 

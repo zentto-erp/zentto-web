@@ -260,12 +260,6 @@ const { data: dashboard, isLoading: dashLoading } = useLogisticaDashboard();
       change: receiptChange,
     },
     {
-      title: "Devoluciones en Proceso",
-      value: String(d?.DevolucionesEnProceso ?? d?.devolucionesEnProceso ?? 0),
-      icon: <AssignmentReturnIcon />,
-      color: brandColors.statRed,
-    },
-    {
       title: "Albaranes en Transito",
       value: String(d?.AlbaranesEnTransito ?? d?.albaranesEnTransito ?? 0),
       icon: <LocalShippingIcon />,
@@ -289,6 +283,12 @@ const { data: dashboard, isLoading: dashLoading } = useLogisticaDashboard();
       value: formatCurrency(valorRecepcionesMes),
       icon: <AttachMoneyIcon />,
       color: brandColors.shortcutSlate,
+    },
+    {
+      title: "Devoluciones en Proceso",
+      value: String(d?.DevolucionesEnProceso ?? d?.devolucionesEnProceso ?? 0),
+      icon: <AssignmentReturnIcon />,
+      color: brandColors.statRed,
     },
   ];
 

@@ -266,18 +266,18 @@ export default function ManufacturaHome({ basePath = "" }: { basePath?: string }
       change: completedChange,
     },
     {
-      title: "Canceladas",
-      value: String(cancelledCount),
-      subtitle: "Ordenes canceladas",
-      icon: <CancelIcon />,
-      color: brandColors.statRed,
-    },
-    {
       title: "Produccion Total",
       value: totalProduced.toLocaleString("es"),
       subtitle: "Cantidad producida este mes",
       icon: <InventoryIcon />,
       color: brandColors.shortcutSlate,
+    },
+    {
+      title: "Canceladas",
+      value: String(cancelledCount),
+      subtitle: "Ordenes canceladas",
+      icon: <CancelIcon />,
+      color: brandColors.statRed,
     },
   ];
 

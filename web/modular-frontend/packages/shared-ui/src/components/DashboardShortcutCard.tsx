@@ -56,7 +56,8 @@ export default function DashboardShortcutCard({
             display: "flex",
             justifyContent: "center",
             alignItems: "center",
-            height: 80,
+            height: 60,
+            "& .MuiSvgIcon-root": { fontSize: 26 },
           })}
         >
           {icon}
@@ -64,20 +65,20 @@ export default function DashboardShortcutCard({
         <CardContent
           sx={{
             textAlign: "center",
-            py: 2,
+            py: 1.5,
             flex: 1,
-            minHeight: 96,
+            minHeight: 80,
             display: "flex",
             flexDirection: "column",
             justifyContent: "center",
           }}
         >
           <Typography
-            variant="h6"
             sx={{
               fontWeight: 700,
               color: "text.primary",
               mb: 0,
+              fontSize: "0.95rem",
               display: "-webkit-box",
               WebkitLineClamp: 2,
               WebkitBoxOrient: "vertical",
@@ -88,13 +89,12 @@ export default function DashboardShortcutCard({
             {title}
           </Typography>
           <Typography
-            variant="body2"
             color="text.secondary"
             sx={{
               textTransform: "uppercase",
               fontWeight: 600,
-              fontSize: "0.75rem",
-              letterSpacing: 1,
+              fontSize: "0.68rem",
+              letterSpacing: 0.8,
             }}
           >
             {description}
