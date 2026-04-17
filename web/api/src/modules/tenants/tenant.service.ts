@@ -110,12 +110,13 @@ export async function sendWelcomeEmail(
   magicLinkUrl?: string
 ): Promise<void> {
   const notifyUrl = process.env.NOTIFY_BASE_URL ?? "https://notify.zentto.net";
-  const notifyKey = process.env.NOTIFY_API_KEY;
+  // Acepta NOTIFY_API_KEY (directo) o AUTH_MAIL_WEBHOOK_TOKEN (inyectado por deploy)
+  const notifyKey = process.env.NOTIFY_API_KEY || process.env.AUTH_MAIL_WEBHOOK_TOKEN;
   const loginUrl = `${tenantUrl || "https://app.zentto.net"}/authentication/login`;
   const useMagicLink = Boolean(magicLinkUrl);
 
   if (!notifyKey) {
-    console.warn("[welcome-email] NOTIFY_API_KEY no configurada — email NO enviado a", ownerEmail);
+    console.warn("[welcome-email] NOTIFY_API_KEY / AUTH_MAIL_WEBHOOK_TOKEN no configurada — email NO enviado a", ownerEmail);
     return;
   }
 

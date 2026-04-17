@@ -356,7 +356,7 @@ jobs:
             # Override only what differs for dev
             sed -i 's|^PG_DATABASE=.*|PG_DATABASE=zentto_dev|' /opt/zentto-dev/.env.api
             sed -i 's|^NODE_ENV=.*|NODE_ENV=development|' /opt/zentto-dev/.env.api
-            sed -i 's|^CORS_ORIGINS=.*|CORS_ORIGINS=https://appdev.zentto.net,https://appdev.zentto.net|' /opt/zentto-dev/.env.api
+            sed -i 's|^CORS_ORIGINS=.*|CORS_ORIGINS=https://appdev.zentto.net|' /opt/zentto-dev/.env.api
             sed -i 's|^AUTH_PUBLIC_URL=.*|AUTH_PUBLIC_URL=https://appdev.zentto.net|' /opt/zentto-dev/.env.api
             sed -i 's|^STORE_URL=.*|STORE_URL=https://appdev.zentto.net|' /opt/zentto-dev/.env.api
 
@@ -367,8 +367,10 @@ jobs:
             # Cache URL — dev uses same cache container (shared network)
             sed -i 's|^ZENTTO_CACHE_URL=.*|ZENTTO_CACHE_URL=http://zentto-cache:4100|' /opt/zentto-dev/.env.api
 
-            # Auth Service URL — dev uses auth-dev container
-            sed -i 's|^AUTH_SERVICE_URL=.*|AUTH_SERVICE_URL=http://zentto-auth-dev:4600|' /opt/zentto-dev/.env.api
+            # Auth Service URL — dev uses auth-dev container (upsert, no depende del prod)
+            grep -q '^AUTH_SERVICE_URL=' /opt/zentto-dev/.env.api \
+              && sed -i 's|^AUTH_SERVICE_URL=.*|AUTH_SERVICE_URL=http://zentto-auth-dev:4600|' /opt/zentto-dev/.env.api \
+              || echo 'AUTH_SERVICE_URL=http://zentto-auth-dev:4600' >> /opt/zentto-dev/.env.api
 
             # Login to GHCR
             echo "$GHCR_TOKEN" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
