@@ -22,6 +22,16 @@ const MODULE_PORTS: Record<string, number> = {
 };
 
 export function middleware(req: NextRequest) {
+  // Solo redirigir a localhost:300X cuando el shell corre localmente en
+  // la máquina del dev (cada micro-app escucha en su propio puerto).
+  // En contenedores (appdev/app.zentto.net) PM2+nginx manejan el ruteo,
+  // así que el middleware NO debe redirigir — si lo hace, el browser del
+  // usuario intenta alcanzar localhost:300X que no existe en su equipo.
+  const host = req.nextUrl.hostname;
+  const isLocalhost = host === 'localhost' || host === '127.0.0.1';
+  if (!isLocalhost) {
+    return NextResponse.next();
+  }
   if (process.env.NODE_ENV !== 'development') {
     return NextResponse.next();
   }
