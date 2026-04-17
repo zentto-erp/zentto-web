@@ -47,5 +47,5 @@ jobs:
             echo "✓ Version $PKG_VERSION ya publicada — skip."
             exit 0
           fi
-          npm publish --access public
+          npm publish --access restricted
           echo "✓ Publicado @zentto/platform-client@$PKG_VERSION"
