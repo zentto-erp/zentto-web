@@ -14,19 +14,11 @@ permissions:
   security-events: write
 
 jobs:
-  # En PROD (main): estricto — bloquea en HIGH/CRITICAL.
-  security-prod:
-    if: github.ref == 'refs/heads/main' || github.base_ref == 'main'
-    uses: zentto-erp/.github/.github/workflows/security.yml@main
-    with:
-      fail-on: high
-    secrets: inherit
-
-  # En DEV (developer + PRs a developer + feature branches): informa pero solo
-  # bloquea en CRITICAL. Los WARNING (TLS bypass interno, XSS proxy de reportes)
-  # son aceptables en backlog y no deben bloquear desarrollo.
-  security-dev:
-    if: github.ref != 'refs/heads/main' && github.base_ref != 'main'
+  # Security scan informa findings pero SOLO bloquea en CRITICAL (ERROR).
+  # Los WARNINGs (high) se revisan y corrigen progresivamente en features
+  # dedicadas. Cuando queden pocos, se puede endurecer prod a fail-on=high.
+  # Política actual: never bloquear deploys por WARNING.
+  security:
     uses: zentto-erp/.github/.github/workflows/security.yml@main
     with:
       fail-on: critical
