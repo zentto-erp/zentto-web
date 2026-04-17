@@ -38,7 +38,7 @@ import {
   useNextMaintenance,
   useFlotaTrends,
 } from "../hooks/useFlota";
-import { brandColors } from "@zentto/shared-ui";
+import { brandColors, DashboardShortcutCard } from "@zentto/shared-ui";
 import type { ColumnDef } from "@zentto/datagrid-core";
 
 /* ─── Helpers ─────────────────────────────────────────────── */
@@ -196,17 +196,17 @@ export default function FlotaHome({ basePath = "" }: { basePath?: string }) {
       change: kmChange,
     },
     {
+      title: "Mant. Pendientes",
+      value: String(db?.MantenimientosPendientes ?? db?.MaintenancePending ?? 0),
+      icon: <BuildIcon />,
+      color: brandColors.shortcutViolet,
+    },
+    {
       title: "Costo Combustible Mes",
       value: db ? formatCurrency(Number(db.CostoCombustibleMes ?? db.FuelCostThisMonth ?? 0)) : "\u2014",
       icon: <LocalGasStationIcon />,
       color: brandColors.statRed,
       change: fuelChange,
-    },
-    {
-      title: "Mant. Pendientes",
-      value: String(db?.MantenimientosPendientes ?? db?.MaintenancePending ?? 0),
-      icon: <BuildIcon />,
-      color: brandColors.shortcutViolet,
     },
   ];
 
@@ -306,18 +306,14 @@ export default function FlotaHome({ basePath = "" }: { basePath?: string }) {
       {/* ─── SHORTCUTS ──────────────────────────────────────── */}
       <Grid container spacing={2} sx={{ mb: 3 }}>
         {shortcuts.map((sc, idx) => (
-          <Grid size={{ xs: 6, sm: 4, md: 3 }} key={idx}>
-            <Card sx={{ borderRadius: 2, overflow: "hidden", boxShadow: "0 2px 4px rgba(0,0,0,0.05)" }}>
-              <CardActionArea onClick={() => router.push(sc.href)}>
-                <Box sx={(t) => ({ bgcolor: sc.bg, backgroundImage: t.palette.mode === 'dark' ? 'linear-gradient(rgba(255,255,255,0.05), rgba(255,255,255,0.05))' : 'none', color: "white", display: "flex", justifyContent: "center", py: 3 })}>
-                  {sc.icon}
-                </Box>
-                <CardContent sx={{ textAlign: "center", py: 1.5 }}>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 700, color: "text.primary", mb: 0, lineHeight: 1.3 }}>{sc.title}</Typography>
-                  <Typography variant="caption" color="text.secondary" sx={{ textTransform: "uppercase", fontWeight: 600, letterSpacing: 1 }}>{sc.description}</Typography>
-                </CardContent>
-              </CardActionArea>
-            </Card>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }} key={idx}>
+            <DashboardShortcutCard
+              title={sc.title}
+              description={sc.description}
+              icon={sc.icon}
+              href={sc.href}
+              color={sc.bg}
+            />
           </Grid>
         ))}
       </Grid>

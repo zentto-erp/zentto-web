@@ -25,7 +25,7 @@ import MenuBookIcon from "@mui/icons-material/MenuBook";
 import BarChartIcon from "@mui/icons-material/BarChart";
 import AccountTreeIcon from "@mui/icons-material/AccountTree";
 import { formatCurrency } from "@zentto/shared-api";
-import { brandColors } from "@zentto/shared-ui";
+import { brandColors, DashboardShortcutCard } from "@zentto/shared-ui";
 import { useRouter } from "next/navigation";
 import { useDashboardResumen, useAsientosList } from "../hooks/useContabilidad";
 
@@ -191,33 +191,13 @@ export default function ContabilidadHome() {
       <Grid container spacing={3} sx={{ mb: 4 }}>
         {shortcuts.map((sc, idx) => (
           <Grid size={{ xs: 12, sm: 6, md: 3 }} key={idx}>
-            <Card
-              sx={{
-                borderRadius: 2,
-                overflow: "hidden",
-                boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
-                cursor: "pointer",
-                transition: "transform 0.2s, box-shadow 0.2s",
-                "&:hover": { transform: "translateY(-2px)", boxShadow: "0 4px 12px rgba(0,0,0,0.15)" },
-              }}
-              onClick={() => router.push(sc.href)}
-            >
-              <Box sx={(t) => ({ bgcolor: sc.bg, backgroundImage: t.palette.mode === 'dark' ? 'linear-gradient(rgba(255,255,255,0.05), rgba(255,255,255,0.05))' : 'none', color: "white", display: "flex", justifyContent: "center", py: 3 })}>
-                {sc.icon}
-              </Box>
-              <CardContent sx={{ textAlign: "center", py: 2 }}>
-                <Typography variant="h6" sx={{ fontWeight: 700, color: "text.primary", mb: 0 }}>
-                  {sc.title}
-                </Typography>
-                <Typography
-                  variant="body2"
-                  color="text.secondary"
-                  sx={{ textTransform: "uppercase", fontWeight: 600, fontSize: "0.75rem", letterSpacing: 1 }}
-                >
-                  {sc.description}
-                </Typography>
-              </CardContent>
-            </Card>
+            <DashboardShortcutCard
+              title={sc.title}
+              description={sc.description}
+              icon={sc.icon}
+              href={sc.href}
+              color={sc.bg}
+            />
           </Grid>
         ))}
       </Grid>

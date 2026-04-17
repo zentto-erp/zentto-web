@@ -36,7 +36,7 @@ import ViewKanbanIcon from "@mui/icons-material/ViewKanban";
 import FormatListBulletedIcon from "@mui/icons-material/FormatListBulleted";
 import EventNoteIcon from "@mui/icons-material/EventNote";
 import { formatCurrency } from "@zentto/shared-api";
-import { brandColors } from "@zentto/shared-ui";
+import { brandColors, DashboardShortcutCard } from "@zentto/shared-ui";
 import { useRouter } from "next/navigation";
 import { usePipelinesList } from "../hooks/useCRM";
 import {
@@ -101,21 +101,21 @@ const shortcuts = [
   {
     title: "Pipeline",
     description: "Tablero Kanban",
-    icon: <ViewKanbanIcon sx={{ fontSize: 28 }} />,
+    icon: <ViewKanbanIcon sx={{ fontSize: 32 }} />,
     href: "/crm/pipeline",
     bg: brandColors.shortcutDark,
   },
   {
     title: "Leads",
     description: "Lista completa",
-    icon: <FormatListBulletedIcon sx={{ fontSize: 28 }} />,
+    icon: <FormatListBulletedIcon sx={{ fontSize: 32 }} />,
     href: "/crm/leads",
     bg: brandColors.shortcutTeal,
   },
   {
     title: "Actividades",
     description: "Tareas y seguimiento",
-    icon: <EventNoteIcon sx={{ fontSize: 28 }} />,
+    icon: <EventNoteIcon sx={{ fontSize: 32 }} />,
     href: "/crm/actividades",
     bg: brandColors.shortcutViolet,
   },
@@ -320,13 +320,6 @@ export default function CRMHome() {
       color: brandColors.success,
     },
     {
-      title: "Perdidos",
-      value: String(kpis?.LostCount ?? 0),
-      subtitle: undefined,
-      icon: <ThumbDownIcon />,
-      color: brandColors.statRed,
-    },
-    {
       title: "Tasa Conversion",
       value: `${Number(kpis?.ConversionRate ?? 0).toFixed(1)}%`,
       subtitle: undefined,
@@ -346,6 +339,13 @@ export default function CRMHome() {
       subtitle: undefined,
       icon: <TimerIcon />,
       color: brandColors.shortcutSlate,
+    },
+    {
+      title: "Perdidos",
+      value: String(kpis?.LostCount ?? 0),
+      subtitle: undefined,
+      icon: <ThumbDownIcon />,
+      color: brandColors.statRed,
     },
   ];
 
@@ -435,50 +435,16 @@ export default function CRMHome() {
       </Box>
 
       {/* ─── SHORTCUTS ───────────────────────────────────────── */}
-      <Grid container spacing={2} sx={{ mb: 3 }}>
+      <Grid container spacing={3} sx={{ mb: 3 }}>
         {shortcuts.map((sc, idx) => (
-          <Grid size={{ xs: 12, sm: 4 }} key={idx}>
-            <Card
-              sx={{
-                borderRadius: 2,
-                overflow: "hidden",
-                cursor: "pointer",
-                transition: "transform 0.2s, box-shadow 0.2s",
-                "&:hover": {
-                  transform: "translateY(-2px)",
-                  boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-                },
-              }}
-              onClick={() => router.push(sc.href)}
-            >
-              <Box
-                sx={{
-                  bgcolor: sc.bg,
-                  color: "white",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 1.5,
-                  px: 2,
-                  py: 1.5,
-                }}
-              >
-                {sc.icon}
-                <Box>
-                  <Typography
-                    variant="subtitle2"
-                    sx={{ fontWeight: 700, color: "white" }}
-                  >
-                    {sc.title}
-                  </Typography>
-                  <Typography
-                    variant="caption"
-                    sx={{ color: "rgba(255,255,255,0.8)" }}
-                  >
-                    {sc.description}
-                  </Typography>
-                </Box>
-              </Box>
-            </Card>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }} key={idx}>
+            <DashboardShortcutCard
+              title={sc.title}
+              description={sc.description}
+              icon={sc.icon}
+              href={sc.href}
+              color={sc.bg}
+            />
           </Grid>
         ))}
       </Grid>
