@@ -47,27 +47,6 @@ export default function AppSelectorPage() {
 
   const has = (mod: string) => isAdmin || modulos.includes(mod);
 
-  const DEV_PORTS: Record<string, number> = {
-    contabilidad: 3001,
-    pos: 3002,
-    nomina: 3003,
-    bancos: 3004,
-    inventario: 3005,
-    ventas: 3006,
-    compras: 3007,
-    restaurante: 3008,
-    ecommerce: 3009,
-    auditoria: 3010,
-    logistica: 3011,
-    crm: 3012,
-    manufactura: 3013,
-    flota: 3014,
-    shipping: 3015,
-    lab: 3016,
-    'report-studio': 3017,
-    panel: 3018,
-  };
-
   const navigateToApp = (appId: string, path: string) => {
     if (path.startsWith('http')) {
       window.open(path, '_blank');
@@ -77,11 +56,8 @@ export default function AppSelectorPage() {
       router.push(path);
       return;
     }
-    const port = DEV_PORTS[appId];
-    if (port) {
-      window.location.href = `http://localhost:${port}${path}`;
-      return;
-    }
+    // resolveAppHref devuelve path relativo en deployed envs
+    // y http://localhost:PORT solo cuando el browser corre localmente.
     window.location.href = resolveAppHref(appId, path);
   };
 
