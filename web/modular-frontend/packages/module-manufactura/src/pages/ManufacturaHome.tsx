@@ -244,25 +244,25 @@ export default function ManufacturaHome({ basePath = "" }: { basePath?: string }
       value: String(dashboard?.BOMsActivos ?? 0),
       subtitle: "Listas de materiales",
       icon: <AccountTreeIcon />,
-      color: "#1976d2",
+      color: brandColors.shortcutDark,
     },
     {
       title: "Centros de Trabajo",
       value: String(dashboard?.CentrosTrabajo ?? 0),
       icon: <FactoryIcon />,
-      color: "#00897b",
+      color: brandColors.shortcutTeal,
     },
     {
       title: "Ordenes en Proceso",
       value: String(dashboard?.OrdenesEnProceso ?? 0),
       icon: <PrecisionManufacturingIcon />,
-      color: "#ff9800",
+      color: brandColors.shortcutViolet,
     },
     {
       title: "Completadas este Mes",
       value: String(dashboard?.CompletadasEsteMes ?? dashboard?.OrdenesCompletadas ?? 0),
       icon: <CheckCircleIcon />,
-      color: "#4caf50",
+      color: brandColors.success,
       change: completedChange,
     },
     {
@@ -270,23 +270,25 @@ export default function ManufacturaHome({ basePath = "" }: { basePath?: string }
       value: String(cancelledCount),
       subtitle: "Ordenes canceladas",
       icon: <CancelIcon />,
-      color: "#f44336",
+      color: brandColors.statRed,
     },
     {
       title: "Produccion Total",
       value: totalProduced.toLocaleString("es"),
       subtitle: "Cantidad producida este mes",
       icon: <InventoryIcon />,
-      color: "#7b1fa2",
+      color: brandColors.shortcutSlate,
     },
   ];
 
-  const shortcuts = [
-    { title: "BOM", description: "Lista de materiales", icon: <AccountTreeIcon sx={{ fontSize: 32 }} />, href: `${bp}/bom`, bg: brandColors.shortcutGreen },
-    { title: "Centros de Trabajo", description: "Configuracion", icon: <FactoryIcon sx={{ fontSize: 32 }} />, href: `${bp}/centros-trabajo`, bg: brandColors.shortcutDark },
-    { title: "Rutas", description: "Produccion", icon: <RouteIcon sx={{ fontSize: 32 }} />, href: `${bp}/rutas`, bg: brandColors.shortcutGreen },
-    { title: "Ordenes", description: "Produccion", icon: <AssignmentIcon sx={{ fontSize: 32 }} />, href: `${bp}/ordenes`, bg: brandColors.shortcutNavy },
+  const PALETTE = [brandColors.shortcutDark, brandColors.shortcutTeal, brandColors.shortcutViolet, brandColors.statRed];
+  const shortcutItems = [
+    { title: "BOM", description: "Lista de materiales", icon: <AccountTreeIcon sx={{ fontSize: 32 }} />, href: `${bp}/bom` },
+    { title: "Centros de Trabajo", description: "Configuracion", icon: <FactoryIcon sx={{ fontSize: 32 }} />, href: `${bp}/centros-trabajo` },
+    { title: "Rutas", description: "Produccion", icon: <RouteIcon sx={{ fontSize: 32 }} />, href: `${bp}/rutas` },
+    { title: "Ordenes", description: "Produccion", icon: <AssignmentIcon sx={{ fontSize: 32 }} />, href: `${bp}/ordenes` },
   ];
+  const shortcuts = shortcutItems.map((sc, i) => ({ ...sc, bg: PALETTE[i % PALETTE.length] }));
 
   const recentRows = recentOrders.map((o, i) => ({ id: o.WorkOrderId ?? i, ...o }));
   const bomRows = recentBoms.map((b, i) => ({ id: (b.BOMId as number) ?? i, ...b }));
@@ -386,11 +388,8 @@ export default function ManufacturaHome({ basePath = "" }: { basePath?: string }
           <Grid size={{ xs: 6, sm: 4, md: 3 }} key={idx}>
             <Card sx={{ borderRadius: 2, overflow: "hidden", boxShadow: "0 2px 4px rgba(0,0,0,0.05)" }}>
               <CardActionArea onClick={() => router.push(sc.href)}>
-                <Box sx={{ bgcolor: sc.bg, color: "white", display: "flex", justifyContent: "center", py: 3, position: "relative" }}>
+                <Box sx={(t) => ({ bgcolor: sc.bg, backgroundImage: t.palette.mode === 'dark' ? 'linear-gradient(rgba(255,255,255,0.05), rgba(255,255,255,0.05))' : 'none', color: "white", display: "flex", justifyContent: "center", py: 3 })}>
                   {sc.icon}
-                  <svg preserveAspectRatio="none" style={{ position: "absolute", bottom: 0, left: 0, width: "100%", height: "30px" }} viewBox="0 0 100 100">
-                    <path d="M0,100 C20,0 50,0 100,100 Z" fill="rgba(255,255,255,0.15)" />
-                  </svg>
                 </Box>
                 <CardContent sx={{ textAlign: "center", py: 1.5 }}>
                   <Typography variant="subtitle1" sx={{ fontWeight: 700, color: "text.primary", mb: 0, lineHeight: 1.3 }}>{sc.title}</Typography>

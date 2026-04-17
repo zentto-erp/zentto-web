@@ -65,29 +65,25 @@ export default function BancosHome() {
       title: "Saldo total",
       value: cuentasData.length > 0 ? formatCurrency(saldoTotal) : "—",
       loading: cuentas.isLoading,
-      color: brandColors.statBlue,
-      icon: <AccountBalanceIcon />,
+      color: brandColors.shortcutDark,
     },
     {
       title: "Cuentas activas",
       value: cuentasData.length > 0 ? String(cuentasData.length) : "—",
       loading: cuentas.isLoading,
-      color: brandColors.statTeal,
-      icon: <TrendingUpIcon />,
+      color: brandColors.shortcutTeal,
     },
     {
       title: "Movimientos del mes",
       value: totalMovimientosMes,
       loading: cuentas.isLoading || movimientosMes.isLoading,
-      color: brandColors.statOrange,
-      icon: <TrendingDownIcon />,
+      color: brandColors.shortcutViolet,
     },
     {
       title: "Conciliaciones pendientes",
       value: String(conciliacionesPendientes),
       loading: conciliaciones.isLoading,
       color: brandColors.statRed,
-      icon: <CompareArrowsIcon />,
     },
   ];
 
@@ -107,21 +103,16 @@ export default function BancosHome() {
               }}
             >
               <CardContent sx={{ pb: "16px !important" }}>
-                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                  <Box>
-                    {s.loading ? (
-                      <Skeleton variant="text" width={120} height={40} sx={{ bgcolor: "rgba(255,255,255,0.3)" }} />
-                    ) : (
-                      <Typography variant="h4" sx={{ fontWeight: 700, lineHeight: 1 }}>
-                        {s.value}
-                      </Typography>
-                    )}
-                    <Typography variant="body1" sx={{ mt: 1, opacity: 0.9, fontWeight: 500 }}>
-                      {s.title}
-                    </Typography>
-                  </Box>
-                  <Box sx={{ opacity: 0.6 }}>{s.icon}</Box>
-                </Box>
+                <Typography variant="body2" sx={{ mb: 0.5, opacity: 0.9, fontWeight: 500 }}>
+                  {s.title}
+                </Typography>
+                {s.loading ? (
+                  <Skeleton variant="text" width={120} height={32} sx={{ bgcolor: "rgba(255,255,255,0.3)" }} />
+                ) : (
+                  <Typography variant="h5" sx={{ fontWeight: 700, lineHeight: 1.1 }}>
+                    {s.value}
+                  </Typography>
+                )}
               </CardContent>
             </Card>
           </Grid>
@@ -133,7 +124,7 @@ export default function BancosHome() {
         {/* Cuentas bancarias */}
         <Grid size={{ xs: 12, md: 8 }}>
           <Paper sx={{ borderRadius: 2, overflow: "hidden" }}>
-            <Box sx={{ p: 2, borderBottom: "1px solid #eee" }}>
+            <Box sx={(t) => ({ p: 2, borderBottom: `1px solid ${t.palette.divider}` })}>
               <Typography variant="h6" fontWeight={600}>
                 Cuentas bancarias
               </Typography>
@@ -192,7 +183,7 @@ export default function BancosHome() {
             <Typography variant="h6" fontWeight={600} mb={2}>
               Resumen general
             </Typography>
-            <Box sx={{ borderLeft: `4px solid ${brandColors.statBlue}`, pl: 2, mb: 3 }}>
+            <Box sx={{ borderLeft: `4px solid ${brandColors.shortcutTeal}`, pl: 2, mb: 3 }}>
               <Typography variant="body2" color="text.secondary">Depósitos del mes</Typography>
               {movimientosMes.isLoading ? (
                 <Skeleton variant="text" width={120} />
@@ -212,7 +203,7 @@ export default function BancosHome() {
                 </Typography>
               )}
             </Box>
-            <Box sx={{ borderLeft: `4px solid ${brandColors.statOrange}`, pl: 2 }}>
+            <Box sx={{ borderLeft: `4px solid ${brandColors.shortcutViolet}`, pl: 2 }}>
               <Typography variant="body2" color="text.secondary">Notas de crédito</Typography>
               {movimientosMes.isLoading ? (
                 <Skeleton variant="text" width={120} />

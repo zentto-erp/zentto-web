@@ -63,7 +63,7 @@ export default function InventarioHome({ basePath = "" }: { basePath?: string })
       value: dashboard ? String(dashboard.TotalArticulos) : "\u2014",
       subtitle: "En sistema",
       loading: dashLoading,
-      color: brandColors.statBlue,
+      color: brandColors.shortcutDark,
       chartType: "bar" as const,
     },
     {
@@ -79,7 +79,7 @@ export default function InventarioHome({ basePath = "" }: { basePath?: string })
       value: dashboard ? String(dashboard.TotalCategorias) : "\u2014",
       subtitle: "Catalogos",
       loading: dashLoading,
-      color: brandColors.statTeal,
+      color: brandColors.shortcutTeal,
       chartType: "bar" as const,
     },
     {
@@ -87,21 +87,23 @@ export default function InventarioHome({ basePath = "" }: { basePath?: string })
       value: dashboard ? formatCurrency(dashboard.ValorInventario) : "\u2014",
       subtitle: "Costo total",
       loading: dashLoading,
-      color: brandColors.statOrange,
+      color: brandColors.shortcutViolet,
       chartType: "line" as const,
     },
   ];
 
-  const shortcuts = [
-    { title: "Articulos", description: "Gestion de productos", icon: <InventoryIcon sx={{ fontSize: 32 }} />, href: `${bp}/articulos`, bg: brandColors.shortcutGreen },
-    { title: "Ajuste Inventario", description: "Entradas y salidas", icon: <TuneIcon sx={{ fontSize: 32 }} />, href: `${bp}/ajuste`, bg: brandColors.shortcutDark },
-    { title: "Movimientos", description: "Historial completo", icon: <HistoryIcon sx={{ fontSize: 32 }} />, href: `${bp}/movimientos`, bg: brandColors.shortcutNavy },
-    { title: "Traslados", description: "Entre almacenes", icon: <SwapHorizIcon sx={{ fontSize: 32 }} />, href: `${bp}/traslados`, bg: brandColors.danger },
-    { title: "Libro Inventario", description: "Reporte mensual", icon: <MenuBookIcon sx={{ fontSize: 32 }} />, href: `${bp}/reportes/libro`, bg: brandColors.success },
-    { title: "Etiquetas", description: "Generador", icon: <LocalOfferIcon sx={{ fontSize: 32 }} />, href: `${bp}/etiquetas`, bg: brandColors.shortcutSlate },
-    { title: "Categorias", description: "Catalogo", icon: <CategoryIcon sx={{ fontSize: 32 }} />, href: `${bp}/catalogos/categorias`, bg: brandColors.shortcutTeal },
-    { title: "Almacenes", description: "Catalogo", icon: <WarehouseIcon sx={{ fontSize: 32 }} />, href: `${bp}/catalogos/almacenes`, bg: brandColors.shortcutSlate },
+  const PALETTE = [brandColors.shortcutDark, brandColors.shortcutTeal, brandColors.shortcutViolet, brandColors.statRed];
+  const shortcutItems = [
+    { title: "Articulos", description: "Gestion de productos", icon: <InventoryIcon sx={{ fontSize: 32 }} />, href: `${bp}/articulos` },
+    { title: "Ajuste Inventario", description: "Entradas y salidas", icon: <TuneIcon sx={{ fontSize: 32 }} />, href: `${bp}/ajuste` },
+    { title: "Movimientos", description: "Historial completo", icon: <HistoryIcon sx={{ fontSize: 32 }} />, href: `${bp}/movimientos` },
+    { title: "Traslados", description: "Entre almacenes", icon: <SwapHorizIcon sx={{ fontSize: 32 }} />, href: `${bp}/traslados` },
+    { title: "Libro Inventario", description: "Reporte mensual", icon: <MenuBookIcon sx={{ fontSize: 32 }} />, href: `${bp}/reportes/libro` },
+    { title: "Etiquetas", description: "Generador", icon: <LocalOfferIcon sx={{ fontSize: 32 }} />, href: `${bp}/etiquetas` },
+    { title: "Categorias", description: "Catalogo", icon: <CategoryIcon sx={{ fontSize: 32 }} />, href: `${bp}/catalogos/categorias` },
+    { title: "Almacenes", description: "Catalogo", icon: <WarehouseIcon sx={{ fontSize: 32 }} />, href: `${bp}/catalogos/almacenes` },
   ];
+  const shortcuts = shortcutItems.map((sc, i) => ({ ...sc, bg: PALETTE[i % PALETTE.length] }));
 
   const movRows = (ultMovs?.rows ?? []) as Record<string, unknown>[];
 
@@ -136,34 +138,12 @@ export default function InventarioHome({ basePath = "" }: { basePath?: string })
               }}
             >
               <CardContent sx={{ pb: "16px !important" }}>
-                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                  <Box>
-                    {s.loading ? (
-                      <Skeleton variant="text" width={80} sx={{ bgcolor: "rgba(255,255,255,0.3)", fontSize: "2rem" }} />
-                    ) : (
-                      <Typography variant="h4" sx={{ fontWeight: 700, lineHeight: 1 }}>{s.value}</Typography>
-                    )}
-                    <Typography variant="body1" sx={{ mt: 1, opacity: 0.9, fontWeight: 500 }}>{s.title}</Typography>
-                  </Box>
-                  <IconButton size="small" sx={{ color: "white", opacity: 0.8, p: 0 }}>
-                    <MoreVertIcon />
-                  </IconButton>
-                </Box>
-                <Box sx={{ mt: 3, height: 40, width: "100%" }}>
-                  {s.chartType === "line" ? (
-                    <svg viewBox="0 0 100 30" width="100%" height="100%" preserveAspectRatio="none">
-                      <path d="M0,20 Q10,10 20,25 T40,15 T60,20 T80,5 T100,10 L100,30 L0,30 Z" fill="rgba(255,255,255,0.1)" />
-                      <path d="M0,20 Q10,10 20,25 T40,15 T60,20 T80,5 T100,10" fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="2" />
-                    </svg>
-                  ) : (
-                    <svg viewBox="0 0 100 30" width="100%" height="100%" preserveAspectRatio="none">
-                      <rect x="5" y="10" width="15" height="20" fill="rgba(255,255,255,0.4)" rx="2" />
-                      <rect x="30" y="5" width="15" height="25" fill="rgba(255,255,255,0.6)" rx="2" />
-                      <rect x="55" y="15" width="15" height="15" fill="rgba(255,255,255,0.3)" rx="2" />
-                      <rect x="80" y="8" width="15" height="22" fill="rgba(255,255,255,0.5)" rx="2" />
-                    </svg>
-                  )}
-                </Box>
+                <Typography variant="body2" sx={{ mb: 0.5, opacity: 0.9, fontWeight: 500 }}>{s.title}</Typography>
+                {s.loading ? (
+                  <Skeleton variant="text" width={80} height={32} sx={{ bgcolor: "rgba(255,255,255,0.3)" }} />
+                ) : (
+                  <Typography variant="h5" sx={{ fontWeight: 700, lineHeight: 1.1 }}>{s.value}</Typography>
+                )}
               </CardContent>
             </Card>
           </Grid>
@@ -176,11 +156,8 @@ export default function InventarioHome({ basePath = "" }: { basePath?: string })
           <Grid size={{ xs: 6, sm: 4, md: 3 }} key={idx}>
             <Card sx={{ borderRadius: 2, overflow: "hidden", boxShadow: "0 2px 4px rgba(0,0,0,0.05)" }}>
               <CardActionArea onClick={() => router.push(sc.href)}>
-                <Box sx={{ bgcolor: sc.bg, color: "white", display: "flex", justifyContent: "center", py: 3, position: "relative" }}>
+                <Box sx={(t) => ({ bgcolor: sc.bg, backgroundImage: t.palette.mode === 'dark' ? 'linear-gradient(rgba(255,255,255,0.05), rgba(255,255,255,0.05))' : 'none', color: "white", display: "flex", justifyContent: "center", py: 3 })}>
                   {sc.icon}
-                  <svg preserveAspectRatio="none" style={{ position: "absolute", bottom: 0, left: 0, width: "100%", height: "30px" }} viewBox="0 0 100 100">
-                    <path d="M0,100 C20,0 50,0 100,100 Z" fill="rgba(255,255,255,0.15)" />
-                  </svg>
                 </Box>
                 <CardContent sx={{ textAlign: "center", py: 1.5 }}>
                   <Typography variant="subtitle1" sx={{ fontWeight: 700, color: "text.primary", mb: 0, lineHeight: 1.3 }}>{sc.title}</Typography>

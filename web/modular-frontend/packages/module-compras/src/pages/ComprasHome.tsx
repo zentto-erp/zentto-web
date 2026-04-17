@@ -189,10 +189,10 @@ export default function ComprasHome({ basePath = "" }: { basePath?: string }) {
 
   /* ─── Shortcuts ──── */
   const shortcuts = [
-    { label: "Nueva Compra", icon: <AddShoppingCartIcon fontSize="small" />, href: `${bp}/compras/new`, color: brandColors.success },
-    { label: "Proveedores", icon: <LocalShippingIcon fontSize="small" />, href: `${bp}/proveedores`, color: brandColors.teal },
-    { label: "CxP Estado", icon: <AccountBalanceIcon fontSize="small" />, href: `${bp}/cxp`, color: brandColors.statBlue },
-    { label: "Pagos", icon: <PaymentIcon fontSize="small" />, href: `${bp}/cuentas-por-pagar`, color: brandColors.accent },
+    { label: "Nueva Compra", icon: <AddShoppingCartIcon fontSize="small" />, href: `${bp}/compras/new`, color: brandColors.shortcutDark },
+    { label: "Proveedores", icon: <LocalShippingIcon fontSize="small" />, href: `${bp}/proveedores`, color: brandColors.shortcutTeal },
+    { label: "CxP Estado", icon: <AccountBalanceIcon fontSize="small" />, href: `${bp}/cxp`, color: brandColors.shortcutViolet },
+    { label: "Pagos", icon: <PaymentIcon fontSize="small" />, href: `${bp}/cuentas-por-pagar`, color: brandColors.statRed },
   ];
 
   return (

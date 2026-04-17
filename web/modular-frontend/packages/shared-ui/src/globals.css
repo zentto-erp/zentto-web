@@ -50,11 +50,19 @@ html {
   scroll-behavior: smooth;
 }
 
-/* Theme transition — aplica a todos los elementos durante el toggle */
-html.theme-transitioning,
+/* Theme transition — solo superficies y bordes comunes, 200ms.
+   Evita selector universal * para no pintar miles de nodos a la vez. */
 html.theme-transitioning body,
-html.theme-transitioning * {
-  transition: background-color 0.4s ease, color 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease !important;
+html.theme-transitioning .MuiAppBar-root,
+html.theme-transitioning .MuiDrawer-paper,
+html.theme-transitioning .MuiPaper-root,
+html.theme-transitioning .MuiCard-root,
+html.theme-transitioning .MuiTableCell-root,
+html.theme-transitioning .MuiDivider-root,
+html.theme-transitioning .MuiChip-root,
+html.theme-transitioning .MuiButton-root,
+html.theme-transitioning .MuiOutlinedInput-notchedOutline {
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease !important;
 }
 
 /* Celdas no editables DataGrid */

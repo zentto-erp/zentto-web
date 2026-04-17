@@ -88,9 +88,9 @@ export default function AuditoriaHome() {
   }));
 
   const stats = [
-    { label: "Logs (24h)", value: data?.logsUltimas24h ?? 0, color: brandColors.statBlue },
-    { label: "Creaciones", value: data?.totalCreates ?? 0, color: brandColors.success },
-    { label: "Actualizaciones", value: data?.totalUpdates ?? 0, color: brandColors.statOrange },
+    { label: "Logs (24h)", value: data?.logsUltimas24h ?? 0, color: brandColors.shortcutDark },
+    { label: "Creaciones", value: data?.totalCreates ?? 0, color: brandColors.shortcutTeal },
+    { label: "Actualizaciones", value: data?.totalUpdates ?? 0, color: brandColors.shortcutViolet },
     { label: "Eliminaciones", value: data?.totalDeletes ?? 0, color: brandColors.statRed },
   ];
 
