@@ -235,6 +235,14 @@ const AuthLogin = ({ title, subtitle, subtext }: loginType) => {
         setIsSubmitting(false);
       } else if (result?.ok) {
         showToast('Inicio de sesion exitoso', 'success');
+        // Emitir cookie HttpOnly zentto_token con domain=.zentto.net para que
+        // sub-apps del ecosistema (pos, restaurante, etc.) reconozcan la sesión
+        // cross-subdomain. El endpoint /api/auth/set-token vive en el shell y
+        // las sub-apps lo proxean. Best-effort: si falla, el login web sigue OK.
+        await fetch('/api/auth/set-token', {
+          method: 'POST',
+          credentials: 'include',
+        }).catch(() => {});
         if (/^https?:\/\//i.test(callbackUrl)) {
           window.location.href = callbackUrl;
         } else {
