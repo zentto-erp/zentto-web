@@ -17,6 +17,7 @@ export type { BrandingConfig, BrandingContextValue } from './providers/BrandingP
 // Branding
 export { default as BrandedThemeProvider } from './components/BrandedThemeProvider';
 export { useBranding } from './hooks/useBranding';
+export { useIsDesktop } from './hooks/useIsDesktop';
 
 // Dashboard cards
 export { default as DashboardShortcutCard } from './components/DashboardShortcutCard';
