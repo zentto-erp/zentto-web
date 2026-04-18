@@ -86,6 +86,7 @@ jobs:
             NEXT_PUBLIC_SHELL_URL=https://app.zentto.net
             NEXT_PUBLIC_TURNSTILE_SITE_KEY=0x4AAAAAACsUe-s-UNo9WDiI
             NEXT_PUBLIC_PADDLE_CLIENT_TOKEN=live_8c250213a8ec06eb59974f48296
+            NPM_TOKEN=${{ secrets.NPM_TOKEN }}
 
   deploy:
     name: Deploy Frontend to server
