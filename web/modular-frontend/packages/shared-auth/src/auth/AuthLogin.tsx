@@ -51,9 +51,29 @@ const loginSchema = z.object({
 
 type LoginFormData = z.infer<typeof loginSchema>;
 
+// Valida un callbackUrl para prevenir open-redirect.
+// Acepta paths relativos y URLs absolutas dentro del dominio zentto.net.
+function getSafeCallbackUrl(raw: string | null): string {
+  if (!raw) return '/';
+  if (raw.startsWith('/') && !raw.startsWith('//')) return raw;
+  try {
+    const parsed = new URL(raw);
+    if (parsed.hostname === 'zentto.net' || parsed.hostname.endsWith('.zentto.net')) {
+      return parsed.toString();
+    }
+  } catch {
+    // URL inválida — fallback seguro
+  }
+  return '/';
+}
+
 const AuthLogin = ({ title, subtitle, subtext }: loginType) => {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const callbackUrl = React.useMemo(
+    () => getSafeCallbackUrl(searchParams.get('callbackUrl')),
+    [searchParams]
+  );
   const [showPassword, setShowPassword] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [errorMsg, setErrorMsg] = React.useState<string | null>(null);
@@ -200,7 +220,7 @@ const AuthLogin = ({ title, subtitle, subtext }: loginType) => {
         companyId: companyId ? String(companyId) : undefined,
         branchId: branchId ? String(branchId) : undefined,
         captchaToken: captchaToken ?? undefined,
-        callbackUrl: '/',
+        callbackUrl,
         redirect: false,
       });
 
@@ -215,8 +235,12 @@ const AuthLogin = ({ title, subtitle, subtext }: loginType) => {
         setIsSubmitting(false);
       } else if (result?.ok) {
         showToast('Inicio de sesion exitoso', 'success');
-        router.push('/');
-        router.refresh();
+        if (/^https?:\/\//i.test(callbackUrl)) {
+          window.location.href = callbackUrl;
+        } else {
+          router.push(callbackUrl);
+          router.refresh();
+        }
       }
     } catch {
       setErrorMsg('Error al iniciar sesion. Intente nuevamente.');
