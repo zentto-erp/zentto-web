@@ -224,9 +224,24 @@ const providers: Provider[] = [
 ];
 
 // Cookie domain para que la sesión sea accesible desde sub-apps en *.zentto.net
-// (por ejemplo posdev.zentto.net usa auth-proxy-route que necesita la cookie).
-// En local/CI el NEXTAUTH_COOKIE_DOMAIN no está → sin domain (solo localhost).
-const COOKIE_DOMAIN = process.env.NEXTAUTH_COOKIE_DOMAIN || undefined;
+// (por ejemplo posdev.zentto.net / pos.zentto.net necesitan la cookie para
+// que el Electron no entre en bucle de login cuando redirige desde el shell).
+// Orden: env explícita → inferida de NEXTAUTH_URL/AUTH_URL si es *.zentto.net → undefined (dev local).
+function inferCookieDomain(): string | undefined {
+  if (process.env.NEXTAUTH_COOKIE_DOMAIN) return process.env.NEXTAUTH_COOKIE_DOMAIN;
+  const raw = process.env.NEXTAUTH_URL ?? process.env.AUTH_URL ?? '';
+  if (!raw) return undefined;
+  try {
+    const url = new URL(raw);
+    if (url.hostname === 'zentto.net' || url.hostname.endsWith('.zentto.net')) {
+      return '.zentto.net';
+    }
+  } catch {
+    // URL mal formada → sin domain
+  }
+  return undefined;
+}
+const COOKIE_DOMAIN = inferCookieDomain();
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   providers,
