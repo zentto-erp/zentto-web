@@ -13,7 +13,8 @@ import {
     ToastProvider,
     LocalizationProviderWrapper,
     OdooLayout,
-    BrandedThemeProvider
+    BrandedThemeProvider,
+    useIsDesktop
 } from '@zentto/shared-ui';
 import '@zentto/shared-ui/globals.css';
 
@@ -22,6 +23,7 @@ import { buildRestauranteNav } from './nav';
 function AppContent({ children }: { children: React.ReactNode }) {
     const { isLoading, isAdmin, modulos, company } = useAuth();
     const [showContent, setShowContent] = useState(false);
+    const isDesktop = useIsDesktop();
 
     // Hidratar localización desde BD al arrancar
     useHydrateLocalizacion('restaurante', company?.companyId ?? 1);
@@ -37,6 +39,14 @@ function AppContent({ children }: { children: React.ReactNode }) {
 
     if (isLoading) {
         return <LoadingFallback />;
+    }
+
+    if (isDesktop) {
+        return (
+            <ToastProvider>
+                <Suspense fallback={<LoadingFallback />}>{children}</Suspense>
+            </ToastProvider>
+        );
     }
 
     return (
