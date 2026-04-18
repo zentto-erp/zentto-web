@@ -52,6 +52,7 @@ const AccessTimeIcon = dynamic(() => import('@mui/icons-material/AccessTime'), {
 const FingerprintIcon = dynamic(() => import('@mui/icons-material/Fingerprint'), { ssr: false });
 const CloseIcon = dynamic(() => import('@mui/icons-material/Close'), { ssr: false });
 const CheckCircleOutlineIcon = dynamic(() => import('@mui/icons-material/CheckCircleOutline'), { ssr: false });
+const TvIcon = dynamic(() => import('@mui/icons-material/Tv'), { ssr: false });
 
 const MAX_CATEGORY_TABS = 24;
 
@@ -113,10 +114,14 @@ export function FacturacionPage() {
     const listarEspera = usePosStore(s => s.listarEspera);
     const paymentModalOpen = usePosStore(s => s.paymentModalOpen);
     const setPaymentModal = usePosStore(s => s.setPaymentModal);
+    const localizacion = usePosStore(s => s.localizacion);
 
     const subtotal = getSubtotal();
     const impuestos = getImpuestos();
     const totalConImpuesto = getTotal();
+
+    // ─── Visor cliente (segunda pantalla Electron) ───
+    const [customerDisplayOpen, setCustomerDisplayOpen] = useState(false);
 
     // ─── Theme & Responsive ───
     const theme = useTheme();
@@ -178,6 +183,35 @@ export function FacturacionPage() {
             setSelectedCategory(null);
         }
     }, [categories, selectedCategory]);
+
+    // ─── Visor cliente: detectar estado inicial ───
+    useEffect(() => {
+        const td = (window as any).zenttoDesktop;
+        if (!td?.customerDisplay) return;
+        td.customerDisplay.isOpen().then((open: boolean) => setCustomerDisplayOpen(open));
+    }, []);
+
+    // ─── Visor cliente: sincronizar carrito en tiempo real ───
+    useEffect(() => {
+        const td = (window as any).zenttoDesktop;
+        if (!td?.customerDisplay) return;
+        if (cart.length === 0) {
+            td.customerDisplay.setIdle();
+        } else {
+            td.customerDisplay.updateCart({
+                items: cart.map(item => ({
+                    name: item.nombre,
+                    qty: item.cantidad,
+                    price: item.precio,
+                    subtotal: item.totalRenglon,
+                })),
+                subtotal,
+                impuestos,
+                total: totalConImpuesto,
+                currency: localizacion.monedaPrincipal,
+            });
+        }
+    }, [cart, subtotal, impuestos, totalConImpuesto, localizacion.monedaPrincipal]);
 
     // ─── Barcode Scanner ───
     useBarcodeScanner((barcode) => {
@@ -532,6 +566,27 @@ export function FacturacionPage() {
                                         </IconButton>
                                     </Tooltip>
                                 </>
+                            )}
+                            {/* Visor Cliente — solo visible en app de escritorio */}
+                            {typeof window !== 'undefined' && !!(window as any).zenttoDesktop?.isDesktop && (
+                                <Tooltip title={customerDisplayOpen ? 'Cerrar Visor Cliente' : 'Abrir Visor Cliente (2ª pantalla)'}>
+                                    <IconButton
+                                        size="small"
+                                        color={customerDisplayOpen ? 'success' : 'default'}
+                                        onClick={async () => {
+                                            const td = (window as any).zenttoDesktop;
+                                            if (customerDisplayOpen) {
+                                                await td.customerDisplay.close();
+                                                setCustomerDisplayOpen(false);
+                                            } else {
+                                                await td.customerDisplay.open();
+                                                setCustomerDisplayOpen(true);
+                                            }
+                                        }}
+                                    >
+                                        <TvIcon />
+                                    </IconButton>
+                                </Tooltip>
                             )}
                         </Box>
                     </Box>
