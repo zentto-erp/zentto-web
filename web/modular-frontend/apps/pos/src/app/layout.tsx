@@ -14,7 +14,8 @@ import {
     ToastProvider,
     LocalizationProviderWrapper,
     BrandedThemeProvider,
-    OdooLayout
+    OdooLayout,
+    useIsDesktop
 } from '@zentto/shared-ui';
 import '@zentto/shared-ui/globals.css';
 
@@ -27,6 +28,7 @@ import { buildPosNav } from './nav';
 function AppContent({ children }: { children: React.ReactNode }) {
     const { isLoading, isAdmin, modulos, company } = useAuth();
     const [showContent, setShowContent] = useState(false);
+    const isDesktop = useIsDesktop();
 
     // Hidratar localización desde BD al arrancar
     useHydrateLocalizacion('pos', company?.companyId ?? 1);
@@ -42,6 +44,14 @@ function AppContent({ children }: { children: React.ReactNode }) {
 
     if (isLoading) {
         return <LoadingFallback />;
+    }
+
+    if (isDesktop) {
+        return (
+            <ToastProvider>
+                <Suspense fallback={<LoadingFallback />}>{children}</Suspense>
+            </ToastProvider>
+        );
     }
 
     return (
