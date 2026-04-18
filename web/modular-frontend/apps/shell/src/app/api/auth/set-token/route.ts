@@ -41,10 +41,14 @@ export async function POST(req: NextRequest) {
 
   const response = NextResponse.json({ ok: true });
 
+  // SameSite=None + Secure permite que la cookie viaje en fetch cross-origin
+  // entre pos.zentto.net → api.zentto.net (Electron desktop). SameSite=Lax
+  // bloquea cross-site fetch aunque el dominio sea compartido. Localhost/dev
+  // sin HTTPS usa lax (SameSite=None requiere Secure=true).
   response.cookies.set("zentto_token", token, {
     httpOnly: true,
     secure: isSecure,
-    sameSite: "lax",
+    sameSite: isSecure ? "none" : "lax",
     domain: cookieDomain,
     path: "/",
     maxAge: 12 * 60 * 60, // 12 horas (en segundos)
@@ -104,7 +108,7 @@ export async function DELETE(req: NextRequest) {
     response.cookies.set(name, "", {
       httpOnly: true,
       secure: isZenttoNet,
-      sameSite: "lax",
+      sameSite: "none",
       domain: cookieDomain,
       path: "/",
       maxAge: 0,
