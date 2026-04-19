@@ -100,3 +100,33 @@ paymentAccountsRouter.delete("/:id", requireAdmin, async (req: Request, res: Res
     res.status(502).json({ error: "payments_unavailable" });
   }
 });
+
+/* ── Cobros Online: dashboard + lista transacciones del tenant ──────── */
+
+paymentAccountsRouter.get("/transactions", async (req: Request, res: Response) => {
+  try {
+    const companyId = (req as AuthenticatedRequest).scope?.companyId ?? 0;
+    const qs = new URLSearchParams({ companyId: String(companyId) });
+    for (const k of ["status", "provider", "from", "to", "limit", "offset", "customerEmail"]) {
+      const v = req.query[k];
+      if (typeof v === "string" && v.length > 0) qs.set(k, v);
+    }
+    const r = await paymentsFetch("GET", `/v1/checkout/transactions?${qs.toString()}`);
+    res.status(r.status).json(r.body);
+  } catch (err: unknown) {
+    res.status(502).json({ error: "payments_unavailable" });
+  }
+});
+
+paymentAccountsRouter.get("/dashboard", async (req: Request, res: Response) => {
+  try {
+    const companyId = (req as AuthenticatedRequest).scope?.companyId ?? 0;
+    const qs = new URLSearchParams({ companyId: String(companyId) });
+    if (typeof req.query.from === "string") qs.set("from", req.query.from);
+    if (typeof req.query.to === "string") qs.set("to", req.query.to);
+    const r = await paymentsFetch("GET", `/v1/checkout/dashboard?${qs.toString()}`);
+    res.status(r.status).json(r.body);
+  } catch (err: unknown) {
+    res.status(502).json({ error: "payments_unavailable" });
+  }
+});

@@ -314,6 +314,7 @@ export function buildNavigation(isAdmin: boolean, modulos: string[], pathname: s
             ],
         });
 
+        nav.push({ kind: 'page', segment: 'bancos/cobros-online', title: 'Cobros Online', icon: <PaymentsIcon /> });
         nav.push({ kind: 'page', segment: 'bancos/reportes', title: 'Reportes', icon: <PrintIcon /> });
         return nav;
     }
