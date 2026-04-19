@@ -64,6 +64,7 @@ import {
   ActivityReportChart,
 } from "../components/charts";
 import { StaleLeadsAlert } from "../components/StaleLeadsAlert";
+import { useAccordionState } from "../hooks/useAccordionState";
 
 /* ─── Helpers ──────────────────────────────────────────────── */
 
@@ -250,6 +251,8 @@ function KPICard({
 
 type AccordionKey = "shortcuts" | "alerts" | "kpis" | "trends" | "stats";
 
+const ACCORDION_STORAGE_KEY = "crm:home:accordions:v1";
+
 const DEFAULT_EXPANDED: Record<AccordionKey, boolean> = {
   shortcuts: true,
   alerts: true,
@@ -263,12 +266,11 @@ const DEFAULT_EXPANDED: Record<AccordionKey, boolean> = {
 export default function CRMHome() {
   const router = useRouter();
 
-  // Accordion state (local; la persistencia se añade en un commit posterior).
-  const [expanded, setExpanded] =
-    useState<Record<AccordionKey, boolean>>(DEFAULT_EXPANDED);
-
-  const setAccordion = (key: AccordionKey, value: boolean) =>
-    setExpanded((prev) => ({ ...prev, [key]: value }));
+  // Accordion state persistido en localStorage vía hook dedicado.
+  const accordions = useAccordionState<AccordionKey>(
+    ACCORDION_STORAGE_KEY,
+    DEFAULT_EXPANDED,
+  );
 
   // State
   const [selectedPipeline, setSelectedPipeline] = useState<
@@ -488,8 +490,8 @@ export default function CRMHome() {
 
       {/* ─── SHORTCUTS ───────────────────────────────────────── */}
       <Accordion
-        expanded={!!expanded.shortcuts}
-        onChange={(_, v) => setAccordion("shortcuts", v)}
+        expanded={accordions.isExpanded("shortcuts")}
+        onChange={(_, v) => accordions.setExpanded("shortcuts", v)}
         disableGutters
         sx={accordionSx}
         role="region"
@@ -531,8 +533,8 @@ export default function CRMHome() {
 
       {/* ─── STALE LEADS ALERT ──────────────────────────────── */}
       <Accordion
-        expanded={!!expanded.alerts}
-        onChange={(_, v) => setAccordion("alerts", v)}
+        expanded={accordions.isExpanded("alerts")}
+        onChange={(_, v) => accordions.setExpanded("alerts", v)}
         disableGutters
         sx={accordionSx}
         role="region"
@@ -557,8 +559,8 @@ export default function CRMHome() {
 
       {/* ─── KPI CARDS (6) ───────────────────────────────────── */}
       <Accordion
-        expanded={!!expanded.kpis}
-        onChange={(_, v) => setAccordion("kpis", v)}
+        expanded={accordions.isExpanded("kpis")}
+        onChange={(_, v) => accordions.setExpanded("kpis", v)}
         disableGutters
         sx={accordionSx}
         role="region"
@@ -602,8 +604,8 @@ export default function CRMHome() {
 
       {/* ─── CHART TABS (TENDENCIAS) ─────────────────────────── */}
       <Accordion
-        expanded={!!expanded.trends}
-        onChange={(_, v) => setAccordion("trends", v)}
+        expanded={accordions.isExpanded("trends")}
+        onChange={(_, v) => accordions.setExpanded("trends", v)}
         disableGutters
         sx={accordionSx}
         role="region"
@@ -660,8 +662,8 @@ export default function CRMHome() {
 
       {/* ─── QUICK STATS ─────────────────────────────────────── */}
       <Accordion
-        expanded={!!expanded.stats}
-        onChange={(_, v) => setAccordion("stats", v)}
+        expanded={accordions.isExpanded("stats")}
+        onChange={(_, v) => accordions.setExpanded("stats", v)}
         disableGutters
         sx={accordionSx}
         role="region"
