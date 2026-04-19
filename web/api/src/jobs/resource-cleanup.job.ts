@@ -10,6 +10,7 @@
  * - Primera ejecución: 60 segundos después del boot
  * - Siguientes: cada 24 horas
  */
+import { notifyFromEnv, type NotifyClient } from "@zentto/platform-client/notify";
 import { callSp } from "../db/query.js";
 import { runResourceAudit } from "../modules/backoffice/resource.service.js";
 import { obs } from "../modules/integrations/observability.js";
@@ -86,20 +87,31 @@ async function runJob(): Promise<void> {
       if (urgentTenants.length > 0) {
         obs.log('info', `[resource-job] ${urgentTenants.length} tenants con eliminación en ≤7 días — enviando notificaciones`, { module: 'resource-job' });
 
-        const notifyUrl = process.env.ZENTTO_NOTIFY_URL;
-        const notifyApiKey = process.env.ZENTTO_NOTIFY_API_KEY;
+        // Se aceptan tanto ZENTTO_NOTIFY_* (legacy) como NOTIFY_* (SDK estándar).
+        const notifyApiKey =
+          process.env.NOTIFY_API_KEY ||
+          process.env.ZENTTO_NOTIFY_API_KEY ||
+          process.env.API_MASTER_KEY;
+        const notifyBaseUrl =
+          process.env.NOTIFY_API_URL ||
+          process.env.NOTIFY_BASE_URL ||
+          process.env.ZENTTO_NOTIFY_URL;
 
-        if (notifyUrl && notifyApiKey) {
+        if (notifyApiKey) {
+          const notify = notifyFromEnv({
+            baseUrl: notifyBaseUrl,
+            apiKey: notifyApiKey,
+          });
           // Enviar notificaciones en paralelo (máximo 5 concurrentes)
           const chunkSize = 5;
           for (let i = 0; i < urgentTenants.length; i += chunkSize) {
             const chunk = urgentTenants.slice(i, i + chunkSize);
             await Promise.allSettled(
-              chunk.map(tenant => sendDeletionWarning(tenant, notifyUrl, notifyApiKey))
+              chunk.map(tenant => sendDeletionWarning(tenant, notify))
             );
           }
         } else {
-          obs.log('warn', '[resource-job] ZENTTO_NOTIFY_URL o ZENTTO_NOTIFY_API_KEY no configurados — omitiendo notificaciones', { module: 'resource-job' });
+          obs.log('warn', '[resource-job] NOTIFY_API_KEY / ZENTTO_NOTIFY_API_KEY no configurados — omitiendo notificaciones', { module: 'resource-job' });
         }
       }
     } catch (notifyErr: unknown) {
@@ -137,42 +149,45 @@ async function runJob(): Promise<void> {
 
 // ── Función auxiliar: enviar aviso de eliminación ──────────────────────────
 
+/**
+ * Envía un aviso de eliminación al owner del tenant via Zentto Notify SDK.
+ *
+ * ⚠️ Bug fix (issue #440): la versión previa hacía `fetch(${notifyUrl}/api/v1/send)`
+ * con `Authorization: Bearer <key>` y un payload con shape `{ channel, to, template,
+ * variables }`. Ese endpoint NO existe en el microservicio notify — nunca existió.
+ * El endpoint real es `POST /api/email/send` con header `X-API-Key`, payload
+ * `{ to, templateId, variables }` y variables como strings. Resultado: desde que
+ * se agregó el job, ningún tenant recibió aviso de eliminación en producción.
+ *
+ * Al migrar a `@zentto/platform-client/notify` (`notify.email.send`), el path y
+ * auth se delegan al SDK y el bug desaparece de raíz.
+ */
 async function sendDeletionWarning(
   tenant: CleanupNearDeadlineRow,
-  notifyUrl: string,
-  apiKey: string,
+  notify: NotifyClient,
 ): Promise<void> {
   if (!tenant.OwnerEmail) return;
 
-  try {
-    const response = await fetch(`${notifyUrl}/api/v1/send`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        channel: 'email',
-        to: tenant.OwnerEmail,
-        template: 'account_deletion_warning',
-        variables: {
-          companyName: tenant.LegalName,
-          companyCode: tenant.CompanyCode,
-          daysUntilDelete: tenant.DaysUntilDelete,
-          deleteAfter: tenant.DeleteAfter,
-        },
-      }),
+  const result = await notify.email.send({
+    to: tenant.OwnerEmail,
+    templateId: 'account_deletion_warning',
+    variables: {
+      companyName: tenant.LegalName,
+      companyCode: tenant.CompanyCode,
+      daysUntilDelete: String(tenant.DaysUntilDelete),
+      deleteAfter: tenant.DeleteAfter,
+    },
+  });
+
+  if (!result.ok) {
+    obs.error(`resource.cleanup.notify.failed: ${result.error ?? 'send_error'}`, {
+      module: 'resource-job',
+      companyCode: tenant.CompanyCode,
     });
-
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
-    }
-
-    obs.log('info', `[resource-job] Notificación enviada a ${tenant.OwnerEmail} (${tenant.CompanyCode})`, { module: 'resource-job' });
-  } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : 'send_error';
-    obs.error(`resource.cleanup.notify.failed: ${msg}`, { module: 'resource-job', companyCode: tenant.CompanyCode });
+    return;
   }
+
+  obs.log('info', `[resource-job] Notificación enviada a ${tenant.OwnerEmail} (${tenant.CompanyCode})`, { module: 'resource-job' });
 }
 
 // ── Inicio del job ─────────────────────────────────────────────────────────
