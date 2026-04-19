@@ -2,12 +2,14 @@
 
 import React, { useState, useMemo } from "react";
 import {
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
   Box,
   Card,
   CardContent,
   Typography,
   Skeleton,
-  Alert,
   Chip,
   Paper,
   Tabs,
@@ -19,9 +21,12 @@ import {
   Select,
   MenuItem,
   Badge,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
 import Grid from "@mui/material/Grid2";
 import { alpha } from "@mui/material/styles";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import PeopleIcon from "@mui/icons-material/People";
 import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
 import ThumbDownIcon from "@mui/icons-material/ThumbDown";
@@ -35,6 +40,11 @@ import FiberNewIcon from "@mui/icons-material/FiberNew";
 import ViewKanbanIcon from "@mui/icons-material/ViewKanban";
 import FormatListBulletedIcon from "@mui/icons-material/FormatListBulleted";
 import EventNoteIcon from "@mui/icons-material/EventNote";
+import RocketLaunchIcon from "@mui/icons-material/RocketLaunch";
+import NotificationsActiveIcon from "@mui/icons-material/NotificationsActive";
+import InsightsIcon from "@mui/icons-material/Insights";
+import ShowChartIcon from "@mui/icons-material/ShowChart";
+import QueryStatsIcon from "@mui/icons-material/QueryStats";
 import { formatCurrency } from "@zentto/shared-api";
 import { brandColors, DashboardShortcutCard, DashboardKpiCard } from "@zentto/shared-ui";
 import { useRouter } from "next/navigation";
@@ -56,6 +66,7 @@ import {
   ActivityReportChart,
 } from "../components/charts";
 import { StaleLeadsAlert } from "../components/StaleLeadsAlert";
+import { useAccordionState } from "../hooks/useAccordionState";
 
 /* ─── Helpers ──────────────────────────────────────────────── */
 
@@ -238,10 +249,44 @@ function KPICard({
   );
 }
 
+/* ─── Accordion keys & defaults ────────────────────────────── */
+
+type AccordionKey = "shortcuts" | "alerts" | "kpis" | "trends" | "stats";
+
+const ACCORDION_STORAGE_KEY = "crm:home:accordions:v1";
+
+const DESKTOP_DEFAULTS: Record<AccordionKey, boolean> = {
+  shortcuts: true,
+  alerts: true,
+  kpis: true,
+  trends: false,
+  stats: false,
+};
+
+// Mobile: todas cerradas por defecto, el usuario expande una a la vez.
+const MOBILE_DEFAULTS: Record<AccordionKey, boolean> = {
+  shortcuts: false,
+  alerts: false,
+  kpis: false,
+  trends: false,
+  stats: false,
+};
+
 /* ─── Main Component ───────────────────────────────────────── */
 
 export default function CRMHome() {
   const router = useRouter();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+
+  // Accordion state persistido en localStorage vía hook dedicado.
+  // Mobile usa defaults cerrados + modo exclusivo (solo 1 abierto a la vez)
+  // y una storage key distinta para no contaminar la preferencia desktop.
+  const accordions = useAccordionState<AccordionKey>(
+    isMobile ? `${ACCORDION_STORAGE_KEY}:mobile` : ACCORDION_STORAGE_KEY,
+    isMobile ? MOBILE_DEFAULTS : DESKTOP_DEFAULTS,
+    { exclusive: isMobile },
+  );
 
   // State
   const [selectedPipeline, setSelectedPipeline] = useState<
@@ -387,6 +432,31 @@ export default function CRMHome() {
     }
   };
 
+  // Métricas auxiliares para chips en summaries.
+  const overdueActivities = kpis?.ActivitiesOverdue ?? 0;
+  const hasOverdue = !loadingKPIs && overdueActivities > 0;
+  const newLeadsCount = kpis?.NewLeadsThisMonth ?? 0;
+
+  // Estilos comunes del acordeón — foco visible y sin sombra extra.
+  const accordionSx = {
+    mb: 2,
+    borderRadius: 2,
+    "&:before": { display: "none" },
+    boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
+    "&.Mui-expanded": { mb: 2 },
+    "& .MuiAccordionSummary-root.Mui-focusVisible": {
+      outline: `2px solid ${alpha(brandColors.shortcutDark, 0.6)}`,
+      outlineOffset: 2,
+    },
+  } as const;
+
+  const summaryTitleSx = {
+    display: "flex",
+    alignItems: "center",
+    gap: 1,
+    flex: 1,
+  } as const;
+
   return (
     <Box>
       {/* ─── HEADER ──────────────────────────────────────────── */}
@@ -435,160 +505,330 @@ export default function CRMHome() {
       </Box>
 
       {/* ─── SHORTCUTS ───────────────────────────────────────── */}
-      <Grid container spacing={3} sx={{ mb: 3 }}>
-        {shortcuts.map((sc, idx) => (
-          <Grid size={{ xs: 12, sm: 6, md: 3 }} key={idx}>
-            <DashboardShortcutCard
-              title={sc.title}
-              description={sc.description}
-              icon={sc.icon}
-              href={sc.href}
-              color={sc.bg}
+      <Accordion
+        expanded={accordions.isExpanded("shortcuts")}
+        onChange={(_, v) => accordions.setExpanded("shortcuts", v)}
+        disableGutters
+        sx={accordionSx}
+        role="region"
+        aria-label="Accesos rápidos"
+      >
+        <AccordionSummary
+          expandIcon={<ExpandMoreIcon />}
+          aria-controls="crm-home-shortcuts-content"
+          id="crm-home-shortcuts-header"
+        >
+          <Box sx={summaryTitleSx}>
+            <RocketLaunchIcon color="primary" />
+            <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+              Accesos rápidos
+            </Typography>
+            <Chip
+              label={shortcuts.length}
+              size="small"
+              sx={{ ml: 1, height: 20, fontSize: "0.7rem" }}
             />
+          </Box>
+        </AccordionSummary>
+        <AccordionDetails>
+          <Grid container spacing={3}>
+            {shortcuts.map((sc, idx) => (
+              <Grid size={{ xs: 12, sm: 6, md: 4 }} key={idx}>
+                <DashboardShortcutCard
+                  title={sc.title}
+                  description={sc.description}
+                  icon={sc.icon}
+                  href={sc.href}
+                  color={sc.bg}
+                />
+              </Grid>
+            ))}
           </Grid>
-        ))}
-      </Grid>
+        </AccordionDetails>
+      </Accordion>
 
       {/* ─── STALE LEADS ALERT ──────────────────────────────── */}
-      <StaleLeadsAlert pipelineId={pipelineId} days={7} maxDisplay={5} />
+      <Accordion
+        expanded={accordions.isExpanded("alerts")}
+        onChange={(_, v) => accordions.setExpanded("alerts", v)}
+        disableGutters
+        sx={accordionSx}
+        role="region"
+        aria-label="Alertas de leads"
+      >
+        <AccordionSummary
+          expandIcon={<ExpandMoreIcon />}
+          aria-controls="crm-home-alerts-content"
+          id="crm-home-alerts-header"
+        >
+          <Box sx={summaryTitleSx}>
+            <NotificationsActiveIcon color="warning" />
+            <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+              Alertas
+            </Typography>
+          </Box>
+        </AccordionSummary>
+        <AccordionDetails>
+          <StaleLeadsAlert pipelineId={pipelineId} days={7} maxDisplay={5} />
+        </AccordionDetails>
+      </Accordion>
 
       {/* ─── KPI CARDS (6) ───────────────────────────────────── */}
-      <Grid container spacing={2} sx={{ mb: 3 }}>
-        {kpiCards.map((kpi, idx) => (
-          <Grid size={{ xs: 12, sm: 6, md: 4 }} key={idx}>
-            <DashboardKpiCard
-              title={kpi.title}
-              value={kpi.value}
-              subtitle={kpi.subtitle}
-              icon={kpi.icon}
-              color={kpi.color}
-              change={kpi.change}
-              loading={loadingKPIs}
-            />
-          </Grid>
-        ))}
-      </Grid>
-
-      {/* ─── CHART TABS ──────────────────────────────────────── */}
-      <Paper sx={{ borderRadius: 2, mb: 3, overflow: "hidden" }}>
-        <Tabs
-          value={chartTab}
-          onChange={(_, v) => setChartTab(v)}
-          variant="scrollable"
-          scrollButtons="auto"
-          sx={{ borderBottom: "1px solid", borderColor: "divider", px: 1 }}
+      <Accordion
+        expanded={accordions.isExpanded("kpis")}
+        onChange={(_, v) => accordions.setExpanded("kpis", v)}
+        disableGutters
+        sx={accordionSx}
+        role="region"
+        aria-label="Indicadores KPI"
+      >
+        <AccordionSummary
+          expandIcon={<ExpandMoreIcon />}
+          aria-controls="crm-home-kpis-content"
+          id="crm-home-kpis-header"
         >
-          <Tab label="Forecast" />
-          <Tab label="Embudo" />
-          <Tab label="Ganados/Perdidos" />
-          <Tab label="Velocidad" />
-          <Tab label="Actividades" />
-        </Tabs>
-        <Box sx={{ p: 2 }}>{chartContent()}</Box>
-      </Paper>
+          <Box sx={summaryTitleSx}>
+            <InsightsIcon color="primary" />
+            <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+              KPIs
+            </Typography>
+            <Chip
+              label={kpiCards.length}
+              size="small"
+              sx={{ ml: 1, height: 20, fontSize: "0.7rem" }}
+            />
+          </Box>
+        </AccordionSummary>
+        <AccordionDetails>
+          <Grid container spacing={2}>
+            {kpiCards.map((kpi, idx) => (
+              <Grid size={{ xs: 12, sm: 6, md: 4 }} key={idx}>
+                <DashboardKpiCard
+                  title={kpi.title}
+                  value={kpi.value}
+                  subtitle={kpi.subtitle}
+                  icon={kpi.icon}
+                  color={kpi.color}
+                  change={kpi.change}
+                  loading={loadingKPIs}
+                />
+              </Grid>
+            ))}
+          </Grid>
+        </AccordionDetails>
+      </Accordion>
 
-      {/* ─── QUICK STATS (Fila 3) ────────────────────────────── */}
-      <Grid container spacing={2}>
-        <Grid size={{ xs: 12, sm: 6 }}>
-          <Paper sx={{ borderRadius: 2, p: 2.5 }}>
-            <Box
+      {/* ─── CHART TABS (TENDENCIAS) ─────────────────────────── */}
+      <Accordion
+        expanded={accordions.isExpanded("trends")}
+        onChange={(_, v) => accordions.setExpanded("trends", v)}
+        disableGutters
+        sx={accordionSx}
+        role="region"
+        aria-label="Tendencias y gráficos"
+        TransitionProps={{ unmountOnExit: true }}
+      >
+        <AccordionSummary
+          expandIcon={<ExpandMoreIcon />}
+          aria-controls="crm-home-trends-content"
+          id="crm-home-trends-header"
+        >
+          <Box sx={summaryTitleSx}>
+            <ShowChartIcon color="primary" />
+            <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+              Tendencias
+            </Typography>
+            <Typography
+              variant="caption"
+              sx={{ color: "text.secondary", ml: 1 }}
+            >
+              Forecast · Embudo · Ganados/Perdidos · Velocidad · Actividades
+            </Typography>
+          </Box>
+        </AccordionSummary>
+        <AccordionDetails sx={{ p: 0 }}>
+          <Paper
+            sx={{
+              borderRadius: 2,
+              overflow: "hidden",
+              boxShadow: "none",
+            }}
+          >
+            <Tabs
+              value={chartTab}
+              onChange={(_, v) => setChartTab(v)}
+              variant="scrollable"
+              scrollButtons="auto"
               sx={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
+                borderBottom: "1px solid",
+                borderColor: "divider",
+                px: 1,
               }}
             >
-              <Box>
-                <Typography
-                  variant="caption"
-                  sx={{
-                    color: "text.secondary",
-                    fontWeight: 600,
-                    textTransform: "uppercase",
-                  }}
-                >
-                  Actividades pendientes
-                </Typography>
-                {loadingKPIs ? (
-                  <Skeleton variant="text" width={60} height={32} />
-                ) : (
-                  <Typography variant="h4" sx={{ fontWeight: 700, mt: 0.5 }}>
-                    {kpis?.ActivitiesPending ?? 0}
-                  </Typography>
-                )}
-              </Box>
-              <Badge
-                badgeContent={kpis?.ActivitiesOverdue ?? 0}
-                color="error"
-                max={99}
-              >
-                <AssignmentLateIcon
-                  sx={{ fontSize: 36, color: "text.secondary" }}
-                />
-              </Badge>
-            </Box>
-            {!loadingKPIs && (kpis?.ActivitiesOverdue ?? 0) > 0 && (
+              <Tab label="Forecast" />
+              <Tab label="Embudo" />
+              <Tab label="Ganados/Perdidos" />
+              <Tab label="Velocidad" />
+              <Tab label="Actividades" />
+            </Tabs>
+            <Box sx={{ p: 2 }}>{chartContent()}</Box>
+          </Paper>
+        </AccordionDetails>
+      </Accordion>
+
+      {/* ─── QUICK STATS ─────────────────────────────────────── */}
+      <Accordion
+        expanded={accordions.isExpanded("stats")}
+        onChange={(_, v) => accordions.setExpanded("stats", v)}
+        disableGutters
+        sx={accordionSx}
+        role="region"
+        aria-label="Estadísticas rápidas"
+      >
+        <AccordionSummary
+          expandIcon={<ExpandMoreIcon />}
+          aria-controls="crm-home-stats-content"
+          id="crm-home-stats-header"
+        >
+          <Box sx={summaryTitleSx}>
+            <QueryStatsIcon color="primary" />
+            <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+              Quick Stats
+            </Typography>
+            {hasOverdue && (
               <Chip
-                label={`${kpis!.ActivitiesOverdue} vencidas`}
+                label={`${overdueActivities} vencidas`}
                 size="small"
                 color="error"
                 variant="outlined"
-                sx={{ mt: 1 }}
+                sx={{ ml: 1, height: 20, fontSize: "0.65rem" }}
               />
             )}
-          </Paper>
-        </Grid>
-
-        <Grid size={{ xs: 12, sm: 6 }}>
-          <Paper sx={{ borderRadius: 2, p: 2.5 }}>
-            <Box
-              sx={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-              }}
-            >
-              <Box>
-                <Typography
-                  variant="caption"
+            {!loadingKPIs && newLeadsCount > 0 && (
+              <Chip
+                label={`${newLeadsCount} nuevos`}
+                size="small"
+                color="info"
+                variant="outlined"
+                sx={{ ml: 1, height: 20, fontSize: "0.65rem" }}
+              />
+            )}
+          </Box>
+        </AccordionSummary>
+        <AccordionDetails>
+          <Grid container spacing={2}>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <Paper sx={{ borderRadius: 2, p: 2.5 }}>
+                <Box
                   sx={{
-                    color: "text.secondary",
-                    fontWeight: 600,
-                    textTransform: "uppercase",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
                   }}
                 >
-                  Leads nuevos este mes
-                </Typography>
-                {loadingKPIs ? (
-                  <Skeleton variant="text" width={60} height={32} />
-                ) : (
-                  <Typography variant="h4" sx={{ fontWeight: 700, mt: 0.5 }}>
-                    {kpis?.NewLeadsThisMonth ?? 0}
-                  </Typography>
-                )}
-              </Box>
-              <FiberNewIcon sx={{ fontSize: 36, color: "#1976d2" }} />
-            </Box>
-            {!loadingKPIs && kpis && (
-              <Typography
-                variant="caption"
-                sx={{ color: "text.secondary", mt: 0.5, display: "block" }}
-              >
-                Mes anterior: {kpis.NewLeadsLastMonth}
-                {leadsChange !== null && (
+                  <Box>
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        color: "text.secondary",
+                        fontWeight: 600,
+                        textTransform: "uppercase",
+                      }}
+                    >
+                      Actividades pendientes
+                    </Typography>
+                    {loadingKPIs ? (
+                      <Skeleton variant="text" width={60} height={32} />
+                    ) : (
+                      <Typography
+                        variant="h4"
+                        sx={{ fontWeight: 700, mt: 0.5 }}
+                      >
+                        {kpis?.ActivitiesPending ?? 0}
+                      </Typography>
+                    )}
+                  </Box>
+                  <Badge
+                    badgeContent={kpis?.ActivitiesOverdue ?? 0}
+                    color="error"
+                    max={99}
+                  >
+                    <AssignmentLateIcon
+                      sx={{ fontSize: 36, color: "text.secondary" }}
+                    />
+                  </Badge>
+                </Box>
+                {hasOverdue && (
                   <Chip
-                    label={`${leadsChange >= 0 ? "+" : ""}${Number(leadsChange).toFixed(0)}%`}
+                    label={`${overdueActivities} vencidas`}
                     size="small"
-                    color={leadsChange >= 0 ? "success" : "error"}
+                    color="error"
                     variant="outlined"
-                    sx={{ ml: 1, height: 20, fontSize: "0.65rem" }}
+                    sx={{ mt: 1 }}
                   />
                 )}
-              </Typography>
-            )}
-          </Paper>
-        </Grid>
-      </Grid>
+              </Paper>
+            </Grid>
+
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <Paper sx={{ borderRadius: 2, p: 2.5 }}>
+                <Box
+                  sx={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                >
+                  <Box>
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        color: "text.secondary",
+                        fontWeight: 600,
+                        textTransform: "uppercase",
+                      }}
+                    >
+                      Leads nuevos este mes
+                    </Typography>
+                    {loadingKPIs ? (
+                      <Skeleton variant="text" width={60} height={32} />
+                    ) : (
+                      <Typography
+                        variant="h4"
+                        sx={{ fontWeight: 700, mt: 0.5 }}
+                      >
+                        {kpis?.NewLeadsThisMonth ?? 0}
+                      </Typography>
+                    )}
+                  </Box>
+                  <FiberNewIcon sx={{ fontSize: 36, color: "#1976d2" }} />
+                </Box>
+                {!loadingKPIs && kpis && (
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      color: "text.secondary",
+                      mt: 0.5,
+                      display: "block",
+                    }}
+                  >
+                    Mes anterior: {kpis.NewLeadsLastMonth}
+                    {leadsChange !== null && (
+                      <Chip
+                        label={`${leadsChange >= 0 ? "+" : ""}${Number(leadsChange).toFixed(0)}%`}
+                        size="small"
+                        color={leadsChange >= 0 ? "success" : "error"}
+                        variant="outlined"
+                        sx={{ ml: 1, height: 20, fontSize: "0.65rem" }}
+                      />
+                    )}
+                  </Typography>
+                )}
+              </Paper>
+            </Grid>
+          </Grid>
+        </AccordionDetails>
+      </Accordion>
     </Box>
   );
 }
