@@ -57,3 +57,49 @@ export const LEAD_STATUS_LABELS: Record<LeadStatus, string> = {
   LOST: 'Perdido',
   ARCHIVED: 'Archivado',
 };
+
+/** Tipo canónico de actividad — alineado con backend y ActivityTimeline. */
+export type ActivityType = 'CALL' | 'EMAIL' | 'MEETING' | 'NOTE' | 'TASK';
+
+export const ACTIVITY_TYPE_VALUES: readonly ActivityType[] = [
+  'CALL',
+  'EMAIL',
+  'MEETING',
+  'NOTE',
+  'TASK',
+] as const;
+
+export const ACTIVITY_TYPE_LABELS: Record<ActivityType, string> = {
+  CALL: 'Llamada',
+  EMAIL: 'Correo',
+  MEETING: 'Reunión',
+  NOTE: 'Nota',
+  TASK: 'Tarea',
+};
+
+/** Color MUI por tipo de actividad — consistente con ActivityTimeline. */
+export const ACTIVITY_TYPE_COLORS: Record<
+  ActivityType,
+  'primary' | 'secondary' | 'success' | 'warning' | 'info'
+> = {
+  CALL: 'primary',
+  EMAIL: 'info',
+  MEETING: 'success',
+  NOTE: 'warning',
+  TASK: 'secondary',
+};
+
+export function isActivityType(value: unknown): value is ActivityType {
+  return (
+    typeof value === 'string' &&
+    (ACTIVITY_TYPE_VALUES as readonly string[]).includes(value)
+  );
+}
+
+/** Estado derivado de una actividad — completada vs pendiente. */
+export type ActivityStatus = 'pending' | 'completed';
+
+export const ACTIVITY_STATUS_LABELS: Record<ActivityStatus, string> = {
+  pending: 'Pendiente',
+  completed: 'Completada',
+};
