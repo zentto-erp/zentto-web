@@ -9303,3 +9303,483 @@ paths:
           $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  #  CRM — Companies / Contacts / Deals (ADR-CRM-001)
+  # ═══════════════════════════════════════════════════════════════════════════
+  /v1/crm/companies:
+    get:
+      tags: [CRM]
+      summary: Listar empresas CRM
+      parameters:
+        - in: query
+          name: search
+          schema: { type: string }
+        - in: query
+          name: industry
+          schema: { type: string }
+        - in: query
+          name: active
+          schema: { type: boolean }
+        - in: query
+          name: page
+          schema: { type: integer, minimum: 1 }
+        - in: query
+          name: limit
+          schema: { type: integer, minimum: 1, maximum: 500 }
+      responses:
+        "200":
+          description: Lista paginada
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      tags: [CRM]
+      summary: Crear empresa CRM
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name:      { type: string, maxLength: 200 }
+                legalName: { type: string }
+                taxId:     { type: string }
+                industry:  { type: string }
+                size:      { type: string, enum: ["1-10","11-50","51-200","201-500","501-1000","1000+"] }
+                website:   { type: string }
+                phone:     { type: string }
+                email:     { type: string, format: email }
+                notes:     { type: string }
+                isActive:  { type: boolean }
+      responses:
+        "200":
+          description: Creada
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /v1/crm/companies/search:
+    get:
+      tags: [CRM]
+      summary: Busqueda rapida de empresas CRM
+      parameters:
+        - in: query
+          name: q
+          required: true
+          schema: { type: string }
+        - in: query
+          name: limit
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Resultados
+
+  /v1/crm/companies/{id}:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema: { type: integer }
+    get:
+      tags: [CRM]
+      summary: Detalle de empresa CRM
+      responses:
+        "200":
+          description: Empresa
+        "404":
+          $ref: "#/components/responses/NotFound"
+    put:
+      tags: [CRM]
+      summary: Actualizar empresa CRM
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:      { type: string }
+                legalName: { type: string }
+                taxId:     { type: string }
+                industry:  { type: string }
+                size:      { type: string }
+                website:   { type: string }
+                phone:     { type: string }
+                email:     { type: string }
+                notes:     { type: string }
+                isActive:  { type: boolean }
+      responses:
+        "200":
+          description: Actualizada
+    delete:
+      tags: [CRM]
+      summary: Borrar (soft) empresa CRM
+      responses:
+        "200":
+          description: Borrada
+
+  /v1/crm/contacts:
+    get:
+      tags: [CRM]
+      summary: Listar contactos CRM
+      parameters:
+        - in: query
+          name: crmCompanyId
+          schema: { type: integer }
+        - in: query
+          name: search
+          schema: { type: string }
+        - in: query
+          name: active
+          schema: { type: boolean }
+        - in: query
+          name: page
+          schema: { type: integer }
+        - in: query
+          name: limit
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Lista paginada
+    post:
+      tags: [CRM]
+      summary: Crear contacto
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [firstName]
+              properties:
+                firstName:    { type: string }
+                lastName:     { type: string }
+                email:        { type: string, format: email }
+                phone:        { type: string }
+                mobile:       { type: string }
+                title:        { type: string }
+                department:   { type: string }
+                linkedIn:     { type: string }
+                notes:        { type: string }
+                crmCompanyId: { type: integer }
+                isActive:     { type: boolean }
+      responses:
+        "200":
+          description: Creado
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /v1/crm/contacts/search:
+    get:
+      tags: [CRM]
+      summary: Busqueda rapida de contactos
+      parameters:
+        - in: query
+          name: q
+          required: true
+          schema: { type: string }
+        - in: query
+          name: limit
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Resultados
+
+  /v1/crm/contacts/{id}:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema: { type: integer }
+    get:
+      tags: [CRM]
+      summary: Detalle de contacto
+      responses:
+        "200":
+          description: Contacto
+        "404":
+          $ref: "#/components/responses/NotFound"
+    put:
+      tags: [CRM]
+      summary: Actualizar contacto
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                firstName:    { type: string }
+                lastName:     { type: string }
+                email:        { type: string }
+                phone:        { type: string }
+                mobile:       { type: string }
+                title:        { type: string }
+                department:   { type: string }
+                linkedIn:     { type: string }
+                notes:        { type: string }
+                crmCompanyId: { type: integer }
+                isActive:     { type: boolean }
+      responses:
+        "200":
+          description: Actualizado
+    delete:
+      tags: [CRM]
+      summary: Borrar (soft) contacto
+      responses:
+        "200":
+          description: Borrado
+
+  /v1/crm/contacts/{id}/promote-customer:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema: { type: integer }
+    post:
+      tags: [CRM]
+      summary: Promover contacto a master.Customer
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                customerCode:
+                  type: string
+                  maxLength: 24
+      responses:
+        "200":
+          description: Promovido (id=CustomerId)
+
+  /v1/crm/deals:
+    get:
+      tags: [CRM]
+      summary: Listar deals
+      parameters:
+        - in: query
+          name: pipelineId
+          schema: { type: integer }
+        - in: query
+          name: stageId
+          schema: { type: integer }
+        - in: query
+          name: status
+          schema: { type: string, enum: [OPEN, WON, LOST, ABANDONED] }
+        - in: query
+          name: ownerAgentId
+          schema: { type: integer }
+        - in: query
+          name: contactId
+          schema: { type: integer }
+        - in: query
+          name: crmCompanyId
+          schema: { type: integer }
+        - in: query
+          name: search
+          schema: { type: string }
+        - in: query
+          name: page
+          schema: { type: integer }
+        - in: query
+          name: limit
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Lista paginada
+    post:
+      tags: [CRM]
+      summary: Crear deal
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, pipelineId, stageId]
+              properties:
+                name:          { type: string }
+                pipelineId:    { type: integer }
+                stageId:       { type: integer }
+                contactId:     { type: integer }
+                crmCompanyId:  { type: integer }
+                ownerAgentId:  { type: integer }
+                value:         { type: number }
+                currency:      { type: string, minLength: 3, maxLength: 3 }
+                probability:   { type: number }
+                expectedClose: { type: string, format: date }
+                priority:      { type: string, enum: [URGENT, HIGH, MEDIUM, LOW] }
+                source:        { type: string }
+                notes:         { type: string }
+                tags:          { type: string }
+      responses:
+        "200":
+          description: Creado
+
+  /v1/crm/deals/search:
+    get:
+      tags: [CRM]
+      summary: Busqueda rapida de deals
+      parameters:
+        - in: query
+          name: q
+          required: true
+          schema: { type: string }
+        - in: query
+          name: limit
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Resultados
+
+  /v1/crm/deals/{id}:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema: { type: integer }
+    get:
+      tags: [CRM]
+      summary: Detalle de deal
+      responses:
+        "200":
+          description: Deal
+        "404":
+          $ref: "#/components/responses/NotFound"
+    put:
+      tags: [CRM]
+      summary: Actualizar deal
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:          { type: string }
+                stageId:       { type: integer }
+                value:         { type: number }
+                currency:      { type: string }
+                probability:   { type: number }
+                expectedClose: { type: string, format: date }
+                priority:      { type: string }
+                source:        { type: string }
+                notes:         { type: string }
+                tags:          { type: string }
+      responses:
+        "200":
+          description: Actualizado
+    delete:
+      tags: [CRM]
+      summary: Borrar (soft) deal
+      responses:
+        "200":
+          description: Borrado
+
+  /v1/crm/deals/{id}/timeline:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema: { type: integer }
+    get:
+      tags: [CRM]
+      summary: Timeline unificada (history + activities + calls)
+      parameters:
+        - in: query
+          name: limit
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Eventos ordenados descendentemente
+
+  /v1/crm/deals/{id}/move-stage:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema: { type: integer }
+    post:
+      tags: [CRM]
+      summary: Mover deal a otro stage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [newStageId]
+              properties:
+                newStageId: { type: integer }
+                notes:      { type: string }
+      responses:
+        "200":
+          description: Stage cambiada
+
+  /v1/crm/deals/{id}/close-won:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema: { type: integer }
+    post:
+      tags: [CRM]
+      summary: Cerrar deal como ganado
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason: { type: string }
+      responses:
+        "200":
+          description: Deal ganado
+
+  /v1/crm/deals/{id}/close-lost:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema: { type: integer }
+    post:
+      tags: [CRM]
+      summary: Cerrar deal como perdido
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason: { type: string }
+      responses:
+        "200":
+          description: Deal perdido
+
+  /v1/crm/leads/{id}/convert:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema: { type: integer }
+    post:
+      tags: [CRM]
+      summary: Convertir lead en deal (crea contact + deal; marca lead CONVERTED)
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                dealName:     { type: string }
+                pipelineId:   { type: integer }
+                stageId:      { type: integer }
+                crmCompanyId: { type: integer }
+      responses:
+        "200":
+          description: Lead convertido, id=DealId
