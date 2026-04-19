@@ -20,6 +20,10 @@ import { useCartStore } from "../store/useCartStore";
 import { useFavoritesStore } from "../store/useFavoritesStore";
 import { useRecentlyViewedStore } from "../store/useRecentlyViewedStore";
 import ReviewStars from "./ReviewStars";
+import { useTrackRecentlyViewed } from "../hooks/useRecentlyViewed";
+import { useToggleWishlist, useWishlist } from "../hooks/useWishlist";
+import RecentlyViewedRail from "./RecentlyViewedRail";
+import ProductRecommendations from "./ProductRecommendations";
 
 interface MediaItem {
   id: number;
@@ -279,9 +283,18 @@ function View360({ images, alt }: { images: string[]; alt: string }) {
 // ─── Main Component ───────────────────────────────────────────
 export default function ProductDetail({ product, onBack, reviews }: Props) {
   const addItem = useCartStore((s) => s.addItem);
-  const toggleFavorite = useFavoritesStore((s) => s.toggleFavorite);
-  const isFavorite = useFavoritesStore((s) => s.isFavorite(product.code));
+  const toggleFavoriteLocal = useFavoritesStore((s) => s.toggleFavorite);
+  const isFavoriteLocal = useFavoritesStore((s) => s.isFavorite(product.code));
   const addRecentView = useRecentlyViewedStore((s) => s.addView);
+  const trackRecent = useTrackRecentlyViewed();
+  const toggleServerWishlist = useToggleWishlist();
+  const { data: serverWishlist } = useWishlist(true);
+  const isFavoriteServer = (serverWishlist || []).some((w) => w.productCode === product.code);
+  const isFavorite = isFavoriteLocal || isFavoriteServer;
+  const toggleFavorite = (item: { productCode: string; productName: string; price: number; imageUrl: string | null }) => {
+    toggleFavoriteLocal(item);
+    toggleServerWishlist.mutate(item.productCode);
+  };
   const [qty, setQty] = useState(1);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [shareMsg, setShareMsg] = useState("");
@@ -295,7 +308,7 @@ export default function ProductDetail({ product, onBack, reviews }: Props) {
   const effectivePrice = selectedVariant ? selectedVariant.price : product.price;
   const effectiveStock = selectedVariant ? selectedVariant.stock : product.stock;
 
-  // Register product view for "recently viewed" recommendations
+  // Register product view for "recently viewed" recommendations (local + server)
   useEffect(() => {
     addRecentView({
       productCode: product.code,
@@ -304,6 +317,7 @@ export default function ProductDetail({ product, onBack, reviews }: Props) {
       imageUrl: product.images?.[0]?.url ?? null,
       category: product.category,
     });
+    trackRecent.mutate(product.code);
   }, [product.code]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const media: MediaItem[] = product.images?.length
@@ -947,6 +961,24 @@ export default function ProductDetail({ product, onBack, reviews }: Props) {
           {reviews}
         </Box>
       )}
+
+      <ProductRecommendations
+        productCode={product.code}
+        onProductClick={(code) => {
+          if (typeof window !== "undefined") {
+            window.location.href = `/productos/${code}`;
+          }
+        }}
+      />
+
+      <RecentlyViewedRail
+        title="Vistos recientemente"
+        onProductClick={(code) => {
+          if (code !== product.code && typeof window !== "undefined") {
+            window.location.href = `/productos/${code}`;
+          }
+        }}
+      />
     </Box>
   );
 }

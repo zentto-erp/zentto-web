@@ -11,6 +11,9 @@ const SmartToyIcon = dynamic(() => import('@mui/icons-material/SmartToy'), { ssr
 const PrintIcon = dynamic(() => import('@mui/icons-material/Print'), { ssr: false });
 const TrendingUpIcon = dynamic(() => import('@mui/icons-material/TrendingUp'), { ssr: false });
 const WebhookIcon = dynamic(() => import('@mui/icons-material/Webhook'), { ssr: false });
+const ContactPageIcon = dynamic(() => import('@mui/icons-material/ContactPage'), { ssr: false });
+const BusinessIcon = dynamic(() => import('@mui/icons-material/Business'), { ssr: false });
+const EmojiEventsIcon = dynamic(() => import('@mui/icons-material/EmojiEvents'), { ssr: false });
 
 export function buildNav(isAdmin: boolean, modulos: string[]): Array<Record<string, unknown>> {
     const nav: Array<Record<string, unknown>> = [];
@@ -29,6 +32,9 @@ export function buildNav(isAdmin: boolean, modulos: string[]): Array<Record<stri
             children: [
                 { kind: 'page', segment: 'pipeline', title: 'Pipeline', icon: <ViewKanbanIcon /> },
                 { kind: 'page', segment: 'leads', title: 'Leads', icon: <PeopleIcon /> },
+                { kind: 'page', segment: 'contactos', title: 'Contactos', icon: <ContactPageIcon /> },
+                { kind: 'page', segment: 'empresas', title: 'Empresas', icon: <BusinessIcon /> },
+                { kind: 'page', segment: 'deals', title: 'Deals', icon: <EmojiEventsIcon /> },
                 { kind: 'page', segment: 'actividades', title: 'Actividades', icon: <EventNoteIcon /> },
                 { kind: 'page', segment: 'timeline', title: 'Timeline', icon: <TimelineIcon /> },
             ],
