@@ -30,13 +30,17 @@ import {
 import type { ColumnDef } from "@zentto/datagrid-core";
 import { useGridLayoutSync } from "@zentto/shared-api";
 import { useCRMGridRegistration } from "./zenttoGridPersistence";
+import {
+  PRIORITY_COLORS,
+  PRIORITY_LABELS,
+  LEAD_STATUS_LABELS,
+  type Priority,
+} from "../types";
 
 
-const priorityColor: Record<string, "error" | "warning" | "info" | "default"> = {
-  HIGH: "error",
-  MEDIUM: "warning",
-  LOW: "info",
-};
+const priorityColor: Record<Priority, "error" | "warning" | "info"> = PRIORITY_COLORS;
+
+const priorityLabel: Record<Priority, string> = PRIORITY_LABELS;
 
 const statusColor: Record<string, "success" | "error" | "info" | "default"> = {
   OPEN: "info",
@@ -44,11 +48,7 @@ const statusColor: Record<string, "success" | "error" | "info" | "default"> = {
   LOST: "error",
 };
 
-const statusLabel: Record<string, string> = {
-  OPEN: "Abierto",
-  WON: "Ganado",
-  LOST: "Perdido",
-};
+const statusLabel: Record<string, string> = LEAD_STATUS_LABELS;
 
 const emptyLead = {
   contactName: "",
@@ -107,9 +107,9 @@ export default function LeadsPage() {
       width: 110,
       renderCell: ((value: unknown) => (
         <Chip
-          label={value === "HIGH" ? "Alta" : value === "MEDIUM" ? "Media" : "Baja"}
+          label={priorityLabel[value as Priority] ?? (value as string)}
           size="small"
-          color={priorityColor[value as string] ?? "default"}
+          color={priorityColor[value as Priority] ?? "default"}
         />
       )) as unknown as ColumnDef["renderCell"],
     },
@@ -311,6 +311,7 @@ export default function LeadsPage() {
                   label="Prioridad"
                   onChange={(e) => setForm({ ...form, priority: e.target.value })}
                 >
+                  <MenuItem value="URGENT">Urgente</MenuItem>
                   <MenuItem value="HIGH">Alta</MenuItem>
                   <MenuItem value="MEDIUM">Media</MenuItem>
                   <MenuItem value="LOW">Baja</MenuItem>

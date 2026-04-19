@@ -47,6 +47,7 @@ import {
   useActivitiesList,
   useCompleteActivity,
 } from "../hooks/useCRM";
+import { PRIORITY_LABELS } from "../types";
 
 /* ─── Helpers ──────────────────────────────────────────────── */
 
@@ -63,11 +64,7 @@ const statusLabel: Record<string, string> = {
   ARCHIVED: "Archivado",
 };
 
-const priorityLabel: Record<string, string> = {
-  HIGH: "Alta",
-  MEDIUM: "Media",
-  LOW: "Baja",
-};
+const priorityLabel: Record<string, string> = PRIORITY_LABELS;
 
 function formatDate(d: string | null | undefined): string {
   if (!d) return "\u2014";
