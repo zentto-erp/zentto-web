@@ -78,3 +78,18 @@ export type {
 export { default as LotesPage } from "./components/LotesPage";
 export { default as SerialesPage } from "./components/SerialesPage";
 export { default as AlmacenesWMSPage } from "./components/AlmacenesWMSPage";
+
+// ── Conteo físico / Albaranes / Traslados MP / Kardex ────────
+export {
+  useConteoList, useCrearConteo, useUpsertLineaConteo, useCerrarConteo,
+  useAlbaranesList, useCrearAlbaran, useAddLineaAlbaran, useEmitirAlbaran, useFirmarAlbaran,
+  useTrasladosMPList, useCrearTrasladoMP, useAvanzarTrasladoMP,
+  useKardex,
+} from "./hooks/useConteoAlbaranes";
+
+export type { HojaConteoRow, AlbaranRow, TrasladoMPRow, KardexRow } from "./hooks/useConteoAlbaranes";
+
+export { default as ConteoFisicoPage }       from "./components/ConteoFisicoPage";
+export { default as AlbaranesPage }          from "./components/AlbaranesPage";
+export { default as TrasladosMultiPasoPage } from "./components/TrasladosMultiPasoPage";
+export { default as KardexPage }             from "./components/KardexPage";
