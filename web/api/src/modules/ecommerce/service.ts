@@ -600,6 +600,26 @@ export async function checkout(data: {
     console.error("[ecommerce/checkout] payments fetch error:", err);
   }
 
+  // Tracking timeline: evento ORDER_CREATED (best-effort)
+  try {
+    const trackTotal = data.items.reduce((s, i) => s + i.subtotal + i.taxAmount, 0);
+    const trackCurrency = (data.currencyCode ?? "USD").toUpperCase();
+    await callSpOut(
+      "usp_Store_Order_Tracking_Add",
+      {
+        CompanyId: scope().companyId,
+        DocumentNumber: orderNumber,
+        EventCode: "ORDER_CREATED",
+        EventLabel: "Pedido recibido",
+        Description: `Cliente: ${data.customer.name} — ${data.items.length} producto(s) — total ${trackCurrency} ${trackTotal.toFixed(2)}`,
+        ActorUser: "storefront",
+      },
+      { Resultado: sql.Int, Mensaje: sql.NVarChar(500) }
+    );
+  } catch (trackErr) {
+    console.error("[checkout] tracking event error:", trackErr);
+  }
+
   return {
     ok: true,
     orderNumber,
@@ -1012,4 +1032,101 @@ export async function setOrderStatus(args: {
     total: Number(output.TotalAmount ?? 0),
     currency: String(output.CurrencyCode || "USD"),
   };
+}
+
+// ─── Wishlist persistida (cliente logueado) ───────────
+
+export async function listWishlist(customerCode: string) {
+  return callSp<any>("usp_Store_Wishlist_List", {
+    CompanyId: scope().companyId,
+    CustomerCode: customerCode,
+  });
+}
+
+export async function toggleWishlist(customerCode: string, productCode: string) {
+  const { output } = await callSpOut(
+    "usp_Store_Wishlist_Toggle",
+    { CompanyId: scope().companyId, CustomerCode: customerCode, ProductCode: productCode },
+    { Resultado: sql.Int, Mensaje: sql.NVarChar(500), InWishlist: sql.Bit }
+  );
+  return {
+    ok: Number(output.Resultado) === 1,
+    inWishlist: Boolean(output.InWishlist),
+    message: String(output.Mensaje || ""),
+  };
+}
+
+// ─── Recently viewed (customer + guest) ───────────────
+
+export async function listRecentlyViewed(args: {
+  customerCode?: string | null;
+  sessionToken?: string | null;
+  limit?: number;
+}) {
+  return callSp<any>("usp_Store_Recently_Viewed_List", {
+    CompanyId: scope().companyId,
+    CustomerCode: args.customerCode ?? null,
+    SessionToken: args.sessionToken ?? null,
+    Limit: args.limit ?? 12,
+  });
+}
+
+export async function trackRecentlyViewed(args: {
+  customerCode?: string | null;
+  sessionToken?: string | null;
+  productCode: string;
+}) {
+  const { output } = await callSpOut(
+    "usp_Store_Recently_Viewed_Track",
+    {
+      CompanyId: scope().companyId,
+      CustomerCode: args.customerCode ?? null,
+      SessionToken: args.sessionToken ?? null,
+      ProductCode: args.productCode,
+      KeepLast: 50,
+    },
+    { Resultado: sql.Int, Mensaje: sql.NVarChar(500) }
+  );
+  return { ok: Number(output.Resultado) === 1, message: String(output.Mensaje || "") };
+}
+
+// ─── Order tracking timeline ──────────────────────────
+
+export interface TrackingEvent {
+  documentNumber: string;
+  eventCode: string;
+  eventLabel: string;
+  description: string | null;
+  occurredAt: string;
+  actorUser: string;
+}
+
+export async function getOrderTracking(args: { orderToken?: string; orderNumber?: string }) {
+  return callSp<TrackingEvent>("usp_Store_Order_Tracking_Get", {
+    CompanyId: scope().companyId,
+    OrderToken: args.orderToken ?? null,
+    OrderNumber: args.orderNumber ?? null,
+  });
+}
+
+export async function addOrderTrackingEvent(args: {
+  orderNumber: string;
+  eventCode: string;
+  eventLabel: string;
+  description?: string;
+  actorUser?: string;
+}) {
+  const { output } = await callSpOut(
+    "usp_Store_Order_Tracking_Add",
+    {
+      CompanyId: scope().companyId,
+      DocumentNumber: args.orderNumber,
+      EventCode: args.eventCode,
+      EventLabel: args.eventLabel,
+      Description: args.description ?? null,
+      ActorUser: args.actorUser ?? "system",
+    },
+    { Resultado: sql.Int, Mensaje: sql.NVarChar(500) }
+  );
+  return { ok: Number(output.Resultado) === 1, message: String(output.Mensaje || "") };
 }
