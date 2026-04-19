@@ -1,14 +1,13 @@
 // components/TrasladosMultiPasoPage.tsx
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   Box, Button, Typography, Dialog, DialogTitle, DialogContent,
   DialogActions, TextField, Stack, Alert, MenuItem,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import type { ColumnDef } from "@zentto/datagrid-core";
-import { ZenttoDataGrid } from "@zentto/shared-ui";
 import { useTrasladosMPList, useCrearTrasladoMP, useAvanzarTrasladoMP } from "../hooks/useConteoAlbaranes";
 
 const ESTADO_ACTIONS: Record<string, string> = {
@@ -16,6 +15,8 @@ const ESTADO_ACTIONS: Record<string, string> = {
   PENDIENTE:   "DESPACHAR",
   EN_TRANSITO: "RECIBIR",
 };
+
+const GRID_ID = "module-inventario:traslados-mp:list";
 
 const COLUMNS: ColumnDef[] = [
   { field: "Numero",         header: "N° Traslado",  width: 160, sortable: true },
@@ -37,15 +38,14 @@ const COLUMNS: ColumnDef[] = [
 ];
 
 export default function TrasladosMultiPasoPage() {
-  const [page, setPage]  = useState(1);
-  const [limit]          = useState(50);
+  const gridRef = useRef<any>(null);
   const [openNew, setOpenNew] = useState(false);
   const [whFrom, setWhFrom] = useState("");
   const [whTo, setWhTo]   = useState("");
   const [notas, setNotas]  = useState("");
   const [error, setError]  = useState("");
 
-  const { data, isLoading } = useTrasladosMPList({ page, limit });
+  const { data, isLoading } = useTrasladosMPList({ page: 1, limit: 200 });
   const crearMut   = useCrearTrasladoMP();
   const avanzarMut = useAvanzarTrasladoMP();
 
@@ -57,22 +57,37 @@ export default function TrasladosMultiPasoPage() {
     FechaRecepcion: r.FechaRecepcion?.slice(0, 10) ?? "",
   }));
 
-  function handleAction(action: string, row: any) {
-    if (action === "cancel") {
-      if (confirm(`¿Cancelar traslado ${row.Numero}?`)) {
-        avanzarMut.mutate({ id: row.TrasladoId, action: "CANCELAR" });
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el) return;
+    el.columns = COLUMNS;
+    el.rows = rows;
+    el.loading = isLoading;
+  }, [rows, isLoading]);
+
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el) return;
+    const handler = (e: CustomEvent) => {
+      const { action, row } = e.detail;
+      if (action === "cancel") {
+        if (confirm(`¿Cancelar traslado ${row.Numero}?`)) {
+          avanzarMut.mutate({ id: row.TrasladoId, action: "CANCELAR" });
+        }
+        return;
       }
-      return;
-    }
-    if (action === "advance") {
-      const nextAction = ESTADO_ACTIONS[row.Estado];
-      if (!nextAction) return;
-      const labels: Record<string, string> = { APROBAR: "aprobar", DESPACHAR: "despachar", RECIBIR: "recibir" };
-      if (confirm(`¿${labels[nextAction] ?? nextAction} el traslado ${row.Numero}?`)) {
-        avanzarMut.mutate({ id: row.TrasladoId, action: nextAction });
+      if (action === "advance") {
+        const nextAction = ESTADO_ACTIONS[row.Estado];
+        if (!nextAction) return;
+        const labels: Record<string, string> = { APROBAR: "aprobar", DESPACHAR: "despachar", RECIBIR: "recibir" };
+        if (confirm(`¿${labels[nextAction] ?? nextAction} el traslado ${row.Numero}?`)) {
+          avanzarMut.mutate({ id: row.TrasladoId, action: nextAction });
+        }
       }
-    }
-  }
+    };
+    el.addEventListener("action-click", handler);
+    return () => el.removeEventListener("action-click", handler);
+  }, [avanzarMut]);
 
   async function handleCrear() {
     setError("");
@@ -96,16 +111,14 @@ export default function TrasladosMultiPasoPage() {
         </Button>
       </Stack>
 
-      <ZenttoDataGrid
-        columns={COLUMNS}
-        rows={rows}
-        loading={isLoading}
-        totalRows={data?.total ?? 0}
-        page={page}
-        pageSize={limit}
-        onPageChange={setPage}
-        onAction={handleAction}
-        height={520}
+      <zentto-grid
+        ref={gridRef}
+        grid-id={GRID_ID}
+        height="520px"
+        enable-toolbar
+        enable-header-filters
+        enable-status-bar
+        enable-quick-search
       />
 
       <Dialog open={openNew} onClose={() => setOpenNew(false)} maxWidth="xs" fullWidth>
@@ -125,4 +138,12 @@ export default function TrasladosMultiPasoPage() {
       </Dialog>
     </Box>
   );
+}
+
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'zentto-grid': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & Record<string, any>, HTMLElement>;
+    }
+  }
 }
