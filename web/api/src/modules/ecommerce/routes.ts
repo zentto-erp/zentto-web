@@ -48,6 +48,9 @@ import {
   listReturns,
   getReturnDetail,
   setReturnStatus,
+  searchProducts,
+  getProductRecommendations,
+  compareProducts,
 } from "./service.js";
 
 export const storeRouter = Router();
@@ -111,6 +114,43 @@ storeRouter.get("/categories", async (_req, res) => {
 storeRouter.get("/brands", async (_req, res) => {
   try {
     res.json(await listBrands());
+  } catch (err: any) {
+    res.status(500).json({ error: "server_error", message: err.message });
+  }
+});
+
+// ─── FASE 4: Search full-text + Recommendations + Compare ────
+
+storeRouter.get("/search", async (req, res) => {
+  try {
+    const data = await searchProducts({
+      query: (req.query.q as string | undefined) || undefined,
+      category: (req.query.category as string | undefined) || undefined,
+      brand: (req.query.brand as string | undefined) || undefined,
+      page: req.query.page ? Number(req.query.page) : undefined,
+      limit: req.query.limit ? Number(req.query.limit) : undefined,
+    });
+    res.json(data);
+  } catch (err: any) {
+    res.status(500).json({ error: "server_error", message: err.message });
+  }
+});
+
+storeRouter.get("/products/:code/recommendations", async (req, res) => {
+  try {
+    const limit = req.query.limit ? Math.min(Number(req.query.limit), 24) : 8;
+    res.json(await getProductRecommendations(req.params.code, limit));
+  } catch (err: any) {
+    res.status(500).json({ error: "server_error", message: err.message });
+  }
+});
+
+storeRouter.get("/compare", async (req, res) => {
+  try {
+    const codesParam = (req.query.codes as string | undefined) || "";
+    const codes = codesParam.split(",").map((c) => c.trim()).filter(Boolean).slice(0, 4);
+    if (!codes.length) return res.status(400).json({ error: "missing_codes" });
+    res.json(await compareProducts(codes));
   } catch (err: any) {
     res.status(500).json({ error: "server_error", message: err.message });
   }

@@ -7,8 +7,11 @@ import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import FavoriteIcon from "@mui/icons-material/Favorite";
 import { useCartStore } from "../store/useCartStore";
 import { useFavoritesStore } from "../store/useFavoritesStore";
+import { useCompareStore } from "../store/useCompareStore";
 import ReviewStars from "./ReviewStars";
 import { formatPrice } from "../utils/formatCurrency";
+import CompareArrowsIcon from "@mui/icons-material/CompareArrows";
+import Tooltip from "@mui/material/Tooltip";
 
 interface Props {
   code: string;
@@ -33,6 +36,8 @@ export default function ProductCard({
   const currency = useCartStore((s) => s.currency);
   const toggleFavorite = useFavoritesStore((s) => s.toggleFavorite);
   const isFav = useFavoritesStore((s) => s.isFavorite(code));
+  const toggleCompare = useCompareStore((s) => s.toggle);
+  const inCompare = useCompareStore((s) => s.contains(code));
 
   const handleFav = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -121,6 +126,23 @@ export default function ProductCard({
         >
           {isFav ? <FavoriteIcon sx={{ fontSize: 20, color: "#cc0c39" }} /> : <FavoriteBorderIcon sx={{ fontSize: 20, color: "#565959" }} />}
         </IconButton>
+        <Tooltip title={inCompare ? "Quitar de comparador" : "Agregar al comparador"}>
+          <IconButton
+            onClick={(e) => { e.stopPropagation(); toggleCompare(code); }}
+            size="small"
+            sx={{
+              position: "absolute",
+              top: 6,
+              right: 42,
+              zIndex: 1,
+              bgcolor: inCompare ? "#0f1111" : "rgba(255,255,255,0.85)",
+              color: inCompare ? "#ff9900" : "#565959",
+              "&:hover": { bgcolor: inCompare ? "#0f1111" : "#fff" },
+            }}
+          >
+            <CompareArrowsIcon sx={{ fontSize: 18 }} />
+          </IconButton>
+        </Tooltip>
         <Box
           component="img"
           src={imageUrl || "/placeholder-product.png"}
