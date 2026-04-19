@@ -116,5 +116,23 @@ export { default as IamUserCompaniesDialog } from './components/modules/iam/IamU
 export { default as IamCompaniesTable } from './components/modules/iam/IamCompaniesTable';
 export { default as IamCompanyFormDialog } from './components/modules/iam/IamCompanyFormDialog';
 
+// ─── Payment Accounts (zentto-payments microservicio) ────────
+export {
+  usePaymentAccounts,
+  usePaymentProviders,
+  usePaymentProviderConfig,
+  usePaymentAccountPreview,
+  useUpsertPaymentAccount,
+  useDeletePaymentAccount,
+} from './hooks/usePaymentAccounts';
+export type {
+  PaymentAccount,
+  ProviderDescriptor,
+  ConfigField as PaymentConfigField,
+  CreateAccountInput,
+} from './hooks/usePaymentAccounts';
+export { default as PaymentAccountsTable } from './components/modules/payment-accounts/PaymentAccountsTable';
+export { default as PaymentAccountFormDialog } from './components/modules/payment-accounts/PaymentAccountFormDialog';
+
 // Home page
 export { default as AdminHome } from './pages/AdminHome';
