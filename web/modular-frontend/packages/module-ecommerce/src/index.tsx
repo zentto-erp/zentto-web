@@ -29,6 +29,9 @@ export {
 export type { AdminMetrics, AdminOrderDetail, ReturnSummary } from "./hooks/useAdminEcommerce";
 export { useMyReturns, useMyReturnDetail, useCreateReturn } from "./hooks/useReturns";
 export type { MyReturn } from "./hooks/useReturns";
+export { useStoreSearch, useProductRecommendations, useCompareProducts } from "./hooks/useStoreSearch";
+export type { SearchHit, SearchResponse, RecommendedProduct, CompareProduct } from "./hooks/useStoreSearch";
+export { useCompareStore } from "./store/useCompareStore";
 
 // Components
 export { default as ProductCard } from "./components/ProductCard";
@@ -51,6 +54,9 @@ export { default as AdminEcommerceDashboard } from "./components/AdminEcommerceD
 export { default as AdminReturnsList } from "./components/AdminReturnsList";
 export { default as MyReturnsList } from "./components/MyReturnsList";
 export { default as ReturnRequestForm } from "./components/ReturnRequestForm";
+export { default as ProductRecommendations } from "./components/ProductRecommendations";
+export { default as ProductCompare } from "./components/ProductCompare";
+export { default as CompareBar } from "./components/CompareBar";
 
 // Pages
 export { default as StoreLayout } from "./pages/StoreLayout";

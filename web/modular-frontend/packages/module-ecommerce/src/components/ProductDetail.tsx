@@ -23,6 +23,7 @@ import ReviewStars from "./ReviewStars";
 import { useTrackRecentlyViewed } from "../hooks/useRecentlyViewed";
 import { useToggleWishlist, useWishlist } from "../hooks/useWishlist";
 import RecentlyViewedRail from "./RecentlyViewedRail";
+import ProductRecommendations from "./ProductRecommendations";
 
 interface MediaItem {
   id: number;
@@ -960,6 +961,15 @@ export default function ProductDetail({ product, onBack, reviews }: Props) {
           {reviews}
         </Box>
       )}
+
+      <ProductRecommendations
+        productCode={product.code}
+        onProductClick={(code) => {
+          if (typeof window !== "undefined") {
+            window.location.href = `/productos/${code}`;
+          }
+        }}
+      />
 
       <RecentlyViewedRail
         title="Vistos recientemente"

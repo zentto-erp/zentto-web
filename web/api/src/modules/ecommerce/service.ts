@@ -1335,3 +1335,89 @@ export async function setReturnStatus(args: {
     customerCode: output.CustomerCode as string | null,
   };
 }
+
+// ─── FASE 4: Search full-text + Recommendations + Compare ────
+
+export async function searchProducts(params: {
+  query?: string;
+  category?: string;
+  brand?: string;
+  page?: number;
+  limit?: number;
+}) {
+  const page = Math.max(params.page ?? 1, 1);
+  const limit = Math.min(Math.max(params.limit ?? 24, 1), 100);
+  const rows = await callSp<any>("usp_Store_Product_Search", {
+    CompanyId: scope().companyId,
+    BranchId: scope().branchId,
+    Query: params.query?.trim() || null,
+    Category: params.category || null,
+    Brand: params.brand || null,
+    Page: page,
+    Limit: limit,
+  });
+  const total = rows[0]?.TotalCount ? Number(rows[0].TotalCount) : 0;
+  const resolvedRows = rows.map((r: any) => ({
+    code: r.code,
+    name: r.name,
+    highlight: r.highlight,
+    category: r.category,
+    brand: r.brand,
+    price: Number(r.price ?? 0),
+    compareAt: r.compareAt != null ? Number(r.compareAt) : null,
+    stock: Number(r.stock ?? 0),
+    imageUrl: resolveImageUrl(r.imageUrl) || PLACEHOLDER_IMAGE,
+    rank: Number(r.rank ?? 0),
+  }));
+  return { page, limit, total, rows: resolvedRows };
+}
+
+export async function getProductRecommendations(productCode: string, limit = 8) {
+  const rows = await callSp<any>("usp_Store_Product_Recommendations", {
+    CompanyId: scope().companyId,
+    BranchId: scope().branchId,
+    ProductCode: productCode,
+    Limit: limit,
+  });
+  return rows.map((r: any) => ({
+    code: r.code,
+    name: r.name,
+    category: r.category,
+    brand: r.brand,
+    price: Number(r.price ?? 0),
+    stock: Number(r.stock ?? 0),
+    imageUrl: resolveImageUrl(r.imageUrl) || PLACEHOLDER_IMAGE,
+    avgRating: Number(r.avgRating ?? 0),
+    reviewCount: Number(r.reviewCount ?? 0),
+    matchScore: Number(r.matchScore ?? 0),
+  }));
+}
+
+export async function compareProducts(codes: string[]) {
+  if (!codes.length) return [];
+  const safeCodes = codes.slice(0, 4).map((c) => String(c).trim()).filter(Boolean);
+  const rows = await callSp<any>("usp_Store_Product_Compare", {
+    CompanyId: scope().companyId,
+    BranchId: scope().branchId,
+    Codes: safeCodes,
+  });
+  return rows.map((r: any) => ({
+    code: r.code,
+    name: r.name,
+    brand: r.brand,
+    category: r.category,
+    price: Number(r.price ?? 0),
+    compareAt: r.compareAt != null ? Number(r.compareAt) : null,
+    stock: Number(r.stock ?? 0),
+    isService: Boolean(r.isService),
+    warrantyMonths: r.warranty != null ? Number(r.warranty) : null,
+    weightKg: r.weightKg != null ? Number(r.weightKg) : null,
+    widthCm: r.widthCm != null ? Number(r.widthCm) : null,
+    heightCm: r.heightCm != null ? Number(r.heightCm) : null,
+    depthCm: r.depthCm != null ? Number(r.depthCm) : null,
+    imageUrl: resolveImageUrl(r.imageUrl) || PLACEHOLDER_IMAGE,
+    avgRating: Number(r.avgRating ?? 0),
+    reviewCount: Number(r.reviewCount ?? 0),
+    specs: r.specsJson || {},
+  }));
+}

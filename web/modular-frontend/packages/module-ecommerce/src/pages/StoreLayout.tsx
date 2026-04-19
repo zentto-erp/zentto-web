@@ -26,6 +26,7 @@ import { useSearchHistoryStore } from "../store/useSearchHistoryStore";
 import CartDrawer from "../components/CartDrawer";
 import CurrencySelector from "../components/CurrencySelector";
 import CartSyncProvider from "../components/CartSyncProvider";
+import CompareBar from "../components/CompareBar";
 
 interface Props {
   children: React.ReactNode;
@@ -479,6 +480,7 @@ export default function StoreLayout({ children, onNavigate }: Props) {
       </Box>
 
       <CartSyncProvider />
+      <CompareBar onOpen={() => onNavigate("/comparar")} />
 
       <CartDrawer
         open={cartOpen}
