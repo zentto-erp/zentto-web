@@ -13,13 +13,28 @@ function scope() {
 // Base URL de la API para resolver rutas relativas de imágenes (ej: /media-files/...)
 const API_SELF_URL = (process.env.API_SELF_URL || `http://localhost:${process.env.PORT || 4000}`).replace(/\/+$/, "");
 
-/** Convierte URLs relativas de imágenes a absolutas */
+// CDN opcional para imágenes públicas. Dos modos:
+//   - Reemplazo de host: STORE_IMAGE_CDN_BASE=https://cdn.zentto.net
+//     api.zentto.net/media-files/x.jpg → cdn.zentto.net/media-files/x.jpg
+//   - Wrapper transformativo: STORE_IMAGE_CDN_WRAP=https://imgcdn.zentto.net/?url=
+//     api.zentto.net/media-files/x.jpg → imgcdn.zentto.net/?url=<encoded>
+const STORE_IMAGE_CDN_BASE = (process.env.STORE_IMAGE_CDN_BASE || "").replace(/\/+$/, "");
+const STORE_IMAGE_CDN_WRAP = process.env.STORE_IMAGE_CDN_WRAP || "";
+
+/** Convierte URLs relativas de imágenes a absolutas y aplica CDN si está configurado. */
 function resolveImageUrl(url: string | null | undefined): string | null {
   if (!url) return null;
-  // Ya es absoluta
-  if (url.startsWith("http://") || url.startsWith("https://")) return url;
-  // Relativa → prefijo con la API
-  return `${API_SELF_URL}${url.startsWith("/") ? "" : "/"}${url}`;
+  let absolute = url.startsWith("http://") || url.startsWith("https://")
+    ? url
+    : `${API_SELF_URL}${url.startsWith("/") ? "" : "/"}${url}`;
+
+  if (STORE_IMAGE_CDN_BASE && absolute.startsWith(API_SELF_URL)) {
+    absolute = STORE_IMAGE_CDN_BASE + absolute.slice(API_SELF_URL.length);
+  }
+  if (STORE_IMAGE_CDN_WRAP) {
+    return STORE_IMAGE_CDN_WRAP + encodeURIComponent(absolute);
+  }
+  return absolute;
 }
 
 /** Placeholder SVG inline para productos sin imagen */
@@ -1420,4 +1435,61 @@ export async function compareProducts(codes: string[]) {
     reviewCount: Number(r.reviewCount ?? 0),
     specs: r.specsJson || {},
   }));
+}
+
+// ─── FASE 5: Performance audit ────────────────────────
+
+interface PerfMeasurement {
+  endpoint: string;
+  description: string;
+  durationMs: number;
+  rowCount: number;
+  ok: boolean;
+  error?: string;
+}
+
+async function measure(label: string, description: string, fn: () => Promise<unknown>): Promise<PerfMeasurement> {
+  const start = process.hrtime.bigint();
+  try {
+    const result = await fn();
+    const duration = Number(process.hrtime.bigint() - start) / 1_000_000;
+    const rowCount = Array.isArray(result)
+      ? result.length
+      : (result as { rows?: unknown[] })?.rows?.length ?? 1;
+    return { endpoint: label, description, durationMs: Math.round(duration * 100) / 100, rowCount, ok: true };
+  } catch (err) {
+    const duration = Number(process.hrtime.bigint() - start) / 1_000_000;
+    return {
+      endpoint: label,
+      description,
+      durationMs: Math.round(duration * 100) / 100,
+      rowCount: 0,
+      ok: false,
+      error: err instanceof Error ? err.message : String(err),
+    };
+  }
+}
+
+export async function getPerfAudit(): Promise<{
+  measurements: PerfMeasurement[];
+  totalMs: number;
+  averageMs: number;
+  worstCase: PerfMeasurement | null;
+}> {
+  const start = Date.now();
+  const measurements = await Promise.all([
+    measure("listProducts(24)",            "Catálogo paginado",          () => listProducts({ limit: 24 })),
+    measure("listCategories",              "Categorías activas",         () => listCategories()),
+    measure("listBrands",                  "Marcas activas",             () => listBrands()),
+    measure("listStorefrontCountries",     "Países (selector)",          () => listStorefrontCountries()),
+    measure("listStorefrontCurrencies",    "Monedas (selector)",         () => listStorefrontCurrencies()),
+    measure("getStorefrontCountry(VE)",    "País + tasa fiscal",         () => getStorefrontCountry("VE")),
+    measure("searchProducts(q='a')",       "Búsqueda full-text",         () => searchProducts({ query: "a", limit: 12 })),
+    measure("getAdminMetrics",             "Métricas dashboard",         () => getAdminMetrics()),
+  ]);
+  const totalMs = Date.now() - start;
+  const ok = measurements.filter((m) => m.ok);
+  const averageMs = ok.length ? Math.round((ok.reduce((s, m) => s + m.durationMs, 0) / ok.length) * 100) / 100 : 0;
+  const worstCase = ok.length ? ok.reduce((w, m) => (m.durationMs > w.durationMs ? m : w)) : null;
+  return { measurements, totalMs, averageMs, worstCase };
 }
