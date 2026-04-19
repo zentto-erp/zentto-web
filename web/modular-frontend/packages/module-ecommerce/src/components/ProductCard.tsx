@@ -8,6 +8,7 @@ import FavoriteIcon from "@mui/icons-material/Favorite";
 import { useCartStore } from "../store/useCartStore";
 import { useFavoritesStore } from "../store/useFavoritesStore";
 import ReviewStars from "./ReviewStars";
+import { formatPrice } from "../utils/formatCurrency";
 
 interface Props {
   code: string;
@@ -29,6 +30,7 @@ export default function ProductCard({
   code, name, fullDescription, category, brand, price, originalPrice, stock, taxRate, imageUrl, avgRating, reviewCount, onViewDetail,
 }: Props) {
   const addItem = useCartStore((s) => s.addItem);
+  const currency = useCartStore((s) => s.currency);
   const toggleFavorite = useFavoritesStore((s) => s.toggleFavorite);
   const isFav = useFavoritesStore((s) => s.isFavorite(code));
 
@@ -169,20 +171,14 @@ export default function ProductCard({
           </Box>
         )}
 
-        {/* Price */}
+        {/* Price (display currency aware) */}
         <Box sx={{ mt: "auto", pt: 0.5 }}>
-          <Box sx={{ display: "flex", alignItems: "baseline", gap: 0.5 }}>
-            <Typography sx={{ fontSize: 12, color: "#0f1111", position: "relative", top: -4 }}>$</Typography>
-            <Typography sx={{ fontSize: 22, fontWeight: 400, color: "#0f1111", lineHeight: 1 }}>
-              {Math.floor(price).toLocaleString()}
-            </Typography>
-            <Typography sx={{ fontSize: 12, color: "#0f1111", position: "relative", top: -4 }}>
-              {(price % 1).toFixed(2).substring(1)}
-            </Typography>
-          </Box>
+          <Typography sx={{ fontSize: 22, fontWeight: 500, color: "#0f1111", lineHeight: 1 }}>
+            {formatPrice(price, currency)}
+          </Typography>
           {originalPrice && originalPrice > price && (
             <Typography variant="caption" sx={{ color: "#565959", textDecoration: "line-through", fontSize: 12 }}>
-              ${originalPrice.toFixed(2)}
+              {formatPrice(originalPrice, currency)}
             </Typography>
           )}
         </Box>

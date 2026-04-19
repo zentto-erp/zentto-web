@@ -69,15 +69,29 @@ import {
   type PipelineStage,
   type LeadFilter,
 } from "../hooks/useCRM";
+import {
+  PRIORITY_COLORS,
+  PRIORITY_LABELS,
+  PRIORITY_VALUES,
+  type Priority,
+} from "../types";
 
 // ─── Priority config ────────────────────────────────────────────────────────
+// Mapa derivado del enum canónico `Priority` (ver ../types).
+// `order` refleja el orden de `PRIORITY_VALUES` (URGENT=0, HIGH=1, MEDIUM=2, LOW=3).
 
-const PRIORITY: Record<string, { color: "error" | "warning" | "info" | "default"; label: string; order: number }> = {
-  URGENT: { color: "error", label: "Urgente", order: 0 },
-  HIGH: { color: "error", label: "Alta", order: 1 },
-  MEDIUM: { color: "warning", label: "Media", order: 2 },
-  LOW: { color: "info", label: "Baja", order: 3 },
-};
+const PRIORITY: Record<Priority, { color: "error" | "warning" | "info" | "default"; label: string; order: number }> =
+  PRIORITY_VALUES.reduce(
+    (acc, value, index) => {
+      acc[value] = {
+        color: PRIORITY_COLORS[value],
+        label: PRIORITY_LABELS[value],
+        order: index,
+      };
+      return acc;
+    },
+    {} as Record<Priority, { color: "error" | "warning" | "info" | "default"; label: string; order: number }>,
+  );
 
 const SOURCE_ICONS: Record<string, string> = {
   WEB: "🌐",
@@ -333,7 +347,7 @@ function StageColumn({ stage, leads, totalValue, onWin, onLose }: StageColumnPro
 
 export default function PipelineKanban() {
   const [selectedPipelineId, setSelectedPipelineId] = useState<number | undefined>();
-  const [filterPriority, setFilterPriority] = useState<string>("");
+  const [filterPriority, setFilterPriority] = useState<Priority | "">("");
   const [filterStatus, setFilterStatus] = useState<string>("");
   const [showFilters, setShowFilters] = useState(false);
   const [newLeadOpen, setNewLeadOpen] = useState(false);
@@ -507,7 +521,7 @@ export default function PipelineKanban() {
           <Stack direction="row" spacing={2} flexWrap="wrap">
             <FormControl size="small" sx={{ minWidth: 120 }}>
               <InputLabel>Prioridad</InputLabel>
-              <Select value={filterPriority} label="Prioridad" onChange={(e) => setFilterPriority(e.target.value)}>
+              <Select value={filterPriority} label="Prioridad" onChange={(e) => setFilterPriority(e.target.value as Priority | "")}>
                 <MenuItem value="">Todas</MenuItem>
                 <MenuItem value="URGENT">Urgente</MenuItem>
                 <MenuItem value="HIGH">Alta</MenuItem>

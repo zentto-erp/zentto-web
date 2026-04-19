@@ -1,6 +1,7 @@
 "use client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiGet, apiPost, apiPut, apiDelete } from "@zentto/shared-api";
+import type { Priority } from "../types";
 
 const BASE = "/api/v1/crm";
 const QK_PIPELINES = "crm-pipelines";
@@ -39,7 +40,7 @@ export interface Lead {
   Email: string;
   Phone: string;
   EstimatedValue: number;
-  Priority: string;
+  Priority: Priority;
   Status: string;
   Source: string;
   AssignedTo: number;
@@ -53,7 +54,7 @@ export interface LeadFilter {
   pipelineId?: number;
   stageId?: number;
   status?: string;
-  priority?: string;
+  priority?: Priority;
   assignedTo?: number;
   search?: string;
   page?: number;

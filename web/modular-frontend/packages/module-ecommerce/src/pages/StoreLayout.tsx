@@ -24,6 +24,8 @@ import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
 import { useCartStore } from "../store/useCartStore";
 import { useSearchHistoryStore } from "../store/useSearchHistoryStore";
 import CartDrawer from "../components/CartDrawer";
+import CurrencySelector from "../components/CurrencySelector";
+import CartSyncProvider from "../components/CartSyncProvider";
 
 interface Props {
   children: React.ReactNode;
@@ -240,6 +242,13 @@ export default function StoreLayout({ children, onNavigate }: Props) {
           </Box>
 
           {/* ═══ Right side actions ═══ */}
+
+          {/* Country + Currency selector */}
+          {!isMobile && (
+            <Box sx={{ flexShrink: 0, mr: 0.5 }}>
+              <CurrencySelector />
+            </Box>
+          )}
 
           {/* User / Account */}
           <Box
@@ -468,6 +477,8 @@ export default function StoreLayout({ children, onNavigate }: Props) {
           &copy; {new Date().getFullYear()} Zentto Store. Todos los derechos reservados.
         </Typography>
       </Box>
+
+      <CartSyncProvider />
 
       <CartDrawer
         open={cartOpen}

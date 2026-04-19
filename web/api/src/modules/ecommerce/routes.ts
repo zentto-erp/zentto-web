@@ -1,6 +1,12 @@
 import { Router } from "express";
 import { z } from "zod";
 import { emitBusinessNotification, syncContact } from "../_shared/notify.js";
+import { requireJwt, type AuthenticatedRequest } from "../../middleware/auth.js";
+import { sendAuthMail } from "../usuarios/auth-mailer.service.js";
+import {
+  orderShippedTemplate,
+  orderDeliveredTemplate,
+} from "../usuarios/email-templates/base.js";
 import {
   listProducts,
   getProductByCodeFull,
@@ -21,6 +27,16 @@ import {
   listPaymentMethods,
   upsertPaymentMethod,
   deletePaymentMethod,
+  listStorefrontCountries,
+  listStorefrontCurrencies,
+  getStorefrontCountry,
+  listAdminOrders,
+  setOrderStatus,
+  getServerCart,
+  upsertServerCartItem,
+  removeServerCartItem,
+  clearServerCart,
+  mergeCartToCustomer,
 } from "./service.js";
 
 export const storeRouter = Router();
@@ -84,6 +100,53 @@ storeRouter.get("/categories", async (_req, res) => {
 storeRouter.get("/brands", async (_req, res) => {
   try {
     res.json(await listBrands());
+  } catch (err: any) {
+    res.status(500).json({ error: "server_error", message: err.message });
+  }
+});
+
+// ─── Storefront público (multi-moneda / país) ─────────
+
+storeRouter.get("/storefront/countries", async (_req, res) => {
+  try {
+    res.json(await listStorefrontCountries());
+  } catch (err: any) {
+    res.status(500).json({ error: "server_error", message: err.message });
+  }
+});
+
+storeRouter.get("/storefront/currencies", async (_req, res) => {
+  try {
+    res.json(await listStorefrontCurrencies());
+  } catch (err: any) {
+    res.status(500).json({ error: "server_error", message: err.message });
+  }
+});
+
+storeRouter.get("/storefront/country/:code", async (req, res) => {
+  try {
+    const code = String(req.params.code || "").trim().toUpperCase();
+    if (!/^[A-Z]{2}$/.test(code)) return res.status(400).json({ error: "invalid_country_code" });
+    const country = await getStorefrontCountry(code);
+    if (!country) return res.status(404).json({ error: "country_not_found" });
+    res.json(country);
+  } catch (err: any) {
+    res.status(500).json({ error: "server_error", message: err.message });
+  }
+});
+
+// Resolución por IP (Cloudflare CF-IPCountry header) — si no hay header, devuelve país base.
+storeRouter.get("/storefront/resolve", async (req, res) => {
+  try {
+    const headerCountry = (req.headers["cf-ipcountry"] || req.headers["x-country-code"]) as string | undefined;
+    const code = (headerCountry || "").trim().toUpperCase();
+    if (code && /^[A-Z]{2}$/.test(code)) {
+      const country = await getStorefrontCountry(code);
+      if (country) return res.json({ source: "ip", ...country });
+    }
+    const fallback = await getStorefrontCountry("VE");
+    if (!fallback) return res.status(404).json({ error: "no_default_country" });
+    res.json({ source: "default", ...fallback });
   } catch (err: any) {
     res.status(500).json({ error: "server_error", message: err.message });
   }
@@ -224,6 +287,9 @@ const checkoutSchema = z.object({
   billingAddressId: z.number().int().positive().optional(),
   paymentMethodId: z.number().int().positive().optional(),
   paymentMethodType: z.string().max(30).optional(),
+  currencyCode: z.string().length(3).optional(),
+  exchangeRate: z.number().positive().max(1_000_000).optional(),
+  countryCode: z.string().length(2).optional(),
 });
 
 storeRouter.post("/checkout", async (req, res) => {
@@ -235,15 +301,35 @@ storeRouter.post("/checkout", async (req, res) => {
     if (!result.ok) return res.status(400).json(result);
 
     // Notify: orden creada (best-effort)
-    if (result.ok || (result as any).orderId) {
-      const email = String(req.body.email ?? req.body.customerEmail ?? "").trim();
-      if (email) {
+    const email = String(parsed.data.customer.email ?? "").trim().toLowerCase();
+    const total = parsed.data.items.reduce((s, i) => s + i.subtotal + i.taxAmount, 0);
+    const currency = (parsed.data.currencyCode ?? "USD").toUpperCase();
+    if (email && result.orderNumber) {
+      try {
+        const { orderCreatedTemplate } = await import("../usuarios/email-templates/base.js");
+        const trackingUrl = `${process.env.PUBLIC_FRONTEND_URL || "https://app.zentto.net"}/confirmacion/${result.orderToken}`;
+        const tpl = orderCreatedTemplate({
+          customerName: parsed.data.customer.name,
+          orderNumber: result.orderNumber,
+          total: total.toFixed(2),
+          currency,
+          trackingUrl,
+          items: parsed.data.items.map((i) => ({
+            name: i.productName,
+            quantity: i.quantity,
+            unitPrice: `${currency} ${i.unitPrice.toFixed(2)}`,
+            lineTotal: `${currency} ${(i.subtotal + i.taxAmount).toFixed(2)}`,
+          })),
+        });
+        sendAuthMail({ to: email, subject: tpl.subject, text: tpl.text, html: tpl.html }).catch(() => {});
         emitBusinessNotification({
           event: "ORDER_CREATED",
           to: email,
-          subject: `Orden #${(result as any).orderId ?? result.orderNumber ?? ""} confirmada`,
-          data: { Orden: String((result as any).orderId ?? result.orderNumber ?? ""), Total: String(req.body.total ?? "0") },
+          subject: tpl.subject,
+          data: { Orden: result.orderNumber, Total: total.toFixed(2), Moneda: currency, Tracking: trackingUrl },
         }).catch(() => {});
+      } catch (notifyErr) {
+        console.error("[checkout] notify error:", notifyErr);
       }
     }
 
@@ -500,6 +586,185 @@ storeRouter.delete("/my/payment-methods/:id", async (req, res) => {
 
     const result = await deletePaymentMethod(customerCode, Number(req.params.id));
     if (!result.ok) return res.status(400).json(result);
+    res.json(result);
+  } catch (err: any) {
+    res.status(500).json({ error: "server_error", message: err.message });
+  }
+});
+
+// ─── Carrito server-side (sync multi-device) ──────────
+
+const cartItemSchema = z.object({
+  cartToken: z.string().min(8).max(64),
+  productCode: z.string().min(1).max(60),
+  productName: z.string().max(250).optional(),
+  imageUrl: z.string().url().max(500).optional(),
+  quantity: z.number().nonnegative().max(10000),
+  unitPrice: z.number().nonnegative(),
+  taxRate: z.number().nonnegative().max(1).default(0),
+  currencyCode: z.string().length(3).optional(),
+  countryCode: z.string().length(2).optional(),
+  exchangeRate: z.number().positive().max(1_000_000).optional(),
+  customerCode: z.string().max(24).optional(),
+});
+
+storeRouter.get("/cart", async (req, res) => {
+  try {
+    const token = String(req.query.token || "").trim();
+    if (!token) return res.status(400).json({ error: "missing_token" });
+    const cart = await getServerCart(token);
+    if (!cart) return res.json({ cartToken: token, items: [] });
+    res.json(cart);
+  } catch (err: any) {
+    res.status(500).json({ error: "server_error", message: err.message });
+  }
+});
+
+storeRouter.post("/cart/items", async (req, res) => {
+  try {
+    const parsed = cartItemSchema.safeParse(req.body);
+    if (!parsed.success) return res.status(400).json({ error: "invalid_body", details: parsed.error.flatten() });
+    const result = await upsertServerCartItem(parsed.data);
+    if (!result.ok) return res.status(400).json(result);
+    res.json(result);
+  } catch (err: any) {
+    res.status(500).json({ error: "server_error", message: err.message });
+  }
+});
+
+storeRouter.delete("/cart/items/:productCode", async (req, res) => {
+  try {
+    const token = String(req.query.token || "").trim();
+    if (!token) return res.status(400).json({ error: "missing_token" });
+    const result = await removeServerCartItem(token, req.params.productCode);
+    if (!result.ok) return res.status(400).json(result);
+    res.json(result);
+  } catch (err: any) {
+    res.status(500).json({ error: "server_error", message: err.message });
+  }
+});
+
+storeRouter.post("/cart/clear", async (req, res) => {
+  try {
+    const token = String(req.body.cartToken || "").trim();
+    if (!token) return res.status(400).json({ error: "missing_token" });
+    const result = await clearServerCart(token);
+    res.json(result);
+  } catch (err: any) {
+    res.status(500).json({ error: "server_error", message: err.message });
+  }
+});
+
+// Merge requiere auth (cliente logueado): JWT con name=email
+storeRouter.post("/cart/merge", async (req, res) => {
+  try {
+    const user = await verifyCustomerToken(req.headers.authorization);
+    if (!user) return res.status(401).json({ error: "not_authenticated" });
+    const cartToken = String(req.body.cartToken || "").trim();
+    if (!cartToken) return res.status(400).json({ error: "missing_token" });
+
+    const { callSp } = await import("../../db/query.js");
+    const rows = await callSp<{ customerCode: string }>(
+      "usp_Store_Customer_Login",
+      { Email: user.name ?? user.sub }
+    );
+    const customerCode = rows[0]?.customerCode;
+    if (!customerCode) return res.status(404).json({ error: "customer_not_found" });
+
+    const result = await mergeCartToCustomer(cartToken, customerCode);
+    res.json(result);
+  } catch (err: any) {
+    res.status(500).json({ error: "server_error", message: err.message });
+  }
+});
+
+// ─── Admin (requireJwt + isAdmin) — gestión de pedidos ──
+
+const setStatusSchema = z.object({
+  status: z.enum(["shipped", "delivered", "cancelled"]),
+  carrier: z.string().max(120).optional(),
+  trackingNo: z.string().max(120).optional(),
+});
+
+storeRouter.get("/admin/orders", requireJwt, async (req, res) => {
+  try {
+    const user = (req as AuthenticatedRequest).user;
+    if (!user?.isAdmin) return res.status(403).json({ error: "forbidden" });
+
+    const data = await listAdminOrders({
+      status: req.query.status as string | undefined,
+      from: req.query.from as string | undefined,
+      to: req.query.to as string | undefined,
+      search: req.query.search as string | undefined,
+      page: req.query.page ? Number(req.query.page) : undefined,
+      limit: req.query.limit ? Number(req.query.limit) : undefined,
+    });
+    res.json(data);
+  } catch (err: any) {
+    res.status(500).json({ error: "server_error", message: err.message });
+  }
+});
+
+storeRouter.post("/admin/orders/:orderNumber/status", requireJwt, async (req, res) => {
+  try {
+    const user = (req as AuthenticatedRequest).user;
+    if (!user?.isAdmin) return res.status(403).json({ error: "forbidden" });
+
+    const parsed = setStatusSchema.safeParse(req.body);
+    if (!parsed.success) return res.status(400).json({ error: "invalid_body", details: parsed.error.flatten() });
+
+    const result = await setOrderStatus({
+      orderNumber: req.params.orderNumber,
+      status: parsed.data.status,
+      carrier: parsed.data.carrier,
+      trackingNo: parsed.data.trackingNo,
+      actorUser: user.name || user.sub,
+    });
+    if (!result.ok) return res.status(400).json(result);
+
+    // Disparar email + notify según status (best-effort)
+    if (result.customerEmail && result.orderToken) {
+      const trackingUrl = `${process.env.PUBLIC_FRONTEND_URL || "https://app.zentto.net"}/confirmacion/${result.orderToken}`;
+      try {
+        if (parsed.data.status === "shipped") {
+          const tpl = orderShippedTemplate({
+            customerName: result.customerName || "Cliente",
+            orderNumber: req.params.orderNumber,
+            carrier: parsed.data.carrier,
+            trackingNumber: parsed.data.trackingNo,
+            trackingUrl,
+          });
+          sendAuthMail({ to: result.customerEmail, subject: tpl.subject, text: tpl.text, html: tpl.html }).catch(() => {});
+          emitBusinessNotification({
+            event: "ORDER_SHIPPED",
+            to: result.customerEmail,
+            subject: tpl.subject,
+            data: {
+              Orden: req.params.orderNumber,
+              Transportista: parsed.data.carrier ?? "",
+              Guia: parsed.data.trackingNo ?? "",
+              Tracking: trackingUrl,
+            },
+          }).catch(() => {});
+        } else if (parsed.data.status === "delivered") {
+          const tpl = orderDeliveredTemplate({
+            customerName: result.customerName || "Cliente",
+            orderNumber: req.params.orderNumber,
+            reviewUrl: trackingUrl + "?review=1",
+          });
+          sendAuthMail({ to: result.customerEmail, subject: tpl.subject, text: tpl.text, html: tpl.html }).catch(() => {});
+          emitBusinessNotification({
+            event: "ORDER_DELIVERED",
+            to: result.customerEmail,
+            subject: tpl.subject,
+            data: { Orden: req.params.orderNumber, Resena: trackingUrl + "?review=1" },
+          }).catch(() => {});
+        }
+      } catch (notifyErr) {
+        console.error("[admin/orders/status] notify error:", notifyErr);
+      }
+    }
+
     res.json(result);
   } catch (err: any) {
     res.status(500).json({ error: "server_error", message: err.message });
