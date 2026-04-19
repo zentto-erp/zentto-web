@@ -55,7 +55,11 @@ paymentAccountsRouter.get("/providers/:code/config", async (req: Request, res: R
 
 paymentAccountsRouter.get("/", async (req: Request, res: Response) => {
   try {
-    const { companyId } = (req as AuthenticatedRequest).scope;
+    const companyId = (req as AuthenticatedRequest).scope?.companyId;
+    if (!companyId) {
+      res.status(401).json({ error: "no_scope" });
+      return;
+    }
     const r = await paymentsFetch("GET", `/v1/admin/accounts?companyId=${companyId}`);
     res.status(r.status).json(r.body);
   } catch (err: unknown) {
@@ -65,7 +69,11 @@ paymentAccountsRouter.get("/", async (req: Request, res: Response) => {
 
 paymentAccountsRouter.post("/", requireAdmin, async (req: Request, res: Response) => {
   try {
-    const { companyId } = (req as AuthenticatedRequest).scope;
+    const companyId = (req as AuthenticatedRequest).scope?.companyId;
+    if (!companyId) {
+      res.status(401).json({ error: "no_scope" });
+      return;
+    }
     // Forzar companyId del scope autenticado (no del body) — seguridad
     const payload = { ...req.body, companyId };
     const r = await paymentsFetch("POST", "/v1/admin/accounts", payload);
