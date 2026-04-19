@@ -25,6 +25,7 @@ import { useCartStore } from "../store/useCartStore";
 import { useSearchHistoryStore } from "../store/useSearchHistoryStore";
 import CartDrawer from "../components/CartDrawer";
 import CurrencySelector from "../components/CurrencySelector";
+import CartSyncProvider from "../components/CartSyncProvider";
 
 interface Props {
   children: React.ReactNode;
@@ -476,6 +477,8 @@ export default function StoreLayout({ children, onNavigate }: Props) {
           &copy; {new Date().getFullYear()} Zentto Store. Todos los derechos reservados.
         </Typography>
       </Box>
+
+      <CartSyncProvider />
 
       <CartDrawer
         open={cartOpen}

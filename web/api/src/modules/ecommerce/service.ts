@@ -580,7 +580,11 @@ export async function checkout(data: {
             orderToken,
             orderNumber,
             customerCode,
+            customerEmail: data.customer.email.toLowerCase(),
+            customerName: data.customer.name,
             companyId: String(scope().companyId),
+            totalAmount: String(totalAmount),
+            currencyCode: currency,
           },
         }),
       });
@@ -821,4 +825,191 @@ export async function getOrderByNumber(orderNumber: string) {
   const header = headers[0] ?? null;
   if (!header) return null;
   return { ...header, lines };
+}
+
+// ─── Carrito server-side (sync multi-device) ──────────
+
+export interface ServerCartItem {
+  productCode: string;
+  productName: string | null;
+  imageUrl: string | null;
+  quantity: number;
+  unitPrice: number;
+  taxRate: number;
+}
+
+export interface ServerCart {
+  cartToken: string;
+  customerCode: string | null;
+  currencyCode: string | null;
+  countryCode: string | null;
+  exchangeRate: number;
+  updatedAt: string | null;
+  items: ServerCartItem[];
+}
+
+export async function getServerCart(cartToken: string): Promise<ServerCart | null> {
+  const rows = await callSp<any>("usp_Store_Cart_Get", {
+    CartToken: cartToken,
+    CompanyId: scope().companyId,
+  });
+  if (!rows.length) return null;
+  const head = rows[0];
+  const items = rows
+    .filter((r: any) => r.productCode != null)
+    .map((r: any) => ({
+      productCode: r.productCode,
+      productName: r.productName,
+      imageUrl: r.imageUrl,
+      quantity: Number(r.quantity),
+      unitPrice: Number(r.unitPrice),
+      taxRate: Number(r.taxRate ?? 0),
+    }));
+  return {
+    cartToken: head.cartToken,
+    customerCode: head.customerCode,
+    currencyCode: head.currencyCode,
+    countryCode: head.countryCode,
+    exchangeRate: Number(head.exchangeRate ?? 1),
+    updatedAt: head.updatedAt,
+    items,
+  };
+}
+
+export async function upsertServerCartItem(args: {
+  cartToken: string;
+  customerCode?: string;
+  productCode: string;
+  productName?: string;
+  imageUrl?: string;
+  quantity: number;
+  unitPrice: number;
+  taxRate: number;
+  currencyCode?: string;
+  countryCode?: string;
+  exchangeRate?: number;
+}) {
+  const { output } = await callSpOut(
+    "usp_Store_Cart_Upsert_Item",
+    {
+      CartToken: args.cartToken,
+      CompanyId: scope().companyId,
+      CustomerCode: args.customerCode ?? null,
+      ProductCode: args.productCode,
+      ProductName: args.productName ?? null,
+      ImageUrl: args.imageUrl ?? null,
+      Quantity: args.quantity,
+      UnitPrice: args.unitPrice,
+      TaxRate: args.taxRate,
+      CurrencyCode: args.currencyCode ?? null,
+      CountryCode: args.countryCode ?? null,
+      ExchangeRate: args.exchangeRate ?? null,
+    },
+    { Resultado: sql.Int, Mensaje: sql.NVarChar(500), CartId: sql.BigInt }
+  );
+  return {
+    ok: Number(output.Resultado) === 1,
+    message: String(output.Mensaje || ""),
+    cartId: output.CartId ? Number(output.CartId) : null,
+  };
+}
+
+export async function removeServerCartItem(cartToken: string, productCode: string) {
+  const { output } = await callSpOut(
+    "usp_Store_Cart_Remove_Item",
+    { CartToken: cartToken, CompanyId: scope().companyId, ProductCode: productCode },
+    { Resultado: sql.Int, Mensaje: sql.NVarChar(500) }
+  );
+  return { ok: Number(output.Resultado) === 1, message: String(output.Mensaje || "") };
+}
+
+export async function clearServerCart(cartToken: string) {
+  const { output } = await callSpOut(
+    "usp_Store_Cart_Clear",
+    { CartToken: cartToken, CompanyId: scope().companyId },
+    { Resultado: sql.Int, Mensaje: sql.NVarChar(500) }
+  );
+  return { ok: Number(output.Resultado) === 1, message: String(output.Mensaje || "") };
+}
+
+export async function mergeCartToCustomer(cartToken: string, customerCode: string) {
+  const { output } = await callSpOut(
+    "usp_Store_Cart_Merge_To_Customer",
+    { CartToken: cartToken, CompanyId: scope().companyId, CustomerCode: customerCode },
+    { Resultado: sql.Int, Mensaje: sql.NVarChar(500), MergedCartToken: sql.NVarChar(64) }
+  );
+  return {
+    ok: Number(output.Resultado) === 1,
+    message: String(output.Mensaje || ""),
+    mergedCartToken: output.MergedCartToken as string | null,
+  };
+}
+
+// ─── Admin: gestión de pedidos ────────────────────────
+
+export async function listAdminOrders(params: {
+  status?: string;
+  from?: string;
+  to?: string;
+  search?: string;
+  page?: number;
+  limit?: number;
+}) {
+  const { rows, output } = await callSpOut<any>(
+    "usp_Store_Order_Admin_List",
+    {
+      CompanyId: scope().companyId,
+      Status: params.status || null,
+      From: params.from || null,
+      To: params.to || null,
+      Search: params.search || null,
+      Page: Math.max(params.page ?? 1, 1),
+      Limit: Math.min(Math.max(params.limit ?? 25, 1), 200),
+    },
+    { TotalCount: sql.BigInt }
+  );
+  return {
+    page: params.page ?? 1,
+    limit: params.limit ?? 25,
+    total: Number(output.TotalCount ?? 0),
+    rows,
+  };
+}
+
+export async function setOrderStatus(args: {
+  orderNumber: string;
+  status: "shipped" | "delivered" | "cancelled";
+  carrier?: string;
+  trackingNo?: string;
+  actorUser?: string;
+}) {
+  const { output } = await callSpOut(
+    "usp_Store_Order_Set_Status",
+    {
+      CompanyId: scope().companyId,
+      OrderNumber: args.orderNumber,
+      Status: args.status,
+      Carrier: args.carrier ?? null,
+      TrackingNo: args.trackingNo ?? null,
+      ActorUser: args.actorUser ?? "admin",
+    },
+    {
+      Resultado: sql.Int,
+      Mensaje: sql.NVarChar(500),
+      CustomerName: sql.NVarChar(255),
+      CustomerEmail: sql.NVarChar(255),
+      OrderToken: sql.NVarChar(100),
+      TotalAmount: sql.Decimal(18, 4),
+      CurrencyCode: sql.NVarChar(20),
+    }
+  );
+  return {
+    ok: Number(output.Resultado) === 1,
+    message: String(output.Mensaje || ""),
+    customerName: output.CustomerName as string | null,
+    customerEmail: output.CustomerEmail as string | null,
+    orderToken: output.OrderToken as string | null,
+    total: Number(output.TotalAmount ?? 0),
+    currency: String(output.CurrencyCode || "USD"),
+  };
 }

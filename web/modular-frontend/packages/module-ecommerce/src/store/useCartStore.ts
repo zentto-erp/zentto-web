@@ -47,6 +47,8 @@ interface CartState {
   customerToken: string | null;
   cartOpen: boolean;
   currency: DisplayCurrency;
+  /** Token persistente para identificar el carrito server-side (sync multi-device). */
+  cartToken: string;
 
   // Actions
   addItem: (item: Omit<CartItem, "subtotal" | "taxAmount" | "total">) => void;
@@ -57,6 +59,8 @@ interface CartState {
   setCustomerToken: (token: string | null) => void;
   setCartOpen: (open: boolean) => void;
   setCurrency: (currency: DisplayCurrency) => void;
+  setCartToken: (token: string) => void;
+  hydrateFromServer: (items: CartItem[]) => void;
 
   // Computed (moneda base — útil para checkout interno y cálculo neto)
   getSubtotal: () => number;
@@ -85,6 +89,10 @@ export const useCartStore = create<CartState>()(
       customerToken: null,
       cartOpen: false,
       currency: DEFAULT_CURRENCY,
+      cartToken:
+        typeof crypto !== "undefined" && "randomUUID" in crypto
+          ? crypto.randomUUID()
+          : Math.random().toString(36).slice(2) + Date.now().toString(36),
 
       addItem: (item) =>
         set((s) => {
@@ -130,6 +138,8 @@ export const useCartStore = create<CartState>()(
       setCustomerToken: (token) => set({ customerToken: token }),
       setCartOpen: (open) => set({ cartOpen: open }),
       setCurrency: (currency) => set({ currency }),
+      setCartToken: (token) => set({ cartToken: token }),
+      hydrateFromServer: (items) => set({ items }),
 
       // Base
       getSubtotal: () => get().items.reduce((sum, c) => sum + c.subtotal, 0),
@@ -158,6 +168,7 @@ export const useCartStore = create<CartState>()(
         customerInfo: state.customerInfo,
         customerToken: state.customerToken,
         currency: state.currency,
+        cartToken: state.cartToken,
       }),
     }
   )
