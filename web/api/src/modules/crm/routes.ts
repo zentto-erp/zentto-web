@@ -12,6 +12,8 @@ import { crmAutomationRouter } from "./automation.routes.js";
 import { crmReportsRouter } from "./reports.routes.js";
 import { publicApiKeysRouter } from "./public-api-keys/routes.js";
 import { webhooksRouter } from "./webhooks/routes.js";
+import { savedViewRouter } from "./savedView.routes.js";
+import { contactsDealsRouter } from "./contactsDeals.routes.js";
 import { obs } from "../integrations/observability.js";
 
 export const crmRouter = Router();
@@ -24,6 +26,9 @@ crmRouter.use("/", crmAutomationRouter);
 crmRouter.use("/reports", crmReportsRouter);
 crmRouter.use("/public-keys", publicApiKeysRouter);
 crmRouter.use("/webhooks", webhooksRouter);
+crmRouter.use("/saved-views", savedViewRouter);
+// ADR-CRM-001: Companies / Contacts / Deals + Lead convert
+crmRouter.use("/", contactsDealsRouter);
 
 // ── Helper ───────────────────────────────────────────────────────────────────
 

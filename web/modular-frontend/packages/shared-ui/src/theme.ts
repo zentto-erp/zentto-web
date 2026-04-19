@@ -2,51 +2,117 @@
 import { createTheme } from '@mui/material/styles';
 import { red } from '@mui/material/colors';
 import { esES as coreEsES } from '@mui/material/locale';
+import { designTokens } from '@zentto/design-tokens';
 
 // @mui/x-data-grid theme augmentation and locale removed (legacy — migrated to native <zentto-grid>)
 
-/* ── Zentto Brand Colors (derivados del ecommerce) ── */
-export const brandColors = {
-  // Core palette
-  dark: '#131921',
-  darkDeep: '#0f1419',
-  darkPaper: '#12181f',
-  darkSecondary: '#232f3e',
-  accent: '#FFB547',
-  accentHover: '#e6a23e',
-  indigo: '#6C63FF',
-  indigoHover: '#5b54e6',
-  heroBackground: '#3b3699',
-  // Functional
-  teal: '#007185',
-  tealHover: '#005F6B',
-  success: '#067D62',
-  danger: '#cc0c39',
-  cta: '#ffd814',
-  ctaHover: '#f7ca00',
-  // Surfaces & borders
-  border: '#e3e6e6',
-  borderDark: '#1f2937',
-  bgPage: '#f9fafb',
-  bgCard: '#ffffff',
-  // Text
-  textDark: '#0f1111',
-  textMuted: '#565959',
-  link: '#007185',
-  // Stats semantic colors
-  statBlue: '#232f3e',
-  statTeal: '#007185',
-  statOrange: '#FFB547',
-  statRed: '#cc0c39',
-  // Shortcut backgrounds
-  shortcutGreen: '#067D62',
-  shortcutDark: '#232f3e',
-  shortcutTeal: '#007185',
-  shortcutSlate: '#37475a',
-  shortcutNavy: '#131921',
-  shortcutOrange: '#FFB547',
-  shortcutViolet: '#6B3FA0',
+/* ── Zentto Design Tokens v2 (semánticos, no-breaking) ───────────────────────
+ *
+ * Referencia: docs/wiki/design-audits/2026-04-19-crm.md §4.3.
+ *
+ * A partir de CRM-115 (ADR-NOTIFY-001 Opción C), los valores subyacentes
+ * provienen del paquete neutral `@zentto/design-tokens`. Este archivo
+ * re-exporta la misma API (`token`, `brandColors`, `ZenttoTokens`, etc.)
+ * para mantener retrocompatibilidad con todos los consumidores.
+ */
+
+/** Lead lifecycle roles (mapean a MUI palette keys). */
+export type LeadColorRole = 'open' | 'won' | 'lost';
+/** Priority scale consolidada (CRM y otras apps). */
+export type PriorityColorRole = 'urgent' | 'high' | 'medium' | 'low';
+/** Density modes para `<zentto-grid>` / RecordTable. */
+export type DensityMode = 'compact' | 'default' | 'comfortable';
+/** Tipografía semántica estilo Material 3 / Primer. */
+export type TypographyRole = 'display' | 'headline' | 'title' | 'body' | 'label';
+
+export interface ZenttoTokens {
+  layout: {
+    /** Separación entre secciones mayores de una vista (px). */
+    sectionGap: number;
+    /** Separación entre campos dentro de un formulario (px). */
+    formGap: number;
+    /** Separación entre chips / badges (px). */
+    chipGap: number;
+  };
+  density: {
+    /** Alturas de fila del RecordTable por densidad (px). */
+    rowHeight: Record<DensityMode, number>;
+  };
+  color: {
+    /**
+     * Roles para el ciclo de vida de un lead. Se resuelven con
+     * `theme.palette[key].main` en runtime para respetar dark mode.
+     */
+    lead: Record<LeadColorRole, { paletteKey: 'primary' | 'success' | 'error' }>;
+    /**
+     * Roles de prioridad. Normalizan la escala `URGENT/HIGH/MEDIUM/LOW`
+     * para que todos los componentes rendericen el mismo color por valor.
+     */
+    priority: Record<PriorityColorRole, { paletteKey: 'error' | 'warning' | 'info' | 'success' }>;
+  };
+  typography: {
+    /**
+     * Tabla de referencia de roles tipográficos. Los valores exactos viven
+     * en `typography.h*` / `typography.body*` de MUI; este mapa documenta
+     * la intención semántica y la correspondencia con variantes MUI.
+     */
+    roles: Record<TypographyRole, { variant: string; size: string; weight: number }>;
+  };
+}
+
+/**
+ * API pública — coincide exactamente con la v1 previa (tipos y forma). Los
+ * valores se derivan ahora del paquete neutral `@zentto/design-tokens` para
+ * habilitar consumo desde stacks Tailwind v4 (dashboard notify) sin duplicar
+ * la fuente de verdad. Ver ADR-NOTIFY-001 Opción C.
+ */
+export const token: ZenttoTokens = {
+  layout: { ...designTokens.layout },
+  density: {
+    rowHeight: { ...designTokens.density.rowHeight },
+  },
+  color: {
+    lead: { ...designTokens.color.lead },
+    priority: { ...designTokens.color.priority },
+  },
+  typography: {
+    roles: {
+      display: {
+        variant: designTokens.typography.roles.display.variant,
+        size: designTokens.typography.roles.display.size,
+        weight: designTokens.typography.roles.display.weight,
+      },
+      headline: {
+        variant: designTokens.typography.roles.headline.variant,
+        size: designTokens.typography.roles.headline.size,
+        weight: designTokens.typography.roles.headline.weight,
+      },
+      title: {
+        variant: designTokens.typography.roles.title.variant,
+        size: designTokens.typography.roles.title.size,
+        weight: designTokens.typography.roles.title.weight,
+      },
+      body: {
+        variant: designTokens.typography.roles.body.variant,
+        size: designTokens.typography.roles.body.size,
+        weight: designTokens.typography.roles.body.weight,
+      },
+      label: {
+        variant: designTokens.typography.roles.label.variant,
+        size: designTokens.typography.roles.label.size,
+        weight: designTokens.typography.roles.label.weight,
+      },
+    },
+  },
 };
+
+/* ── Zentto Brand Colors (derivados del ecommerce) ──
+ *
+ * Re-export de `designTokens.brand` con la misma forma que la v1, para
+ * que consumidores como `brandColors.accent`, `brandColors.textDark`, etc.
+ * sigan compilando sin cambios.
+ */
+export const brandColors = { ...designTokens.brand };
 
 const baseThemeOptions = {
   cssVariables: {
@@ -96,7 +162,10 @@ const baseThemeOptions = {
     h6: {
       fontWeight: 600,
       fontSize: '1.125rem',
-    }
+    },
+    // Roles semánticos (display/headline/title/body/label) — ver `token.typography.roles`.
+    // Se mantienen los defaults existentes de MUI; documentados aquí para
+    // referencia del design system (no breaking).
   },
   components: {
     MuiButton: {

@@ -39882,3 +39882,228 @@ BEGIN
 END;
 $$;
 
+
+-- ── CRM SavedView (CRM-108) ──────────────────────────────────────────────────
+-- Listado de vistas guardadas: owner + vistas compartidas del tenant.
+CREATE FUNCTION public.usp_crm_saved_view_list(p_company_id integer, p_user_id integer, p_entity character varying DEFAULT NULL::character varying) RETURNS TABLE("ViewId" bigint, "CompanyId" integer, "UserId" integer, "Entity" character varying, "Name" character varying, "FilterJson" jsonb, "ColumnsJson" jsonb, "SortJson" jsonb, "IsShared" boolean, "IsDefault" boolean, "IsOwner" boolean, "CreatedAt" timestamp without time zone, "UpdatedAt" timestamp without time zone)
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    RETURN QUERY
+    SELECT
+        sv."ViewId",
+        sv."CompanyId",
+        sv."UserId",
+        sv."Entity"::VARCHAR,
+        sv."Name"::VARCHAR,
+        sv."FilterJson",
+        sv."ColumnsJson",
+        sv."SortJson",
+        sv."IsShared",
+        sv."IsDefault",
+        (sv."UserId" = p_user_id) AS "IsOwner",
+        sv."CreatedAt"::TIMESTAMP,
+        sv."UpdatedAt"::TIMESTAMP
+    FROM   crm."SavedView" sv
+    WHERE  sv."CompanyId" = p_company_id
+      AND  (p_entity IS NULL OR sv."Entity" = p_entity)
+      AND  (sv."UserId" = p_user_id OR sv."IsShared" = TRUE)
+    ORDER BY sv."Entity", sv."IsDefault" DESC, sv."Name";
+END;
+$$;
+
+
+CREATE FUNCTION public.usp_crm_saved_view_detail(p_company_id integer, p_user_id integer, p_view_id bigint) RETURNS TABLE("ViewId" bigint, "CompanyId" integer, "UserId" integer, "Entity" character varying, "Name" character varying, "FilterJson" jsonb, "ColumnsJson" jsonb, "SortJson" jsonb, "IsShared" boolean, "IsDefault" boolean, "IsOwner" boolean, "CreatedAt" timestamp without time zone, "UpdatedAt" timestamp without time zone)
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    RETURN QUERY
+    SELECT
+        sv."ViewId",
+        sv."CompanyId",
+        sv."UserId",
+        sv."Entity"::VARCHAR,
+        sv."Name"::VARCHAR,
+        sv."FilterJson",
+        sv."ColumnsJson",
+        sv."SortJson",
+        sv."IsShared",
+        sv."IsDefault",
+        (sv."UserId" = p_user_id) AS "IsOwner",
+        sv."CreatedAt"::TIMESTAMP,
+        sv."UpdatedAt"::TIMESTAMP
+    FROM   crm."SavedView" sv
+    WHERE  sv."ViewId"    = p_view_id
+      AND  sv."CompanyId" = p_company_id
+      AND  (sv."UserId" = p_user_id OR sv."IsShared" = TRUE);
+END;
+$$;
+
+
+CREATE FUNCTION public.usp_crm_saved_view_upsert(p_company_id integer, p_user_id integer, p_view_id bigint DEFAULT NULL::bigint, p_entity character varying DEFAULT NULL::character varying, p_name character varying DEFAULT NULL::character varying, p_filter_json jsonb DEFAULT '{}'::jsonb, p_columns_json jsonb DEFAULT NULL::jsonb, p_sort_json jsonb DEFAULT NULL::jsonb, p_is_shared boolean DEFAULT FALSE, p_is_default boolean DEFAULT FALSE) RETURNS TABLE("ok" boolean, "mensaje" character varying, "ViewId" bigint)
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    v_view_id  BIGINT;
+    v_owner_id INTEGER;
+BEGIN
+    IF p_view_id IS NULL OR p_view_id <= 0 THEN
+        IF p_entity IS NULL OR p_name IS NULL THEN
+            RETURN QUERY SELECT FALSE, 'Entity y Name son requeridos'::VARCHAR, NULL::BIGINT;
+            RETURN;
+        END IF;
+
+        IF p_entity NOT IN ('LEAD','CONTACT','COMPANY','DEAL','ACTIVITY') THEN
+            RETURN QUERY SELECT FALSE, 'Entity invalida'::VARCHAR, NULL::BIGINT;
+            RETURN;
+        END IF;
+
+        IF COALESCE(p_is_default, FALSE) = TRUE THEN
+            UPDATE crm."SavedView"
+               SET "IsDefault" = FALSE,
+                   "UpdatedAt" = NOW()
+             WHERE "CompanyId" = p_company_id
+               AND "UserId"    = p_user_id
+               AND "Entity"    = p_entity
+               AND "IsDefault" = TRUE;
+        END IF;
+
+        INSERT INTO crm."SavedView" (
+            "CompanyId","UserId","Entity","Name","FilterJson",
+            "ColumnsJson","SortJson","IsShared","IsDefault"
+        ) VALUES (
+            p_company_id, p_user_id, p_entity, p_name,
+            COALESCE(p_filter_json, '{}'::JSONB),
+            p_columns_json, p_sort_json,
+            COALESCE(p_is_shared, FALSE),
+            COALESCE(p_is_default, FALSE)
+        )
+        RETURNING crm."SavedView"."ViewId" INTO v_view_id;
+
+        RETURN QUERY SELECT TRUE, 'Vista creada'::VARCHAR, v_view_id;
+        RETURN;
+    ELSE
+        SELECT sv."UserId" INTO v_owner_id
+        FROM   crm."SavedView" sv
+        WHERE  sv."ViewId"    = p_view_id
+          AND  sv."CompanyId" = p_company_id;
+
+        IF v_owner_id IS NULL THEN
+            RETURN QUERY SELECT FALSE, 'Vista no encontrada'::VARCHAR, NULL::BIGINT;
+            RETURN;
+        END IF;
+
+        IF v_owner_id <> p_user_id THEN
+            RETURN QUERY SELECT FALSE, 'Solo el propietario puede modificar la vista'::VARCHAR, NULL::BIGINT;
+            RETURN;
+        END IF;
+
+        IF COALESCE(p_is_default, FALSE) = TRUE THEN
+            UPDATE crm."SavedView"
+               SET "IsDefault" = FALSE,
+                   "UpdatedAt" = NOW()
+             WHERE "CompanyId" = p_company_id
+               AND "UserId"    = p_user_id
+               AND "Entity"    = COALESCE(p_entity, (SELECT sv2."Entity" FROM crm."SavedView" sv2 WHERE sv2."ViewId" = p_view_id))
+               AND "ViewId"   <> p_view_id
+               AND "IsDefault" = TRUE;
+        END IF;
+
+        UPDATE crm."SavedView"
+           SET "Name"        = COALESCE(p_name,         "Name"),
+               "FilterJson"  = COALESCE(p_filter_json,  "FilterJson"),
+               "ColumnsJson" = COALESCE(p_columns_json, "ColumnsJson"),
+               "SortJson"    = COALESCE(p_sort_json,    "SortJson"),
+               "IsShared"    = COALESCE(p_is_shared,    "IsShared"),
+               "IsDefault"   = COALESCE(p_is_default,   "IsDefault"),
+               "UpdatedAt"   = NOW()
+         WHERE "ViewId" = p_view_id;
+
+        RETURN QUERY SELECT TRUE, 'Vista actualizada'::VARCHAR, p_view_id;
+        RETURN;
+    END IF;
+
+EXCEPTION
+    WHEN unique_violation THEN
+        RETURN QUERY SELECT FALSE, 'Ya existe una vista con ese nombre para la entidad'::VARCHAR, NULL::BIGINT;
+    WHEN OTHERS THEN
+        RETURN QUERY SELECT FALSE, SQLERRM::VARCHAR, NULL::BIGINT;
+END;
+$$;
+
+
+CREATE FUNCTION public.usp_crm_saved_view_delete(p_company_id integer, p_user_id integer, p_view_id bigint) RETURNS TABLE("ok" boolean, "mensaje" character varying)
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    v_owner_id INTEGER;
+BEGIN
+    SELECT sv."UserId" INTO v_owner_id
+    FROM   crm."SavedView" sv
+    WHERE  sv."ViewId"    = p_view_id
+      AND  sv."CompanyId" = p_company_id;
+
+    IF v_owner_id IS NULL THEN
+        RETURN QUERY SELECT FALSE, 'Vista no encontrada'::VARCHAR;
+        RETURN;
+    END IF;
+
+    IF v_owner_id <> p_user_id THEN
+        RETURN QUERY SELECT FALSE, 'Solo el propietario puede eliminar la vista'::VARCHAR;
+        RETURN;
+    END IF;
+
+    DELETE FROM crm."SavedView"
+     WHERE "ViewId"    = p_view_id
+       AND "CompanyId" = p_company_id;
+
+    RETURN QUERY SELECT TRUE, 'Vista eliminada'::VARCHAR;
+EXCEPTION WHEN OTHERS THEN
+    RETURN QUERY SELECT FALSE, SQLERRM::VARCHAR;
+END;
+$$;
+
+
+CREATE FUNCTION public.usp_crm_saved_view_set_default(p_company_id integer, p_user_id integer, p_view_id bigint) RETURNS TABLE("ok" boolean, "mensaje" character varying)
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    v_owner_id INTEGER;
+    v_entity   VARCHAR(50);
+BEGIN
+    SELECT sv."UserId", sv."Entity" INTO v_owner_id, v_entity
+    FROM   crm."SavedView" sv
+    WHERE  sv."ViewId"    = p_view_id
+      AND  sv."CompanyId" = p_company_id;
+
+    IF v_owner_id IS NULL THEN
+        RETURN QUERY SELECT FALSE, 'Vista no encontrada'::VARCHAR;
+        RETURN;
+    END IF;
+
+    IF v_owner_id <> p_user_id THEN
+        RETURN QUERY SELECT FALSE, 'Solo el propietario puede marcar default'::VARCHAR;
+        RETURN;
+    END IF;
+
+    UPDATE crm."SavedView"
+       SET "IsDefault" = FALSE,
+           "UpdatedAt" = NOW()
+     WHERE "CompanyId" = p_company_id
+       AND "UserId"    = p_user_id
+       AND "Entity"    = v_entity
+       AND "IsDefault" = TRUE
+       AND "ViewId"   <> p_view_id;
+
+    UPDATE crm."SavedView"
+       SET "IsDefault" = TRUE,
+           "UpdatedAt" = NOW()
+     WHERE "ViewId"    = p_view_id
+       AND "CompanyId" = p_company_id;
+
+    RETURN QUERY SELECT TRUE, 'Default actualizado'::VARCHAR;
+EXCEPTION WHEN OTHERS THEN
+    RETURN QUERY SELECT FALSE, SQLERRM::VARCHAR;
+END;
+$$;
+

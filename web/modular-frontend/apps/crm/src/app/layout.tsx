@@ -14,11 +14,39 @@ import {
     ToastProvider,
     LocalizationProviderWrapper,
     BrandedThemeProvider,
-    OdooLayout
+    OdooLayout,
+    type CommandSection
 } from '@zentto/shared-ui';
 import '@zentto/shared-ui/globals.css';
 
 import { buildNav } from './nav';
+import QuickCreateProvider, { useQuickCreate } from './QuickCreateProvider';
+
+function AppShell({
+    children,
+    showContent,
+    navigation,
+}: {
+    children: React.ReactNode;
+    showContent: boolean;
+    navigation: Array<Record<string, unknown>>;
+}) {
+    const qc = useQuickCreate();
+    return (
+        <AppBarWrapper
+            paletteStaticSections={qc.sections as CommandSection[]}
+            palettePlaceholder="Crear, navegar, buscar… (Ctrl+K)"
+        >
+            {!showContent ? (
+                <LoadingFallback />
+            ) : (
+                <OdooLayout navigationFields={navigation}>
+                    <Suspense fallback={<LoadingFallback />}>{children}</Suspense>
+                </OdooLayout>
+            )}
+        </AppBarWrapper>
+    );
+}
 
 function AppContent({ children }: { children: React.ReactNode }) {
     const { isLoading, isAdmin, modulos, company } = useAuth();
@@ -41,17 +69,13 @@ function AppContent({ children }: { children: React.ReactNode }) {
     }
 
     return (
-        <AppBarWrapper>
-            {!showContent ? (
-                <LoadingFallback />
-            ) : (
-                <ToastProvider>
-                    <OdooLayout navigationFields={navigation}>
-                        <Suspense fallback={<LoadingFallback />}>{children}</Suspense>
-                    </OdooLayout>
-                </ToastProvider>
-            )}
-        </AppBarWrapper>
+        <ToastProvider>
+            <QuickCreateProvider>
+                <AppShell showContent={showContent} navigation={navigation}>
+                    {children}
+                </AppShell>
+            </QuickCreateProvider>
+        </ToastProvider>
     );
 }
 

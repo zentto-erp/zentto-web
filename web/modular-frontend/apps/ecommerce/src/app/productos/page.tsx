@@ -4,11 +4,13 @@ import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
     Box, Grid, Typography, Drawer, IconButton, useMediaQuery, useTheme,
-    Select, MenuItem, FormControl,
+    Select, MenuItem, FormControl, Chip, Alert,
 } from '@mui/material';
 import FilterListIcon from '@mui/icons-material/FilterList';
+import SearchIcon from '@mui/icons-material/Search';
 import {
     useProductList,
+    useStoreSearch,
     useCategoryList,
     useBrandList,
     ProductGrid,
@@ -50,8 +52,19 @@ export default function ProductosPage() {
         setPage(1);
     };
 
-    const { data: products, isLoading } = useProductList({
-        search,
+    const hasFtsQuery = search.trim().length > 0;
+
+    const { data: ftsData, isLoading: ftsLoading } = useStoreSearch({
+        query: search,
+        category: filters.category,
+        brand: filters.brand,
+        page,
+        limit: 24,
+        enabled: hasFtsQuery,
+    });
+
+    const { data: products, isLoading: listLoading } = useProductList({
+        search: hasFtsQuery ? undefined : search,
         category: filters.category,
         brand: filters.brand,
         priceMin: filters.priceMin,
@@ -62,6 +75,7 @@ export default function ProductosPage() {
         page,
         limit: 24,
     });
+
     const { data: categories = [], isLoading: loadingCats } = useCategoryList();
     const { data: brands = [] } = useBrandList();
 
@@ -69,6 +83,25 @@ export default function ProductosPage() {
         setSearch(q);
         setPage(1);
     };
+
+    const ftsProducts = (ftsData?.rows ?? []).map((h) => ({
+        id: 0,
+        code: h.code,
+        name: h.name,
+        fullDescription: h.highlight || undefined,
+        category: h.category ?? undefined,
+        brand: h.brand ?? undefined,
+        price: h.price,
+        stock: h.stock,
+        taxRate: 0,
+        imageUrl: h.imageUrl,
+        avgRating: h.rank,
+        reviewCount: undefined,
+    }));
+
+    const displayProducts = hasFtsQuery ? ftsProducts : (products?.rows ?? []);
+    const displayTotal = hasFtsQuery ? (ftsData?.total ?? 0) : (products?.total ?? 0);
+    const isLoading = hasFtsQuery ? ftsLoading : listLoading;
 
     const sidebar = (
         <CategorySidebar
@@ -87,31 +120,51 @@ export default function ProductosPage() {
                 <Box sx={{ flex: 1, minWidth: 200 }}>
                     <SearchBar value={search} onSearch={handleSearch} />
                 </Box>
-                <FormControl size="small" sx={{ minWidth: 180 }}>
-                    <Select
-                        value={sortBy}
-                        onChange={(e) => { setSortBy(e.target.value); setPage(1); }}
-                        sx={{
-                            fontSize: 13,
-                            bgcolor: '#fff',
-                            borderRadius: '8px',
-                            '& .MuiOutlinedInput-notchedOutline': { borderColor: '#d5d9d9' },
-                        }}
-                    >
-                        <MenuItem value="name">Ordenar: A-Z</MenuItem>
-                        <MenuItem value="price_asc">Precio: menor a mayor</MenuItem>
-                        <MenuItem value="price_desc">Precio: mayor a menor</MenuItem>
-                        <MenuItem value="rating">Mejor calificados</MenuItem>
-                        <MenuItem value="newest">Mas recientes</MenuItem>
-                        <MenuItem value="bestseller">Mas populares</MenuItem>
-                    </Select>
-                </FormControl>
+                {!hasFtsQuery && (
+                    <FormControl size="small" sx={{ minWidth: 180 }}>
+                        <Select
+                            value={sortBy}
+                            onChange={(e) => { setSortBy(e.target.value); setPage(1); }}
+                            sx={{
+                                fontSize: 13,
+                                bgcolor: '#fff',
+                                borderRadius: '8px',
+                                '& .MuiOutlinedInput-notchedOutline': { borderColor: '#d5d9d9' },
+                            }}
+                        >
+                            <MenuItem value="name">Ordenar: A-Z</MenuItem>
+                            <MenuItem value="price_asc">Precio: menor a mayor</MenuItem>
+                            <MenuItem value="price_desc">Precio: mayor a menor</MenuItem>
+                            <MenuItem value="rating">Mejor calificados</MenuItem>
+                            <MenuItem value="newest">Mas recientes</MenuItem>
+                            <MenuItem value="bestseller">Mas populares</MenuItem>
+                        </Select>
+                    </FormControl>
+                )}
                 {isMobile && (
                     <IconButton onClick={() => setDrawerOpen(true)}>
                         <FilterListIcon />
                     </IconButton>
                 )}
             </Box>
+
+            {hasFtsQuery && (
+                <Alert
+                    severity="info"
+                    icon={<SearchIcon />}
+                    sx={{ mb: 2 }}
+                    action={
+                        <Chip
+                            label="Limpiar búsqueda"
+                            size="small"
+                            onClick={() => { setSearch(''); setPage(1); }}
+                            sx={{ cursor: 'pointer' }}
+                        />
+                    }
+                >
+                    Resultados de búsqueda para: <strong>{search}</strong>
+                </Alert>
+            )}
 
             <Grid container spacing={3}>
                 {!isMobile && (
@@ -121,8 +174,8 @@ export default function ProductosPage() {
                 )}
                 <Grid xs={12} md={9} lg={10}>
                     <ProductGrid
-                        products={products?.rows ?? []}
-                        total={products?.total ?? 0}
+                        products={displayProducts}
+                        total={displayTotal}
                         page={page}
                         limit={24}
                         loading={isLoading}

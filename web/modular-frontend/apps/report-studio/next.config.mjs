@@ -4,7 +4,7 @@ const nextConfig = {
   reactStrictMode: true,
   basePath: '/report-studio',
   transpilePackages: [
-    '@zentto/shared-ui',
+    '@zentto/design-tokens', '@zentto/shared-ui',
     '@zentto/shared-auth',
     '@zentto/shared-api',
     '@zentto/report-core',

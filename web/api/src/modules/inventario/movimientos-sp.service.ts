@@ -24,7 +24,7 @@ export interface MovimientoRow {
 }
 
 export interface InsertMovimientoParams {
-  companyId?: number;
+  companyId: number;
   productCode: string;
   movementType: string;
   quantity: number;
@@ -34,10 +34,43 @@ export interface InsertMovimientoParams {
   warehouseTo?: string;
   notes?: string;
   userId?: number;
+  /** Trazabilidad: tipo de documento origen (POS_TICKET, INVOICE, PURCHASE_ORDER, WORK_ORDER, PHYSICAL_COUNT, MANUAL_ADJUST, RECIPE_SALE, TRANSFER) */
+  sourceDocumentType?: string;
+  /** Trazabilidad: ID del documento origen */
+  sourceDocumentId?: number;
+}
+
+export interface KardexRow {
+  TotalCount: number;
+  MovementId: number;
+  LedgerSource: string;
+  MovementDate: string;
+  MovementTypeNorm: string;
+  MovementTypeRaw: string;
+  Quantity: number;
+  UnitCost: number;
+  TotalCost: number;
+  SaldoAcumulado: number;
+  WarehouseFrom: string | null;
+  WarehouseTo: string | null;
+  SourceDocumentType: string | null;
+  SourceDocumentRef: string | null;
+  DocumentRef: string | null;
+  Notes: string | null;
+  CreatedByUserId: number | null;
+}
+
+export interface KardexParams {
+  companyId: number;
+  productCode: string;
+  fechaDesde?: string;
+  fechaHasta?: string;
+  page?: number;
+  limit?: number;
 }
 
 export interface ListMovimientosParams {
-  companyId?: number;
+  companyId: number;
   search?: string;
   productCode?: string;
   movementType?: string;
@@ -76,7 +109,7 @@ export interface LibroRow {
 }
 
 export interface LibroParams {
-  companyId?: number;
+  companyId: number;
   fechaDesde: string;
   fechaHasta: string;
   productCode?: string;
@@ -94,7 +127,7 @@ export async function insertMovimientoSP(params: InsertMovimientoParams): Promis
   const { output } = await callSpOut<never>(
     "usp_Inventario_Movimiento_Insert",
     {
-      CompanyId: params.companyId ?? 1,
+      CompanyId: params.companyId,
       ProductCode: params.productCode,
       MovementType: params.movementType,
       Quantity: params.quantity,
@@ -104,6 +137,8 @@ export async function insertMovimientoSP(params: InsertMovimientoParams): Promis
       WarehouseTo: params.warehouseTo ?? null,
       Notes: params.notes ?? null,
       UserId: params.userId ?? null,
+      SourceDocumentType: params.sourceDocumentType ?? null,
+      SourceDocumentId: params.sourceDocumentId ?? null,
     },
     { Resultado: sql.Int, Mensaje: sql.NVarChar(500) }
   );
@@ -115,14 +150,14 @@ export async function insertMovimientoSP(params: InsertMovimientoParams): Promis
 }
 
 /** usp_Inventario_Movimiento_List */
-export async function listMovimientosSP(params: ListMovimientosParams = {}): Promise<ListMovimientosResult> {
+export async function listMovimientosSP(params: ListMovimientosParams): Promise<ListMovimientosResult> {
   const page = Math.max(1, params.page || 1);
   const limit = Math.min(Math.max(1, params.limit || 50), 500);
 
   const { rows, output } = await callSpOut<MovimientoRow>(
     "usp_Inventario_Movimiento_List",
     {
-      CompanyId: params.companyId ?? 1,
+      CompanyId: params.companyId,
       Search: params.search || null,
       ProductCode: params.productCode || null,
       MovementType: params.movementType || null,
@@ -144,7 +179,7 @@ export async function listMovimientosSP(params: ListMovimientosParams = {}): Pro
 }
 
 /** usp_Inventario_Dashboard */
-export async function getInventarioDashboardSP(companyId = 1): Promise<DashboardData> {
+export async function getInventarioDashboardSP(companyId: number): Promise<DashboardData> {
   const rows = await callSp<DashboardData>(
     "usp_Inventario_Dashboard",
     { CompanyId: companyId }
@@ -163,10 +198,31 @@ export async function getLibroInventarioSP(params: LibroParams): Promise<LibroRo
   return callSp<LibroRow>(
     "usp_Inventario_LibroInventario",
     {
-      CompanyId: params.companyId ?? 1,
+      CompanyId: params.companyId,
       FechaDesde: params.fechaDesde,
       FechaHasta: params.fechaHasta,
       ProductCode: params.productCode || null,
     }
   );
+}
+
+/** usp_Inventario_Kardex_Detallado — kardex con saldo acumulado y origen del movimiento */
+export async function getKardexDetalladoSP(params: KardexParams): Promise<{ rows: KardexRow[]; total: number; page: number; limit: number }> {
+  const page = Math.max(1, params.page || 1);
+  const limit = Math.min(Math.max(1, params.limit || 100), 500);
+
+  const rows = await callSp<KardexRow>(
+    "usp_Inventario_Kardex_Detallado",
+    {
+      CompanyId: params.companyId,
+      ProductCode: params.productCode,
+      FechaDesde: params.fechaDesde || null,
+      FechaHasta: params.fechaHasta || null,
+      Page: page,
+      Limit: limit,
+    }
+  );
+
+  const total = Number(rows[0]?.TotalCount ?? 0);
+  return { rows: rows || [], total, page, limit };
 }

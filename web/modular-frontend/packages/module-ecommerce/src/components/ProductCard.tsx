@@ -7,7 +7,11 @@ import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import FavoriteIcon from "@mui/icons-material/Favorite";
 import { useCartStore } from "../store/useCartStore";
 import { useFavoritesStore } from "../store/useFavoritesStore";
+import { useCompareStore } from "../store/useCompareStore";
 import ReviewStars from "./ReviewStars";
+import { formatPrice } from "../utils/formatCurrency";
+import CompareArrowsIcon from "@mui/icons-material/CompareArrows";
+import Tooltip from "@mui/material/Tooltip";
 
 interface Props {
   code: string;
@@ -29,8 +33,11 @@ export default function ProductCard({
   code, name, fullDescription, category, brand, price, originalPrice, stock, taxRate, imageUrl, avgRating, reviewCount, onViewDetail,
 }: Props) {
   const addItem = useCartStore((s) => s.addItem);
+  const currency = useCartStore((s) => s.currency);
   const toggleFavorite = useFavoritesStore((s) => s.toggleFavorite);
   const isFav = useFavoritesStore((s) => s.isFavorite(code));
+  const toggleCompare = useCompareStore((s) => s.toggle);
+  const inCompare = useCompareStore((s) => s.contains(code));
 
   const handleFav = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -119,6 +126,23 @@ export default function ProductCard({
         >
           {isFav ? <FavoriteIcon sx={{ fontSize: 20, color: "#cc0c39" }} /> : <FavoriteBorderIcon sx={{ fontSize: 20, color: "#565959" }} />}
         </IconButton>
+        <Tooltip title={inCompare ? "Quitar de comparador" : "Agregar al comparador"}>
+          <IconButton
+            onClick={(e) => { e.stopPropagation(); toggleCompare(code); }}
+            size="small"
+            sx={{
+              position: "absolute",
+              top: 6,
+              right: 42,
+              zIndex: 1,
+              bgcolor: inCompare ? "#0f1111" : "rgba(255,255,255,0.85)",
+              color: inCompare ? "#ff9900" : "#565959",
+              "&:hover": { bgcolor: inCompare ? "#0f1111" : "#fff" },
+            }}
+          >
+            <CompareArrowsIcon sx={{ fontSize: 18 }} />
+          </IconButton>
+        </Tooltip>
         <Box
           component="img"
           src={imageUrl || "/placeholder-product.png"}
@@ -169,20 +193,14 @@ export default function ProductCard({
           </Box>
         )}
 
-        {/* Price */}
+        {/* Price (display currency aware) */}
         <Box sx={{ mt: "auto", pt: 0.5 }}>
-          <Box sx={{ display: "flex", alignItems: "baseline", gap: 0.5 }}>
-            <Typography sx={{ fontSize: 12, color: "#0f1111", position: "relative", top: -4 }}>$</Typography>
-            <Typography sx={{ fontSize: 22, fontWeight: 400, color: "#0f1111", lineHeight: 1 }}>
-              {Math.floor(price).toLocaleString()}
-            </Typography>
-            <Typography sx={{ fontSize: 12, color: "#0f1111", position: "relative", top: -4 }}>
-              {(price % 1).toFixed(2).substring(1)}
-            </Typography>
-          </Box>
+          <Typography sx={{ fontSize: 22, fontWeight: 500, color: "#0f1111", lineHeight: 1 }}>
+            {formatPrice(price, currency)}
+          </Typography>
           {originalPrice && originalPrice > price && (
             <Typography variant="caption" sx={{ color: "#565959", textDecoration: "line-through", fontSize: 12 }}>
-              ${originalPrice.toFixed(2)}
+              {formatPrice(originalPrice, currency)}
             </Typography>
           )}
         </Box>

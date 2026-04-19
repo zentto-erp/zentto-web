@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import {
   Box,
   Paper,
@@ -28,7 +29,9 @@ import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
 import CloseIcon from "@mui/icons-material/Close";
 import ThumbDownIcon from "@mui/icons-material/ThumbDown";
 import RefreshIcon from "@mui/icons-material/Refresh";
-import { FormDialog } from "@zentto/shared-ui";
+import TransformIcon from "@mui/icons-material/Transform";
+import { FormDialog, useToast } from "@zentto/shared-ui";
+import { useLeadConvert } from "../hooks/useLeadConvert";
 import { formatCurrency } from "@zentto/shared-api";
 import { LeadScoreBadge } from "./LeadScoreBadge";
 import { LeadActivityTimeline } from "./LeadActivityTimeline";
@@ -47,6 +50,7 @@ import {
   useActivitiesList,
   useCompleteActivity,
 } from "../hooks/useCRM";
+import { PRIORITY_LABELS } from "../types";
 
 /* ─── Helpers ──────────────────────────────────────────────── */
 
@@ -63,11 +67,7 @@ const statusLabel: Record<string, string> = {
   ARCHIVED: "Archivado",
 };
 
-const priorityLabel: Record<string, string> = {
-  HIGH: "Alta",
-  MEDIUM: "Media",
-  LOW: "Baja",
-};
+const priorityLabel: Record<string, string> = PRIORITY_LABELS;
 
 function formatDate(d: string | null | undefined): string {
   if (!d) return "\u2014";
@@ -100,6 +100,9 @@ export default function LeadDetailPanel({ leadId, onClose }: LeadDetailPanelProp
   const loseLead = useLoseLead();
   const createActivity = useCreateActivity();
   const completeActivity = useCompleteActivity();
+  const convertLead = useLeadConvert();
+  const router = useRouter();
+  const { showToast } = useToast();
 
   const stages = (stagesData as any)?.data ?? (stagesData as any)?.rows ?? stagesData ?? [];
   const activities = (activitiesData as any)?.data ?? (activitiesData as any)?.rows ?? activitiesData ?? [];
@@ -113,6 +116,8 @@ export default function LeadDetailPanel({ leadId, onClose }: LeadDetailPanelProp
   const [moveNotes, setMoveNotes] = useState("");
   const [loseDialogOpen, setLoseDialogOpen] = useState(false);
   const [loseReason, setLoseReason] = useState("");
+  const [convertDialogOpen, setConvertDialogOpen] = useState(false);
+  const [convertForm, setConvertForm] = useState({ dealName: "", pipelineId: "" as number | "", stageId: "" as number | "" });
 
   /* Handlers */
   const handleCreateNote = () => {
@@ -159,6 +164,38 @@ export default function LeadDetailPanel({ leadId, onClose }: LeadDetailPanelProp
 
   const handleRecalculateScore = () => {
     calculateScore.mutate(leadId);
+  };
+
+  const openConvertDialog = () => {
+    if (!lead) return;
+    setConvertForm({
+      dealName: lead.ContactName
+        ? `Deal — ${lead.ContactName}`
+        : `Deal #${lead.LeadId}`,
+      pipelineId: lead.PipelineId,
+      stageId: lead.StageId,
+    });
+    setConvertDialogOpen(true);
+  };
+
+  const handleConvert = () => {
+    convertLead.mutate(
+      {
+        leadId,
+        dealName: convertForm.dealName.trim() || undefined,
+        pipelineId: convertForm.pipelineId ? Number(convertForm.pipelineId) : undefined,
+        stageId: convertForm.stageId ? Number(convertForm.stageId) : undefined,
+      },
+      {
+        onSuccess: (res: any) => {
+          const dealId = res?.id ?? res?.DealId ?? res?.data?.id;
+          showToast("Lead convertido a deal", "success");
+          setConvertDialogOpen(false);
+          if (dealId) router.push(`/deals?deal=${dealId}`);
+        },
+        onError: (err) => showToast(String((err as Error).message), "error"),
+      },
+    );
   };
 
   /* Loading */
@@ -382,6 +419,15 @@ export default function LeadDetailPanel({ leadId, onClose }: LeadDetailPanelProp
               >
                 Perdido
               </Button>
+              <Button
+                variant="outlined"
+                size="small"
+                color="primary"
+                startIcon={<TransformIcon />}
+                onClick={openConvertDialog}
+              >
+                Convertir a Deal
+              </Button>
             </Stack>
             <Divider sx={{ my: 2 }} />
           </>
@@ -533,6 +579,48 @@ export default function LeadDetailPanel({ leadId, onClose }: LeadDetailPanelProp
             value={loseReason}
             onChange={(e) => setLoseReason(e.target.value)}
           />
+        </Stack>
+      </FormDialog>
+
+      {/* Convertir a Deal */}
+      <FormDialog
+        open={convertDialogOpen}
+        onClose={() => setConvertDialogOpen(false)}
+        title="Convertir lead a deal"
+        onSave={handleConvert}
+        loading={convertLead.isPending}
+        disableSave={!convertForm.dealName.trim()}
+        saveLabel="Convertir"
+      >
+        <Stack spacing={2} sx={{ mt: 1 }}>
+          <Alert severity="info" variant="outlined">
+            Se creará un Contact + Deal. El lead pasará a estado CONVERTED.
+          </Alert>
+          <TextField
+            label="Nombre del deal"
+            fullWidth
+            required
+            value={convertForm.dealName}
+            onChange={(e) => setConvertForm({ ...convertForm, dealName: e.target.value })}
+          />
+          <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+            <FormControl fullWidth>
+              <InputLabel>Etapa inicial</InputLabel>
+              <Select
+                value={convertForm.stageId}
+                label="Etapa inicial"
+                onChange={(e) =>
+                  setConvertForm({ ...convertForm, stageId: Number(e.target.value) })
+                }
+              >
+                {(stages as Array<any>).map((s: any) => (
+                  <MenuItem key={s.StageId} value={s.StageId}>
+                    {s.Name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Stack>
         </Stack>
       </FormDialog>
     </Paper>

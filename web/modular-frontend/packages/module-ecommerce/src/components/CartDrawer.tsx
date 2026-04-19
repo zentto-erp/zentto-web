@@ -8,6 +8,7 @@ import LocalShippingIcon from "@mui/icons-material/LocalShipping";
 import ShieldIcon from "@mui/icons-material/Shield";
 import CartItem from "./CartItem";
 import { useCartStore } from "../store/useCartStore";
+import { formatPrice } from "../utils/formatCurrency";
 
 interface Props {
   open: boolean;
@@ -22,6 +23,8 @@ export default function CartDrawer({ open, onClose, onCheckout }: Props) {
   const getTaxTotal = useCartStore((s) => s.getTaxTotal);
   const getTotal = useCartStore((s) => s.getTotal);
   const getItemCount = useCartStore((s) => s.getItemCount);
+  const currency = useCartStore((s) => s.currency);
+  const taxLabel = currency.taxName || "IVA";
 
   return (
     <Drawer anchor="right" open={open} onClose={onClose} PaperProps={{ sx: { width: { xs: "100%", sm: 420 }, bgcolor: "#f5f5f5" } }}>
@@ -63,17 +66,17 @@ export default function CartDrawer({ open, onClose, onCheckout }: Props) {
             <Box sx={{ p: 2 }}>
               <Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.5 }}>
                 <Typography variant="body2" color="text.secondary">Subtotal:</Typography>
-                <Typography variant="body2">${getSubtotal().toFixed(2)}</Typography>
+                <Typography variant="body2">{formatPrice(getSubtotal(), currency)}</Typography>
               </Box>
               <Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.5 }}>
-                <Typography variant="body2" color="text.secondary">IVA:</Typography>
-                <Typography variant="body2">${getTaxTotal().toFixed(2)}</Typography>
+                <Typography variant="body2" color="text.secondary">{taxLabel}:</Typography>
+                <Typography variant="body2">{formatPrice(getTaxTotal(), currency)}</Typography>
               </Box>
               <Divider sx={{ my: 1 }} />
               <Box sx={{ display: "flex", justifyContent: "space-between", mb: 2 }}>
                 <Typography variant="h6" fontWeight="bold">Total:</Typography>
                 <Typography variant="h6" fontWeight="bold" sx={{ color: "#b12704" }}>
-                  ${getTotal().toFixed(2)}
+                  {formatPrice(getTotal(), currency)}
                 </Typography>
               </Box>
 

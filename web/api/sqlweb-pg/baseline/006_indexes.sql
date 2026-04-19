@@ -128,6 +128,12 @@ CREATE UNIQUE INDEX "UQ_crm_PipelineStage_Code" ON crm."PipelineStage" USING btr
 CREATE UNIQUE INDEX "UQ_crm_Pipeline_Code" ON crm."Pipeline" USING btree ("CompanyId", "PipelineCode") WHERE ("IsDeleted" = false);
 
 
+CREATE INDEX "IX_crm_SavedView_UserEntity" ON crm."SavedView" USING btree ("CompanyId", "UserId", "Entity");
+
+
+CREATE INDEX "IX_crm_SavedView_Shared" ON crm."SavedView" USING btree ("CompanyId", "Entity", "IsShared") WHERE ("IsShared" = true);
+
+
 CREATE INDEX "IX_fin_BankAccount_Search" ON fin."BankAccount" USING btree ("CompanyId", "BranchId", "IsActive", "AccountNumber");
 
 

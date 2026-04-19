@@ -1,6 +1,7 @@
 "use client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiGet, apiPost, apiPut, apiDelete } from "@zentto/shared-api";
+import type { Priority } from "../types";
 
 const BASE = "/api/v1/crm";
 const QK_PIPELINES = "crm-pipelines";
@@ -39,7 +40,7 @@ export interface Lead {
   Email: string;
   Phone: string;
   EstimatedValue: number;
-  Priority: string;
+  Priority: Priority;
   Status: string;
   Source: string;
   AssignedTo: number;
@@ -53,7 +54,7 @@ export interface LeadFilter {
   pipelineId?: number;
   stageId?: number;
   status?: string;
-  priority?: string;
+  priority?: Priority;
   assignedTo?: number;
   search?: string;
   page?: number;
@@ -193,6 +194,34 @@ export function useLoseLead() {
   });
 }
 
+/**
+ * Soft-delete de lead (mueve a status ARCHIVED via update).
+ *
+ * Backend aún no expone `DELETE /leads/:id` — usamos `PUT` con `status: ARCHIVED`
+ * como soft-delete mientras se abre follow-up para el SP `usp_crm_lead_delete`.
+ * Ver CRM-104 sección "follow-ups".
+ */
+export function useDeleteLead() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) =>
+      apiPut(`${BASE}/leads/${id}`, { status: "ARCHIVED" }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: [QK_LEADS] }),
+  });
+}
+
+/**
+ * Reasigna un lead a otro usuario (usa `PUT /leads/:id` con `assignedTo`).
+ */
+export function useAssignLead() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (d: { id: number; assignedTo: number }) =>
+      apiPut(`${BASE}/leads/${d.id}`, { assignedTo: d.assignedTo }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: [QK_LEADS] }),
+  });
+}
+
 export function useCRMDashboard(pipelineId?: number) {
   return useQuery({
     queryKey: [QK_LEADS, "dashboard", pipelineId],
@@ -221,6 +250,47 @@ export function useCompleteActivity() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: number) => apiPost(`${BASE}/actividades/${id}/completar`, {}),
+    onSuccess: () => qc.invalidateQueries({ queryKey: [QK_ACTIVITIES] }),
+  });
+}
+
+/** Actualiza campos de una actividad (subject/description/dueDate/assignedTo/type). */
+export function useUpdateActivity() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (d: { id: number } & Record<string, any>) => {
+      const { id, ...payload } = d;
+      return apiPut(`${BASE}/actividades/${id}`, payload);
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: [QK_ACTIVITIES] }),
+  });
+}
+
+/**
+ * Elimina una actividad. La API actual solo expone soft-delete vía PUT
+ * `{ isDeleted: true }`. Si en el futuro se añade DELETE explícito, cambiar aquí.
+ */
+export function useDeleteActivity() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => apiDelete(`${BASE}/actividades/${id}`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: [QK_ACTIVITIES] }),
+  });
+}
+
+/**
+ * Reasigna una o más actividades a un usuario distinto. Bulk helper para
+ * bulk actions en la tabla de actividades.
+ */
+export function useReassignActivities() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (d: { ids: number[]; assignedTo: number }) => {
+      const results = await Promise.all(
+        d.ids.map((id) => apiPut(`${BASE}/actividades/${id}`, { assignedTo: d.assignedTo })),
+      );
+      return results;
+    },
     onSuccess: () => qc.invalidateQueries({ queryKey: [QK_ACTIVITIES] }),
   });
 }

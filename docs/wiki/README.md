@@ -30,6 +30,20 @@ Usar este flujo como entrada principal para tareas nuevas:
 10. [ER Integridad Creada](./10-er-integridad-creada.md)
 11. [**Arquitectura Dual Database (SQL Server + PostgreSQL)**](./11-dual-database.md)
 12. [**Infraestructura y CI/CD**](./12-infraestructura.md)
+13. [Analisis Competitivo](./13-analisis-competitivo.md)
+14. [Integracion Ecosistema](./14-integracion-ecosistema.md)
+15. [Event Bus](./15-event-bus.md)
+16. [**Modelo entidades CRM (Contact / Company / Deal / Lead)**](./16-crm-entities-model.md)
+
+### Design System
+
+- [**Design System overlay**](./DESIGN-SYSTEM.md) — cómo adoptamos el formato
+  Google Stitch / `DESIGN.md` en `shared-ui` y apps. Fuente de verdad:
+  `web/modular-frontend/packages/shared-ui/DESIGN.md`.
+
+### ADRs
+
+- [`../adr/`](../adr/) — Architecture Decision Records firmados.
 
 ## Principios de trabajo
 

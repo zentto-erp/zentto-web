@@ -17,6 +17,23 @@ export { useProductList, useProductDetail, useCategoryList, useBrandList, usePro
 export type { ProductFilters } from "./hooks/useStoreProducts";
 export { useCustomerRegister, useCustomerLogin, useCustomerProfile, useCustomerLogout } from "./hooks/useStoreAuth";
 export { useCheckout, useOrderByToken, useMyOrders } from "./hooks/useStoreOrders";
+export { useStorefrontCountries, useStorefrontCurrencies, useCountryConfig, useResolveCountry } from "./hooks/useStorefront";
+export { useWishlist, useToggleWishlist } from "./hooks/useWishlist";
+export { useRecentlyViewed, useTrackRecentlyViewed } from "./hooks/useRecentlyViewed";
+export { useOrderTracking } from "./hooks/useOrderTracking";
+export type { TrackingEvent } from "./hooks/useOrderTracking";
+export {
+  useAdminMetrics, useAdminOrderDetail, useAdminReturns,
+  useAdminReturnDetail, useAdminSetReturnStatus, useMyOrderDetail,
+} from "./hooks/useAdminEcommerce";
+export type { AdminMetrics, AdminOrderDetail, ReturnSummary } from "./hooks/useAdminEcommerce";
+export { useMyReturns, useMyReturnDetail, useCreateReturn } from "./hooks/useReturns";
+export type { MyReturn } from "./hooks/useReturns";
+export { useStoreSearch, useProductRecommendations, useCompareProducts } from "./hooks/useStoreSearch";
+export type { SearchHit, SearchResponse, RecommendedProduct, CompareProduct } from "./hooks/useStoreSearch";
+export { useCompareStore } from "./store/useCompareStore";
+export { usePerfAudit, useCacheStats, useInvalidateCache } from "./hooks/usePerfAndCache";
+export type { PerfMeasurement, PerfReport, CacheStats } from "./hooks/usePerfAndCache";
 
 // Components
 export { default as ProductCard } from "./components/ProductCard";
@@ -32,6 +49,17 @@ export { default as OrderHistory } from "./components/OrderHistory";
 export { default as ReviewStars } from "./components/ReviewStars";
 export { default as ProductReviews } from "./components/ProductReviews";
 export { default as PanelGrid } from "./components/PanelGrid";
+export { default as OrderTimeline } from "./components/OrderTimeline";
+export { default as RecentlyViewedRail } from "./components/RecentlyViewedRail";
+export { default as CurrencySelector } from "./components/CurrencySelector";
+export { default as AdminEcommerceDashboard } from "./components/AdminEcommerceDashboard";
+export { default as AdminReturnsList } from "./components/AdminReturnsList";
+export { default as MyReturnsList } from "./components/MyReturnsList";
+export { default as ReturnRequestForm } from "./components/ReturnRequestForm";
+export { default as ProductRecommendations } from "./components/ProductRecommendations";
+export { default as ProductCompare } from "./components/ProductCompare";
+export { default as CompareBar } from "./components/CompareBar";
+export { default as PerfAndCachePanel } from "./components/PerfAndCachePanel";
 
 // Pages
 export { default as StoreLayout } from "./pages/StoreLayout";

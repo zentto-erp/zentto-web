@@ -3005,6 +3005,38 @@ IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_crm_LeadHistory_Lead')
   CREATE INDEX IX_crm_LeadHistory_Lead ON crm.LeadHistory (LeadId, CreatedAt DESC);
 GO
 
+IF OBJECT_ID('crm.SavedView', 'U') IS NULL
+CREATE TABLE crm.SavedView(
+  ViewId                BIGINT IDENTITY(1,1) PRIMARY KEY,
+  CompanyId             INT            NOT NULL,
+  UserId                INT            NOT NULL,
+  Entity                VARCHAR(50)    NOT NULL,
+  Name                  NVARCHAR(200)  NOT NULL,
+  FilterJson            NVARCHAR(MAX)  NOT NULL DEFAULT N'{}',
+  ColumnsJson           NVARCHAR(MAX)  NULL,
+  SortJson              NVARCHAR(MAX)  NULL,
+  IsShared              BIT            NOT NULL DEFAULT 0,
+  IsDefault             BIT            NOT NULL DEFAULT 0,
+  CreatedAt             DATETIME2(0)   NOT NULL DEFAULT SYSUTCDATETIME(),
+  UpdatedAt             DATETIME2(0)   NOT NULL DEFAULT SYSUTCDATETIME(),
+  CONSTRAINT CK_crm_SavedView_Entity CHECK (Entity IN ('LEAD','CONTACT','COMPANY','DEAL','ACTIVITY')),
+  CONSTRAINT FK_crm_SavedView_Company FOREIGN KEY (CompanyId) REFERENCES cfg.Company(CompanyId),
+  CONSTRAINT FK_crm_SavedView_User FOREIGN KEY (UserId) REFERENCES sec.[User](UserId)
+);
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'UQ_crm_SavedView_Name')
+  CREATE UNIQUE INDEX UQ_crm_SavedView_Name ON crm.SavedView (CompanyId, UserId, Entity, Name);
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_crm_SavedView_UserEntity')
+  CREATE INDEX IX_crm_SavedView_UserEntity ON crm.SavedView (CompanyId, UserId, Entity);
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_crm_SavedView_Shared')
+  CREATE INDEX IX_crm_SavedView_Shared ON crm.SavedView (CompanyId, Entity, IsShared) WHERE IsShared = 1;
+GO
+
 IF OBJECT_ID('mfg.BillOfMaterials', 'U') IS NULL
 CREATE TABLE mfg.BillOfMaterials(
   BOMId                 BIGINT IDENTITY(1,1) PRIMARY KEY,

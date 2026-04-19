@@ -3,6 +3,7 @@
 import { Box, Typography, IconButton, Select, MenuItem, ListItem } from "@mui/material";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import { useCartStore, type CartItem as CartItemType } from "../store/useCartStore";
+import { formatPrice } from "../utils/formatCurrency";
 
 interface Props {
   item: CartItemType;
@@ -11,6 +12,7 @@ interface Props {
 export default function CartItem({ item }: Props) {
   const updateQuantity = useCartStore((s) => s.updateQuantity);
   const removeItem = useCartStore((s) => s.removeItem);
+  const currency = useCartStore((s) => s.currency);
 
   return (
     <ListItem
@@ -58,7 +60,7 @@ export default function CartItem({ item }: Props) {
         </Typography>
 
         <Typography variant="body2" sx={{ fontWeight: "bold", color: "#0f1111", mb: 0.5 }}>
-          ${item.total.toFixed(2)}
+          {formatPrice(item.total, currency)}
         </Typography>
 
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>

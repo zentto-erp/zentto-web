@@ -62,6 +62,9 @@ export function useCheckout() {
       billingAddressId?: number;
       paymentMethodId?: number;
       paymentMethodType?: string;
+      currencyCode?: string;
+      exchangeRate?: number;
+      countryCode?: string;
     }) => storePost("/store/checkout", payload),
     onSuccess: () => {
       clearCart();

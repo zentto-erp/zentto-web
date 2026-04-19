@@ -20,10 +20,14 @@ import HistoryIcon from "@mui/icons-material/History";
 import CloseIcon from "@mui/icons-material/Close";
 import CategoryIcon from "@mui/icons-material/Category";
 import HomeIcon from "@mui/icons-material/Home";
+import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
 import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
 import { useCartStore } from "../store/useCartStore";
 import { useSearchHistoryStore } from "../store/useSearchHistoryStore";
 import CartDrawer from "../components/CartDrawer";
+import CurrencySelector from "../components/CurrencySelector";
+import CartSyncProvider from "../components/CartSyncProvider";
+import CompareBar from "../components/CompareBar";
 
 interface Props {
   children: React.ReactNode;
@@ -241,6 +245,13 @@ export default function StoreLayout({ children, onNavigate }: Props) {
 
           {/* ═══ Right side actions ═══ */}
 
+          {/* Country + Currency selector */}
+          {!isMobile && (
+            <Box sx={{ flexShrink: 0, mr: 0.5 }}>
+              <CurrencySelector />
+            </Box>
+          )}
+
           {/* User / Account */}
           <Box
             onClick={(e) => {
@@ -265,6 +276,10 @@ export default function StoreLayout({ children, onNavigate }: Props) {
             <MenuItem onClick={() => { setUserMenuAnchor(null); onNavigate("/pedidos"); }}>
               <ListItemIcon><ReceiptLongIcon fontSize="small" /></ListItemIcon>
               <ListItemText>Mis pedidos</ListItemText>
+            </MenuItem>
+            <MenuItem onClick={() => { setUserMenuAnchor(null); onNavigate("/admin/dashboard"); }}>
+              <ListItemIcon><AdminPanelSettingsIcon fontSize="small" /></ListItemIcon>
+              <ListItemText>Panel Admin</ListItemText>
             </MenuItem>
             <Divider />
             <MenuItem onClick={handleLogout}>
@@ -468,6 +483,9 @@ export default function StoreLayout({ children, onNavigate }: Props) {
           &copy; {new Date().getFullYear()} Zentto Store. Todos los derechos reservados.
         </Typography>
       </Box>
+
+      <CartSyncProvider />
+      <CompareBar onOpen={() => onNavigate("/comparar")} />
 
       <CartDrawer
         open={cartOpen}

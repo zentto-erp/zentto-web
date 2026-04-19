@@ -373,6 +373,14 @@ ALTER TABLE ONLY crm."Pipeline"
     ADD CONSTRAINT "Pipeline_pkey" PRIMARY KEY ("PipelineId");
 
 
+ALTER TABLE ONLY crm."SavedView"
+    ADD CONSTRAINT "PK_crm_SavedView" PRIMARY KEY ("ViewId");
+
+
+ALTER TABLE ONLY crm."SavedView"
+    ADD CONSTRAINT "UQ_crm_SavedView_Name" UNIQUE ("CompanyId", "UserId", "Entity", "Name");
+
+
 ALTER TABLE ONLY crm."Agent"
     ADD CONSTRAINT "UQ_Agent_Code" UNIQUE ("CompanyId", "AgentCode");
 
@@ -1910,6 +1918,14 @@ ALTER TABLE ONLY crm."Pipeline"
 
 ALTER TABLE ONLY crm."Pipeline"
     ADD CONSTRAINT "FK_crm_Pipeline_UpdatedBy" FOREIGN KEY ("UpdatedByUserId") REFERENCES sec."User"("UserId");
+
+
+ALTER TABLE ONLY crm."SavedView"
+    ADD CONSTRAINT "FK_crm_SavedView_Company" FOREIGN KEY ("CompanyId") REFERENCES cfg."Company"("CompanyId");
+
+
+ALTER TABLE ONLY crm."SavedView"
+    ADD CONSTRAINT "FK_crm_SavedView_User" FOREIGN KEY ("UserId") REFERENCES sec."User"("UserId");
 
 
 ALTER TABLE ONLY crm."LeadScore"

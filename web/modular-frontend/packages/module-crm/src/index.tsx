@@ -4,6 +4,17 @@
 export const MODULE_ID = "crm";
 export const MODULE_TITLE = "CRM";
 
+// ─── Shared types ───────────────────────────────────────────
+export type { Priority, LeadStatus } from "./types";
+export {
+  PRIORITY_VALUES,
+  PRIORITY_LABELS,
+  PRIORITY_COLORS,
+  LEAD_STATUS_LABELS,
+  isPriority,
+  toPriority,
+} from "./types";
+
 // ─── Hooks ───────────────────────────────────────────────────
 export {
   usePipelinesList,
@@ -73,6 +84,60 @@ export {
 export type { TenantWebhook, PublicApiKey } from "./hooks/useIntegrations";
 export { default as ActividadesPage } from "./components/ActividadesPage";
 export { default as LeadDetailPanel } from "./components/LeadDetailPanel";
+export { default as ContactsPage } from "./components/ContactsPage";
+export { default as ContactDetailPanel } from "./components/ContactDetailPanel";
+export { default as CompaniesPage } from "./components/CompaniesPage";
+export { default as CompanyDetailPanel } from "./components/CompanyDetailPanel";
+export { default as DealsPage } from "./components/DealsPage";
+export { default as DealDetailPanel } from "./components/DealDetailPanel";
+
+// ─── Contacts / Companies / Deals hooks (CRM-111) ──────────
+export {
+  useContactsList,
+  useContact,
+  useSearchContacts,
+  useUpsertContact,
+  useDeleteContact,
+  usePromoteToCustomer,
+} from "./hooks/useContacts";
+export type { Contact, ContactFilter, ContactInput } from "./hooks/useContacts";
+
+export {
+  useCompaniesList,
+  useCompany,
+  useSearchCompanies,
+  useUpsertCompany,
+  useDeleteCompany,
+} from "./hooks/useCompanies";
+export type {
+  Company,
+  CompanyFilter,
+  CompanyInput,
+  CompanySize,
+} from "./hooks/useCompanies";
+
+export {
+  useDealsList,
+  useDeal,
+  useDealTimeline,
+  useSearchDeals,
+  useUpsertDeal,
+  useDeleteDeal,
+  useMoveDealStage,
+  useCloseWonDeal,
+  useCloseLostDeal,
+} from "./hooks/useDeals";
+export type {
+  Deal,
+  DealFilter,
+  DealInput,
+  DealStatus,
+  DealTimelineEvent,
+  DealUpdateInput,
+} from "./hooks/useDeals";
+
+export { useLeadConvert } from "./hooks/useLeadConvert";
+export type { LeadConvertInput } from "./hooks/useLeadConvert";
 export { LeadTimeline } from "./components/LeadTimeline";
 export { LeadScoreBadge } from "./components/LeadScoreBadge";
 export { LeadActivityTimeline } from "./components/LeadActivityTimeline";

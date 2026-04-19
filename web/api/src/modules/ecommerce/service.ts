@@ -13,13 +13,28 @@ function scope() {
 // Base URL de la API para resolver rutas relativas de imágenes (ej: /media-files/...)
 const API_SELF_URL = (process.env.API_SELF_URL || `http://localhost:${process.env.PORT || 4000}`).replace(/\/+$/, "");
 
-/** Convierte URLs relativas de imágenes a absolutas */
+// CDN opcional para imágenes públicas. Dos modos:
+//   - Reemplazo de host: STORE_IMAGE_CDN_BASE=https://cdn.zentto.net
+//     api.zentto.net/media-files/x.jpg → cdn.zentto.net/media-files/x.jpg
+//   - Wrapper transformativo: STORE_IMAGE_CDN_WRAP=https://imgcdn.zentto.net/?url=
+//     api.zentto.net/media-files/x.jpg → imgcdn.zentto.net/?url=<encoded>
+const STORE_IMAGE_CDN_BASE = (process.env.STORE_IMAGE_CDN_BASE || "").replace(/\/+$/, "");
+const STORE_IMAGE_CDN_WRAP = process.env.STORE_IMAGE_CDN_WRAP || "";
+
+/** Convierte URLs relativas de imágenes a absolutas y aplica CDN si está configurado. */
 function resolveImageUrl(url: string | null | undefined): string | null {
   if (!url) return null;
-  // Ya es absoluta
-  if (url.startsWith("http://") || url.startsWith("https://")) return url;
-  // Relativa → prefijo con la API
-  return `${API_SELF_URL}${url.startsWith("/") ? "" : "/"}${url}`;
+  let absolute = url.startsWith("http://") || url.startsWith("https://")
+    ? url
+    : `${API_SELF_URL}${url.startsWith("/") ? "" : "/"}${url}`;
+
+  if (STORE_IMAGE_CDN_BASE && absolute.startsWith(API_SELF_URL)) {
+    absolute = STORE_IMAGE_CDN_BASE + absolute.slice(API_SELF_URL.length);
+  }
+  if (STORE_IMAGE_CDN_WRAP) {
+    return STORE_IMAGE_CDN_WRAP + encodeURIComponent(absolute);
+  }
+  return absolute;
 }
 
 /** Placeholder SVG inline para productos sin imagen */
@@ -183,6 +198,54 @@ export async function listBrands() {
   return callSp<StoreBrand>("usp_Store_Brand_List", {
     CompanyId: scope().companyId,
   });
+}
+
+// ─── Storefront público (multi-moneda / país) ─────────
+
+export async function listStorefrontCountries() {
+  return callSp<{
+    countryCode: string;
+    countryName: string;
+    currencyCode: string;
+    currencySymbol: string;
+    phonePrefix: string;
+    flagEmoji: string;
+    sortOrder: number;
+  }>("usp_Store_Storefront_Countries_List", {});
+}
+
+export async function listStorefrontCurrencies() {
+  return callSp<{
+    currencyCode: string;
+    currencyName: string;
+    symbol: string;
+    rateToBase: number;
+    isBase: boolean;
+    rateDate: string;
+  }>("usp_Store_Storefront_Currencies_List", { CompanyId: scope().companyId });
+}
+
+export async function getStorefrontCountry(code: string) {
+  const rows = await callSp<{
+    countryCode: string;
+    countryName: string;
+    currencyCode: string;
+    currencySymbol: string;
+    referenceCurrency: string;
+    defaultExchangeRate: number;
+    pricesIncludeTax: boolean;
+    specialTaxRate: number;
+    specialTaxEnabled: boolean;
+    taxAuthorityCode: string;
+    fiscalIdName: string;
+    timeZoneIana: string;
+    phonePrefix: string;
+    flagEmoji: string;
+    defaultTaxCode: string | null;
+    defaultTaxName: string | null;
+    defaultTaxRate: number;
+  }>("usp_Store_Storefront_Country_Get", { CountryCode: code.toUpperCase() });
+  return rows[0] ?? null;
 }
 
 // ─── Auth de clientes ──────────────────────────────────
@@ -423,6 +486,9 @@ export async function checkout(data: {
   billingAddressId?: number;
   paymentMethodId?: number;
   paymentMethodType?: string;
+  currencyCode?: string;
+  exchangeRate?: number;
+  countryCode?: string;
 }) {
   // 1. Buscar o crear cliente
   const { output: custOut } = await callSpOut(
@@ -472,6 +538,8 @@ export async function checkout(data: {
       BillingAddressId: data.billingAddressId ?? null,
       ShippingAddressText: data.customer.address || null,
       BillingAddressText: data.customer.billingAddress || data.customer.address || null,
+      CurrencyCode: data.currencyCode ?? null,
+      ExchangeRate: data.exchangeRate ?? null,
     },
     {
       OrderNumber: sql.NVarChar(60),
@@ -486,11 +554,94 @@ export async function checkout(data: {
     return { ok: false, error: orderOut.Mensaje as string };
   }
 
+  const orderNumber = orderOut.OrderNumber as string;
+  const orderToken = orderOut.OrderToken as string;
+
+  // 3. Iniciar checkout en zentto-payments (cobro real)
+  let checkoutUrl: string | null = null;
+  let paymentTxnId: string | null = null;
+  try {
+    const totalAmount = data.items.reduce((s, i) => s + i.subtotal + i.taxAmount, 0);
+    const currency = (data.currencyCode ?? "USD").toUpperCase();
+    const PAYMENTS_URL = process.env.ZENTTO_PAYMENTS_URL || "https://payments.zentto.net";
+    const PAYMENTS_KEY = process.env.ZENTTO_PAYMENTS_API_KEY || "";
+    const PUBLIC_API = process.env.PUBLIC_API_URL || "https://api.zentto.net";
+    const PUBLIC_FE  = process.env.PUBLIC_FRONTEND_URL || "https://app.zentto.net";
+
+    if (PAYMENTS_KEY && totalAmount > 0) {
+      const itemNames = data.items.slice(0, 3).map(i => i.productName).join(", ");
+      const itemsCount = data.items.length;
+      const summaryName = itemsCount > 3 ? `${itemNames} +${itemsCount - 3} más` : itemNames;
+
+      const res = await fetch(`${PAYMENTS_URL}/v1/checkout`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-API-Key": PAYMENTS_KEY },
+        body: JSON.stringify({
+          provider: process.env.ZENTTO_PAYMENTS_PROVIDER || "paddle",
+          companyId: scope().companyId,
+          items: [{
+            name: `Pedido ${orderNumber} — ${summaryName}`,
+            unitAmount: totalAmount,
+            quantity: 1,
+            currency,
+          }],
+          customerEmail: data.customer.email.toLowerCase(),
+          customerName: data.customer.name,
+          callbackUrl: `${PUBLIC_API}/v1/payments/callback`,
+          successUrl: `${PUBLIC_FE}/confirmacion/${orderToken}`,
+          cancelUrl:  `${PUBLIC_FE}/checkout?cancelled=1`,
+          metadata: {
+            source: "ecommerce",
+            orderToken,
+            orderNumber,
+            customerCode,
+            customerEmail: data.customer.email.toLowerCase(),
+            customerName: data.customer.name,
+            companyId: String(scope().companyId),
+            totalAmount: String(totalAmount),
+            currencyCode: currency,
+          },
+        }),
+      });
+      const json = await res.json().catch(() => ({} as Record<string, unknown>));
+      if (res.ok) {
+        checkoutUrl = (json as { checkoutUrl?: string }).checkoutUrl ?? null;
+        paymentTxnId = (json as { providerTxnId?: string }).providerTxnId ?? null;
+      } else {
+        console.error("[ecommerce/checkout] payments microservice error:", json);
+      }
+    }
+  } catch (err) {
+    console.error("[ecommerce/checkout] payments fetch error:", err);
+  }
+
+  // Tracking timeline: evento ORDER_CREATED (best-effort)
+  try {
+    const trackTotal = data.items.reduce((s, i) => s + i.subtotal + i.taxAmount, 0);
+    const trackCurrency = (data.currencyCode ?? "USD").toUpperCase();
+    await callSpOut(
+      "usp_Store_Order_Tracking_Add",
+      {
+        CompanyId: scope().companyId,
+        DocumentNumber: orderNumber,
+        EventCode: "ORDER_CREATED",
+        EventLabel: "Pedido recibido",
+        Description: `Cliente: ${data.customer.name} — ${data.items.length} producto(s) — total ${trackCurrency} ${trackTotal.toFixed(2)}`,
+        ActorUser: "storefront",
+      },
+      { Resultado: sql.Int, Mensaje: sql.NVarChar(500) }
+    );
+  } catch (trackErr) {
+    console.error("[checkout] tracking event error:", trackErr);
+  }
+
   return {
     ok: true,
-    orderNumber: orderOut.OrderNumber as string,
-    orderToken: orderOut.OrderToken as string,
+    orderNumber,
+    orderToken,
     message: orderOut.Mensaje as string,
+    checkoutUrl,
+    paymentTxnId,
   };
 }
 
@@ -709,4 +860,636 @@ export async function getOrderByNumber(orderNumber: string) {
   const header = headers[0] ?? null;
   if (!header) return null;
   return { ...header, lines };
+}
+
+// ─── Carrito server-side (sync multi-device) ──────────
+
+export interface ServerCartItem {
+  productCode: string;
+  productName: string | null;
+  imageUrl: string | null;
+  quantity: number;
+  unitPrice: number;
+  taxRate: number;
+}
+
+export interface ServerCart {
+  cartToken: string;
+  customerCode: string | null;
+  currencyCode: string | null;
+  countryCode: string | null;
+  exchangeRate: number;
+  updatedAt: string | null;
+  items: ServerCartItem[];
+}
+
+export async function getServerCart(cartToken: string): Promise<ServerCart | null> {
+  const rows = await callSp<any>("usp_Store_Cart_Get", {
+    CartToken: cartToken,
+    CompanyId: scope().companyId,
+  });
+  if (!rows.length) return null;
+  const head = rows[0];
+  const items = rows
+    .filter((r: any) => r.productCode != null)
+    .map((r: any) => ({
+      productCode: r.productCode,
+      productName: r.productName,
+      imageUrl: r.imageUrl,
+      quantity: Number(r.quantity),
+      unitPrice: Number(r.unitPrice),
+      taxRate: Number(r.taxRate ?? 0),
+    }));
+  return {
+    cartToken: head.cartToken,
+    customerCode: head.customerCode,
+    currencyCode: head.currencyCode,
+    countryCode: head.countryCode,
+    exchangeRate: Number(head.exchangeRate ?? 1),
+    updatedAt: head.updatedAt,
+    items,
+  };
+}
+
+export async function upsertServerCartItem(args: {
+  cartToken: string;
+  customerCode?: string;
+  productCode: string;
+  productName?: string;
+  imageUrl?: string;
+  quantity: number;
+  unitPrice: number;
+  taxRate: number;
+  currencyCode?: string;
+  countryCode?: string;
+  exchangeRate?: number;
+}) {
+  const { output } = await callSpOut(
+    "usp_Store_Cart_Upsert_Item",
+    {
+      CartToken: args.cartToken,
+      CompanyId: scope().companyId,
+      CustomerCode: args.customerCode ?? null,
+      ProductCode: args.productCode,
+      ProductName: args.productName ?? null,
+      ImageUrl: args.imageUrl ?? null,
+      Quantity: args.quantity,
+      UnitPrice: args.unitPrice,
+      TaxRate: args.taxRate,
+      CurrencyCode: args.currencyCode ?? null,
+      CountryCode: args.countryCode ?? null,
+      ExchangeRate: args.exchangeRate ?? null,
+    },
+    { Resultado: sql.Int, Mensaje: sql.NVarChar(500), CartId: sql.BigInt }
+  );
+  return {
+    ok: Number(output.Resultado) === 1,
+    message: String(output.Mensaje || ""),
+    cartId: output.CartId ? Number(output.CartId) : null,
+  };
+}
+
+export async function removeServerCartItem(cartToken: string, productCode: string) {
+  const { output } = await callSpOut(
+    "usp_Store_Cart_Remove_Item",
+    { CartToken: cartToken, CompanyId: scope().companyId, ProductCode: productCode },
+    { Resultado: sql.Int, Mensaje: sql.NVarChar(500) }
+  );
+  return { ok: Number(output.Resultado) === 1, message: String(output.Mensaje || "") };
+}
+
+export async function clearServerCart(cartToken: string) {
+  const { output } = await callSpOut(
+    "usp_Store_Cart_Clear",
+    { CartToken: cartToken, CompanyId: scope().companyId },
+    { Resultado: sql.Int, Mensaje: sql.NVarChar(500) }
+  );
+  return { ok: Number(output.Resultado) === 1, message: String(output.Mensaje || "") };
+}
+
+export async function mergeCartToCustomer(cartToken: string, customerCode: string) {
+  const { output } = await callSpOut(
+    "usp_Store_Cart_Merge_To_Customer",
+    { CartToken: cartToken, CompanyId: scope().companyId, CustomerCode: customerCode },
+    { Resultado: sql.Int, Mensaje: sql.NVarChar(500), MergedCartToken: sql.NVarChar(64) }
+  );
+  return {
+    ok: Number(output.Resultado) === 1,
+    message: String(output.Mensaje || ""),
+    mergedCartToken: output.MergedCartToken as string | null,
+  };
+}
+
+// ─── Admin: gestión de pedidos ────────────────────────
+
+export async function listAdminOrders(params: {
+  status?: string;
+  from?: string;
+  to?: string;
+  search?: string;
+  page?: number;
+  limit?: number;
+}) {
+  const { rows, output } = await callSpOut<any>(
+    "usp_Store_Order_Admin_List",
+    {
+      CompanyId: scope().companyId,
+      Status: params.status || null,
+      From: params.from || null,
+      To: params.to || null,
+      Search: params.search || null,
+      Page: Math.max(params.page ?? 1, 1),
+      Limit: Math.min(Math.max(params.limit ?? 25, 1), 200),
+    },
+    { TotalCount: sql.BigInt }
+  );
+  return {
+    page: params.page ?? 1,
+    limit: params.limit ?? 25,
+    total: Number(output.TotalCount ?? 0),
+    rows,
+  };
+}
+
+export async function setOrderStatus(args: {
+  orderNumber: string;
+  status: "shipped" | "delivered" | "cancelled";
+  carrier?: string;
+  trackingNo?: string;
+  actorUser?: string;
+}) {
+  const { output } = await callSpOut(
+    "usp_Store_Order_Set_Status",
+    {
+      CompanyId: scope().companyId,
+      OrderNumber: args.orderNumber,
+      Status: args.status,
+      Carrier: args.carrier ?? null,
+      TrackingNo: args.trackingNo ?? null,
+      ActorUser: args.actorUser ?? "admin",
+    },
+    {
+      Resultado: sql.Int,
+      Mensaje: sql.NVarChar(500),
+      CustomerName: sql.NVarChar(255),
+      CustomerEmail: sql.NVarChar(255),
+      OrderToken: sql.NVarChar(100),
+      TotalAmount: sql.Decimal(18, 4),
+      CurrencyCode: sql.NVarChar(20),
+    }
+  );
+  return {
+    ok: Number(output.Resultado) === 1,
+    message: String(output.Mensaje || ""),
+    customerName: output.CustomerName as string | null,
+    customerEmail: output.CustomerEmail as string | null,
+    orderToken: output.OrderToken as string | null,
+    total: Number(output.TotalAmount ?? 0),
+    currency: String(output.CurrencyCode || "USD"),
+  };
+}
+
+// ─── Wishlist persistida (cliente logueado) ───────────
+
+export async function listWishlist(customerCode: string) {
+  return callSp<any>("usp_Store_Wishlist_List", {
+    CompanyId: scope().companyId,
+    CustomerCode: customerCode,
+  });
+}
+
+export async function toggleWishlist(customerCode: string, productCode: string) {
+  const { output } = await callSpOut(
+    "usp_Store_Wishlist_Toggle",
+    { CompanyId: scope().companyId, CustomerCode: customerCode, ProductCode: productCode },
+    { Resultado: sql.Int, Mensaje: sql.NVarChar(500), InWishlist: sql.Bit }
+  );
+  return {
+    ok: Number(output.Resultado) === 1,
+    inWishlist: Boolean(output.InWishlist),
+    message: String(output.Mensaje || ""),
+  };
+}
+
+// ─── Recently viewed (customer + guest) ───────────────
+
+export async function listRecentlyViewed(args: {
+  customerCode?: string | null;
+  sessionToken?: string | null;
+  limit?: number;
+}) {
+  return callSp<any>("usp_Store_Recently_Viewed_List", {
+    CompanyId: scope().companyId,
+    CustomerCode: args.customerCode ?? null,
+    SessionToken: args.sessionToken ?? null,
+    Limit: args.limit ?? 12,
+  });
+}
+
+export async function trackRecentlyViewed(args: {
+  customerCode?: string | null;
+  sessionToken?: string | null;
+  productCode: string;
+}) {
+  const { output } = await callSpOut(
+    "usp_Store_Recently_Viewed_Track",
+    {
+      CompanyId: scope().companyId,
+      CustomerCode: args.customerCode ?? null,
+      SessionToken: args.sessionToken ?? null,
+      ProductCode: args.productCode,
+      KeepLast: 50,
+    },
+    { Resultado: sql.Int, Mensaje: sql.NVarChar(500) }
+  );
+  return { ok: Number(output.Resultado) === 1, message: String(output.Mensaje || "") };
+}
+
+// ─── Order tracking timeline ──────────────────────────
+
+export interface TrackingEvent {
+  documentNumber: string;
+  eventCode: string;
+  eventLabel: string;
+  description: string | null;
+  occurredAt: string;
+  actorUser: string;
+}
+
+export async function getOrderTracking(args: { orderToken?: string; orderNumber?: string }) {
+  return callSp<TrackingEvent>("usp_Store_Order_Tracking_Get", {
+    CompanyId: scope().companyId,
+    OrderToken: args.orderToken ?? null,
+    OrderNumber: args.orderNumber ?? null,
+  });
+}
+
+export async function addOrderTrackingEvent(args: {
+  orderNumber: string;
+  eventCode: string;
+  eventLabel: string;
+  description?: string;
+  actorUser?: string;
+}) {
+  const { output } = await callSpOut(
+    "usp_Store_Order_Tracking_Add",
+    {
+      CompanyId: scope().companyId,
+      DocumentNumber: args.orderNumber,
+      EventCode: args.eventCode,
+      EventLabel: args.eventLabel,
+      Description: args.description ?? null,
+      ActorUser: args.actorUser ?? "system",
+    },
+    { Resultado: sql.Int, Mensaje: sql.NVarChar(500) }
+  );
+  return { ok: Number(output.Resultado) === 1, message: String(output.Mensaje || "") };
+}
+
+// ─── FASE 3: Admin dashboard + RMA ─────────────────────
+
+export async function getAdminMetrics(params: { from?: string; to?: string } = {}) {
+  const rows = await callSp<any>("usp_Store_Admin_Metrics", {
+    CompanyId: scope().companyId,
+    From: params.from || null,
+    To: params.to || null,
+  });
+  return rows[0] ?? {
+    totalOrders: 0, pendingOrders: 0, paidOrders: 0, shippedOrders: 0,
+    deliveredOrders: 0, cancelledOrders: 0, pendingReturns: 0,
+    totalRevenueUsd: 0, avgTicketUsd: 0,
+  };
+}
+
+export async function getAdminOrderDetail(orderNumber: string) {
+  const rows = await callSp<any>("usp_Store_Admin_Order_Detail", {
+    CompanyId: scope().companyId,
+    OrderNumber: orderNumber,
+  });
+  if (!rows.length) return null;
+  const head = rows[0];
+  const lines = new Map<number, any>();
+  const payments = new Map<number, any>();
+  const events: any[] = [];
+  for (const r of rows) {
+    if (r.lineNumber != null && !lines.has(r.lineNumber)) {
+      lines.set(r.lineNumber, {
+        lineNumber: r.lineNumber,
+        productCode: r.productCode,
+        productName: r.productName,
+        quantity: Number(r.quantity),
+        unitPrice: Number(r.unitPrice),
+        lineTotal: Number(r.lineTotal),
+      });
+    }
+    if (r.paymentId != null && !payments.has(r.paymentId)) {
+      payments.set(r.paymentId, {
+        paymentId: r.paymentId,
+        method: r.paymentMethod,
+        reference: r.paymentRef,
+        amount: Number(r.paymentAmount),
+        date: r.paymentDate,
+      });
+    }
+    if (r.eventCode != null) {
+      const key = `${r.eventCode}|${r.eventOccurredAt}`;
+      if (!events.some((e) => `${e.eventCode}|${e.occurredAt}` === key)) {
+        events.push({
+          eventCode: r.eventCode,
+          eventLabel: r.eventLabel,
+          description: r.eventDescription,
+          occurredAt: r.eventOccurredAt,
+        });
+      }
+    }
+  }
+  return {
+    orderNumber: head.orderNumber,
+    orderDate: head.orderDate,
+    customerCode: head.customerCode,
+    customerName: head.customerName,
+    fiscalId: head.fiscalId,
+    notes: head.notes,
+    currencyCode: head.currencyCode,
+    exchangeRate: Number(head.exchangeRate ?? 1),
+    subtotal: Number(head.subtotal),
+    taxAmount: Number(head.taxAmount),
+    totalAmount: Number(head.totalAmount),
+    isPaid: head.isPaid,
+    isVoided: head.isVoided,
+    isDelivered: head.isDelivered,
+    shipped: Boolean(head.shipped),
+    lines: Array.from(lines.values()),
+    payments: Array.from(payments.values()),
+    events,
+  };
+}
+
+// ─── RMA (devoluciones) ────────────────────────────────
+
+export async function createReturnRequest(args: {
+  customerCode: string;
+  orderNumber: string;
+  reason: string;
+  items?: Array<{
+    lineNumber?: number;
+    productCode: string;
+    productName?: string;
+    quantity?: number;
+    unitPrice?: number;
+    reason?: string;
+  }>;
+}) {
+  const { output } = await callSpOut(
+    "usp_Store_Return_Request_Create",
+    {
+      CompanyId: scope().companyId,
+      OrderNumber: args.orderNumber,
+      CustomerCode: args.customerCode,
+      Reason: args.reason,
+      ItemsJson: JSON.stringify(args.items ?? []),
+    },
+    { Resultado: sql.Int, Mensaje: sql.NVarChar(500), ReturnId: sql.BigInt }
+  );
+  return {
+    ok: Number(output.Resultado) === 1,
+    message: String(output.Mensaje || ""),
+    returnId: output.ReturnId ? Number(output.ReturnId) : null,
+  };
+}
+
+export async function listReturns(args: {
+  customerCode?: string | null;
+  status?: string | null;
+  page?: number;
+  limit?: number;
+}) {
+  const { rows, output } = await callSpOut<any>(
+    "usp_Store_Return_Request_List",
+    {
+      CompanyId: scope().companyId,
+      CustomerCode: args.customerCode ?? null,
+      Status: args.status ?? null,
+      Page: Math.max(args.page ?? 1, 1),
+      Limit: Math.min(Math.max(args.limit ?? 25, 1), 200),
+    },
+    { TotalCount: sql.BigInt }
+  );
+  return {
+    page: args.page ?? 1,
+    limit: args.limit ?? 25,
+    total: Number(output.TotalCount ?? 0),
+    rows,
+  };
+}
+
+export async function getReturnDetail(returnId: number) {
+  const rows = await callSp<any>("usp_Store_Return_Request_Get", {
+    CompanyId: scope().companyId,
+    ReturnId: returnId,
+  });
+  if (!rows.length) return null;
+  const h = rows[0];
+  const items = rows
+    .filter((r: any) => r.productCode != null)
+    .map((r: any) => ({
+      lineNumber: r.lineNumber,
+      productCode: r.productCode,
+      productName: r.productName,
+      quantity: Number(r.quantity ?? 0),
+      unitPrice: Number(r.unitPrice ?? 0),
+      reason: r.itemReason,
+    }));
+  return {
+    returnId: Number(h.returnId),
+    orderNumber: h.orderNumber,
+    customerCode: h.customerCode,
+    status: h.status,
+    reason: h.reason,
+    adminNotes: h.adminNotes,
+    refundAmount: Number(h.refundAmount ?? 0),
+    refundCurrency: h.refundCurrency,
+    refundMethod: h.refundMethod,
+    refundReference: h.refundReference,
+    requestedAt: h.requestedAt,
+    processedAt: h.processedAt,
+    items,
+  };
+}
+
+export async function setReturnStatus(args: {
+  returnId: number;
+  status: "approved" | "rejected" | "in_transit" | "received" | "refunded";
+  adminNotes?: string;
+  refundMethod?: string;
+  refundReference?: string;
+  actorUser?: string;
+}) {
+  const { output } = await callSpOut(
+    "usp_Store_Return_Request_Set_Status",
+    {
+      CompanyId: scope().companyId,
+      ReturnId: args.returnId,
+      Status: args.status,
+      AdminNotes: args.adminNotes ?? null,
+      RefundMethod: args.refundMethod ?? null,
+      RefundReference: args.refundReference ?? null,
+      ActorUser: args.actorUser ?? "admin",
+    },
+    {
+      Resultado: sql.Int,
+      Mensaje: sql.NVarChar(500),
+      OrderNumber: sql.NVarChar(60),
+      CustomerCode: sql.NVarChar(24),
+    }
+  );
+  return {
+    ok: Number(output.Resultado) === 1,
+    message: String(output.Mensaje || ""),
+    orderNumber: output.OrderNumber as string | null,
+    customerCode: output.CustomerCode as string | null,
+  };
+}
+
+// ─── FASE 4: Search full-text + Recommendations + Compare ────
+
+export async function searchProducts(params: {
+  query?: string;
+  category?: string;
+  brand?: string;
+  page?: number;
+  limit?: number;
+}) {
+  const page = Math.max(params.page ?? 1, 1);
+  const limit = Math.min(Math.max(params.limit ?? 24, 1), 100);
+  const rows = await callSp<any>("usp_Store_Product_Search", {
+    CompanyId: scope().companyId,
+    BranchId: scope().branchId,
+    Query: params.query?.trim() || null,
+    Category: params.category || null,
+    Brand: params.brand || null,
+    Page: page,
+    Limit: limit,
+  });
+  const total = rows[0]?.TotalCount ? Number(rows[0].TotalCount) : 0;
+  const resolvedRows = rows.map((r: any) => ({
+    code: r.code,
+    name: r.name,
+    highlight: r.highlight,
+    category: r.category,
+    brand: r.brand,
+    price: Number(r.price ?? 0),
+    compareAt: r.compareAt != null ? Number(r.compareAt) : null,
+    stock: Number(r.stock ?? 0),
+    imageUrl: resolveImageUrl(r.imageUrl) || PLACEHOLDER_IMAGE,
+    rank: Number(r.rank ?? 0),
+  }));
+  return { page, limit, total, rows: resolvedRows };
+}
+
+export async function getProductRecommendations(productCode: string, limit = 8) {
+  const rows = await callSp<any>("usp_Store_Product_Recommendations", {
+    CompanyId: scope().companyId,
+    BranchId: scope().branchId,
+    ProductCode: productCode,
+    Limit: limit,
+  });
+  return rows.map((r: any) => ({
+    code: r.code,
+    name: r.name,
+    category: r.category,
+    brand: r.brand,
+    price: Number(r.price ?? 0),
+    stock: Number(r.stock ?? 0),
+    imageUrl: resolveImageUrl(r.imageUrl) || PLACEHOLDER_IMAGE,
+    avgRating: Number(r.avgRating ?? 0),
+    reviewCount: Number(r.reviewCount ?? 0),
+    matchScore: Number(r.matchScore ?? 0),
+  }));
+}
+
+export async function compareProducts(codes: string[]) {
+  if (!codes.length) return [];
+  const safeCodes = codes.slice(0, 4).map((c) => String(c).trim()).filter(Boolean);
+  const rows = await callSp<any>("usp_Store_Product_Compare", {
+    CompanyId: scope().companyId,
+    BranchId: scope().branchId,
+    Codes: safeCodes,
+  });
+  return rows.map((r: any) => ({
+    code: r.code,
+    name: r.name,
+    brand: r.brand,
+    category: r.category,
+    price: Number(r.price ?? 0),
+    compareAt: r.compareAt != null ? Number(r.compareAt) : null,
+    stock: Number(r.stock ?? 0),
+    isService: Boolean(r.isService),
+    warrantyMonths: r.warranty != null ? Number(r.warranty) : null,
+    weightKg: r.weightKg != null ? Number(r.weightKg) : null,
+    widthCm: r.widthCm != null ? Number(r.widthCm) : null,
+    heightCm: r.heightCm != null ? Number(r.heightCm) : null,
+    depthCm: r.depthCm != null ? Number(r.depthCm) : null,
+    imageUrl: resolveImageUrl(r.imageUrl) || PLACEHOLDER_IMAGE,
+    avgRating: Number(r.avgRating ?? 0),
+    reviewCount: Number(r.reviewCount ?? 0),
+    specs: r.specsJson || {},
+  }));
+}
+
+// ─── FASE 5: Performance audit ────────────────────────
+
+interface PerfMeasurement {
+  endpoint: string;
+  description: string;
+  durationMs: number;
+  rowCount: number;
+  ok: boolean;
+  error?: string;
+}
+
+async function measure(label: string, description: string, fn: () => Promise<unknown>): Promise<PerfMeasurement> {
+  const start = process.hrtime.bigint();
+  try {
+    const result = await fn();
+    const duration = Number(process.hrtime.bigint() - start) / 1_000_000;
+    const rowCount = Array.isArray(result)
+      ? result.length
+      : (result as { rows?: unknown[] })?.rows?.length ?? 1;
+    return { endpoint: label, description, durationMs: Math.round(duration * 100) / 100, rowCount, ok: true };
+  } catch (err) {
+    const duration = Number(process.hrtime.bigint() - start) / 1_000_000;
+    return {
+      endpoint: label,
+      description,
+      durationMs: Math.round(duration * 100) / 100,
+      rowCount: 0,
+      ok: false,
+      error: err instanceof Error ? err.message : String(err),
+    };
+  }
+}
+
+export async function getPerfAudit(): Promise<{
+  measurements: PerfMeasurement[];
+  totalMs: number;
+  averageMs: number;
+  worstCase: PerfMeasurement | null;
+}> {
+  const start = Date.now();
+  const measurements = await Promise.all([
+    measure("listProducts(24)",            "Catálogo paginado",          () => listProducts({ limit: 24 })),
+    measure("listCategories",              "Categorías activas",         () => listCategories()),
+    measure("listBrands",                  "Marcas activas",             () => listBrands()),
+    measure("listStorefrontCountries",     "Países (selector)",          () => listStorefrontCountries()),
+    measure("listStorefrontCurrencies",    "Monedas (selector)",         () => listStorefrontCurrencies()),
+    measure("getStorefrontCountry(VE)",    "País + tasa fiscal",         () => getStorefrontCountry("VE")),
+    measure("searchProducts(q='a')",       "Búsqueda full-text",         () => searchProducts({ query: "a", limit: 12 })),
+    measure("getAdminMetrics",             "Métricas dashboard",         () => getAdminMetrics()),
+  ]);
+  const totalMs = Date.now() - start;
+  const ok = measurements.filter((m) => m.ok);
+  const averageMs = ok.length ? Math.round((ok.reduce((s, m) => s + m.durationMs, 0) / ok.length) * 100) / 100 : 0;
+  const worstCase = ok.length ? ok.reduce((w, m) => (m.durationMs > w.durationMs ? m : w)) : null;
+  return { measurements, totalMs, averageMs, worstCase };
 }
