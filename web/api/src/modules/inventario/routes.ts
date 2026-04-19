@@ -14,6 +14,7 @@ import {
   getKardexDetalladoSP,
 } from "./movimientos-sp.service.js";
 import { search, getByCode, getFilterOptions, invalidateAndReload, warmUp, getCacheStats } from "./inventario-cache.js";
+import { reserveStockSP, releaseStockSP, commitStockSP, getStockAvailableSP } from "./reservas-sp.service.js";
 import { emitInventarioMovementEntry } from "./inventario-contabilidad.service.js";
 import { emitBusinessNotification } from "../_shared/notify.js";
 import { obs } from "../integrations/observability.js";
@@ -286,6 +287,76 @@ inventarioRouter.get("/kardex/:codigo", async (req, res) => {
       limit: q.limit ? Number(q.limit) : undefined,
     });
     res.json(result);
+  } catch (err: any) {
+    res.status(err?.status ?? 500).json({ error: String(err.message ?? err) });
+  }
+});
+
+// ========== GET: Stock disponible (considera reservas activas) ==========
+inventarioRouter.get("/reservas/disponible/:codigo", async (req, res) => {
+  try {
+    const companyId = requireCompanyId(req);
+    const result = await getStockAvailableSP(companyId, req.params.codigo);
+    res.json(result);
+  } catch (err: any) {
+    res.status(err?.status ?? 500).json({ error: String(err.message ?? err) });
+  }
+});
+
+// ========== POST: Reservar stock (atómico, TTL configurable) ==========
+inventarioRouter.post("/reservas", async (req, res) => {
+  try {
+    const companyId = requireCompanyId(req);
+    const b = req.body ?? {};
+    if (!b.productCode || !b.quantity || !b.referenceType || !b.referenceId) {
+      return res.status(400).json({ error: "productCode, quantity, referenceType y referenceId son requeridos" });
+    }
+    const result = await reserveStockSP({
+      companyId,
+      productCode:   b.productCode,
+      quantity:      Number(b.quantity),
+      referenceType: b.referenceType,
+      referenceId:   String(b.referenceId),
+      ttlMinutes:    b.ttlMinutes ? Number(b.ttlMinutes) : 30,
+      userId:        (req as any).user?.userId,
+    });
+    if (result.ok) {
+      res.status(201).json(result);
+    } else {
+      res.status(409).json(result);
+    }
+  } catch (err: any) {
+    res.status(err?.status ?? 500).json({ error: String(err.message ?? err) });
+  }
+});
+
+// ========== DELETE: Liberar reserva ==========
+inventarioRouter.delete("/reservas/:id", async (req, res) => {
+  try {
+    const companyId = requireCompanyId(req);
+    const id = Number(req.params.id);
+    if (!Number.isFinite(id) || id <= 0) return res.status(400).json({ error: "id inválido" });
+    const result = await releaseStockSP(id, companyId);
+    res.status(result.ok ? 200 : 404).json(result);
+  } catch (err: any) {
+    res.status(err?.status ?? 500).json({ error: String(err.message ?? err) });
+  }
+});
+
+// ========== POST: Confirmar reserva (convierte en movimiento real) ==========
+inventarioRouter.post("/reservas/:id/commit", async (req, res) => {
+  try {
+    const companyId = requireCompanyId(req);
+    const id = Number(req.params.id);
+    if (!Number.isFinite(id) || id <= 0) return res.status(400).json({ error: "id inválido" });
+    const b = req.body ?? {};
+    const result = await commitStockSP(id, companyId, b.unitCost ? Number(b.unitCost) : 0, (req as any).user?.userId);
+    if (result.ok) {
+      invalidateAndReload().catch(() => {});
+      res.json(result);
+    } else {
+      res.status(404).json(result);
+    }
   } catch (err: any) {
     res.status(err?.status ?? 500).json({ error: String(err.message ?? err) });
   }
