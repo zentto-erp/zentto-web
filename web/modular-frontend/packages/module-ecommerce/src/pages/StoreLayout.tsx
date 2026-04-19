@@ -20,6 +20,7 @@ import HistoryIcon from "@mui/icons-material/History";
 import CloseIcon from "@mui/icons-material/Close";
 import CategoryIcon from "@mui/icons-material/Category";
 import HomeIcon from "@mui/icons-material/Home";
+import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
 import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
 import { useCartStore } from "../store/useCartStore";
 import { useSearchHistoryStore } from "../store/useSearchHistoryStore";
@@ -275,6 +276,10 @@ export default function StoreLayout({ children, onNavigate }: Props) {
             <MenuItem onClick={() => { setUserMenuAnchor(null); onNavigate("/pedidos"); }}>
               <ListItemIcon><ReceiptLongIcon fontSize="small" /></ListItemIcon>
               <ListItemText>Mis pedidos</ListItemText>
+            </MenuItem>
+            <MenuItem onClick={() => { setUserMenuAnchor(null); onNavigate("/admin/dashboard"); }}>
+              <ListItemIcon><AdminPanelSettingsIcon fontSize="small" /></ListItemIcon>
+              <ListItemText>Panel Admin</ListItemText>
             </MenuItem>
             <Divider />
             <MenuItem onClick={handleLogout}>

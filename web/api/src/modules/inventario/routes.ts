@@ -19,6 +19,13 @@ import { obs } from "../integrations/observability.js";
 
 export const inventarioRouter = Router();
 
+/** Extrae CompanyId del JWT. Lanza 401 si no está presente (evita fallback a empresa 1). */
+function requireCompanyId(req: any): number {
+  const id = Number(req.user?.companyId);
+  if (!Number.isFinite(id) || id <= 0) throw Object.assign(new Error("missing_company_scope"), { status: 401 });
+  return id;
+}
+
 // Esquema de validación para query params de listado de artículos
 const qSchema = z.object({
   search: z.string().optional(),
@@ -99,20 +106,23 @@ inventarioRouter.post("/cache/reload", async (_req, res) => {
 });
 
 // ========== GET: Dashboard de inventario ==========
-inventarioRouter.get("/dashboard", async (_req, res) => {
+inventarioRouter.get("/dashboard", async (req, res) => {
   try {
-    const data = await getInventarioDashboardSP();
+    const companyId = requireCompanyId(req);
+    const data = await getInventarioDashboardSP(companyId);
     res.json(data);
-  } catch (err) {
-    res.status(500).json({ error: String(err) });
+  } catch (err: any) {
+    res.status(err?.status ?? 500).json({ error: String(err.message ?? err) });
   }
 });
 
 // ========== GET: Listado de movimientos ==========
 inventarioRouter.get("/movimientos", async (req, res) => {
   try {
+    const companyId = requireCompanyId(req);
     const q = req.query;
     const result = await listMovimientosSP({
+      companyId,
       search: q.search as string,
       productCode: q.productCode as string,
       movementType: q.movementType as string,
@@ -123,16 +133,18 @@ inventarioRouter.get("/movimientos", async (req, res) => {
       limit: q.limit ? Number(q.limit) : undefined,
     });
     res.json(result);
-  } catch (err) {
-    res.status(500).json({ error: String(err) });
+  } catch (err: any) {
+    res.status(err?.status ?? 500).json({ error: String(err.message ?? err) });
   }
 });
 
 // ========== POST: Registrar movimiento ==========
 inventarioRouter.post("/movimientos", async (req, res) => {
   try {
+    const companyId = requireCompanyId(req);
     const b = req.body ?? {};
     const result = await insertMovimientoSP({
+      companyId,
       productCode: b.productCode || b.codigoArticulo,
       movementType: b.movementType || (Number(b.cantidad) < 0 ? "SALIDA" : "ENTRADA"),
       quantity: Math.abs(Number(b.quantity || b.cantidad || 0)),
@@ -141,6 +153,7 @@ inventarioRouter.post("/movimientos", async (req, res) => {
       warehouseFrom: b.warehouseFrom,
       warehouseTo: b.warehouseTo,
       notes: b.notes || b.observaciones,
+      userId: (req as any).user?.userId,
     });
     invalidateAndReload().catch(() => {});
     if (result.success) {
@@ -200,8 +213,10 @@ inventarioRouter.post("/movimientos", async (req, res) => {
 // ========== POST: Traslado entre almacenes ==========
 inventarioRouter.post("/traslados", async (req, res) => {
   try {
+    const companyId = requireCompanyId(req);
     const b = req.body ?? {};
     const result = await insertMovimientoSP({
+      companyId,
       productCode: b.productCode,
       movementType: "TRASLADO",
       quantity: Math.abs(Number(b.quantity || 0)),
@@ -210,6 +225,7 @@ inventarioRouter.post("/traslados", async (req, res) => {
       warehouseFrom: b.warehouseFrom,
       warehouseTo: b.warehouseTo,
       notes: b.notes,
+      userId: (req as any).user?.userId,
     });
     invalidateAndReload().catch(() => {});
     if (result.success) {
@@ -236,18 +252,20 @@ inventarioRouter.post("/traslados", async (req, res) => {
 // ========== GET: Libro de inventario (reporte) ==========
 inventarioRouter.get("/reportes/libro", async (req, res) => {
   try {
+    const companyId = requireCompanyId(req);
     const q = req.query;
     if (!q.fechaDesde || !q.fechaHasta) {
       return res.status(400).json({ error: "fechaDesde y fechaHasta son requeridos" });
     }
     const rows = await getLibroInventarioSP({
+      companyId,
       fechaDesde: q.fechaDesde as string,
       fechaHasta: q.fechaHasta as string,
       productCode: q.productCode as string,
     });
     res.json({ rows });
-  } catch (err) {
-    res.status(500).json({ error: String(err) });
+  } catch (err: any) {
+    res.status(err?.status ?? 500).json({ error: String(err.message ?? err) });
   }
 });
 

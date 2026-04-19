@@ -98,6 +98,14 @@ export function useAdminOrderDetail(orderNumber?: string) {
   });
 }
 
+export function useMyOrderDetail(orderNumber?: string) {
+  return useQuery<AdminOrderDetail>({
+    queryKey: ["store-my-order", orderNumber],
+    enabled: !!orderNumber,
+    queryFn: () => adminFetch(`/store/my/orders/${encodeURIComponent(orderNumber!)}`),
+  });
+}
+
 export function useAdminReturns(params: { status?: string; page?: number; limit?: number } = {}) {
   return useQuery<{ rows: ReturnSummary[]; total: number; page: number; limit: number }>({
     queryKey: ["store-admin-returns", params],

@@ -24,7 +24,7 @@ export { useOrderTracking } from "./hooks/useOrderTracking";
 export type { TrackingEvent } from "./hooks/useOrderTracking";
 export {
   useAdminMetrics, useAdminOrderDetail, useAdminReturns,
-  useAdminReturnDetail, useAdminSetReturnStatus,
+  useAdminReturnDetail, useAdminSetReturnStatus, useMyOrderDetail,
 } from "./hooks/useAdminEcommerce";
 export type { AdminMetrics, AdminOrderDetail, ReturnSummary } from "./hooks/useAdminEcommerce";
 export { useMyReturns, useMyReturnDetail, useCreateReturn } from "./hooks/useReturns";

@@ -7,7 +7,8 @@ import { getActiveScope } from "../_shared/scope.js";
 
 function scope() {
   const s = getActiveScope();
-  return { companyId: s?.companyId ?? 1, branchId: s?.branchId ?? 1 };
+  if (!s) throw new Error("No active scope — missing tenant context");
+  return { companyId: s.companyId, branchId: s.branchId };
 }
 
 export interface InventarioRow {

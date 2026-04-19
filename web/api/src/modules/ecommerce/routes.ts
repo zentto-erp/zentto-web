@@ -417,6 +417,30 @@ storeRouter.get("/my/orders", async (req, res) => {
   }
 });
 
+// ─── Detalle de pedido del cliente (para formulario de devolución) ───────────
+storeRouter.get("/my/orders/:orderNumber", async (req, res) => {
+  try {
+    const user = await verifyCustomerToken(req.headers.authorization);
+    if (!user) return res.status(401).json({ error: "not_authenticated" });
+
+    const { callSp } = await import("../../db/query.js");
+    const rows = await callSp<{ customerCode: string }>(
+      "usp_Store_Customer_Login",
+      { Email: user.name ?? user.sub }
+    );
+    const customerCode = rows[0]?.customerCode;
+    if (!customerCode) return res.status(404).json({ error: "customer_not_found" });
+
+    const detail = await getAdminOrderDetail(req.params.orderNumber);
+    if (!detail) return res.status(404).json({ error: "order_not_found" });
+    if (detail.customerCode !== customerCode) return res.status(403).json({ error: "forbidden" });
+
+    res.json(detail);
+  } catch (err: any) {
+    res.status(500).json({ error: "server_error", message: err.message });
+  }
+});
+
 // ─── Direcciones del cliente ─────────────────────────
 
 const addressSchema = z.object({
