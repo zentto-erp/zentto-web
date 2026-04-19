@@ -596,29 +596,27 @@ export async function registrarVenta(data: {
     }
   }
 
-  // Best-effort: create inventory movements for each line sold
-  try {
-    const warehouseId = data.warehouseId ?? null;
-    if (warehouseId) {
-      for (const line of lines) {
-        if (line.productId && !line.isVoid && line.quantity > 0) {
-          await callSp("usp_Inv_Movement_Create", {
-            CompanyId: scope.companyId,
-            BranchId: scope.branchId,
-            ProductId: line.productId,
-            FromWarehouseId: warehouseId,
-            MovementType: "SALE_OUT",
-            Quantity: line.quantity,
-            UnitCost: line.unitPrice ?? 0,
-            SourceDocumentType: "POS",
-            SourceDocumentNumber: data.numFactura,
-            Notes: "Venta POS",
-            UserId: soldByUserId,
-          });
-        }
-      }
+  // Reserve+commit de stock atómico: cada línea no-void consume stock a través de
+  // inv.StockReservation (lock atómico por producto) y genera InventoryMovement SALIDA.
+  // Si el stock no alcanza, RAISE EXCEPTION dentro del SP → rollback de todo el ticket.
+  const { output: stockOut } = await callSpOut(
+    "usp_POS_SaleTicket_Commit_Stock",
+    {
+      SaleTicketId: ventaId,
+      CompanyId: scope.companyId,
+      UserId: soldByUserId,
+    },
+    {
+      Resultado: sql.Int,
+      Mensaje: sql.NVarChar(500),
+      LineasProcesadas: sql.Int,
+      MovimientosGenerados: sql.Int,
     }
-  } catch { /* never blocks POS sale */ }
+  );
+
+  if (Number(stockOut.Resultado ?? 0) !== 1) {
+    throw new Error(`pos_stock_commit_failed:${String(stockOut.Mensaje ?? "unknown")}`);
+  }
 
   if (Number.isFinite(Number(data.esperaOrigenId)) && Number(data.esperaOrigenId) > 0) {
     await callSpOut(
