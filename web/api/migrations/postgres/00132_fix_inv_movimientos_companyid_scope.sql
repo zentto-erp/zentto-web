@@ -1,13 +1,8 @@
 -- +goose Up
 -- +goose StatementBegin
--- Fix: usp_Inventario_Movimiento_List — ensure CompanyId filter is enforced
--- This migration is a safety net. Migration 00064 already added CompanyId to
--- usp_rest_admin_adjuststock. This migration reinforces the SP contract by
--- adding a hard CHECK that CompanyId is never NULL or <= 0 when passed.
--- The TS-layer fix (removing ?? 1 defaults) was applied simultaneously.
+-- Validate usp_Inventario_Movimiento_Insert exists (baseline guard).
 DO $$
 BEGIN
-  -- Validate usp_Inventario_Movimiento_Insert exists with correct signature
   IF NOT EXISTS (
     SELECT 1 FROM pg_proc p
     JOIN pg_namespace n ON n.oid = p.pronamespace
@@ -16,23 +11,43 @@ BEGIN
   ) THEN
     RAISE EXCEPTION 'usp_Inventario_Movimiento_Insert not found — run baseline first';
   END IF;
+END;
+$$;
+-- +goose StatementEnd
 
-  -- Validate usp_rest_admin_adjuststock has 3 params (company_id was added in 00064)
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_proc p
-    JOIN pg_namespace n ON n.oid = p.pronamespace
-    WHERE n.nspname = 'public'
-      AND p.proname = 'usp_rest_admin_adjuststock'
-      AND pronargs = 3
-  ) THEN
-    RAISE EXCEPTION 'usp_rest_admin_adjuststock still has 2 params (missing CompanyId) — migration 00064 may not have run';
-  END IF;
+-- +goose StatementBegin
+-- Ensure usp_rest_admin_adjuststock has 3 params (company_id).
+-- Migration 00064 added company_id but the 2-param baseline could overwrite it.
+-- Using CREATE OR REPLACE so this migration is always idempotent.
+CREATE OR REPLACE FUNCTION public.usp_rest_admin_adjuststock(
+    p_company_id integer,
+    p_product_id bigint,
+    p_delta_qty  numeric
+) RETURNS void
+    LANGUAGE plpgsql AS $$
+BEGIN
+    IF p_product_id IS NULL OR p_delta_qty = 0 THEN
+        RETURN;
+    END IF;
+    UPDATE master."Product"
+    SET "StockQty" = COALESCE("StockQty", 0) + p_delta_qty,
+        "UpdatedAt" = NOW() AT TIME ZONE 'UTC'
+    WHERE "ProductId" = p_product_id
+      AND "CompanyId" = p_company_id;
 END;
 $$;
 -- +goose StatementEnd
 
 -- +goose Down
 -- +goose StatementBegin
--- No rollback needed — this migration only validates, does not change schema
-SELECT 1;
+CREATE OR REPLACE FUNCTION public.usp_rest_admin_adjuststock(p_product_id bigint, p_delta_qty numeric) RETURNS void
+    LANGUAGE plpgsql AS $$
+BEGIN
+    IF p_product_id IS NULL OR p_delta_qty = 0 THEN RETURN; END IF;
+    UPDATE master."Product"
+    SET "StockQty" = COALESCE("StockQty", 0) + p_delta_qty,
+        "UpdatedAt" = NOW() AT TIME ZONE 'UTC'
+    WHERE "ProductId" = p_product_id;
+END;
+$$;
 -- +goose StatementEnd
