@@ -37,6 +37,11 @@ import {
   removeServerCartItem,
   clearServerCart,
   mergeCartToCustomer,
+  listWishlist,
+  toggleWishlist,
+  listRecentlyViewed,
+  trackRecentlyViewed,
+  getOrderTracking,
 } from "./service.js";
 
 export const storeRouter = Router();
@@ -673,6 +678,83 @@ storeRouter.post("/cart/merge", async (req, res) => {
 
     const result = await mergeCartToCustomer(cartToken, customerCode);
     res.json(result);
+  } catch (err: any) {
+    res.status(500).json({ error: "server_error", message: err.message });
+  }
+});
+
+// ─── Wishlist (cliente logueado) ──────────────────────
+
+async function getCustomerCodeFromAuth(req: any): Promise<string | null> {
+  const user = await verifyCustomerToken(req.headers.authorization);
+  if (!user) return null;
+  const { callSp } = await import("../../db/query.js");
+  const rows = await callSp<{ customerCode: string }>(
+    "usp_Store_Customer_Login",
+    { Email: user.name ?? user.sub }
+  );
+  return rows[0]?.customerCode ?? null;
+}
+
+storeRouter.get("/wishlist", async (req, res) => {
+  try {
+    const customerCode = await getCustomerCodeFromAuth(req);
+    if (!customerCode) return res.status(401).json({ error: "not_authenticated" });
+    res.json(await listWishlist(customerCode));
+  } catch (err: any) {
+    res.status(500).json({ error: "server_error", message: err.message });
+  }
+});
+
+storeRouter.post("/wishlist/toggle", async (req, res) => {
+  try {
+    const productCode = String(req.body?.productCode || "").trim();
+    if (!productCode) return res.status(400).json({ error: "missing_product_code" });
+    const customerCode = await getCustomerCodeFromAuth(req);
+    if (!customerCode) return res.status(401).json({ error: "not_authenticated" });
+    res.json(await toggleWishlist(customerCode, productCode));
+  } catch (err: any) {
+    res.status(500).json({ error: "server_error", message: err.message });
+  }
+});
+
+// ─── Recently viewed (customer + guest) ────────────────
+
+storeRouter.get("/recently-viewed", async (req, res) => {
+  try {
+    const sessionToken = (req.query.session as string | undefined) || null;
+    const customerCode = await getCustomerCodeFromAuth(req).catch(() => null);
+    if (!customerCode && !sessionToken) {
+      return res.status(400).json({ error: "missing_session_or_auth" });
+    }
+    const limit = req.query.limit ? Number(req.query.limit) : 12;
+    res.json(await listRecentlyViewed({ customerCode, sessionToken, limit }));
+  } catch (err: any) {
+    res.status(500).json({ error: "server_error", message: err.message });
+  }
+});
+
+storeRouter.post("/recently-viewed", async (req, res) => {
+  try {
+    const productCode = String(req.body?.productCode || "").trim();
+    if (!productCode) return res.status(400).json({ error: "missing_product_code" });
+    const sessionToken = String(req.body?.sessionToken || "").trim() || null;
+    const customerCode = await getCustomerCodeFromAuth(req).catch(() => null);
+    if (!customerCode && !sessionToken) {
+      return res.status(400).json({ error: "missing_session_or_auth" });
+    }
+    res.json(await trackRecentlyViewed({ customerCode, sessionToken, productCode }));
+  } catch (err: any) {
+    res.status(500).json({ error: "server_error", message: err.message });
+  }
+});
+
+// ─── Order tracking timeline (público vía orderToken) ─
+
+storeRouter.get("/orders/:token/tracking", async (req, res) => {
+  try {
+    const events = await getOrderTracking({ orderToken: req.params.token });
+    res.json(events);
   } catch (err: any) {
     res.status(500).json({ error: "server_error", message: err.message });
   }
