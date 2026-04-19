@@ -22,6 +22,7 @@ interface Props {
   orders: OrderRow[];
   loading?: boolean;
   onViewOrder?: (orderNumber: string) => void;
+  onRequestReturn?: (orderNumber: string) => void;
 }
 
 const COLUMNS: ColumnDef[] = [
@@ -30,7 +31,7 @@ const COLUMNS: ColumnDef[] = [
   { field: "totalAmount", header: "Total", flex: 1, type: "number", currency: "USD", aggregation: "sum" },
   {
     field: "isPaid",
-    header: "Estado",
+    header: "Pago",
     flex: 1,
     sortable: true,
     groupable: true,
@@ -38,20 +39,30 @@ const COLUMNS: ColumnDef[] = [
     statusVariant: "outlined",
   },
   {
+    field: "isDelivered",
+    header: "Entrega",
+    flex: 1,
+    sortable: true,
+    groupable: true,
+    statusColors: { S: "success", N: "default" },
+    statusVariant: "outlined",
+  },
+  {
     field: "actions",
     header: "Acciones",
     type: "actions",
-    width: 80,
+    width: 120,
     pin: "right",
     actions: [
       { icon: "view", label: "Ver pedido", action: "view", color: "#6b7280" },
+      { icon: "assignment_return", label: "Solicitar devolución", action: "return", color: "#f59e0b" },
     ],
   },
 ];
 
 const GRID_ID = "module-ecommerce:order-history:list";
 
-export default function OrderHistory({ orders, loading, onViewOrder }: Props) {
+export default function OrderHistory({ orders, loading, onViewOrder, onRequestReturn }: Props) {
   const gridRef = useRef<any>(null);
   const { ready: gridLayoutReady } = useGridLayoutSync(GRID_ID);
   const { registered } = useEcommerceGridRegistration(gridLayoutReady);
@@ -75,10 +86,13 @@ export default function OrderHistory({ orders, loading, onViewOrder }: Props) {
     const handler = (e: CustomEvent) => {
       const { action, row } = e.detail;
       if (action === "view" && onViewOrder) onViewOrder(row.orderNumber);
+      if (action === "return" && onRequestReturn && row.isDelivered === "S") {
+        onRequestReturn(row.orderNumber);
+      }
     };
     el.addEventListener("action-click", handler);
     return () => el.removeEventListener("action-click", handler);
-  }, [registered, rows, onViewOrder]);
+  }, [registered, rows, onViewOrder, onRequestReturn]);
 
   if (loading) {
     return (
