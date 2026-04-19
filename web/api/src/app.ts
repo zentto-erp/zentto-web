@@ -524,8 +524,13 @@ export async function createApp() {
   // Reportes Crystal Reports (proxy al .NET Report Server)
   app.use("/v1/reportes", reportesRouter);
 
-  // Payment Gateway (multi-country, multi-provider)
+  // Payment Gateway (multi-country, multi-provider) — legacy local plugins
   app.use("/v1/payments", paymentsRouter);
+
+  // Payment Accounts — proxy al microservicio zentto-payments para gestionar
+  // accounts (Paddle/Stripe/Mercantil/etc.) por cliente desde el ERP.
+  const { paymentAccountsRouter } = await import("./modules/payment-accounts/routes.js");
+  app.use("/v1/payment-accounts", paymentAccountsRouter);
 
   // White-label brand config per tenant (F4)
   const { brandRouter } = await import("./modules/brand/routes.js");
