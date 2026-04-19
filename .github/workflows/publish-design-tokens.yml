@@ -21,12 +21,12 @@ jobs:
       run:
         working-directory: web/modular-frontend/packages/design-tokens
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.3.0
         with:
           fetch-depth: 2
           persist-credentials: false
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@1a4442cacd436585916779262731d5b162bc6ec7 # v4.5.0
         with:
           node-version: "20"
           registry-url: "https://registry.npmjs.org"
@@ -43,6 +43,7 @@ jobs:
 
       # Salta silenciosamente si la version del package.json ya esta publicada.
       # Solo publica cuando alguien bumpeo web/modular-frontend/packages/design-tokens/package.json.
+      # zizmor: ignore[use-trusted-publishing] — npm trusted publishing requiere OIDC setup aparte; migraremos más adelante.
       - name: Publish if new version
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN_DESIGN_TOKENS || secrets.NPM_TOKEN }}
