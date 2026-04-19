@@ -11,6 +11,7 @@ import {
   listMovimientosSP,
   getInventarioDashboardSP,
   getLibroInventarioSP,
+  getKardexDetalladoSP,
 } from "./movimientos-sp.service.js";
 import { search, getByCode, getFilterOptions, invalidateAndReload, warmUp, getCacheStats } from "./inventario-cache.js";
 import { emitInventarioMovementEntry } from "./inventario-contabilidad.service.js";
@@ -154,6 +155,8 @@ inventarioRouter.post("/movimientos", async (req, res) => {
       warehouseTo: b.warehouseTo,
       notes: b.notes || b.observaciones,
       userId: (req as any).user?.userId,
+      sourceDocumentType: b.sourceDocumentType,
+      sourceDocumentId: b.sourceDocumentId ? Number(b.sourceDocumentId) : undefined,
     });
     invalidateAndReload().catch(() => {});
     if (result.success) {
@@ -264,6 +267,25 @@ inventarioRouter.get("/reportes/libro", async (req, res) => {
       productCode: q.productCode as string,
     });
     res.json({ rows });
+  } catch (err: any) {
+    res.status(err?.status ?? 500).json({ error: String(err.message ?? err) });
+  }
+});
+
+// ========== GET: Kardex detallado (trazabilidad completa con saldo acumulado) ==========
+inventarioRouter.get("/kardex/:codigo", async (req, res) => {
+  try {
+    const companyId = requireCompanyId(req);
+    const q = req.query;
+    const result = await getKardexDetalladoSP({
+      companyId,
+      productCode: req.params.codigo,
+      fechaDesde: q.fechaDesde as string,
+      fechaHasta: q.fechaHasta as string,
+      page: q.page ? Number(q.page) : undefined,
+      limit: q.limit ? Number(q.limit) : undefined,
+    });
+    res.json(result);
   } catch (err: any) {
     res.status(err?.status ?? 500).json({ error: String(err.message ?? err) });
   }
