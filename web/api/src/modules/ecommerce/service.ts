@@ -1049,6 +1049,33 @@ export async function setOrderStatus(args: {
   };
 }
 
+// ─── Cancelar orden (libera reservas) ───────────────────
+export async function cancelOrder(args: {
+  orderNumber: string;
+  userId?: number | null;
+  reason?: string | null;
+}) {
+  const { output } = await callSpOut(
+    "usp_Store_Order_Cancel",
+    {
+      CompanyId: scope().companyId,
+      OrderNumber: args.orderNumber,
+      UserId: args.userId ?? null,
+      Reason: args.reason ?? null,
+    },
+    {
+      Resultado: sql.Int,
+      Mensaje: sql.NVarChar(500),
+      ReservasLiberadas: sql.Int,
+    }
+  );
+  return {
+    ok: Number(output.Resultado) === 1,
+    message: String(output.Mensaje || ""),
+    reservasLiberadas: Number(output.ReservasLiberadas ?? 0),
+  };
+}
+
 // ─── Wishlist persistida (cliente logueado) ───────────
 
 export async function listWishlist(customerCode: string) {
