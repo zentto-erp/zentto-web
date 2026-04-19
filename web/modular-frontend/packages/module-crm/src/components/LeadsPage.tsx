@@ -17,7 +17,13 @@ import {
   MenuItem,
 } from "@mui/material";
 import { formatCurrency } from "@zentto/shared-api";
-import { ContextActionHeader } from "@zentto/shared-ui";
+import {
+  ContextActionHeader,
+  RightDetailDrawer,
+  useDrawerQueryParam,
+  type DrawerTab,
+} from "@zentto/shared-ui";
+import LeadDetailPanel from "./LeadDetailPanel";
 import {
   useLeadsList,
   usePipelinesList,
@@ -73,6 +79,10 @@ export default function LeadsPage() {
   const gridRef = useRef<any>(null);
   const { ready: gridLayoutReady } = useGridLayoutSync(GRID_ID);
   const { registered } = useCRMGridRegistration(gridLayoutReady);
+
+  /* ─── Drawer de detalle — deep-link ?lead=<id>&tab=<key> ─── */
+  const leadDrawer = useDrawerQueryParam("lead");
+  const drawerLeadId = leadDrawer.id ? Number(leadDrawer.id) : null;
 
   const { data, isLoading } = useLeadsList(filter);
   const { data: pipelinesData } = usePipelinesList();
@@ -193,13 +203,26 @@ export default function LeadsPage() {
     if (!el || !registered) return;
     const handler = (e: CustomEvent) => {
       const { action, row } = e.detail;
-      if (action === "view") { handleEdit(row); }
+      // view → drawer lateral con deep-link (?lead=<id>), no navega.
+      if (action === "view") { leadDrawer.openDrawer(row.LeadId); }
       if (action === "edit") { handleEdit(row); }
       if (action === "delete") { /* TODO: eliminar lead */ }
     };
     el.addEventListener("action-click", handler);
     return () => el.removeEventListener("action-click", handler);
-  }, [registered, rows]);
+  }, [registered, rows, leadDrawer]);
+
+  /* Row click (no menú de acciones) → drawer también. */
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el || !registered) return;
+    const handler = (e: CustomEvent) => {
+      const row = e.detail?.row;
+      if (row?.LeadId) leadDrawer.openDrawer(row.LeadId);
+    };
+    el.addEventListener("row-click", handler);
+    return () => el.removeEventListener("row-click", handler);
+  }, [registered, rows, leadDrawer]);
 
   useEffect(() => {
     const el = gridRef.current;
@@ -236,6 +259,18 @@ export default function LeadsPage() {
         create-label="Nuevo Lead"
       ></zentto-grid>
       </Box>
+
+      {/* ─── Drawer de detalle (lateral derecho) ─── */}
+      <RightDetailDrawer
+        open={leadDrawer.open && drawerLeadId !== null}
+        onClose={leadDrawer.closeDrawer}
+        title="Detalle del lead"
+        subtitle={drawerLeadId ? `#${drawerLeadId}` : undefined}
+      >
+        {drawerLeadId && (
+          <LeadDetailPanel leadId={drawerLeadId} onClose={leadDrawer.closeDrawer} />
+        )}
+      </RightDetailDrawer>
 
       {/* Dialog Crear/Editar */}
       <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="sm" fullWidth>
