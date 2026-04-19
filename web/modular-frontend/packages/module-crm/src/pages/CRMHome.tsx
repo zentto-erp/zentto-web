@@ -21,6 +21,8 @@ import {
   Select,
   MenuItem,
   Badge,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
 import Grid from "@mui/material/Grid2";
 import { alpha } from "@mui/material/styles";
@@ -253,10 +255,19 @@ type AccordionKey = "shortcuts" | "alerts" | "kpis" | "trends" | "stats";
 
 const ACCORDION_STORAGE_KEY = "crm:home:accordions:v1";
 
-const DEFAULT_EXPANDED: Record<AccordionKey, boolean> = {
+const DESKTOP_DEFAULTS: Record<AccordionKey, boolean> = {
   shortcuts: true,
   alerts: true,
   kpis: true,
+  trends: false,
+  stats: false,
+};
+
+// Mobile: todas cerradas por defecto, el usuario expande una a la vez.
+const MOBILE_DEFAULTS: Record<AccordionKey, boolean> = {
+  shortcuts: false,
+  alerts: false,
+  kpis: false,
   trends: false,
   stats: false,
 };
@@ -265,11 +276,16 @@ const DEFAULT_EXPANDED: Record<AccordionKey, boolean> = {
 
 export default function CRMHome() {
   const router = useRouter();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   // Accordion state persistido en localStorage vía hook dedicado.
+  // Mobile usa defaults cerrados + modo exclusivo (solo 1 abierto a la vez)
+  // y una storage key distinta para no contaminar la preferencia desktop.
   const accordions = useAccordionState<AccordionKey>(
-    ACCORDION_STORAGE_KEY,
-    DEFAULT_EXPANDED,
+    isMobile ? `${ACCORDION_STORAGE_KEY}:mobile` : ACCORDION_STORAGE_KEY,
+    isMobile ? MOBILE_DEFAULTS : DESKTOP_DEFAULTS,
+    { exclusive: isMobile },
   );
 
   // State
