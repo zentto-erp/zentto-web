@@ -1,15 +1,16 @@
 // components/AlbaranesPage.tsx
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   Box, Button, Typography, Dialog, DialogTitle, DialogContent,
   DialogActions, TextField, Stack, Alert, MenuItem,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import type { ColumnDef } from "@zentto/datagrid-core";
-import { ZenttoDataGrid } from "@zentto/shared-ui";
 import { useAlbaranesList, useCrearAlbaran, useEmitirAlbaran, useFirmarAlbaran } from "../hooks/useConteoAlbaranes";
+
+const GRID_ID = "module-inventario:albaranes:list";
 
 const COLUMNS: ColumnDef[] = [
   { field: "Numero",          header: "N° Albarán",    width: 160, sortable: true },
@@ -33,8 +34,7 @@ const COLUMNS: ColumnDef[] = [
 ];
 
 export default function AlbaranesPage() {
-  const [page, setPage] = useState(1);
-  const [limit]         = useState(50);
+  const gridRef = useRef<any>(null);
   const [openNew, setOpenNew] = useState(false);
   const [tipo, setTipo]   = useState("DESPACHO");
   const [whFrom, setWhFrom] = useState("");
@@ -42,7 +42,7 @@ export default function AlbaranesPage() {
   const [destNombre, setDestNombre] = useState("");
   const [error, setError] = useState("");
 
-  const { data, isLoading }  = useAlbaranesList({ page, limit });
+  const { data, isLoading }  = useAlbaranesList({ page: 1, limit: 200 });
   const crearMut   = useCrearAlbaran();
   const emitirMut  = useEmitirAlbaran();
   const firmarMut  = useFirmarAlbaran();
@@ -53,15 +53,30 @@ export default function AlbaranesPage() {
     FechaEmision: r.FechaEmision ? r.FechaEmision.slice(0, 10) : "",
   }));
 
-  function handleAction(action: string, row: any) {
-    if (action === "emitir" && row.Estado === "BORRADOR") {
-      emitirMut.mutate(row.AlbaranId);
-    } else if (action === "firmar" && row.Estado === "EMITIDO") {
-      if (confirm(`¿Firmar albarán ${row.Numero}? Esta acción generará movimientos de stock.`)) {
-        firmarMut.mutate({ id: row.AlbaranId });
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el) return;
+    el.columns = COLUMNS;
+    el.rows = rows;
+    el.loading = isLoading;
+  }, [rows, isLoading]);
+
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el) return;
+    const handler = (e: CustomEvent) => {
+      const { action, row } = e.detail;
+      if (action === "emitir" && row.Estado === "BORRADOR") {
+        emitirMut.mutate(row.AlbaranId);
+      } else if (action === "firmar" && row.Estado === "EMITIDO") {
+        if (confirm(`¿Firmar albarán ${row.Numero}? Esta acción generará movimientos de stock.`)) {
+          firmarMut.mutate({ id: row.AlbaranId });
+        }
       }
-    }
-  }
+    };
+    el.addEventListener("action-click", handler);
+    return () => el.removeEventListener("action-click", handler);
+  }, [emitirMut, firmarMut]);
 
   async function handleCrear() {
     setError("");
@@ -88,16 +103,14 @@ export default function AlbaranesPage() {
         </Button>
       </Stack>
 
-      <ZenttoDataGrid
-        columns={COLUMNS}
-        rows={rows}
-        loading={isLoading}
-        totalRows={data?.total ?? 0}
-        page={page}
-        pageSize={limit}
-        onPageChange={setPage}
-        onAction={handleAction}
-        height={520}
+      <zentto-grid
+        ref={gridRef}
+        grid-id={GRID_ID}
+        height="520px"
+        enable-toolbar
+        enable-header-filters
+        enable-status-bar
+        enable-quick-search
       />
 
       <Dialog open={openNew} onClose={() => setOpenNew(false)} maxWidth="sm" fullWidth>
@@ -122,4 +135,12 @@ export default function AlbaranesPage() {
       </Dialog>
     </Box>
   );
+}
+
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'zentto-grid': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & Record<string, any>, HTMLElement>;
+    }
+  }
 }
