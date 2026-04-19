@@ -2,14 +2,15 @@
 -- Fix: usp_crm_saved_view_list y usp_crm_saved_view_detail usaban TIMESTAMPTZ
 -- en el RETURNS TABLE. El contrato del proyecto requiere TIMESTAMP (sin zona).
 -- La tabla interna sigue usando TIMESTAMPTZ; las funciones castean al retornar.
+-- DROP antes de CREATE porque PostgreSQL no permite cambiar el tipo de retorno
+-- con CREATE OR REPLACE FUNCTION.
 
--- DROP antes de CREATE para permitir cambio de tipo de retorno (TIMESTAMPTZ → TIMESTAMP)
 -- +goose StatementBegin
 DROP FUNCTION IF EXISTS public.usp_crm_saved_view_list(INTEGER, INTEGER, VARCHAR);
 -- +goose StatementEnd
 
 -- +goose StatementBegin
-CREATE OR REPLACE FUNCTION public.usp_crm_saved_view_list(
+CREATE FUNCTION public.usp_crm_saved_view_list(
     p_company_id INTEGER,
     p_user_id    INTEGER,
     p_entity     VARCHAR DEFAULT NULL
@@ -60,7 +61,7 @@ DROP FUNCTION IF EXISTS public.usp_crm_saved_view_detail(INTEGER, INTEGER, BIGIN
 -- +goose StatementEnd
 
 -- +goose StatementBegin
-CREATE OR REPLACE FUNCTION public.usp_crm_saved_view_detail(
+CREATE FUNCTION public.usp_crm_saved_view_detail(
     p_company_id INTEGER,
     p_user_id    INTEGER,
     p_view_id    BIGINT
