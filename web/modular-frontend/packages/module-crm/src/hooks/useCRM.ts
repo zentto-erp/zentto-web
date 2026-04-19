@@ -225,3 +225,44 @@ export function useCompleteActivity() {
     onSuccess: () => qc.invalidateQueries({ queryKey: [QK_ACTIVITIES] }),
   });
 }
+
+/** Actualiza campos de una actividad (subject/description/dueDate/assignedTo/type). */
+export function useUpdateActivity() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (d: { id: number } & Record<string, any>) => {
+      const { id, ...payload } = d;
+      return apiPut(`${BASE}/actividades/${id}`, payload);
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: [QK_ACTIVITIES] }),
+  });
+}
+
+/**
+ * Elimina una actividad. La API actual solo expone soft-delete vía PUT
+ * `{ isDeleted: true }`. Si en el futuro se añade DELETE explícito, cambiar aquí.
+ */
+export function useDeleteActivity() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => apiDelete(`${BASE}/actividades/${id}`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: [QK_ACTIVITIES] }),
+  });
+}
+
+/**
+ * Reasigna una o más actividades a un usuario distinto. Bulk helper para
+ * bulk actions en la tabla de actividades.
+ */
+export function useReassignActivities() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (d: { ids: number[]; assignedTo: number }) => {
+      const results = await Promise.all(
+        d.ids.map((id) => apiPut(`${BASE}/actividades/${id}`, { assignedTo: d.assignedTo })),
+      );
+      return results;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: [QK_ACTIVITIES] }),
+  });
+}
