@@ -496,6 +496,124 @@ components:
         TotalNet:
           type: number
           nullable: true
+    CrmSavedView:
+      type: object
+      description: Vista guardada (filtros + columnas + orden) por usuario y entidad CRM.
+      properties:
+        ViewId:
+          type: integer
+          format: int64
+        CompanyId:
+          type: integer
+        UserId:
+          type: integer
+        Entity:
+          type: string
+          enum: [LEAD, CONTACT, COMPANY, DEAL, ACTIVITY]
+        Name:
+          type: string
+        FilterJson:
+          type: object
+          nullable: true
+          additionalProperties: true
+        ColumnsJson:
+          nullable: true
+          oneOf:
+            - type: array
+              items: {}
+            - type: object
+              additionalProperties: true
+        SortJson:
+          nullable: true
+          oneOf:
+            - type: array
+              items: {}
+            - type: object
+              additionalProperties: true
+        IsShared:
+          type: boolean
+        IsDefault:
+          type: boolean
+        IsOwner:
+          type: boolean
+        CreatedAt:
+          type: string
+          format: date-time
+        UpdatedAt:
+          type: string
+          format: date-time
+    CrmSavedViewCreate:
+      type: object
+      required: [entity, name]
+      properties:
+        entity:
+          type: string
+          enum: [LEAD, CONTACT, COMPANY, DEAL, ACTIVITY]
+        name:
+          type: string
+          maxLength: 200
+        filterJson:
+          type: object
+          additionalProperties: true
+        columnsJson:
+          nullable: true
+          oneOf:
+            - type: array
+              items: {}
+            - type: object
+              additionalProperties: true
+        sortJson:
+          nullable: true
+          oneOf:
+            - type: array
+              items: {}
+            - type: object
+              additionalProperties: true
+        isShared:
+          type: boolean
+          default: false
+        isDefault:
+          type: boolean
+          default: false
+    CrmSavedViewUpdate:
+      type: object
+      description: Todos los campos son opcionales. Solo el owner puede actualizar.
+      properties:
+        name:
+          type: string
+          maxLength: 200
+        filterJson:
+          type: object
+          additionalProperties: true
+        columnsJson:
+          nullable: true
+          oneOf:
+            - type: array
+              items: {}
+            - type: object
+              additionalProperties: true
+        sortJson:
+          nullable: true
+          oneOf:
+            - type: array
+              items: {}
+            - type: object
+              additionalProperties: true
+        isShared:
+          type: boolean
+        isDefault:
+          type: boolean
+    CrmSavedViewMutationResult:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        viewId:
+          type: integer
+          format: int64
+          nullable: true
   parameters:
     IdParam:
       in: path
@@ -9299,6 +9417,161 @@ paths:
       responses:
         "201":
           $ref: "#/components/responses/CreatedObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/crm/saved-views:
+    get:
+      tags:
+        - CRM
+      summary: Lista vistas guardadas del usuario + compartidas del tenant
+      description: Retorna las vistas del usuario actual mas las vistas con IsShared=TRUE del mismo tenant.
+      x-db-agnostic: true
+      parameters:
+        - in: query
+          name: entity
+          required: false
+          schema:
+            type: string
+            enum: [LEAD, CONTACT, COMPANY, DEAL, ACTIVITY]
+      responses:
+        "200":
+          description: Lista de vistas guardadas
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  rows:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/CrmSavedView"
+                  total:
+                    type: integer
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      tags:
+        - CRM
+      summary: Crea una vista guardada
+      x-db-agnostic: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CrmSavedViewCreate"
+      responses:
+        "201":
+          description: Vista creada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CrmSavedViewMutationResult"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/crm/saved-views/{id}:
+    get:
+      tags:
+        - CRM
+      summary: Detalle de una vista guardada
+      x-db-agnostic: true
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: Vista guardada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CrmSavedView"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    patch:
+      tags:
+        - CRM
+      summary: Actualiza una vista guardada (solo owner)
+      x-db-agnostic: true
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CrmSavedViewUpdate"
+      responses:
+        "200":
+          description: Vista actualizada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CrmSavedViewMutationResult"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    delete:
+      tags:
+        - CRM
+      summary: Elimina una vista guardada (solo owner)
+      x-db-agnostic: true
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: Vista eliminada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CrmSavedViewMutationResult"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/crm/saved-views/{id}/default:
+    post:
+      tags:
+        - CRM
+      summary: Marca la vista como default del usuario para su entidad
+      x-db-agnostic: true
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: Default actualizado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CrmSavedViewMutationResult"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
