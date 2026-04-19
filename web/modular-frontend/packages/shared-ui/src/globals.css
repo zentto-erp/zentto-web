@@ -154,3 +154,32 @@ input[type="number"] {
     size: A4;
   }
 }
+
+/* ── CommandPalette (cmdk) — selectores que cmdk expone por data-attrs ──── */
+[cmdk-root] [cmdk-group-heading] {
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--mui-palette-text-secondary, rgba(0, 0, 0, 0.6));
+  user-select: none;
+}
+
+[cmdk-root] [cmdk-item][data-selected='true'] {
+  background-color: color-mix(in srgb, var(--mui-palette-primary-main, #6366f1) 12%, transparent);
+}
+
+[cmdk-root] [cmdk-item][data-disabled='true'] {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+[cmdk-root] [cmdk-item] {
+  transition: background-color 120ms ease;
+}
+
+[cmdk-root] [cmdk-empty] {
+  padding: 0;
+}
+
