@@ -4,7 +4,11 @@
 -- La tabla interna sigue usando TIMESTAMPTZ; las funciones castean al retornar.
 
 -- +goose StatementBegin
-CREATE OR REPLACE FUNCTION public.usp_crm_saved_view_list(
+DROP FUNCTION IF EXISTS public.usp_crm_saved_view_list(INTEGER, INTEGER, VARCHAR);
+-- +goose StatementEnd
+
+-- +goose StatementBegin
+CREATE FUNCTION public.usp_crm_saved_view_list(
     p_company_id INTEGER,
     p_user_id    INTEGER,
     p_entity     VARCHAR DEFAULT NULL
@@ -51,7 +55,11 @@ $$;
 -- +goose StatementEnd
 
 -- +goose StatementBegin
-CREATE OR REPLACE FUNCTION public.usp_crm_saved_view_detail(
+DROP FUNCTION IF EXISTS public.usp_crm_saved_view_detail(INTEGER, INTEGER, BIGINT);
+-- +goose StatementEnd
+
+-- +goose StatementBegin
+CREATE FUNCTION public.usp_crm_saved_view_detail(
     p_company_id INTEGER,
     p_user_id    INTEGER,
     p_view_id    BIGINT
