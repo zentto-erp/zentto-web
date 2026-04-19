@@ -9,7 +9,7 @@ import {
 import AddIcon from "@mui/icons-material/Add";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import type { ColumnDef } from "@zentto/datagrid-core";
-import { ZenttoDataGrid } from "@zentto/shared-ui";
+import { InventarioGrid } from "./InventarioGrid";
 import { useConteoList, useCrearConteo, useCerrarConteo, useUpsertLineaConteo } from "../hooks/useConteoAlbaranes";
 
 const ESTADO_COLORS: Record<string, "default" | "info" | "warning" | "success" | "error"> = {
@@ -85,7 +85,7 @@ export default function ConteoFisicoPage() {
         </Button>
       </Stack>
 
-      <ZenttoDataGrid
+      <InventarioGrid
         columns={COLUMNS}
         rows={rows}
         loading={isLoading}

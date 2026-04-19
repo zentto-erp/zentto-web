@@ -8,7 +8,7 @@ import {
 import SearchIcon from "@mui/icons-material/Search";
 import InputAdornment from "@mui/material/InputAdornment";
 import type { ColumnDef } from "@zentto/datagrid-core";
-import { ZenttoDataGrid } from "@zentto/shared-ui";
+import { InventarioGrid } from "./InventarioGrid";
 import { useKardex } from "../hooks/useConteoAlbaranes";
 import { formatCurrency } from "@zentto/shared-api";
 
@@ -93,7 +93,7 @@ export default function KardexPage() {
         </Paper>
       )}
 
-      <ZenttoDataGrid
+      <InventarioGrid
         columns={COLUMNS}
         rows={rows}
         loading={isLoading}

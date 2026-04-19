@@ -8,7 +8,7 @@ import {
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import type { ColumnDef } from "@zentto/datagrid-core";
-import { ZenttoDataGrid } from "@zentto/shared-ui";
+import { InventarioGrid } from "./InventarioGrid";
 import { useTrasladosMPList, useCrearTrasladoMP, useAvanzarTrasladoMP } from "../hooks/useConteoAlbaranes";
 
 const ESTADO_ACTIONS: Record<string, string> = {
@@ -96,7 +96,7 @@ export default function TrasladosMultiPasoPage() {
         </Button>
       </Stack>
 
-      <ZenttoDataGrid
+      <InventarioGrid
         columns={COLUMNS}
         rows={rows}
         loading={isLoading}

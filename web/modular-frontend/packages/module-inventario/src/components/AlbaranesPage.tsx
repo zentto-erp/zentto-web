@@ -8,7 +8,7 @@ import {
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import type { ColumnDef } from "@zentto/datagrid-core";
-import { ZenttoDataGrid } from "@zentto/shared-ui";
+import { InventarioGrid } from "./InventarioGrid";
 import { useAlbaranesList, useCrearAlbaran, useEmitirAlbaran, useFirmarAlbaran } from "../hooks/useConteoAlbaranes";
 
 const COLUMNS: ColumnDef[] = [
@@ -88,7 +88,7 @@ export default function AlbaranesPage() {
         </Button>
       </Stack>
 
-      <ZenttoDataGrid
+      <InventarioGrid
         columns={COLUMNS}
         rows={rows}
         loading={isLoading}
