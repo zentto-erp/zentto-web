@@ -56,6 +56,7 @@ const nextConfig = {
     ];
   },
   transpilePackages: [
+    '@zentto/design-tokens',
     '@zentto/shared-auth',
     '@zentto/shared-i18n',
     '@zentto/shared-ui',
