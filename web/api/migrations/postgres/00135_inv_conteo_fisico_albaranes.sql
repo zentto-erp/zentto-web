@@ -1,3 +1,4 @@
+-- +goose Up
 -- Migration: 00135_inv_conteo_fisico_albaranes.sql
 -- Physical count (hoja de conteo), albaranes (delivery documents), multi-step transfer states
 -- Sprint 2 — Inventario PR4
@@ -5,12 +6,13 @@
 -- ─────────────────────────────────────────────────────────────────────────────
 -- 1. inv.HojaConteo — Physical count header
 -- ─────────────────────────────────────────────────────────────────────────────
+-- +goose StatementBegin
 CREATE TABLE IF NOT EXISTS inv."HojaConteo" (
     "HojaConteoId"  SERIAL       PRIMARY KEY,
     "CompanyId"     INT          NOT NULL,
     "WarehouseCode" VARCHAR(20)  NOT NULL,
-    "Numero"        VARCHAR(30)  NOT NULL,                 -- human-readable ref
-    "Estado"        VARCHAR(20)  NOT NULL DEFAULT 'BORRADOR',  -- BORRADOR | EN_PROCESO | APROBADA | CERRADA | CANCELADA
+    "Numero"        VARCHAR(30)  NOT NULL,
+    "Estado"        VARCHAR(20)  NOT NULL DEFAULT 'BORRADOR',
     "FechaConteo"   TIMESTAMP    NOT NULL DEFAULT NOW(),
     "FechaCierre"   TIMESTAMP    NULL,
     "ResponsableId" INT          NULL,
@@ -20,18 +22,22 @@ CREATE TABLE IF NOT EXISTS inv."HojaConteo" (
     CONSTRAINT chk_hoja_estado CHECK ("Estado" IN ('BORRADOR','EN_PROCESO','APROBADA','CERRADA','CANCELADA')),
     CONSTRAINT uq_hoja_numero   UNIQUE ("CompanyId", "Numero")
 );
+-- +goose StatementEnd
 
+-- +goose StatementBegin
 CREATE INDEX IF NOT EXISTS idx_hoja_conteo_company ON inv."HojaConteo" ("CompanyId", "Estado");
+-- +goose StatementEnd
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- 2. inv.HojaConteoLinea — Physical count lines (one per SKU counted)
 -- ─────────────────────────────────────────────────────────────────────────────
+-- +goose StatementBegin
 CREATE TABLE IF NOT EXISTS inv."HojaConteoLinea" (
     "LineaId"        SERIAL      PRIMARY KEY,
     "HojaConteoId"   INT         NOT NULL REFERENCES inv."HojaConteo"("HojaConteoId"),
     "ProductCode"    VARCHAR(50) NOT NULL,
-    "StockSistema"   NUMERIC(14,4) NOT NULL DEFAULT 0,   -- snapshot at count start
-    "StockFisico"    NUMERIC(14,4) NULL,                 -- entered by counter
+    "StockSistema"   NUMERIC(14,4) NOT NULL DEFAULT 0,
+    "StockFisico"    NUMERIC(14,4) NULL,
     "Diferencia"     NUMERIC(14,4) GENERATED ALWAYS AS ("StockFisico" - "StockSistema") STORED,
     "UnitCost"       NUMERIC(14,4) NOT NULL DEFAULT 0,
     "Justificacion"  VARCHAR(500) NULL,
@@ -39,18 +45,22 @@ CREATE TABLE IF NOT EXISTS inv."HojaConteoLinea" (
     "ContadoAt"      TIMESTAMP   NULL,
     CONSTRAINT uq_hoja_linea    UNIQUE ("HojaConteoId", "ProductCode")
 );
+-- +goose StatementEnd
 
+-- +goose StatementBegin
 CREATE INDEX IF NOT EXISTS idx_hoja_linea_hoja ON inv."HojaConteoLinea" ("HojaConteoId");
+-- +goose StatementEnd
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- 3. inv.Albaran — Delivery/reception document with legal value
 -- ─────────────────────────────────────────────────────────────────────────────
+-- +goose StatementBegin
 CREATE TABLE IF NOT EXISTS inv."Albaran" (
     "AlbaranId"      SERIAL       PRIMARY KEY,
     "CompanyId"      INT          NOT NULL,
     "Numero"         VARCHAR(40)  NOT NULL,
-    "Tipo"           VARCHAR(20)  NOT NULL DEFAULT 'DESPACHO',  -- DESPACHO | RECEPCION | TRASLADO
-    "Estado"         VARCHAR(20)  NOT NULL DEFAULT 'BORRADOR',  -- BORRADOR | EMITIDO | FIRMADO | ANULADO
+    "Tipo"           VARCHAR(20)  NOT NULL DEFAULT 'DESPACHO',
+    "Estado"         VARCHAR(20)  NOT NULL DEFAULT 'BORRADOR',
     "FechaEmision"   TIMESTAMP    NOT NULL DEFAULT NOW(),
     "FechaFirma"     TIMESTAMP    NULL,
     "WarehouseFrom"  VARCHAR(20)  NULL,
@@ -61,22 +71,26 @@ CREATE TABLE IF NOT EXISTS inv."Albaran" (
     "Observaciones"  TEXT         NULL,
     "FirmadoPorId"   INT          NULL,
     "FirmadoPorNombre" VARCHAR(200) NULL,
-    "SourceDocumentType" VARCHAR(30) NULL,  -- ORDER | TRASLADO | CONTEO | MANUAL
+    "SourceDocumentType" VARCHAR(30) NULL,
     "SourceDocumentId"   INT          NULL,
-    "ReportLayoutId" INT          NULL,     -- zentto-report layout reference
+    "ReportLayoutId" INT          NULL,
     "CreatedByUserId" INT         NULL,
     "CreatedAt"      TIMESTAMP    NOT NULL DEFAULT NOW(),
     CONSTRAINT chk_albaran_tipo   CHECK ("Tipo"   IN ('DESPACHO','RECEPCION','TRASLADO')),
     CONSTRAINT chk_albaran_estado CHECK ("Estado" IN ('BORRADOR','EMITIDO','FIRMADO','ANULADO')),
     CONSTRAINT uq_albaran_numero  UNIQUE ("CompanyId", "Numero")
 );
+-- +goose StatementEnd
 
+-- +goose StatementBegin
 CREATE INDEX IF NOT EXISTS idx_albaran_company ON inv."Albaran" ("CompanyId", "Estado", "Tipo");
 CREATE INDEX IF NOT EXISTS idx_albaran_fecha   ON inv."Albaran" ("CompanyId", "FechaEmision");
+-- +goose StatementEnd
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- 4. inv.AlbaranLinea — Line items of a delivery document
 -- ─────────────────────────────────────────────────────────────────────────────
+-- +goose StatementBegin
 CREATE TABLE IF NOT EXISTS inv."AlbaranLinea" (
     "AlbaranLineaId" SERIAL       PRIMARY KEY,
     "AlbaranId"      INT          NOT NULL REFERENCES inv."Albaran"("AlbaranId"),
@@ -89,18 +103,21 @@ CREATE TABLE IF NOT EXISTS inv."AlbaranLinea" (
     "FechaVencimiento" DATE       NULL,
     "Observaciones"  VARCHAR(500) NULL
 );
+-- +goose StatementEnd
 
+-- +goose StatementBegin
 CREATE INDEX IF NOT EXISTS idx_albaran_linea_albaran ON inv."AlbaranLinea" ("AlbaranId");
+-- +goose StatementEnd
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- 5. inv.TrasladoMultiPaso — Tracked multi-step warehouse transfer
 -- ─────────────────────────────────────────────────────────────────────────────
+-- +goose StatementBegin
 CREATE TABLE IF NOT EXISTS inv."TrasladoMultiPaso" (
     "TrasladoId"     SERIAL       PRIMARY KEY,
     "CompanyId"      INT          NOT NULL,
     "Numero"         VARCHAR(40)  NOT NULL,
     "Estado"         VARCHAR(20)  NOT NULL DEFAULT 'BORRADOR',
-    -- BORRADOR → PENDIENTE → EN_TRANSITO → RECIBIDO → CERRADO | CANCELADO
     "WarehouseFrom"  VARCHAR(20)  NOT NULL,
     "WarehouseTo"    VARCHAR(20)  NOT NULL,
     "FechaSolicitud" TIMESTAMP    NOT NULL DEFAULT NOW(),
@@ -116,12 +133,16 @@ CREATE TABLE IF NOT EXISTS inv."TrasladoMultiPaso" (
     CONSTRAINT chk_traslado_estado CHECK ("Estado" IN ('BORRADOR','PENDIENTE','EN_TRANSITO','RECIBIDO','CERRADO','CANCELADO')),
     CONSTRAINT uq_traslado_numero  UNIQUE ("CompanyId", "Numero")
 );
+-- +goose StatementEnd
 
+-- +goose StatementBegin
 CREATE INDEX IF NOT EXISTS idx_traslado_company ON inv."TrasladoMultiPaso" ("CompanyId", "Estado");
+-- +goose StatementEnd
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- 6. inv.TrasladoMultiPasoLinea — Line items of a multi-step transfer
 -- ─────────────────────────────────────────────────────────────────────────────
+-- +goose StatementBegin
 CREATE TABLE IF NOT EXISTS inv."TrasladoMultiPasoLinea" (
     "TrasladoLineaId" SERIAL      PRIMARY KEY,
     "TrasladoId"      INT         NOT NULL REFERENCES inv."TrasladoMultiPaso"("TrasladoId"),
@@ -133,17 +154,21 @@ CREATE TABLE IF NOT EXISTS inv."TrasladoMultiPasoLinea" (
     "Observaciones"      VARCHAR(500) NULL,
     CONSTRAINT uq_traslado_linea UNIQUE ("TrasladoId", "ProductCode")
 );
+-- +goose StatementEnd
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- 7. SEQUENCE helpers — numero generation
 -- ─────────────────────────────────────────────────────────────────────────────
+-- +goose StatementBegin
 CREATE SEQUENCE IF NOT EXISTS inv.seq_hoja_conteo_numero START 1 INCREMENT 1;
 CREATE SEQUENCE IF NOT EXISTS inv.seq_albaran_numero     START 1 INCREMENT 1;
 CREATE SEQUENCE IF NOT EXISTS inv.seq_traslado_numero    START 1 INCREMENT 1;
+-- +goose StatementEnd
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- 8. usp_inv_conteo_fisico_create — Create physical count sheet
 -- ─────────────────────────────────────────────────────────────────────────────
+-- +goose StatementBegin
 CREATE OR REPLACE FUNCTION usp_inv_conteo_fisico_create(
     p_company_id      INT,
     p_warehouse_code  VARCHAR(20),
@@ -174,10 +199,12 @@ BEGIN
     RETURN QUERY SELECT TRUE, v_id, v_numero, 'Hoja de conteo creada';
 END;
 $$;
+-- +goose StatementEnd
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- 9. usp_inv_conteo_fisico_upsert_linea — Add/update count line
 -- ─────────────────────────────────────────────────────────────────────────────
+-- +goose StatementBegin
 CREATE OR REPLACE FUNCTION usp_inv_conteo_fisico_upsert_linea(
     p_hoja_conteo_id  INT,
     p_product_code    VARCHAR(50),
@@ -207,7 +234,6 @@ BEGIN
         RETURN;
     END IF;
 
-    -- Snapshot current logical stock for this company
     SELECT COALESCE(SUM(
         CASE WHEN sm."MovementType" IN ('PURCHASE_IN','TRANSFER_IN','ADJUSTMENT_IN') THEN sm."Quantity"
              WHEN sm."MovementType" IN ('SALE_OUT','TRANSFER_OUT','ADJUSTMENT_OUT') THEN -sm."Quantity"
@@ -235,10 +261,12 @@ BEGIN
     RETURN QUERY SELECT TRUE, v_linea_id, 'Línea guardada';
 END;
 $$;
+-- +goose StatementEnd
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- 10. usp_inv_conteo_fisico_close — Approve count and generate AJUSTE movements
 -- ─────────────────────────────────────────────────────────────────────────────
+-- +goose StatementBegin
 CREATE OR REPLACE FUNCTION usp_inv_conteo_fisico_close(
     p_hoja_conteo_id  INT,
     p_company_id      INT,
@@ -268,7 +296,6 @@ BEGIN
         RETURN;
     END IF;
 
-    -- Generate AJUSTE movement for every line with non-zero difference
     FOR rec IN
         SELECT l."ProductCode", l."Diferencia", l."UnitCost"
         FROM inv."HojaConteoLinea" l
@@ -303,10 +330,12 @@ BEGIN
     RETURN QUERY SELECT TRUE, v_ajustes, 'Conteo cerrado. Ajustes generados: ' || v_ajustes;
 END;
 $$;
+-- +goose StatementEnd
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- 11. usp_inv_conteo_fisico_list — List physical count sheets (paginated)
 -- ─────────────────────────────────────────────────────────────────────────────
+-- +goose StatementBegin
 CREATE OR REPLACE FUNCTION usp_inv_conteo_fisico_list(
     p_company_id     INT,
     p_estado         VARCHAR(20) DEFAULT NULL,
@@ -351,10 +380,12 @@ BEGIN
     LIMIT v_limit OFFSET v_offset;
 END;
 $$;
+-- +goose StatementEnd
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- 12. usp_inv_albaran_create — Create delivery/reception document
 -- ─────────────────────────────────────────────────────────────────────────────
+-- +goose StatementBegin
 CREATE OR REPLACE FUNCTION usp_inv_albaran_create(
     p_company_id       INT,
     p_tipo             VARCHAR(20),
@@ -408,10 +439,12 @@ BEGIN
     RETURN QUERY SELECT TRUE, v_id, v_numero, 'Albarán creado';
 END;
 $$;
+-- +goose StatementEnd
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- 13. usp_inv_albaran_add_linea — Add line to albarán
 -- ─────────────────────────────────────────────────────────────────────────────
+-- +goose StatementBegin
 CREATE OR REPLACE FUNCTION usp_inv_albaran_add_linea(
     p_albaran_id    INT,
     p_product_code  VARCHAR(50),
@@ -447,10 +480,12 @@ BEGIN
     RETURN QUERY SELECT TRUE, v_id, 'Línea agregada';
 END;
 $$;
+-- +goose StatementEnd
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- 14. usp_inv_albaran_emit — Emit albarán (BORRADOR → EMITIDO)
 -- ─────────────────────────────────────────────────────────────────────────────
+-- +goose StatementBegin
 CREATE OR REPLACE FUNCTION usp_inv_albaran_emit(
     p_albaran_id INT,
     p_company_id INT,
@@ -490,11 +525,12 @@ BEGIN
     RETURN QUERY SELECT TRUE, 'Albarán emitido';
 END;
 $$;
+-- +goose StatementEnd
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- 15. usp_inv_albaran_sign — Digitally sign albarán (EMITIDO → FIRMADO)
---     Signing triggers stock movement for DESPACHO/RECEPCION
 -- ─────────────────────────────────────────────────────────────────────────────
+-- +goose StatementBegin
 CREATE OR REPLACE FUNCTION usp_inv_albaran_sign(
     p_albaran_id  INT,
     p_company_id  INT,
@@ -528,7 +564,6 @@ BEGIN
         RETURN;
     END IF;
 
-    -- Determine movement type and warehouse
     IF v_tipo = 'DESPACHO' THEN
         v_movtype := 'SALE_OUT';
         v_whcode  := COALESCE(v_whfrom, 'PRINCIPAL');
@@ -536,7 +571,6 @@ BEGIN
         v_movtype := 'PURCHASE_IN';
         v_whcode  := COALESCE(v_whto, 'PRINCIPAL');
     ELSE
-        -- TRASLADO: movements handled by TrasladoMultiPaso workflow
         v_movtype := NULL;
         v_whcode  := NULL;
     END IF;
@@ -571,10 +605,12 @@ BEGIN
     RETURN QUERY SELECT TRUE, v_movs, 'Albarán firmado. Movimientos generados: ' || v_movs;
 END;
 $$;
+-- +goose StatementEnd
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- 16. usp_inv_traslado_create — Create multi-step warehouse transfer
 -- ─────────────────────────────────────────────────────────────────────────────
+-- +goose StatementBegin
 CREATE OR REPLACE FUNCTION usp_inv_traslado_create(
     p_company_id     INT,
     p_warehouse_from VARCHAR(20),
@@ -612,15 +648,17 @@ BEGIN
     RETURN QUERY SELECT TRUE, v_id, v_numero, 'Traslado creado';
 END;
 $$;
+-- +goose StatementEnd
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- 17. usp_inv_traslado_advance — Advance multi-step transfer state machine
 -- ─────────────────────────────────────────────────────────────────────────────
+-- +goose StatementBegin
 CREATE OR REPLACE FUNCTION usp_inv_traslado_advance(
     p_traslado_id INT,
     p_company_id  INT,
     p_user_id     INT,
-    p_action      VARCHAR(20)  -- APROBAR | DESPACHAR | RECIBIR | CANCELAR
+    p_action      VARCHAR(20)
 )
 RETURNS TABLE("ok" BOOLEAN, "NuevoEstado" VARCHAR, "AlbaranId" INT, "mensaje" TEXT)
 LANGUAGE plpgsql AS $$
@@ -643,7 +681,6 @@ BEGIN
         RETURN;
     END IF;
 
-    -- State machine validation
     IF p_action = 'APROBAR' AND v_estado = 'BORRADOR' THEN
         v_nuevo_est := 'PENDIENTE';
         UPDATE inv."TrasladoMultiPaso"
@@ -651,7 +688,6 @@ BEGIN
         WHERE "TrasladoId" = p_traslado_id;
 
     ELSIF p_action = 'DESPACHAR' AND v_estado = 'PENDIENTE' THEN
-        -- Create exit albarán and stock movements (TRANSFER_OUT)
         SELECT a."AlbaranId" INTO v_alb_id
         FROM usp_inv_albaran_create(
             p_company_id, 'TRASLADO', v_whfrom, v_whto,
@@ -688,7 +724,6 @@ BEGIN
         v_nuevo_est := 'EN_TRANSITO';
 
     ELSIF p_action = 'RECIBIR' AND v_estado = 'EN_TRANSITO' THEN
-        -- Create reception albarán and stock movements (TRANSFER_IN)
         SELECT a."AlbaranId" INTO v_alb_id
         FROM usp_inv_albaran_create(
             p_company_id, 'TRASLADO', v_whfrom, v_whto,
@@ -739,10 +774,12 @@ BEGIN
     RETURN QUERY SELECT TRUE, v_nuevo_est, v_alb_id, 'Traslado avanzado a ' || v_nuevo_est;
 END;
 $$;
+-- +goose StatementEnd
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- 18. usp_inv_albaran_list — List albaranes (paginated)
 -- ─────────────────────────────────────────────────────────────────────────────
+-- +goose StatementBegin
 CREATE OR REPLACE FUNCTION usp_inv_albaran_list(
     p_company_id INT,
     p_tipo       VARCHAR(20) DEFAULT NULL,
@@ -793,7 +830,63 @@ BEGIN
     LIMIT v_limit OFFSET v_offset;
 END;
 $$;
+-- +goose StatementEnd
 
--- ─────────────────────────────────────────────────────────────────────────────
--- SQL Server equivalents are in web/api/sqlweb/includes/sp/ (see PR notes)
--- ─────────────────────────────────────────────────────────────────────────────
+
+-- +goose Down
+-- +goose StatementBegin
+DROP FUNCTION IF EXISTS usp_inv_albaran_list(INT, VARCHAR, VARCHAR, TIMESTAMP, TIMESTAMP, INT, INT);
+-- +goose StatementEnd
+-- +goose StatementBegin
+DROP FUNCTION IF EXISTS usp_inv_traslado_advance(INT, INT, INT, VARCHAR);
+-- +goose StatementEnd
+-- +goose StatementBegin
+DROP FUNCTION IF EXISTS usp_inv_traslado_create(INT, VARCHAR, VARCHAR, INT, TEXT);
+-- +goose StatementEnd
+-- +goose StatementBegin
+DROP FUNCTION IF EXISTS usp_inv_albaran_sign(INT, INT, INT, VARCHAR);
+-- +goose StatementEnd
+-- +goose StatementBegin
+DROP FUNCTION IF EXISTS usp_inv_albaran_emit(INT, INT, INT);
+-- +goose StatementEnd
+-- +goose StatementBegin
+DROP FUNCTION IF EXISTS usp_inv_albaran_add_linea(INT, VARCHAR, NUMERIC, VARCHAR, NUMERIC, VARCHAR, DATE, VARCHAR);
+-- +goose StatementEnd
+-- +goose StatementBegin
+DROP FUNCTION IF EXISTS usp_inv_albaran_create(INT, VARCHAR, VARCHAR, VARCHAR, VARCHAR, VARCHAR, VARCHAR, INT, TEXT, INT);
+-- +goose StatementEnd
+-- +goose StatementBegin
+DROP FUNCTION IF EXISTS usp_inv_conteo_fisico_list(INT, VARCHAR, VARCHAR, INT, INT);
+-- +goose StatementEnd
+-- +goose StatementBegin
+DROP FUNCTION IF EXISTS usp_inv_conteo_fisico_close(INT, INT, INT);
+-- +goose StatementEnd
+-- +goose StatementBegin
+DROP FUNCTION IF EXISTS usp_inv_conteo_fisico_upsert_linea(INT, VARCHAR, NUMERIC, NUMERIC, VARCHAR, INT);
+-- +goose StatementEnd
+-- +goose StatementBegin
+DROP FUNCTION IF EXISTS usp_inv_conteo_fisico_create(INT, VARCHAR, INT, TEXT);
+-- +goose StatementEnd
+-- +goose StatementBegin
+DROP SEQUENCE IF EXISTS inv.seq_traslado_numero;
+DROP SEQUENCE IF EXISTS inv.seq_albaran_numero;
+DROP SEQUENCE IF EXISTS inv.seq_hoja_conteo_numero;
+-- +goose StatementEnd
+-- +goose StatementBegin
+DROP TABLE IF EXISTS inv."TrasladoMultiPasoLinea";
+-- +goose StatementEnd
+-- +goose StatementBegin
+DROP TABLE IF EXISTS inv."TrasladoMultiPaso";
+-- +goose StatementEnd
+-- +goose StatementBegin
+DROP TABLE IF EXISTS inv."AlbaranLinea";
+-- +goose StatementEnd
+-- +goose StatementBegin
+DROP TABLE IF EXISTS inv."Albaran";
+-- +goose StatementEnd
+-- +goose StatementBegin
+DROP TABLE IF EXISTS inv."HojaConteoLinea";
+-- +goose StatementEnd
+-- +goose StatementBegin
+DROP TABLE IF EXISTS inv."HojaConteo";
+-- +goose StatementEnd

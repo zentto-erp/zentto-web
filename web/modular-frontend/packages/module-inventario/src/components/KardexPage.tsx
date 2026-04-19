@@ -1,14 +1,13 @@
 // components/KardexPage.tsx
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   Box, TextField, Typography, Stack, Chip, Paper,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import InputAdornment from "@mui/material/InputAdornment";
 import type { ColumnDef } from "@zentto/datagrid-core";
-import { ZenttoDataGrid } from "@zentto/shared-ui";
 import { useKardex } from "../hooks/useConteoAlbaranes";
 import { formatCurrency } from "@zentto/shared-api";
 
@@ -25,6 +24,8 @@ const MOVTYPE_COLORS: Record<string, string> = {
   AJUSTE:         "default",
 };
 
+const GRID_ID = "module-inventario:kardex:list";
+
 const COLUMNS: ColumnDef[] = [
   { field: "FechaMovimiento",      header: "Fecha",          width: 120 },
   { field: "TipoMovimiento",       header: "Tipo",           width: 140,
@@ -38,18 +39,17 @@ const COLUMNS: ColumnDef[] = [
 ];
 
 export default function KardexPage() {
+  const gridRef = useRef<any>(null);
   const [search, setSearch]     = useState("");
   const [codigo, setCodigo]     = useState("");
   const [fechaDesde, setDesde]  = useState("");
   const [fechaHasta, setHasta]  = useState("");
-  const [page, setPage]         = useState(1);
-  const limit = 100;
 
   const { data, isLoading } = useKardex(codigo, {
     fechaDesde: fechaDesde || undefined,
     fechaHasta: fechaHasta || undefined,
-    page,
-    limit,
+    page: 1,
+    limit: 500,
   });
 
   const rows = (data?.rows ?? []).map((r, i) => ({
@@ -58,9 +58,16 @@ export default function KardexPage() {
     FechaMovimiento: r.FechaMovimiento?.slice(0, 10) ?? "",
   }));
 
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el) return;
+    el.columns = COLUMNS;
+    el.rows = rows;
+    el.loading = isLoading;
+  }, [rows, isLoading]);
+
   function handleSearch() {
     setCodigo(search.trim());
-    setPage(1);
   }
 
   return (
@@ -93,16 +100,24 @@ export default function KardexPage() {
         </Paper>
       )}
 
-      <ZenttoDataGrid
-        columns={COLUMNS}
-        rows={rows}
-        loading={isLoading}
-        totalRows={data?.total ?? 0}
-        page={page}
-        pageSize={limit}
-        onPageChange={setPage}
-        height={520}
+      <zentto-grid
+        ref={gridRef}
+        grid-id={GRID_ID}
+        height="520px"
+        enable-toolbar
+        enable-header-filters
+        enable-status-bar
+        enable-quick-search
+        export-filename="kardex"
       />
     </Box>
   );
+}
+
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'zentto-grid': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & Record<string, any>, HTMLElement>;
+    }
+  }
 }

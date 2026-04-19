@@ -32687,7 +32687,7 @@ END;
 $$;
 
 
-CREATE FUNCTION public.usp_rest_admin_adjuststock(p_product_id bigint, p_delta_qty numeric) RETURNS void
+CREATE FUNCTION public.usp_rest_admin_adjuststock(p_company_id integer, p_product_id bigint, p_delta_qty numeric) RETURNS void
     LANGUAGE plpgsql
     AS $$
 BEGIN
@@ -32698,7 +32698,8 @@ BEGIN
     UPDATE master."Product"
     SET "StockQty" = COALESCE("StockQty", 0) + p_delta_qty,
         "UpdatedAt" = NOW() AT TIME ZONE 'UTC'
-    WHERE "ProductId" = p_product_id;
+    WHERE "ProductId" = p_product_id
+      AND "CompanyId" = p_company_id;
 END;
 $$;
 
