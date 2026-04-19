@@ -101,3 +101,70 @@ export function useDeletePaymentAccount() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["payment-accounts"] }),
   });
 }
+
+// ─── Cobros Online ───────────────────────────────────────────────────
+
+export interface PaymentTransaction {
+  TransactionId: string;
+  Provider: string;
+  ProviderTxnId: string;
+  OwnerApp: string;
+  CompanyId: number | null;
+  Amount: number;
+  Currency: string;
+  CustomerEmail: string | null;
+  CustomerName: string | null;
+  Status: "pending" | "processing" | "paid" | "failed" | "cancelled" | "refunded" | "expired";
+  CallbackUrl: string;
+  Metadata: Record<string, unknown> | null;
+  CheckoutUrl: string | null;
+  CreatedAt: string;
+  UpdatedAt: string;
+  PaidAt: string | null;
+}
+
+export interface TransactionsFilters {
+  status?: string;
+  provider?: string;
+  customerEmail?: string;
+  from?: string;
+  to?: string;
+  limit?: number;
+  offset?: number;
+}
+
+export function usePaymentTransactions(filters: TransactionsFilters = {}) {
+  const qs = new URLSearchParams();
+  for (const [k, v] of Object.entries(filters)) {
+    if (v !== undefined && v !== null && v !== "") qs.set(k, String(v));
+  }
+  const qsStr = qs.toString();
+  return useQuery({
+    queryKey: ["payment-transactions", filters],
+    queryFn: () => apiGet(`/v1/payment-accounts/transactions${qsStr ? `?${qsStr}` : ""}`) as Promise<{ rows: PaymentTransaction[]; total: number }>,
+    staleTime: 30_000,
+  });
+}
+
+export interface DashboardSummary {
+  totalTransactions: number;
+  totalPaid: number;
+  totalPending: number;
+  totalFailed: number;
+  amountPaidByMonth: Array<{ month: string; amount: number; currency: string; count: number }>;
+  amountByProvider: Array<{ provider: string; amount: number; count: number }>;
+  amountByApp: Array<{ ownerApp: string; amount: number; count: number }>;
+  recentTransactions: PaymentTransaction[];
+}
+
+export function usePaymentsDashboard(filters: { from?: string; to?: string } = {}) {
+  const qs = new URLSearchParams();
+  if (filters.from) qs.set("from", filters.from);
+  if (filters.to) qs.set("to", filters.to);
+  const qsStr = qs.toString();
+  return useQuery({
+    queryKey: ["payments-dashboard", filters],
+    queryFn: () => apiGet(`/v1/payment-accounts/dashboard${qsStr ? `?${qsStr}` : ""}`) as Promise<DashboardSummary>,
+    staleTime: 60_000,
+  });
+}

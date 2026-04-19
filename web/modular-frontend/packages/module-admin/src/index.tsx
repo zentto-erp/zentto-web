@@ -133,6 +133,9 @@ export type {
 } from './hooks/usePaymentAccounts';
 export { default as PaymentAccountsTable } from './components/modules/payment-accounts/PaymentAccountsTable';
 export { default as PaymentAccountFormDialog } from './components/modules/payment-accounts/PaymentAccountFormDialog';
+export { default as CobrosOnlineDashboard } from './components/modules/payment-accounts/CobrosOnlineDashboard';
+export { usePaymentTransactions, usePaymentsDashboard } from './hooks/usePaymentAccounts';
+export type { PaymentTransaction, TransactionsFilters, DashboardSummary as PaymentsDashboardSummary } from './hooks/usePaymentAccounts';
 
 // Home page
 export { default as AdminHome } from './pages/AdminHome';

@@ -295,6 +295,133 @@ export function trialExpiringTemplate(userName: string, daysLeft: number, upgrad
   return { subject, text, html };
 }
 
+// ─── Ecommerce — order lifecycle ─────────────────────────
+
+interface OrderItemSummary { name: string; quantity: number; unitPrice: string; lineTotal: string; }
+
+function renderOrderItems(items: OrderItemSummary[]): string {
+  if (!items.length) return "";
+  return `
+    <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin:16px 0;border-collapse:collapse">
+      <tbody>
+        ${items.map(i => `
+          <tr>
+            <td style="padding:10px 0;border-bottom:1px solid #ececf3;color:#1a1a2e;font-size:13px">
+              ${escapeHtml(i.name)}
+              <div style="color:#7a7a90;font-size:12px;margin-top:2px">Cant: ${i.quantity} &middot; ${escapeHtml(i.unitPrice)}</div>
+            </td>
+            <td style="padding:10px 0;border-bottom:1px solid #ececf3;color:#1a1a2e;font-size:13px;text-align:right;white-space:nowrap">
+              ${escapeHtml(i.lineTotal)}
+            </td>
+          </tr>`).join("")}
+      </tbody>
+    </table>`;
+}
+
+export function orderCreatedTemplate(args: {
+  customerName: string;
+  orderNumber: string;
+  total: string;
+  currency: string;
+  items: OrderItemSummary[];
+  trackingUrl: string;
+}) {
+  const subject = `Confirmamos tu pedido ${args.orderNumber} — Zentto Store`;
+  const text = `Hola ${args.customerName}, recibimos tu pedido ${args.orderNumber} por ${args.currency} ${args.total}. Te avisaremos cuando se confirme el pago.\n\nDetalle: ${args.trackingUrl}\n\n${BRAND.legalName} — ${BRAND.url}`;
+  const html = layout(`
+    <h2>Pedido recibido</h2>
+    <p>Hola <strong>${escapeHtml(args.customerName)}</strong>,</p>
+    <p>Recibimos tu pedido y lo estamos procesando. En breve te confirmaremos el pago.</p>
+    <div class="info-box">
+      <p><strong>Número de pedido:</strong> ${escapeHtml(args.orderNumber)}</p>
+      <p><strong>Total:</strong> ${escapeHtml(args.currency)} ${escapeHtml(args.total)}</p>
+    </div>
+    ${renderOrderItems(args.items)}
+    <p style="text-align:center"><a href="${args.trackingUrl}" class="btn">Ver mi pedido</a></p>
+  `, {
+    preheader: `Pedido ${args.orderNumber} por ${args.currency} ${args.total} recibido`,
+    reason: "Recibes este correo porque hiciste un pedido en Zentto Store.",
+    transactional: true,
+  });
+  return { subject, text, html };
+}
+
+export function orderPaidTemplate(args: {
+  customerName: string;
+  orderNumber: string;
+  total: string;
+  currency: string;
+  paymentRef: string;
+  trackingUrl: string;
+}) {
+  const subject = `Pago confirmado — pedido ${args.orderNumber}`;
+  const text = `Hola ${args.customerName}, confirmamos el pago de tu pedido ${args.orderNumber} por ${args.currency} ${args.total}. Ref: ${args.paymentRef}.\n\nSeguimiento: ${args.trackingUrl}\n\n${BRAND.legalName} — ${BRAND.url}`;
+  const html = layout(`
+    <h2>¡Pago confirmado!</h2>
+    <p>Hola <strong>${escapeHtml(args.customerName)}</strong>,</p>
+    <p>Tu pago fue procesado correctamente. Estamos preparando tu pedido para envío.</p>
+    <div class="info-box">
+      <p><strong>Pedido:</strong> ${escapeHtml(args.orderNumber)}</p>
+      <p><strong>Total:</strong> ${escapeHtml(args.currency)} ${escapeHtml(args.total)}</p>
+      <p><strong>Referencia de pago:</strong> ${escapeHtml(args.paymentRef)}</p>
+    </div>
+    <p style="text-align:center"><a href="${args.trackingUrl}" class="btn">Ver mi pedido</a></p>
+  `, {
+    preheader: `Pago confirmado — pedido ${args.orderNumber}`,
+    reason: "Recibes este correo porque hiciste un pedido en Zentto Store.",
+    transactional: true,
+  });
+  return { subject, text, html };
+}
+
+export function orderShippedTemplate(args: {
+  customerName: string;
+  orderNumber: string;
+  carrier?: string;
+  trackingNumber?: string;
+  trackingUrl: string;
+}) {
+  const subject = `Tu pedido ${args.orderNumber} fue enviado`;
+  const text = `Hola ${args.customerName}, tu pedido ${args.orderNumber} ya está en camino${args.carrier ? ` (${args.carrier}${args.trackingNumber ? ` — guía ${args.trackingNumber}` : ""})` : ""}.\n\nSeguimiento: ${args.trackingUrl}\n\n${BRAND.legalName} — ${BRAND.url}`;
+  const html = layout(`
+    <h2>Tu pedido está en camino 🚚</h2>
+    <p>Hola <strong>${escapeHtml(args.customerName)}</strong>,</p>
+    <p>Despachamos tu pedido. Pronto estará contigo.</p>
+    <div class="info-box">
+      <p><strong>Pedido:</strong> ${escapeHtml(args.orderNumber)}</p>
+      ${args.carrier ? `<p><strong>Transportista:</strong> ${escapeHtml(args.carrier)}</p>` : ""}
+      ${args.trackingNumber ? `<p><strong>Guía de envío:</strong> ${escapeHtml(args.trackingNumber)}</p>` : ""}
+    </div>
+    <p style="text-align:center"><a href="${args.trackingUrl}" class="btn">Hacer seguimiento</a></p>
+  `, {
+    preheader: `Pedido ${args.orderNumber} enviado`,
+    reason: "Recibes este correo porque hiciste un pedido en Zentto Store.",
+    transactional: true,
+  });
+  return { subject, text, html };
+}
+
+export function orderDeliveredTemplate(args: {
+  customerName: string;
+  orderNumber: string;
+  reviewUrl: string;
+}) {
+  const subject = `Pedido ${args.orderNumber} entregado`;
+  const text = `Hola ${args.customerName}, tu pedido ${args.orderNumber} ha sido entregado. ¡Gracias por confiar en Zentto Store!\n\nDeja tu reseña: ${args.reviewUrl}\n\n${BRAND.legalName} — ${BRAND.url}`;
+  const html = layout(`
+    <h2>Pedido entregado ✅</h2>
+    <p>Hola <strong>${escapeHtml(args.customerName)}</strong>,</p>
+    <p>Tu pedido <strong>${escapeHtml(args.orderNumber)}</strong> fue entregado. Esperamos que lo disfrutes.</p>
+    <p>¿Te ayudamos a contar tu experiencia? Tu opinión ayuda a otros compradores.</p>
+    <p style="text-align:center"><a href="${args.reviewUrl}" class="btn">Dejar reseña</a></p>
+  `, {
+    preheader: `Pedido ${args.orderNumber} entregado`,
+    reason: "Recibes este correo porque hiciste un pedido en Zentto Store.",
+    transactional: true,
+  });
+  return { subject, text, html };
+}
+
 export function paymentSuccessTemplate(customerName: string, planName: string, amount: string, nextBillingDate: string) {
   const subject = "Pago confirmado — Zentto";
   const text = `Hola ${customerName}, tu pago de ${amount} para el plan ${planName} ha sido procesado. Próxima facturación: ${nextBillingDate}.\n\n${BRAND.legalName} — ${BRAND.url}`;

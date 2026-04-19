@@ -185,6 +185,54 @@ export async function listBrands() {
   });
 }
 
+// ─── Storefront público (multi-moneda / país) ─────────
+
+export async function listStorefrontCountries() {
+  return callSp<{
+    countryCode: string;
+    countryName: string;
+    currencyCode: string;
+    currencySymbol: string;
+    phonePrefix: string;
+    flagEmoji: string;
+    sortOrder: number;
+  }>("usp_Store_Storefront_Countries_List", {});
+}
+
+export async function listStorefrontCurrencies() {
+  return callSp<{
+    currencyCode: string;
+    currencyName: string;
+    symbol: string;
+    rateToBase: number;
+    isBase: boolean;
+    rateDate: string;
+  }>("usp_Store_Storefront_Currencies_List", { CompanyId: scope().companyId });
+}
+
+export async function getStorefrontCountry(code: string) {
+  const rows = await callSp<{
+    countryCode: string;
+    countryName: string;
+    currencyCode: string;
+    currencySymbol: string;
+    referenceCurrency: string;
+    defaultExchangeRate: number;
+    pricesIncludeTax: boolean;
+    specialTaxRate: number;
+    specialTaxEnabled: boolean;
+    taxAuthorityCode: string;
+    fiscalIdName: string;
+    timeZoneIana: string;
+    phonePrefix: string;
+    flagEmoji: string;
+    defaultTaxCode: string | null;
+    defaultTaxName: string | null;
+    defaultTaxRate: number;
+  }>("usp_Store_Storefront_Country_Get", { CountryCode: code.toUpperCase() });
+  return rows[0] ?? null;
+}
+
 // ─── Auth de clientes ──────────────────────────────────
 
 export async function registerCustomer(data: {
@@ -423,6 +471,9 @@ export async function checkout(data: {
   billingAddressId?: number;
   paymentMethodId?: number;
   paymentMethodType?: string;
+  currencyCode?: string;
+  exchangeRate?: number;
+  countryCode?: string;
 }) {
   // 1. Buscar o crear cliente
   const { output: custOut } = await callSpOut(
@@ -472,6 +523,8 @@ export async function checkout(data: {
       BillingAddressId: data.billingAddressId ?? null,
       ShippingAddressText: data.customer.address || null,
       BillingAddressText: data.customer.billingAddress || data.customer.address || null,
+      CurrencyCode: data.currencyCode ?? null,
+      ExchangeRate: data.exchangeRate ?? null,
     },
     {
       OrderNumber: sql.NVarChar(60),
@@ -486,11 +539,74 @@ export async function checkout(data: {
     return { ok: false, error: orderOut.Mensaje as string };
   }
 
+  const orderNumber = orderOut.OrderNumber as string;
+  const orderToken = orderOut.OrderToken as string;
+
+  // 3. Iniciar checkout en zentto-payments (cobro real)
+  let checkoutUrl: string | null = null;
+  let paymentTxnId: string | null = null;
+  try {
+    const totalAmount = data.items.reduce((s, i) => s + i.subtotal + i.taxAmount, 0);
+    const currency = (data.currencyCode ?? "USD").toUpperCase();
+    const PAYMENTS_URL = process.env.ZENTTO_PAYMENTS_URL || "https://payments.zentto.net";
+    const PAYMENTS_KEY = process.env.ZENTTO_PAYMENTS_API_KEY || "";
+    const PUBLIC_API = process.env.PUBLIC_API_URL || "https://api.zentto.net";
+    const PUBLIC_FE  = process.env.PUBLIC_FRONTEND_URL || "https://app.zentto.net";
+
+    if (PAYMENTS_KEY && totalAmount > 0) {
+      const itemNames = data.items.slice(0, 3).map(i => i.productName).join(", ");
+      const itemsCount = data.items.length;
+      const summaryName = itemsCount > 3 ? `${itemNames} +${itemsCount - 3} más` : itemNames;
+
+      const res = await fetch(`${PAYMENTS_URL}/v1/checkout`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-API-Key": PAYMENTS_KEY },
+        body: JSON.stringify({
+          provider: process.env.ZENTTO_PAYMENTS_PROVIDER || "paddle",
+          companyId: scope().companyId,
+          items: [{
+            name: `Pedido ${orderNumber} — ${summaryName}`,
+            unitAmount: totalAmount,
+            quantity: 1,
+            currency,
+          }],
+          customerEmail: data.customer.email.toLowerCase(),
+          customerName: data.customer.name,
+          callbackUrl: `${PUBLIC_API}/v1/payments/callback`,
+          successUrl: `${PUBLIC_FE}/confirmacion/${orderToken}`,
+          cancelUrl:  `${PUBLIC_FE}/checkout?cancelled=1`,
+          metadata: {
+            source: "ecommerce",
+            orderToken,
+            orderNumber,
+            customerCode,
+            customerEmail: data.customer.email.toLowerCase(),
+            customerName: data.customer.name,
+            companyId: String(scope().companyId),
+            totalAmount: String(totalAmount),
+            currencyCode: currency,
+          },
+        }),
+      });
+      const json = await res.json().catch(() => ({} as Record<string, unknown>));
+      if (res.ok) {
+        checkoutUrl = (json as { checkoutUrl?: string }).checkoutUrl ?? null;
+        paymentTxnId = (json as { providerTxnId?: string }).providerTxnId ?? null;
+      } else {
+        console.error("[ecommerce/checkout] payments microservice error:", json);
+      }
+    }
+  } catch (err) {
+    console.error("[ecommerce/checkout] payments fetch error:", err);
+  }
+
   return {
     ok: true,
-    orderNumber: orderOut.OrderNumber as string,
-    orderToken: orderOut.OrderToken as string,
+    orderNumber,
+    orderToken,
     message: orderOut.Mensaje as string,
+    checkoutUrl,
+    paymentTxnId,
   };
 }
 
@@ -709,4 +825,191 @@ export async function getOrderByNumber(orderNumber: string) {
   const header = headers[0] ?? null;
   if (!header) return null;
   return { ...header, lines };
+}
+
+// ─── Carrito server-side (sync multi-device) ──────────
+
+export interface ServerCartItem {
+  productCode: string;
+  productName: string | null;
+  imageUrl: string | null;
+  quantity: number;
+  unitPrice: number;
+  taxRate: number;
+}
+
+export interface ServerCart {
+  cartToken: string;
+  customerCode: string | null;
+  currencyCode: string | null;
+  countryCode: string | null;
+  exchangeRate: number;
+  updatedAt: string | null;
+  items: ServerCartItem[];
+}
+
+export async function getServerCart(cartToken: string): Promise<ServerCart | null> {
+  const rows = await callSp<any>("usp_Store_Cart_Get", {
+    CartToken: cartToken,
+    CompanyId: scope().companyId,
+  });
+  if (!rows.length) return null;
+  const head = rows[0];
+  const items = rows
+    .filter((r: any) => r.productCode != null)
+    .map((r: any) => ({
+      productCode: r.productCode,
+      productName: r.productName,
+      imageUrl: r.imageUrl,
+      quantity: Number(r.quantity),
+      unitPrice: Number(r.unitPrice),
+      taxRate: Number(r.taxRate ?? 0),
+    }));
+  return {
+    cartToken: head.cartToken,
+    customerCode: head.customerCode,
+    currencyCode: head.currencyCode,
+    countryCode: head.countryCode,
+    exchangeRate: Number(head.exchangeRate ?? 1),
+    updatedAt: head.updatedAt,
+    items,
+  };
+}
+
+export async function upsertServerCartItem(args: {
+  cartToken: string;
+  customerCode?: string;
+  productCode: string;
+  productName?: string;
+  imageUrl?: string;
+  quantity: number;
+  unitPrice: number;
+  taxRate: number;
+  currencyCode?: string;
+  countryCode?: string;
+  exchangeRate?: number;
+}) {
+  const { output } = await callSpOut(
+    "usp_Store_Cart_Upsert_Item",
+    {
+      CartToken: args.cartToken,
+      CompanyId: scope().companyId,
+      CustomerCode: args.customerCode ?? null,
+      ProductCode: args.productCode,
+      ProductName: args.productName ?? null,
+      ImageUrl: args.imageUrl ?? null,
+      Quantity: args.quantity,
+      UnitPrice: args.unitPrice,
+      TaxRate: args.taxRate,
+      CurrencyCode: args.currencyCode ?? null,
+      CountryCode: args.countryCode ?? null,
+      ExchangeRate: args.exchangeRate ?? null,
+    },
+    { Resultado: sql.Int, Mensaje: sql.NVarChar(500), CartId: sql.BigInt }
+  );
+  return {
+    ok: Number(output.Resultado) === 1,
+    message: String(output.Mensaje || ""),
+    cartId: output.CartId ? Number(output.CartId) : null,
+  };
+}
+
+export async function removeServerCartItem(cartToken: string, productCode: string) {
+  const { output } = await callSpOut(
+    "usp_Store_Cart_Remove_Item",
+    { CartToken: cartToken, CompanyId: scope().companyId, ProductCode: productCode },
+    { Resultado: sql.Int, Mensaje: sql.NVarChar(500) }
+  );
+  return { ok: Number(output.Resultado) === 1, message: String(output.Mensaje || "") };
+}
+
+export async function clearServerCart(cartToken: string) {
+  const { output } = await callSpOut(
+    "usp_Store_Cart_Clear",
+    { CartToken: cartToken, CompanyId: scope().companyId },
+    { Resultado: sql.Int, Mensaje: sql.NVarChar(500) }
+  );
+  return { ok: Number(output.Resultado) === 1, message: String(output.Mensaje || "") };
+}
+
+export async function mergeCartToCustomer(cartToken: string, customerCode: string) {
+  const { output } = await callSpOut(
+    "usp_Store_Cart_Merge_To_Customer",
+    { CartToken: cartToken, CompanyId: scope().companyId, CustomerCode: customerCode },
+    { Resultado: sql.Int, Mensaje: sql.NVarChar(500), MergedCartToken: sql.NVarChar(64) }
+  );
+  return {
+    ok: Number(output.Resultado) === 1,
+    message: String(output.Mensaje || ""),
+    mergedCartToken: output.MergedCartToken as string | null,
+  };
+}
+
+// ─── Admin: gestión de pedidos ────────────────────────
+
+export async function listAdminOrders(params: {
+  status?: string;
+  from?: string;
+  to?: string;
+  search?: string;
+  page?: number;
+  limit?: number;
+}) {
+  const { rows, output } = await callSpOut<any>(
+    "usp_Store_Order_Admin_List",
+    {
+      CompanyId: scope().companyId,
+      Status: params.status || null,
+      From: params.from || null,
+      To: params.to || null,
+      Search: params.search || null,
+      Page: Math.max(params.page ?? 1, 1),
+      Limit: Math.min(Math.max(params.limit ?? 25, 1), 200),
+    },
+    { TotalCount: sql.BigInt }
+  );
+  return {
+    page: params.page ?? 1,
+    limit: params.limit ?? 25,
+    total: Number(output.TotalCount ?? 0),
+    rows,
+  };
+}
+
+export async function setOrderStatus(args: {
+  orderNumber: string;
+  status: "shipped" | "delivered" | "cancelled";
+  carrier?: string;
+  trackingNo?: string;
+  actorUser?: string;
+}) {
+  const { output } = await callSpOut(
+    "usp_Store_Order_Set_Status",
+    {
+      CompanyId: scope().companyId,
+      OrderNumber: args.orderNumber,
+      Status: args.status,
+      Carrier: args.carrier ?? null,
+      TrackingNo: args.trackingNo ?? null,
+      ActorUser: args.actorUser ?? "admin",
+    },
+    {
+      Resultado: sql.Int,
+      Mensaje: sql.NVarChar(500),
+      CustomerName: sql.NVarChar(255),
+      CustomerEmail: sql.NVarChar(255),
+      OrderToken: sql.NVarChar(100),
+      TotalAmount: sql.Decimal(18, 4),
+      CurrencyCode: sql.NVarChar(20),
+    }
+  );
+  return {
+    ok: Number(output.Resultado) === 1,
+    message: String(output.Mensaje || ""),
+    customerName: output.CustomerName as string | null,
+    customerEmail: output.CustomerEmail as string | null,
+    orderToken: output.OrderToken as string | null,
+    total: Number(output.TotalAmount ?? 0),
+    currency: String(output.CurrencyCode || "USD"),
+  };
 }
