@@ -185,6 +185,54 @@ export async function listBrands() {
   });
 }
 
+// ─── Storefront público (multi-moneda / país) ─────────
+
+export async function listStorefrontCountries() {
+  return callSp<{
+    countryCode: string;
+    countryName: string;
+    currencyCode: string;
+    currencySymbol: string;
+    phonePrefix: string;
+    flagEmoji: string;
+    sortOrder: number;
+  }>("usp_Store_Storefront_Countries_List", {});
+}
+
+export async function listStorefrontCurrencies() {
+  return callSp<{
+    currencyCode: string;
+    currencyName: string;
+    symbol: string;
+    rateToBase: number;
+    isBase: boolean;
+    rateDate: string;
+  }>("usp_Store_Storefront_Currencies_List", { CompanyId: scope().companyId });
+}
+
+export async function getStorefrontCountry(code: string) {
+  const rows = await callSp<{
+    countryCode: string;
+    countryName: string;
+    currencyCode: string;
+    currencySymbol: string;
+    referenceCurrency: string;
+    defaultExchangeRate: number;
+    pricesIncludeTax: boolean;
+    specialTaxRate: number;
+    specialTaxEnabled: boolean;
+    taxAuthorityCode: string;
+    fiscalIdName: string;
+    timeZoneIana: string;
+    phonePrefix: string;
+    flagEmoji: string;
+    defaultTaxCode: string | null;
+    defaultTaxName: string | null;
+    defaultTaxRate: number;
+  }>("usp_Store_Storefront_Country_Get", { CountryCode: code.toUpperCase() });
+  return rows[0] ?? null;
+}
+
 // ─── Auth de clientes ──────────────────────────────────
 
 export async function registerCustomer(data: {
@@ -423,6 +471,9 @@ export async function checkout(data: {
   billingAddressId?: number;
   paymentMethodId?: number;
   paymentMethodType?: string;
+  currencyCode?: string;
+  exchangeRate?: number;
+  countryCode?: string;
 }) {
   // 1. Buscar o crear cliente
   const { output: custOut } = await callSpOut(
@@ -472,6 +523,8 @@ export async function checkout(data: {
       BillingAddressId: data.billingAddressId ?? null,
       ShippingAddressText: data.customer.address || null,
       BillingAddressText: data.customer.billingAddress || data.customer.address || null,
+      CurrencyCode: data.currencyCode ?? null,
+      ExchangeRate: data.exchangeRate ?? null,
     },
     {
       OrderNumber: sql.NVarChar(60),
@@ -486,11 +539,70 @@ export async function checkout(data: {
     return { ok: false, error: orderOut.Mensaje as string };
   }
 
+  const orderNumber = orderOut.OrderNumber as string;
+  const orderToken = orderOut.OrderToken as string;
+
+  // 3. Iniciar checkout en zentto-payments (cobro real)
+  let checkoutUrl: string | null = null;
+  let paymentTxnId: string | null = null;
+  try {
+    const totalAmount = data.items.reduce((s, i) => s + i.subtotal + i.taxAmount, 0);
+    const currency = (data.currencyCode ?? "USD").toUpperCase();
+    const PAYMENTS_URL = process.env.ZENTTO_PAYMENTS_URL || "https://payments.zentto.net";
+    const PAYMENTS_KEY = process.env.ZENTTO_PAYMENTS_API_KEY || "";
+    const PUBLIC_API = process.env.PUBLIC_API_URL || "https://api.zentto.net";
+    const PUBLIC_FE  = process.env.PUBLIC_FRONTEND_URL || "https://app.zentto.net";
+
+    if (PAYMENTS_KEY && totalAmount > 0) {
+      const itemNames = data.items.slice(0, 3).map(i => i.productName).join(", ");
+      const itemsCount = data.items.length;
+      const summaryName = itemsCount > 3 ? `${itemNames} +${itemsCount - 3} más` : itemNames;
+
+      const res = await fetch(`${PAYMENTS_URL}/v1/checkout`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-API-Key": PAYMENTS_KEY },
+        body: JSON.stringify({
+          provider: process.env.ZENTTO_PAYMENTS_PROVIDER || "paddle",
+          companyId: scope().companyId,
+          items: [{
+            name: `Pedido ${orderNumber} — ${summaryName}`,
+            unitAmount: totalAmount,
+            quantity: 1,
+            currency,
+          }],
+          customerEmail: data.customer.email.toLowerCase(),
+          customerName: data.customer.name,
+          callbackUrl: `${PUBLIC_API}/v1/payments/callback`,
+          successUrl: `${PUBLIC_FE}/confirmacion/${orderToken}`,
+          cancelUrl:  `${PUBLIC_FE}/checkout?cancelled=1`,
+          metadata: {
+            source: "ecommerce",
+            orderToken,
+            orderNumber,
+            customerCode,
+            companyId: String(scope().companyId),
+          },
+        }),
+      });
+      const json = await res.json().catch(() => ({} as Record<string, unknown>));
+      if (res.ok) {
+        checkoutUrl = (json as { checkoutUrl?: string }).checkoutUrl ?? null;
+        paymentTxnId = (json as { providerTxnId?: string }).providerTxnId ?? null;
+      } else {
+        console.error("[ecommerce/checkout] payments microservice error:", json);
+      }
+    }
+  } catch (err) {
+    console.error("[ecommerce/checkout] payments fetch error:", err);
+  }
+
   return {
     ok: true,
-    orderNumber: orderOut.OrderNumber as string,
-    orderToken: orderOut.OrderToken as string,
+    orderNumber,
+    orderToken,
     message: orderOut.Mensaje as string,
+    checkoutUrl,
+    paymentTxnId,
   };
 }
 

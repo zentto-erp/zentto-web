@@ -1,7 +1,8 @@
 "use client";
 
 import { Box, Typography, Divider } from "@mui/material";
-import type { CartItem } from "../store/useCartStore";
+import { useCartStore, type CartItem } from "../store/useCartStore";
+import { formatPrice } from "../utils/formatCurrency";
 
 interface Props {
   items: CartItem[];
@@ -11,6 +12,8 @@ interface Props {
 }
 
 export default function OrderSummary({ items, subtotal, tax, total }: Props) {
+  const currency = useCartStore((s) => s.currency);
+  const taxLabel = currency.taxName || "IVA";
   return (
     <Box>
       {items.map((item) => (
@@ -26,28 +29,28 @@ export default function OrderSummary({ items, subtotal, tax, total }: Props) {
               {item.productName}
             </Typography>
             <Typography variant="caption" color="text.secondary">
-              {item.quantity} x ${item.unitPrice.toFixed(2)}
+              {item.quantity} x {formatPrice(item.unitPrice, currency)}
             </Typography>
           </Box>
           <Typography variant="body2" fontWeight="bold" sx={{ whiteSpace: "nowrap" }}>
-            ${item.total.toFixed(2)}
+            {formatPrice(item.total, currency)}
           </Typography>
         </Box>
       ))}
 
       <Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.5 }}>
         <Typography variant="body2" color="text.secondary">Subtotal:</Typography>
-        <Typography variant="body2">${subtotal.toFixed(2)}</Typography>
+        <Typography variant="body2">{formatPrice(subtotal, currency)}</Typography>
       </Box>
       <Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.5 }}>
-        <Typography variant="body2" color="text.secondary">IVA:</Typography>
-        <Typography variant="body2">${tax.toFixed(2)}</Typography>
+        <Typography variant="body2" color="text.secondary">{taxLabel}:</Typography>
+        <Typography variant="body2">{formatPrice(tax, currency)}</Typography>
       </Box>
       <Divider sx={{ my: 1 }} />
       <Box sx={{ display: "flex", justifyContent: "space-between" }}>
         <Typography variant="h6" fontWeight="bold">Total:</Typography>
         <Typography variant="h6" fontWeight="bold" sx={{ color: "#b12704" }}>
-          ${total.toFixed(2)}
+          {formatPrice(total, currency)}
         </Typography>
       </Box>
     </Box>

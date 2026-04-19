@@ -12,6 +12,7 @@ import { useCountries } from "@zentto/shared-api";
 import { useCartStore } from "../store/useCartStore";
 import { useCheckout } from "../hooks/useStoreOrders";
 import OrderSummary from "./OrderSummary";
+import { formatPrice } from "../utils/formatCurrency";
 import AddressSelector from "./AddressSelector";
 import PaymentMethodSelector from "./PaymentMethodSelector";
 import type { CustomerAddress, CustomerPaymentMethod } from "../hooks/useStoreAccount";
@@ -28,6 +29,7 @@ export default function CheckoutForm({ onSuccess, onBack }: Props) {
   const getSubtotal = useCartStore((s) => s.getSubtotal);
   const getTaxTotal = useCartStore((s) => s.getTaxTotal);
   const getTotal = useCartStore((s) => s.getTotal);
+  const currency = useCartStore((s) => s.currency);
 
   const isLoggedIn = !!customerToken;
 
@@ -81,6 +83,23 @@ export default function CheckoutForm({ onSuccess, onBack }: Props) {
         ? [billingAddress.AddressLine, billingAddress.City, billingAddress.State].filter(Boolean).join(", ")
         : shippingAddr;
 
+    // Si el país tiene una tasa fiscal default y los items no la traen, aplicarla.
+    const countryTaxRate = currency.taxRate || 0;
+    const itemsForCheckout = items.map((item) => {
+      const effectiveTax = item.taxRate > 0 ? item.taxRate : countryTaxRate;
+      const subtotal = Math.round(item.unitPrice * item.quantity * 100) / 100;
+      const taxAmount = Math.round(subtotal * effectiveTax * 100) / 100;
+      return {
+        productCode: item.productCode,
+        productName: item.productName,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+        taxRate: effectiveTax,
+        subtotal,
+        taxAmount,
+      };
+    });
+
     try {
       const result = await checkoutMutation.mutateAsync({
         customer: {
@@ -91,22 +110,23 @@ export default function CheckoutForm({ onSuccess, onBack }: Props) {
           billingAddress: billingAddr || undefined,
           fiscalId: fiscalId.trim() || undefined,
         },
-        items: items.map((item) => ({
-          productCode: item.productCode,
-          productName: item.productName,
-          quantity: item.quantity,
-          unitPrice: item.unitPrice,
-          taxRate: item.taxRate,
-          subtotal: item.subtotal,
-          taxAmount: item.taxAmount,
-        })),
+        items: itemsForCheckout,
         notes: notes.trim() || undefined,
         addressId: selectedAddressId ?? undefined,
         billingAddressId: sameAsBilling ? selectedAddressId ?? undefined : billingAddressId ?? undefined,
         paymentMethodId: selectedPaymentId ?? undefined,
         paymentMethodType: selectedPayment?.MethodType ?? undefined,
+        currencyCode: currency.currencyCode,
+        exchangeRate: currency.rateToBase,
+        countryCode: currency.countryCode,
       });
 
+      // Si el backend devolvió checkoutUrl (microservicio zentto-payments)
+      // → redirigir al portal de pago. Caso contrario, ir a confirmación.
+      if (result.checkoutUrl) {
+        window.location.href = result.checkoutUrl;
+        return;
+      }
       if (result.orderToken) {
         onSuccess(result.orderToken);
       }
@@ -287,7 +307,9 @@ export default function CheckoutForm({ onSuccess, onBack }: Props) {
                   mb: 1.5,
                 }}
               >
-                {checkoutMutation.isPending ? <CircularProgress size={24} /> : `Confirmar pedido — $${getTotal().toFixed(2)}`}
+                {checkoutMutation.isPending
+                  ? <CircularProgress size={24} />
+                  : `Confirmar pedido — ${formatPrice(getTotal(), currency)}`}
               </Button>
 
               <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5, mt: 1 }}>

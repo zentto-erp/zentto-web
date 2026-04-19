@@ -21,6 +21,9 @@ import {
   listPaymentMethods,
   upsertPaymentMethod,
   deletePaymentMethod,
+  listStorefrontCountries,
+  listStorefrontCurrencies,
+  getStorefrontCountry,
 } from "./service.js";
 
 export const storeRouter = Router();
@@ -84,6 +87,53 @@ storeRouter.get("/categories", async (_req, res) => {
 storeRouter.get("/brands", async (_req, res) => {
   try {
     res.json(await listBrands());
+  } catch (err: any) {
+    res.status(500).json({ error: "server_error", message: err.message });
+  }
+});
+
+// ─── Storefront público (multi-moneda / país) ─────────
+
+storeRouter.get("/storefront/countries", async (_req, res) => {
+  try {
+    res.json(await listStorefrontCountries());
+  } catch (err: any) {
+    res.status(500).json({ error: "server_error", message: err.message });
+  }
+});
+
+storeRouter.get("/storefront/currencies", async (_req, res) => {
+  try {
+    res.json(await listStorefrontCurrencies());
+  } catch (err: any) {
+    res.status(500).json({ error: "server_error", message: err.message });
+  }
+});
+
+storeRouter.get("/storefront/country/:code", async (req, res) => {
+  try {
+    const code = String(req.params.code || "").trim().toUpperCase();
+    if (!/^[A-Z]{2}$/.test(code)) return res.status(400).json({ error: "invalid_country_code" });
+    const country = await getStorefrontCountry(code);
+    if (!country) return res.status(404).json({ error: "country_not_found" });
+    res.json(country);
+  } catch (err: any) {
+    res.status(500).json({ error: "server_error", message: err.message });
+  }
+});
+
+// Resolución por IP (Cloudflare CF-IPCountry header) — si no hay header, devuelve país base.
+storeRouter.get("/storefront/resolve", async (req, res) => {
+  try {
+    const headerCountry = (req.headers["cf-ipcountry"] || req.headers["x-country-code"]) as string | undefined;
+    const code = (headerCountry || "").trim().toUpperCase();
+    if (code && /^[A-Z]{2}$/.test(code)) {
+      const country = await getStorefrontCountry(code);
+      if (country) return res.json({ source: "ip", ...country });
+    }
+    const fallback = await getStorefrontCountry("VE");
+    if (!fallback) return res.status(404).json({ error: "no_default_country" });
+    res.json({ source: "default", ...fallback });
   } catch (err: any) {
     res.status(500).json({ error: "server_error", message: err.message });
   }
@@ -224,6 +274,9 @@ const checkoutSchema = z.object({
   billingAddressId: z.number().int().positive().optional(),
   paymentMethodId: z.number().int().positive().optional(),
   paymentMethodType: z.string().max(30).optional(),
+  currencyCode: z.string().length(3).optional(),
+  exchangeRate: z.number().positive().max(1_000_000).optional(),
+  countryCode: z.string().length(2).optional(),
 });
 
 storeRouter.post("/checkout", async (req, res) => {
