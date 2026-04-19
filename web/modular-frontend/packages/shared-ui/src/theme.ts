@@ -5,6 +5,92 @@ import { esES as coreEsES } from '@mui/material/locale';
 
 // @mui/x-data-grid theme augmentation and locale removed (legacy — migrated to native <zentto-grid>)
 
+/* ── Zentto Design Tokens v2 (semánticos, no-breaking) ───────────────────────
+ *
+ * Referencia: docs/wiki/design-audits/2026-04-19-crm.md §4.3.
+ *
+ * Estos tokens viven en paralelo a `theme.spacing` / `theme.palette` para
+ * habilitar uso consistente entre módulos (CRM, hotel, medical, tickets…).
+ * Consumirlos en componentes mediante `import { token } from '@zentto/shared-ui'`.
+ */
+
+/** Lead lifecycle roles (mapean a MUI palette keys). */
+export type LeadColorRole = 'open' | 'won' | 'lost';
+/** Priority scale consolidada (CRM y otras apps). */
+export type PriorityColorRole = 'urgent' | 'high' | 'medium' | 'low';
+/** Density modes para `<zentto-grid>` / RecordTable. */
+export type DensityMode = 'compact' | 'default' | 'comfortable';
+/** Tipografía semántica estilo Material 3 / Primer. */
+export type TypographyRole = 'display' | 'headline' | 'title' | 'body' | 'label';
+
+export interface ZenttoTokens {
+  layout: {
+    /** Separación entre secciones mayores de una vista (px). */
+    sectionGap: number;
+    /** Separación entre campos dentro de un formulario (px). */
+    formGap: number;
+    /** Separación entre chips / badges (px). */
+    chipGap: number;
+  };
+  density: {
+    /** Alturas de fila del RecordTable por densidad (px). */
+    rowHeight: Record<DensityMode, number>;
+  };
+  color: {
+    /**
+     * Roles para el ciclo de vida de un lead. Se resuelven con
+     * `theme.palette[key].main` en runtime para respetar dark mode.
+     */
+    lead: Record<LeadColorRole, { paletteKey: 'primary' | 'success' | 'error' }>;
+    /**
+     * Roles de prioridad. Normalizan la escala `URGENT/HIGH/MEDIUM/LOW`
+     * para que todos los componentes rendericen el mismo color por valor.
+     */
+    priority: Record<PriorityColorRole, { paletteKey: 'error' | 'warning' | 'info' | 'success' }>;
+  };
+  typography: {
+    /**
+     * Tabla de referencia de roles tipográficos. Los valores exactos viven
+     * en `typography.h*` / `typography.body*` de MUI; este mapa documenta
+     * la intención semántica y la correspondencia con variantes MUI.
+     */
+    roles: Record<TypographyRole, { variant: string; size: string; weight: number }>;
+  };
+}
+
+export const token: ZenttoTokens = {
+  layout: {
+    sectionGap: 24,
+    formGap: 16,
+    chipGap: 6,
+  },
+  density: {
+    rowHeight: { compact: 28, default: 36, comfortable: 46 },
+  },
+  color: {
+    lead: {
+      open: { paletteKey: 'primary' },
+      won: { paletteKey: 'success' },
+      lost: { paletteKey: 'error' },
+    },
+    priority: {
+      urgent: { paletteKey: 'error' },
+      high: { paletteKey: 'error' },
+      medium: { paletteKey: 'warning' },
+      low: { paletteKey: 'info' },
+    },
+  },
+  typography: {
+    roles: {
+      display: { variant: 'h4', size: '1.75rem', weight: 700 },   // 28 / 32 700
+      headline: { variant: 'h5', size: '1.25rem', weight: 700 },  // 20 / 24 700
+      title: { variant: 'h6', size: '1rem', weight: 600 },        // 16 / 22 600
+      body: { variant: 'body1', size: '0.875rem', weight: 400 },  // 14 / 20 400
+      label: { variant: 'caption', size: '0.75rem', weight: 600 },// 12 / 16 600
+    },
+  },
+};
+
 /* ── Zentto Brand Colors (derivados del ecommerce) ── */
 export const brandColors = {
   // Core palette
@@ -96,7 +182,10 @@ const baseThemeOptions = {
     h6: {
       fontWeight: 600,
       fontSize: '1.125rem',
-    }
+    },
+    // Roles semánticos (display/headline/title/body/label) — ver `token.typography.roles`.
+    // Se mantienen los defaults existentes de MUI; documentados aquí para
+    // referencia del design system (no breaking).
   },
   components: {
     MuiButton: {

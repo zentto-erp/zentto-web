@@ -1,6 +1,7 @@
 "use client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiGet, apiPost } from "@zentto/shared-api";
+import type { Priority } from "../types";
 
 const BASE = "/api/v1/crm";
 const QK_LEADS = "crm-leads";
@@ -21,7 +22,7 @@ export interface LeadDetailData {
   Email: string;
   Phone: string;
   EstimatedValue: number;
-  Priority: string;
+  Priority: Priority;
   Status: string;
   Source: string;
   AssignedTo: number;

@@ -5,8 +5,15 @@ import './web-components';
 
 // Theme
 export { default as theme } from './theme';
-export { brandColors, createBrandedTheme, DEFAULT_BRANDING } from './theme';
-export type { BrandingColors } from './theme';
+export { brandColors, createBrandedTheme, DEFAULT_BRANDING, token } from './theme';
+export type {
+  BrandingColors,
+  ZenttoTokens,
+  LeadColorRole,
+  PriorityColorRole,
+  DensityMode,
+  TypographyRole,
+} from './theme';
 
 // Providers
 export { default as ToastProvider, useToast } from './providers/ToastProvider';

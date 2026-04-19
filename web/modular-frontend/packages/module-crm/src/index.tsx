@@ -4,6 +4,17 @@
 export const MODULE_ID = "crm";
 export const MODULE_TITLE = "CRM";
 
+// ─── Shared types ───────────────────────────────────────────
+export type { Priority, LeadStatus } from "./types";
+export {
+  PRIORITY_VALUES,
+  PRIORITY_LABELS,
+  PRIORITY_COLORS,
+  LEAD_STATUS_LABELS,
+  isPriority,
+  toPriority,
+} from "./types";
+
 // ─── Hooks ───────────────────────────────────────────────────
 export {
   usePipelinesList,
