@@ -38,10 +38,26 @@ import { useBranding } from '../hooks/useBranding';
 
 export default function OdooLayout({
     children,
-    navigationFields
+    navigationFields,
+    rightPanel,
+    rightPanelOpen,
+    onRightPanelClose
 }: {
     children: React.ReactNode,
-    navigationFields?: Array<Record<string, unknown>>
+    navigationFields?: Array<Record<string, unknown>>,
+    /**
+     * Panel lateral derecho (típicamente un <RightDetailDrawer/>). Opcional.
+     * El nodo debe manejar su propia apertura (`open`/`onClose`) — aquí sólo
+     * se controla el montaje condicional para evitar renders innecesarios.
+     */
+    rightPanel?: React.ReactNode,
+    /** Si se provee con `rightPanel`, controla el montaje del panel. */
+    rightPanelOpen?: boolean,
+    /**
+     * Callback cuando el usuario cierra el panel lateral. Disponible como
+     * prop informativa — normalmente ya lo maneja `rightPanel.onClose`.
+     */
+    onRightPanelClose?: () => void
 }) {
     const router = useRouter();
     const pathname = usePathname();
@@ -324,6 +340,15 @@ export default function OdooLayout({
                     </Box>
                 </Box>
             </Box>
+
+            {/* Right detail panel (opcional — drawer tipo HubSpot/Linear) */}
+            {rightPanel && rightPanelOpen && (
+                <React.Fragment>
+                    {typeof rightPanel === 'function'
+                        ? (rightPanel as () => React.ReactNode)()
+                        : rightPanel}
+                </React.Fragment>
+            )}
         </Box>
     );
 }
