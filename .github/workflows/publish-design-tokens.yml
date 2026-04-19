@@ -1,0 +1,52 @@
+name: Publish @zentto/design-tokens
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "web/modular-frontend/packages/design-tokens/**"
+      - ".github/workflows/publish-design-tokens.yml"
+  workflow_dispatch:
+
+jobs:
+  publish:
+    name: Build & publish to npm
+    runs-on: ubuntu-22.04
+    defaults:
+      run:
+        working-directory: web/modular-frontend/packages/design-tokens
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Install
+        run: npm install --ignore-scripts
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Typecheck + build
+        run: |
+          npm run typecheck
+          npm run build
+
+      # Salta silenciosamente si la version del package.json ya esta publicada.
+      # Solo publica cuando alguien bumpeo web/modular-frontend/packages/design-tokens/package.json.
+      - name: Publish if new version
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN_DESIGN_TOKENS || secrets.NPM_TOKEN }}
+        run: |
+          PKG_VERSION=$(node -p "require('./package.json').version")
+          PUBLISHED=$(npm view @zentto/design-tokens version 2>/dev/null || echo "")
+          echo "Local: $PKG_VERSION | Published: $PUBLISHED"
+          if [ "$PKG_VERSION" = "$PUBLISHED" ]; then
+            echo "Version $PKG_VERSION ya publicada — skip."
+            exit 0
+          fi
+          npm publish --access restricted --ignore-scripts
+          echo "Publicado @zentto/design-tokens@$PKG_VERSION"
