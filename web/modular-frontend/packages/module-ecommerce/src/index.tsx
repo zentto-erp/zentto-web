@@ -32,6 +32,8 @@ export type { MyReturn } from "./hooks/useReturns";
 export { useStoreSearch, useProductRecommendations, useCompareProducts } from "./hooks/useStoreSearch";
 export type { SearchHit, SearchResponse, RecommendedProduct, CompareProduct } from "./hooks/useStoreSearch";
 export { useCompareStore } from "./store/useCompareStore";
+export { usePerfAudit, useCacheStats, useInvalidateCache } from "./hooks/usePerfAndCache";
+export type { PerfMeasurement, PerfReport, CacheStats } from "./hooks/usePerfAndCache";
 
 // Components
 export { default as ProductCard } from "./components/ProductCard";
@@ -57,6 +59,7 @@ export { default as ReturnRequestForm } from "./components/ReturnRequestForm";
 export { default as ProductRecommendations } from "./components/ProductRecommendations";
 export { default as ProductCompare } from "./components/ProductCompare";
 export { default as CompareBar } from "./components/CompareBar";
+export { default as PerfAndCachePanel } from "./components/PerfAndCachePanel";
 
 // Pages
 export { default as StoreLayout } from "./pages/StoreLayout";

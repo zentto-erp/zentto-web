@@ -3,6 +3,7 @@ import { z } from "zod";
 import { emitBusinessNotification, syncContact } from "../_shared/notify.js";
 import { requireJwt, type AuthenticatedRequest } from "../../middleware/auth.js";
 import { sendAuthMail } from "../usuarios/auth-mailer.service.js";
+import { cached, invalidatePrefix, cacheStats } from "../../lib/storefront-cache.js";
 import {
   orderShippedTemplate,
   orderDeliveredTemplate,
@@ -51,6 +52,7 @@ import {
   searchProducts,
   getProductRecommendations,
   compareProducts,
+  getPerfAudit,
 } from "./service.js";
 
 export const storeRouter = Router();
@@ -70,12 +72,21 @@ const productListSchema = z.object({
   limit: z.string().optional(),
 });
 
-storeRouter.get("/products", async (req, res) => {
-  try {
-    const parsed = productListSchema.safeParse(req.query);
-    if (!parsed.success) return res.status(400).json({ error: "invalid_query" });
+// Cache TTLs (segundos). Productos cambian poco; catalogos casi nada.
+const TTL_PRODUCT_LIST  = 60_000;   // 1 min
+const TTL_PRODUCT_DETAIL = 5 * 60_000;
+const TTL_CATEGORY      = 30 * 60_000;
+const TTL_BRAND         = 30 * 60_000;
+const TTL_SEARCH        = 30_000;
+const TTL_RECS          = 5 * 60_000;
+const TTL_STOREFRONT    = 30 * 60_000;
 
-    const data = await listProducts({
+storeRouter.get(
+  "/products",
+  cached("products:list", TTL_PRODUCT_LIST, async (req) => {
+    const parsed = productListSchema.safeParse(req.query);
+    if (!parsed.success) throw new Error("invalid_query");
+    return listProducts({
       search: parsed.data.search,
       category: parsed.data.category,
       brand: parsed.data.brand,
@@ -87,104 +98,83 @@ storeRouter.get("/products", async (req, res) => {
       page: parsed.data.page ? Number(parsed.data.page) : undefined,
       limit: parsed.data.limit ? Number(parsed.data.limit) : undefined,
     });
-    res.json(data);
-  } catch (err: any) {
-    res.status(500).json({ error: "server_error", message: err.message });
-  }
-});
+  })
+);
 
-storeRouter.get("/products/:code", async (req, res) => {
-  try {
+storeRouter.get(
+  "/products/:code",
+  cached("products:detail", TTL_PRODUCT_DETAIL, async (req) => {
     const product = await getProductByCodeFull(req.params.code);
-    if (!product) return res.status(404).json({ error: "not_found" });
-    res.json(product);
-  } catch (err: any) {
-    res.status(500).json({ error: "server_error", message: err.message });
-  }
-});
+    if (!product) throw Object.assign(new Error("not_found"), { status: 404 });
+    return product;
+  })
+);
 
-storeRouter.get("/categories", async (_req, res) => {
-  try {
-    res.json(await listCategories());
-  } catch (err: any) {
-    res.status(500).json({ error: "server_error", message: err.message });
-  }
-});
+storeRouter.get(
+  "/categories",
+  cached("categories:list", TTL_CATEGORY, async () => listCategories())
+);
 
-storeRouter.get("/brands", async (_req, res) => {
-  try {
-    res.json(await listBrands());
-  } catch (err: any) {
-    res.status(500).json({ error: "server_error", message: err.message });
-  }
-});
+storeRouter.get(
+  "/brands",
+  cached("brands:list", TTL_BRAND, async () => listBrands())
+);
 
 // ─── FASE 4: Search full-text + Recommendations + Compare ────
 
-storeRouter.get("/search", async (req, res) => {
-  try {
-    const data = await searchProducts({
+storeRouter.get(
+  "/search",
+  cached("search:list", TTL_SEARCH, async (req) => {
+    return searchProducts({
       query: (req.query.q as string | undefined) || undefined,
       category: (req.query.category as string | undefined) || undefined,
       brand: (req.query.brand as string | undefined) || undefined,
       page: req.query.page ? Number(req.query.page) : undefined,
       limit: req.query.limit ? Number(req.query.limit) : undefined,
     });
-    res.json(data);
-  } catch (err: any) {
-    res.status(500).json({ error: "server_error", message: err.message });
-  }
-});
+  })
+);
 
-storeRouter.get("/products/:code/recommendations", async (req, res) => {
-  try {
+storeRouter.get(
+  "/products/:code/recommendations",
+  cached("products:recs", TTL_RECS, async (req) => {
     const limit = req.query.limit ? Math.min(Number(req.query.limit), 24) : 8;
-    res.json(await getProductRecommendations(req.params.code, limit));
-  } catch (err: any) {
-    res.status(500).json({ error: "server_error", message: err.message });
-  }
-});
+    return getProductRecommendations(req.params.code, limit);
+  })
+);
 
-storeRouter.get("/compare", async (req, res) => {
-  try {
+storeRouter.get(
+  "/compare",
+  cached("compare", TTL_PRODUCT_DETAIL, async (req) => {
     const codesParam = (req.query.codes as string | undefined) || "";
     const codes = codesParam.split(",").map((c) => c.trim()).filter(Boolean).slice(0, 4);
-    if (!codes.length) return res.status(400).json({ error: "missing_codes" });
-    res.json(await compareProducts(codes));
-  } catch (err: any) {
-    res.status(500).json({ error: "server_error", message: err.message });
-  }
-});
+    if (!codes.length) throw Object.assign(new Error("missing_codes"), { status: 400 });
+    return compareProducts(codes);
+  })
+);
 
 // ─── Storefront público (multi-moneda / país) ─────────
 
-storeRouter.get("/storefront/countries", async (_req, res) => {
-  try {
-    res.json(await listStorefrontCountries());
-  } catch (err: any) {
-    res.status(500).json({ error: "server_error", message: err.message });
-  }
-});
+storeRouter.get(
+  "/storefront/countries",
+  cached("storefront:countries", TTL_STOREFRONT, async () => listStorefrontCountries())
+);
 
-storeRouter.get("/storefront/currencies", async (_req, res) => {
-  try {
-    res.json(await listStorefrontCurrencies());
-  } catch (err: any) {
-    res.status(500).json({ error: "server_error", message: err.message });
-  }
-});
+storeRouter.get(
+  "/storefront/currencies",
+  cached("storefront:currencies", TTL_STOREFRONT, async () => listStorefrontCurrencies())
+);
 
-storeRouter.get("/storefront/country/:code", async (req, res) => {
-  try {
+storeRouter.get(
+  "/storefront/country/:code",
+  cached("storefront:country", TTL_STOREFRONT, async (req) => {
     const code = String(req.params.code || "").trim().toUpperCase();
-    if (!/^[A-Z]{2}$/.test(code)) return res.status(400).json({ error: "invalid_country_code" });
+    if (!/^[A-Z]{2}$/.test(code)) throw Object.assign(new Error("invalid_country_code"), { status: 400 });
     const country = await getStorefrontCountry(code);
-    if (!country) return res.status(404).json({ error: "country_not_found" });
-    res.json(country);
-  } catch (err: any) {
-    res.status(500).json({ error: "server_error", message: err.message });
-  }
-});
+    if (!country) throw Object.assign(new Error("country_not_found"), { status: 404 });
+    return country;
+  })
+);
 
 // Resolución por IP (Cloudflare CF-IPCountry header) — si no hay header, devuelve país base.
 storeRouter.get("/storefront/resolve", async (req, res) => {
@@ -862,6 +852,33 @@ storeRouter.get("/my/returns/:id", async (req, res) => {
   } catch (err: any) {
     res.status(500).json({ error: "server_error", message: err.message });
   }
+});
+
+// ─── Admin: Performance + Cache (FASE 5) ─────────────
+
+storeRouter.get("/admin/perf", requireJwt, async (req, res) => {
+  try {
+    const user = (req as AuthenticatedRequest).user;
+    if (!user?.isAdmin) return res.status(403).json({ error: "forbidden" });
+    res.json(await getPerfAudit());
+  } catch (err: any) {
+    res.status(500).json({ error: "server_error", message: err.message });
+  }
+});
+
+storeRouter.get("/admin/cache/stats", requireJwt, async (req, res) => {
+  const user = (req as AuthenticatedRequest).user;
+  if (!user?.isAdmin) return res.status(403).json({ error: "forbidden" });
+  res.json(cacheStats());
+});
+
+storeRouter.post("/admin/cache/invalidate", requireJwt, async (req, res) => {
+  const user = (req as AuthenticatedRequest).user;
+  if (!user?.isAdmin) return res.status(403).json({ error: "forbidden" });
+  const prefix = String(req.body?.prefix || "");
+  if (!prefix) return res.status(400).json({ error: "missing_prefix" });
+  const removed = invalidatePrefix(prefix);
+  res.json({ ok: true, removed });
 });
 
 // ─── Admin (requireJwt + isAdmin) — gestión de pedidos ──
