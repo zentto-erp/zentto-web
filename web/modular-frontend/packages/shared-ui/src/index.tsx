@@ -89,6 +89,17 @@ export type {
   FilterSelectOption,
 } from './components/ZenttoFilterPanel';
 
+// ─── ZenttoRecordTable — wrapper sobre <zentto-grid> (CRM-103) ───
+export { ZenttoRecordTable } from './components/ZenttoRecordTable';
+export type {
+  ZenttoRecordTableProps,
+  ColumnSpec,
+  SavedView,
+  BulkAction,
+  PaginationProps as RecordTablePaginationProps,
+  EmptyStateSpec,
+} from './components/ZenttoRecordTable';
+
 // Db Mode Toggle
 export { DbModeToggle } from './components/DbModeToggle';
 
