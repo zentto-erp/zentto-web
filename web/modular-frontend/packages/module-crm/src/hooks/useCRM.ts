@@ -194,6 +194,34 @@ export function useLoseLead() {
   });
 }
 
+/**
+ * Soft-delete de lead (mueve a status ARCHIVED via update).
+ *
+ * Backend aún no expone `DELETE /leads/:id` — usamos `PUT` con `status: ARCHIVED`
+ * como soft-delete mientras se abre follow-up para el SP `usp_crm_lead_delete`.
+ * Ver CRM-104 sección "follow-ups".
+ */
+export function useDeleteLead() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) =>
+      apiPut(`${BASE}/leads/${id}`, { status: "ARCHIVED" }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: [QK_LEADS] }),
+  });
+}
+
+/**
+ * Reasigna un lead a otro usuario (usa `PUT /leads/:id` con `assignedTo`).
+ */
+export function useAssignLead() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (d: { id: number; assignedTo: number }) =>
+      apiPut(`${BASE}/leads/${d.id}`, { assignedTo: d.assignedTo }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: [QK_LEADS] }),
+  });
+}
+
 export function useCRMDashboard(pipelineId?: number) {
   return useQuery({
     queryKey: [QK_LEADS, "dashboard", pipelineId],
