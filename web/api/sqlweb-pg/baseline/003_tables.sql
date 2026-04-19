@@ -1394,6 +1394,23 @@ CREATE TABLE crm."PipelineStage" (
 );
 
 
+CREATE TABLE crm."SavedView" (
+    "ViewId" bigint NOT NULL,
+    "CompanyId" integer NOT NULL,
+    "UserId" integer NOT NULL,
+    "Entity" character varying(50) NOT NULL,
+    "Name" character varying(200) NOT NULL,
+    "FilterJson" jsonb DEFAULT '{}'::jsonb NOT NULL,
+    "ColumnsJson" jsonb,
+    "SortJson" jsonb,
+    "IsShared" boolean DEFAULT false NOT NULL,
+    "IsDefault" boolean DEFAULT false NOT NULL,
+    "CreatedAt" timestamp with time zone DEFAULT now() NOT NULL,
+    "UpdatedAt" timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT "CK_crm_SavedView_Entity" CHECK ((("Entity")::text = ANY ((ARRAY['LEAD'::character varying, 'CONTACT'::character varying, 'COMPANY'::character varying, 'DEAL'::character varying, 'ACTIVITY'::character varying])::text[])))
+);
+
+
 CREATE TABLE fin."Bank" (
     "BankId" bigint NOT NULL,
     "CompanyId" integer NOT NULL,

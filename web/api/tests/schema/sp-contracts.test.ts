@@ -253,6 +253,12 @@ describe("SP Contracts — funciones de infraestructura", () => {
     "usp_crm_lead_list",
     "usp_crm_activity_list",
     "usp_crm_pipeline_getstages",
+    // CRM — Saved Views (CRM-108)
+    "usp_crm_saved_view_list",
+    "usp_crm_saved_view_detail",
+    "usp_crm_saved_view_upsert",
+    "usp_crm_saved_view_delete",
+    "usp_crm_saved_view_set_default",
     // Manufactura
     "usp_mfg_bom_list",
     "usp_mfg_workorder_list",

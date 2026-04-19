@@ -169,6 +169,7 @@ describe.skipIf(skipAll)("SP Contracts MSSQL — tablas canónicas", () => {
     ["logistics", "DeliveryNote"],
     ["crm", "Pipeline"],
     ["crm", "Lead"],
+    ["crm", "SavedView"],
     ["mfg", "BillOfMaterials"],
     ["fleet", "Vehicle"],
     ["store", "ProductReview"],
@@ -203,6 +204,12 @@ describe.skipIf(skipAll)("SP Contracts MSSQL — SPs críticos", () => {
     "usp_Cfg_AppSetting_Upsert",
     "usp_Sys_HealthCheck",
     "usp_Sys_GetTableColumns",
+    // CRM — Saved Views (CRM-108)
+    "usp_CRM_SavedView_List",
+    "usp_CRM_SavedView_Detail",
+    "usp_CRM_SavedView_Upsert",
+    "usp_CRM_SavedView_Delete",
+    "usp_CRM_SavedView_SetDefault",
   ];
 
   for (const sp of criticalSPs) {
