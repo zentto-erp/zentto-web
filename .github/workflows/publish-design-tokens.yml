@@ -8,10 +8,15 @@ on:
       - ".github/workflows/publish-design-tokens.yml"
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   publish:
     name: Build & publish to npm
     runs-on: ubuntu-22.04
+    permissions:
+      contents: read
     defaults:
       run:
         working-directory: web/modular-frontend/packages/design-tokens
@@ -19,6 +24,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 2
+          persist-credentials: false
 
       - uses: actions/setup-node@v4
         with:
