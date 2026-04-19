@@ -81,13 +81,20 @@ async function run() {
     ddlResult.errors.forEach(e => console.log(`     ${e.ctx}: ${e.msg}`));
   }
 
-  // Phase 4: Patch columns
-  console.log('\n4. Patch columnas...');
-  const patchFile = path.resolve(__dirname, '03_patch_missing_columns.sql');
-  if (fs.existsSync(patchFile)) {
-    const pR = await executeBatches(pool, fs.readFileSync(patchFile, 'utf8'));
-    console.log(`   OK: ${pR.ok}, FAIL: ${pR.fail}`);
-  } else { console.log('   (sin patch)'); }
+  // Phase 4: Patches (ejecuta todos los 0?_patch_*.sql en orden numerico)
+  console.log('\n4. Patches...');
+  const patches = fs.readdirSync(__dirname)
+    .filter(f => /^0\d_patch_.+\.sql$/i.test(f))
+    .sort();
+  for (const pf of patches) {
+    const full = path.resolve(__dirname, pf);
+    const pR = await executeBatches(pool, fs.readFileSync(full, 'utf8'));
+    console.log(`   ${pf} -> OK: ${pR.ok}, FAIL: ${pR.fail}`);
+    if (pR.errors.length > 0) {
+      pR.errors.forEach(e => console.log(`     ${e.ctx}: ${e.msg}`));
+    }
+  }
+  if (patches.length === 0) console.log('   (sin patches)');
 
   // Phase 5: Seeds
   console.log('\n5. Ejecutando seeds...');
