@@ -15,6 +15,11 @@ import {
 } from "./movimientos-sp.service.js";
 import { search, getByCode, getFilterOptions, invalidateAndReload, warmUp, getCacheStats } from "./inventario-cache.js";
 import { reserveStockSP, releaseStockSP, commitStockSP, getStockAvailableSP } from "./reservas-sp.service.js";
+import {
+  crearHojaConteoSP, upsertLineaConteoSP, cerrarHojaConteoSP, listHojasConteoSP,
+  crearAlbaranSP, addLineaAlbaranSP, emitirAlbaranSP, firmarAlbaranSP, listAlbaranesSP,
+  crearTrasladoMultiPasoSP, avanzarTrasladoSP,
+} from "./conteo-sp.service.js";
 import { emitInventarioMovementEntry } from "./inventario-contabilidad.service.js";
 import { emitBusinessNotification } from "../_shared/notify.js";
 import { obs } from "../integrations/observability.js";
@@ -357,6 +362,179 @@ inventarioRouter.post("/reservas/:id/commit", async (req, res) => {
     } else {
       res.status(404).json(result);
     }
+  } catch (err: any) {
+    res.status(err?.status ?? 500).json({ error: String(err.message ?? err) });
+  }
+});
+
+// ──────────────────────────��� CONTEO FÍSICO ───────────────────────────────────
+
+inventarioRouter.get("/conteo", async (req, res) => {
+  try {
+    const companyId = requireCompanyId(req);
+    const q = req.query;
+    res.json(await listHojasConteoSP({
+      companyId,
+      estado:        q.estado        as string,
+      warehouseCode: q.warehouseCode as string,
+      page:          q.page  ? Number(q.page)  : undefined,
+      limit:         q.limit ? Number(q.limit) : undefined,
+    }));
+  } catch (err: any) {
+    res.status(err?.status ?? 500).json({ error: String(err.message ?? err) });
+  }
+});
+
+inventarioRouter.post("/conteo", async (req, res) => {
+  try {
+    const companyId = requireCompanyId(req);
+    const b = req.body ?? {};
+    if (!b.warehouseCode) return res.status(400).json({ error: "warehouseCode requerido" });
+    const result = await crearHojaConteoSP(companyId, b.warehouseCode, (req as any).user?.userId, b.notas);
+    res.status(result.ok ? 201 : 400).json(result);
+  } catch (err: any) {
+    res.status(err?.status ?? 500).json({ error: String(err.message ?? err) });
+  }
+});
+
+inventarioRouter.put("/conteo/:id/lineas", async (req, res) => {
+  try {
+    const companyId = requireCompanyId(req);
+    const b = req.body ?? {};
+    if (!b.productCode || b.stockFisico === undefined)
+      return res.status(400).json({ error: "productCode y stockFisico requeridos" });
+    const result = await upsertLineaConteoSP({
+      hojaConteoId: Number(req.params.id),
+      productCode:  b.productCode,
+      stockFisico:  Number(b.stockFisico),
+      unitCost:     b.unitCost ? Number(b.unitCost) : undefined,
+      justificacion: b.justificacion,
+      userId:       (req as any).user?.userId,
+    });
+    res.status(result.ok ? 200 : 400).json(result);
+  } catch (err: any) {
+    res.status(err?.status ?? 500).json({ error: String(err.message ?? err) });
+  }
+});
+
+inventarioRouter.post("/conteo/:id/cerrar", async (req, res) => {
+  try {
+    const companyId = requireCompanyId(req);
+    const result = await cerrarHojaConteoSP(Number(req.params.id), companyId, (req as any).user?.userId);
+    if (result.ok) invalidateAndReload().catch(() => {});
+    res.status(result.ok ? 200 : 400).json(result);
+  } catch (err: any) {
+    res.status(err?.status ?? 500).json({ error: String(err.message ?? err) });
+  }
+});
+
+// ─────────────────────────── ALBARANES ───────────────────────────────────────
+
+inventarioRouter.get("/albaranes", async (req, res) => {
+  try {
+    const companyId = requireCompanyId(req);
+    const q = req.query;
+    res.json(await listAlbaranesSP({
+      companyId,
+      tipo:        q.tipo        as string,
+      estado:      q.estado      as string,
+      fechaDesde:  q.fechaDesde  as string,
+      fechaHasta:  q.fechaHasta  as string,
+      page:        q.page  ? Number(q.page)  : undefined,
+      limit:       q.limit ? Number(q.limit) : undefined,
+    }));
+  } catch (err: any) {
+    res.status(err?.status ?? 500).json({ error: String(err.message ?? err) });
+  }
+});
+
+inventarioRouter.post("/albaranes", async (req, res) => {
+  try {
+    const companyId = requireCompanyId(req);
+    const b = req.body ?? {};
+    if (!b.tipo) return res.status(400).json({ error: "tipo requerido: DESPACHO | RECEPCION | TRASLADO" });
+    const result = await crearAlbaranSP({
+      companyId, tipo: b.tipo,
+      warehouseFrom: b.warehouseFrom, warehouseTo: b.warehouseTo,
+      destinatarioNombre: b.destinatarioNombre, destinatarioRif: b.destinatarioRif,
+      sourceType: b.sourceType, sourceId: b.sourceId ? Number(b.sourceId) : undefined,
+      observaciones: b.observaciones, userId: (req as any).user?.userId,
+    });
+    res.status(result.ok ? 201 : 400).json(result);
+  } catch (err: any) {
+    res.status(err?.status ?? 500).json({ error: String(err.message ?? err) });
+  }
+});
+
+inventarioRouter.post("/albaranes/:id/lineas", async (req, res) => {
+  try {
+    requireCompanyId(req);
+    const b = req.body ?? {};
+    if (!b.productCode || b.cantidad === undefined)
+      return res.status(400).json({ error: "productCode y cantidad requeridos" });
+    const result = await addLineaAlbaranSP({
+      albaranId: Number(req.params.id), productCode: b.productCode,
+      cantidad: Number(b.cantidad), unidad: b.unidad,
+      costo: b.costo ? Number(b.costo) : undefined,
+      lote: b.lote, vencimiento: b.vencimiento, observaciones: b.observaciones,
+    });
+    res.status(result.ok ? 201 : 400).json(result);
+  } catch (err: any) {
+    res.status(err?.status ?? 500).json({ error: String(err.message ?? err) });
+  }
+});
+
+inventarioRouter.post("/albaranes/:id/emitir", async (req, res) => {
+  try {
+    const companyId = requireCompanyId(req);
+    const result = await emitirAlbaranSP(Number(req.params.id), companyId, (req as any).user?.userId);
+    res.status(result.ok ? 200 : 400).json(result);
+  } catch (err: any) {
+    res.status(err?.status ?? 500).json({ error: String(err.message ?? err) });
+  }
+});
+
+inventarioRouter.post("/albaranes/:id/firmar", async (req, res) => {
+  try {
+    const companyId = requireCompanyId(req);
+    const b = req.body ?? {};
+    const result = await firmarAlbaranSP(Number(req.params.id), companyId, (req as any).user?.userId, b.firmante);
+    if (result.ok) invalidateAndReload().catch(() => {});
+    res.status(result.ok ? 200 : 400).json(result);
+  } catch (err: any) {
+    res.status(err?.status ?? 500).json({ error: String(err.message ?? err) });
+  }
+});
+
+// ─────────────────────────── TRASLADOS MULTI-PASO ────────────────────────────
+
+inventarioRouter.post("/traslados-mp", async (req, res) => {
+  try {
+    const companyId = requireCompanyId(req);
+    const b = req.body ?? {};
+    if (!b.warehouseFrom || !b.warehouseTo)
+      return res.status(400).json({ error: "warehouseFrom y warehouseTo requeridos" });
+    const result = await crearTrasladoMultiPasoSP({
+      companyId, warehouseFrom: b.warehouseFrom, warehouseTo: b.warehouseTo,
+      userId: (req as any).user?.userId, notas: b.notas,
+    });
+    res.status(result.ok ? 201 : 400).json(result);
+  } catch (err: any) {
+    res.status(err?.status ?? 500).json({ error: String(err.message ?? err) });
+  }
+});
+
+inventarioRouter.post("/traslados-mp/:id/avanzar", async (req, res) => {
+  try {
+    const companyId = requireCompanyId(req);
+    const b = req.body ?? {};
+    if (!b.action) return res.status(400).json({ error: "action requerido: APROBAR | DESPACHAR | RECIBIR | CANCELAR" });
+    const result = await avanzarTrasladoSP({
+      trasladoId: Number(req.params.id), companyId,
+      userId: (req as any).user?.userId, action: b.action,
+    });
+    if (result.ok && b.action === "RECIBIR") invalidateAndReload().catch(() => {});
+    res.status(result.ok ? 200 : 400).json(result);
   } catch (err: any) {
     res.status(err?.status ?? 500).json({ error: String(err.message ?? err) });
   }
