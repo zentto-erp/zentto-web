@@ -68,6 +68,8 @@ const PENDING_CONTRACT_PREFIXES = new Set([
   '/v1/marcas',
   '/v1/nomina/concept-templates',
   '/v1/partners',
+  '/v1/payment-accounts',
+  '/v1/payments',
   '/v1/permisos',
   '/v1/pos',
   '/v1/pricing',
