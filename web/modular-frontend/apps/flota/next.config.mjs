@@ -3,7 +3,7 @@ const nextConfig = {
   typescript: { ignoreBuildErrors: true },
     reactStrictMode: true,
     basePath: '/flota',
-    transpilePackages: ['@zentto/shared-ui', '@zentto/shared-auth', '@zentto/shared-api', '@zentto/shared-reports', '@zentto/module-flota'],
+    transpilePackages: ['@zentto/design-tokens', '@zentto/shared-ui', '@zentto/shared-auth', '@zentto/shared-api', '@zentto/shared-reports', '@zentto/module-flota'],
 };
 
 export default nextConfig;

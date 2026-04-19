@@ -3,7 +3,7 @@ const nextConfig = {
   typescript: { ignoreBuildErrors: true },
     reactStrictMode: true,
     basePath: '/auditoria',
-    transpilePackages: ['@zentto/shared-ui', '@zentto/shared-auth', '@zentto/shared-api', '@zentto/shared-reports', '@zentto/module-auditoria'],
+    transpilePackages: ['@zentto/design-tokens', '@zentto/shared-ui', '@zentto/shared-auth', '@zentto/shared-api', '@zentto/shared-reports', '@zentto/module-auditoria'],
 };
 
 export default nextConfig;
