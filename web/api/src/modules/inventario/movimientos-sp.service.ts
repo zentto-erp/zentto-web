@@ -34,6 +34,39 @@ export interface InsertMovimientoParams {
   warehouseTo?: string;
   notes?: string;
   userId?: number;
+  /** Trazabilidad: tipo de documento origen (POS_TICKET, INVOICE, PURCHASE_ORDER, WORK_ORDER, PHYSICAL_COUNT, MANUAL_ADJUST, RECIPE_SALE, TRANSFER) */
+  sourceDocumentType?: string;
+  /** Trazabilidad: ID del documento origen */
+  sourceDocumentId?: number;
+}
+
+export interface KardexRow {
+  TotalCount: number;
+  MovementId: number;
+  LedgerSource: string;
+  MovementDate: string;
+  MovementTypeNorm: string;
+  MovementTypeRaw: string;
+  Quantity: number;
+  UnitCost: number;
+  TotalCost: number;
+  SaldoAcumulado: number;
+  WarehouseFrom: string | null;
+  WarehouseTo: string | null;
+  SourceDocumentType: string | null;
+  SourceDocumentRef: string | null;
+  DocumentRef: string | null;
+  Notes: string | null;
+  CreatedByUserId: number | null;
+}
+
+export interface KardexParams {
+  companyId: number;
+  productCode: string;
+  fechaDesde?: string;
+  fechaHasta?: string;
+  page?: number;
+  limit?: number;
 }
 
 export interface ListMovimientosParams {
@@ -104,6 +137,8 @@ export async function insertMovimientoSP(params: InsertMovimientoParams): Promis
       WarehouseTo: params.warehouseTo ?? null,
       Notes: params.notes ?? null,
       UserId: params.userId ?? null,
+      SourceDocumentType: params.sourceDocumentType ?? null,
+      SourceDocumentId: params.sourceDocumentId ?? null,
     },
     { Resultado: sql.Int, Mensaje: sql.NVarChar(500) }
   );
@@ -169,4 +204,25 @@ export async function getLibroInventarioSP(params: LibroParams): Promise<LibroRo
       ProductCode: params.productCode || null,
     }
   );
+}
+
+/** usp_Inventario_Kardex_Detallado — kardex con saldo acumulado y origen del movimiento */
+export async function getKardexDetalladoSP(params: KardexParams): Promise<{ rows: KardexRow[]; total: number; page: number; limit: number }> {
+  const page = Math.max(1, params.page || 1);
+  const limit = Math.min(Math.max(1, params.limit || 100), 500);
+
+  const rows = await callSp<KardexRow>(
+    "usp_Inventario_Kardex_Detallado",
+    {
+      CompanyId: params.companyId,
+      ProductCode: params.productCode,
+      FechaDesde: params.fechaDesde || null,
+      FechaHasta: params.fechaHasta || null,
+      Page: page,
+      Limit: limit,
+    }
+  );
+
+  const total = Number(rows[0]?.TotalCount ?? 0);
+  return { rows: rows || [], total, page, limit };
 }

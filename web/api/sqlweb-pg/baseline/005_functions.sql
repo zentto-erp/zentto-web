@@ -39885,7 +39885,7 @@ $$;
 
 -- ── CRM SavedView (CRM-108) ──────────────────────────────────────────────────
 -- Listado de vistas guardadas: owner + vistas compartidas del tenant.
-CREATE FUNCTION public.usp_crm_saved_view_list(p_company_id integer, p_user_id integer, p_entity character varying DEFAULT NULL::character varying) RETURNS TABLE("ViewId" bigint, "CompanyId" integer, "UserId" integer, "Entity" character varying, "Name" character varying, "FilterJson" jsonb, "ColumnsJson" jsonb, "SortJson" jsonb, "IsShared" boolean, "IsDefault" boolean, "IsOwner" boolean, "CreatedAt" timestamp with time zone, "UpdatedAt" timestamp with time zone)
+CREATE FUNCTION public.usp_crm_saved_view_list(p_company_id integer, p_user_id integer, p_entity character varying DEFAULT NULL::character varying) RETURNS TABLE("ViewId" bigint, "CompanyId" integer, "UserId" integer, "Entity" character varying, "Name" character varying, "FilterJson" jsonb, "ColumnsJson" jsonb, "SortJson" jsonb, "IsShared" boolean, "IsDefault" boolean, "IsOwner" boolean, "CreatedAt" timestamp without time zone, "UpdatedAt" timestamp without time zone)
     LANGUAGE plpgsql
     AS $$
 BEGIN
@@ -39902,8 +39902,8 @@ BEGIN
         sv."IsShared",
         sv."IsDefault",
         (sv."UserId" = p_user_id) AS "IsOwner",
-        sv."CreatedAt",
-        sv."UpdatedAt"
+        sv."CreatedAt"::TIMESTAMP,
+        sv."UpdatedAt"::TIMESTAMP
     FROM   crm."SavedView" sv
     WHERE  sv."CompanyId" = p_company_id
       AND  (p_entity IS NULL OR sv."Entity" = p_entity)
@@ -39913,7 +39913,7 @@ END;
 $$;
 
 
-CREATE FUNCTION public.usp_crm_saved_view_detail(p_company_id integer, p_user_id integer, p_view_id bigint) RETURNS TABLE("ViewId" bigint, "CompanyId" integer, "UserId" integer, "Entity" character varying, "Name" character varying, "FilterJson" jsonb, "ColumnsJson" jsonb, "SortJson" jsonb, "IsShared" boolean, "IsDefault" boolean, "IsOwner" boolean, "CreatedAt" timestamp with time zone, "UpdatedAt" timestamp with time zone)
+CREATE FUNCTION public.usp_crm_saved_view_detail(p_company_id integer, p_user_id integer, p_view_id bigint) RETURNS TABLE("ViewId" bigint, "CompanyId" integer, "UserId" integer, "Entity" character varying, "Name" character varying, "FilterJson" jsonb, "ColumnsJson" jsonb, "SortJson" jsonb, "IsShared" boolean, "IsDefault" boolean, "IsOwner" boolean, "CreatedAt" timestamp without time zone, "UpdatedAt" timestamp without time zone)
     LANGUAGE plpgsql
     AS $$
 BEGIN
@@ -39930,8 +39930,8 @@ BEGIN
         sv."IsShared",
         sv."IsDefault",
         (sv."UserId" = p_user_id) AS "IsOwner",
-        sv."CreatedAt",
-        sv."UpdatedAt"
+        sv."CreatedAt"::TIMESTAMP,
+        sv."UpdatedAt"::TIMESTAMP
     FROM   crm."SavedView" sv
     WHERE  sv."ViewId"    = p_view_id
       AND  sv."CompanyId" = p_company_id
