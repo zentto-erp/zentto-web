@@ -47,6 +47,17 @@ export { default as CustomStepper } from './components/CustomStepper';
 export type { CustomStepperProps, StepDef } from './components/CustomStepper';
 export { default as ContextActionHeader } from './components/ContextActionHeader';
 export { default as OdooLayout } from './components/OdooLayout';
+export { default as RightDetailDrawer } from './components/RightDetailDrawer';
+export type {
+  RightDetailDrawerProps,
+  RightDetailDrawerWidth,
+  DrawerTab,
+} from './components/RightDetailDrawer';
+export { useDrawerQueryParam } from './hooks/useDrawerQueryParam';
+export type {
+  UseDrawerQueryParamOptions,
+  UseDrawerQueryParamResult,
+} from './hooks/useDrawerQueryParam';
 export { default as SettingsLayout } from './components/SettingsLayout';
 export { default as SettingsSection } from './components/SettingsSection';
 export { default as SettingsItem } from './components/SettingsItem';
