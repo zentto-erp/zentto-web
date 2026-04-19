@@ -22,6 +22,13 @@ export { useWishlist, useToggleWishlist } from "./hooks/useWishlist";
 export { useRecentlyViewed, useTrackRecentlyViewed } from "./hooks/useRecentlyViewed";
 export { useOrderTracking } from "./hooks/useOrderTracking";
 export type { TrackingEvent } from "./hooks/useOrderTracking";
+export {
+  useAdminMetrics, useAdminOrderDetail, useAdminReturns,
+  useAdminReturnDetail, useAdminSetReturnStatus,
+} from "./hooks/useAdminEcommerce";
+export type { AdminMetrics, AdminOrderDetail, ReturnSummary } from "./hooks/useAdminEcommerce";
+export { useMyReturns, useMyReturnDetail, useCreateReturn } from "./hooks/useReturns";
+export type { MyReturn } from "./hooks/useReturns";
 
 // Components
 export { default as ProductCard } from "./components/ProductCard";
@@ -40,6 +47,10 @@ export { default as PanelGrid } from "./components/PanelGrid";
 export { default as OrderTimeline } from "./components/OrderTimeline";
 export { default as RecentlyViewedRail } from "./components/RecentlyViewedRail";
 export { default as CurrencySelector } from "./components/CurrencySelector";
+export { default as AdminEcommerceDashboard } from "./components/AdminEcommerceDashboard";
+export { default as AdminReturnsList } from "./components/AdminReturnsList";
+export { default as MyReturnsList } from "./components/MyReturnsList";
+export { default as ReturnRequestForm } from "./components/ReturnRequestForm";
 
 // Pages
 export { default as StoreLayout } from "./pages/StoreLayout";
