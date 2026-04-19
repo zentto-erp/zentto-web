@@ -20,6 +20,16 @@ export { default as ToastProvider, useToast } from './providers/ToastProvider';
 export { default as LocalizationProviderWrapper } from './providers/LocalizationProviderWrapper';
 export { default as BrandingProvider } from './providers/BrandingProvider';
 export type { BrandingConfig, BrandingContextValue } from './providers/BrandingProvider';
+export {
+  KeyboardShortcutsProvider,
+  useKeyboardShortcut,
+  useKeyboardShortcuts,
+} from './providers/KeyboardShortcutsProvider';
+export type {
+  KeyboardShortcutsProviderProps,
+  KeyboardShortcutOptions,
+  ShortcutEntry,
+} from './providers/KeyboardShortcutsProvider';
 
 // Branding
 export { default as BrandedThemeProvider } from './components/BrandedThemeProvider';
@@ -39,6 +49,16 @@ export { default as Copyright } from './components/Copyright';
 export { default as Logo } from './components/Logo';
 export { default as AppTitle } from './components/AppTitle';
 export { default as AppBarWrapper } from './components/AppBarWrapper';
+export type { AppBarWrapperProps } from './components/AppBarWrapper';
+export { CommandPalette, KbdHint } from './components/CommandPalette';
+export type {
+  CommandPaletteProps,
+  CommandItem,
+  CommandSection,
+  SearchResult,
+} from './components/CommandPalette';
+export { KeyboardShortcutsCheatSheet } from './components/KeyboardShortcutsCheatSheet';
+export type { KeyboardShortcutsCheatSheetProps } from './components/KeyboardShortcutsCheatSheet';
 export { default as SidebarFooterAccount, ToolbarAccountOverride } from './components/SidebarFooterAccount';
 export { default as PerfilDrawer } from './components/PerfilDrawer';
 export { LoadingFallback } from './components/LoadingFallback';
