@@ -572,6 +572,9 @@ export function buildNavigation(isAdmin: boolean, modulos: string[], pathname: s
         nav.push({ kind: 'page', segment: 'configuracion/mi-plan', title: 'Mi Plan', icon: <WorkspacePremiumIcon /> });
         nav.push({ kind: 'page', segment: 'configuracion/empresas', title: 'Empresas', icon: <BusinessIcon /> });
         nav.push({ kind: 'page', segment: 'configuracion/formas-pago', title: 'Formas de Pago', icon: <PaymentsIcon /> });
+        if (isAdmin) {
+            nav.push({ kind: 'page', segment: 'configuracion/cuentas-pago', title: 'Cuentas de Pago', icon: <PaymentsIcon /> });
+        }
         if (has(modulos, 'usuarios')) {
             nav.push({ kind: 'page', segment: 'configuracion/usuarios', title: 'Usuarios', icon: <ManageAccountsIcon /> });
         }
