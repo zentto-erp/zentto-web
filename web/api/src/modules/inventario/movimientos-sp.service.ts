@@ -24,7 +24,7 @@ export interface MovimientoRow {
 }
 
 export interface InsertMovimientoParams {
-  companyId?: number;
+  companyId: number;
   productCode: string;
   movementType: string;
   quantity: number;
@@ -37,7 +37,7 @@ export interface InsertMovimientoParams {
 }
 
 export interface ListMovimientosParams {
-  companyId?: number;
+  companyId: number;
   search?: string;
   productCode?: string;
   movementType?: string;
@@ -76,7 +76,7 @@ export interface LibroRow {
 }
 
 export interface LibroParams {
-  companyId?: number;
+  companyId: number;
   fechaDesde: string;
   fechaHasta: string;
   productCode?: string;
@@ -94,7 +94,7 @@ export async function insertMovimientoSP(params: InsertMovimientoParams): Promis
   const { output } = await callSpOut<never>(
     "usp_Inventario_Movimiento_Insert",
     {
-      CompanyId: params.companyId ?? 1,
+      CompanyId: params.companyId,
       ProductCode: params.productCode,
       MovementType: params.movementType,
       Quantity: params.quantity,
@@ -115,14 +115,14 @@ export async function insertMovimientoSP(params: InsertMovimientoParams): Promis
 }
 
 /** usp_Inventario_Movimiento_List */
-export async function listMovimientosSP(params: ListMovimientosParams = {}): Promise<ListMovimientosResult> {
+export async function listMovimientosSP(params: ListMovimientosParams): Promise<ListMovimientosResult> {
   const page = Math.max(1, params.page || 1);
   const limit = Math.min(Math.max(1, params.limit || 50), 500);
 
   const { rows, output } = await callSpOut<MovimientoRow>(
     "usp_Inventario_Movimiento_List",
     {
-      CompanyId: params.companyId ?? 1,
+      CompanyId: params.companyId,
       Search: params.search || null,
       ProductCode: params.productCode || null,
       MovementType: params.movementType || null,
@@ -144,7 +144,7 @@ export async function listMovimientosSP(params: ListMovimientosParams = {}): Pro
 }
 
 /** usp_Inventario_Dashboard */
-export async function getInventarioDashboardSP(companyId = 1): Promise<DashboardData> {
+export async function getInventarioDashboardSP(companyId: number): Promise<DashboardData> {
   const rows = await callSp<DashboardData>(
     "usp_Inventario_Dashboard",
     { CompanyId: companyId }
@@ -163,7 +163,7 @@ export async function getLibroInventarioSP(params: LibroParams): Promise<LibroRo
   return callSp<LibroRow>(
     "usp_Inventario_LibroInventario",
     {
-      CompanyId: params.companyId ?? 1,
+      CompanyId: params.companyId,
       FechaDesde: params.fechaDesde,
       FechaHasta: params.fechaHasta,
       ProductCode: params.productCode || null,
