@@ -20,6 +20,10 @@ import {
   crearAlbaranSP, addLineaAlbaranSP, emitirAlbaranSP, firmarAlbaranSP, listAlbaranesSP,
   crearTrasladoMultiPasoSP, avanzarTrasladoSP,
 } from "./conteo-sp.service.js";
+import {
+  getValuationMethodSP, setValuationMethodSP, createValuationLayerSP,
+  consumeValuationSP, getProductCurrentCostSP, type ValuationMethod,
+} from "./valuation-sp.service.js";
 import { emitInventarioMovementEntry } from "./inventario-contabilidad.service.js";
 import { emitBusinessNotification } from "../_shared/notify.js";
 import { obs } from "../integrations/observability.js";
@@ -534,6 +538,107 @@ inventarioRouter.post("/traslados-mp/:id/avanzar", async (req, res) => {
       userId: (req as any).user?.userId, action: b.action,
     });
     if (result.ok && b.action === "RECIBIR") invalidateAndReload().catch(() => {});
+    res.status(result.ok ? 200 : 400).json(result);
+  } catch (err: any) {
+    res.status(err?.status ?? 500).json({ error: String(err.message ?? err) });
+  }
+});
+
+// ========== Valuation: FIFO / LIFO / WEIGHTED_AVG / LAST_COST / STANDARD ==========
+
+const VALUATION_METHODS: readonly ValuationMethod[] = ["FIFO", "LIFO", "WEIGHTED_AVG", "LAST_COST", "STANDARD"];
+
+inventarioRouter.get("/valuation/:productId/method", async (req, res) => {
+  try {
+    const companyId = requireCompanyId(req);
+    const productId = Number(req.params.productId);
+    if (!Number.isFinite(productId) || productId <= 0) {
+      return res.status(400).json({ error: "productId inválido" });
+    }
+    const result = await getValuationMethodSP(companyId, productId);
+    res.json(result);
+  } catch (err: any) {
+    res.status(err?.status ?? 500).json({ error: String(err.message ?? err) });
+  }
+});
+
+inventarioRouter.put("/valuation/:productId/method", async (req, res) => {
+  try {
+    const companyId = requireCompanyId(req);
+    const productId = Number(req.params.productId);
+    const b = req.body ?? {};
+    if (!Number.isFinite(productId) || productId <= 0) {
+      return res.status(400).json({ error: "productId inválido" });
+    }
+    if (!VALUATION_METHODS.includes(b.method)) {
+      return res.status(400).json({ error: `method debe ser uno de: ${VALUATION_METHODS.join(" | ")}` });
+    }
+    const result = await setValuationMethodSP({
+      companyId, productId,
+      method: b.method,
+      standardCost: Number(b.standardCost ?? 0),
+      userId: (req as any).user?.userId,
+    });
+    res.status(result.ok ? 200 : 400).json(result);
+  } catch (err: any) {
+    res.status(err?.status ?? 500).json({ error: String(err.message ?? err) });
+  }
+});
+
+inventarioRouter.get("/valuation/:productId/current-cost", async (req, res) => {
+  try {
+    const companyId = requireCompanyId(req);
+    const productId = Number(req.params.productId);
+    if (!Number.isFinite(productId) || productId <= 0) {
+      return res.status(400).json({ error: "productId inválido" });
+    }
+    const result = await getProductCurrentCostSP(companyId, productId);
+    res.json(result);
+  } catch (err: any) {
+    res.status(err?.status ?? 500).json({ error: String(err.message ?? err) });
+  }
+});
+
+inventarioRouter.post("/valuation/:productId/layers", async (req, res) => {
+  try {
+    const companyId = requireCompanyId(req);
+    const productId = Number(req.params.productId);
+    const b = req.body ?? {};
+    if (!Number.isFinite(productId) || productId <= 0) {
+      return res.status(400).json({ error: "productId inválido" });
+    }
+    const qty = Number(b.quantity);
+    const cost = Number(b.unitCost ?? 0);
+    if (!Number.isFinite(qty) || qty <= 0) {
+      return res.status(400).json({ error: "quantity debe ser > 0" });
+    }
+    const result = await createValuationLayerSP({
+      companyId, productId,
+      quantity: qty,
+      unitCost: cost,
+      sourceDocumentType: b.sourceDocumentType,
+      sourceDocumentNumber: b.sourceDocumentNumber,
+      lotId: b.lotId,
+      layerDate: b.layerDate,
+    });
+    res.status(result.ok ? 201 : 400).json(result);
+  } catch (err: any) {
+    res.status(err?.status ?? 500).json({ error: String(err.message ?? err) });
+  }
+});
+
+inventarioRouter.post("/valuation/:productId/consume", async (req, res) => {
+  try {
+    const companyId = requireCompanyId(req);
+    const productId = Number(req.params.productId);
+    const qty = Number(req.body?.quantity);
+    if (!Number.isFinite(productId) || productId <= 0) {
+      return res.status(400).json({ error: "productId inválido" });
+    }
+    if (!Number.isFinite(qty) || qty <= 0) {
+      return res.status(400).json({ error: "quantity debe ser > 0" });
+    }
+    const result = await consumeValuationSP(companyId, productId, qty);
     res.status(result.ok ? 200 : 400).json(result);
   } catch (err: any) {
     res.status(err?.status ?? 500).json({ error: String(err.message ?? err) });
