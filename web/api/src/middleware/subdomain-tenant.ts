@@ -22,17 +22,57 @@ const SLUG_TTL_MS = 5 * 60 * 1000;
 const NOT_FOUND_SENTINEL = -1;
 
 // ── Dominios que NO son tenants (bypass) ────────────────────────────────────
+// CRÍTICO: cualquier subdomain de zentto.net que NO sea tenant debe estar aquí
+// para que su Origin/Referer no haga el middleware buscar "pos" o "restaurante"
+// como slug de tenant en master.cfg_tenants → 404 tenant_not_found.
 const KNOWN_DOMAINS = new Set([
+  // Core
   "zentto.net",
   "www.zentto.net",
   "app.zentto.net",
   "appdev.zentto.net",
   "apidev.zentto.net",
   "api.zentto.net",
+  // Apps Electron / standalone (frontend + api por app)
+  "pos.zentto.net",
+  "posdev.zentto.net",
+  "restaurante.zentto.net",
+  "restaurantedev.zentto.net",
+  "hotel.zentto.net",
+  "hoteldev.zentto.net",
+  "hotelapi.zentto.net",
+  "hotelapidev.zentto.net",
+  "education.zentto.net",
+  "educationdev.zentto.net",
+  "educationapi.zentto.net",
+  "educationapidev.zentto.net",
+  "medical.zentto.net",
+  "medicaldev.zentto.net",
+  "medicalapi.zentto.net",
+  "medicalapidev.zentto.net",
+  "tickets.zentto.net",
+  "ticketsdev.zentto.net",
+  "ticketsapi.zentto.net",
+  "ticketsapidev.zentto.net",
+  "rental.zentto.net",
+  "rentaldev.zentto.net",
+  "rentalapi.zentto.net",
+  "rentalapidev.zentto.net",
+  "inmobiliario.zentto.net",
+  "inmobiliariodev.zentto.net",
+  // Auth, infra, observabilidad
+  "auth.zentto.net",
+  "authdev.zentto.net",
   "vault.zentto.net",
   "notify.zentto.net",
   "kibana.zentto.net",
   "kafka.zentto.net",
+  "elastic.zentto.net",
+  // Docs, landings, soporte, store
+  "docs.zentto.net",
+  "landings.zentto.net",
+  "soporte.zentto.net",
+  "store.zentto.net",
 ]);
 
 // ── Extensiones de Request ──────────────────────────────────────────────────
