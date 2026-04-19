@@ -1130,3 +1130,208 @@ export async function addOrderTrackingEvent(args: {
   );
   return { ok: Number(output.Resultado) === 1, message: String(output.Mensaje || "") };
 }
+
+// ─── FASE 3: Admin dashboard + RMA ─────────────────────
+
+export async function getAdminMetrics(params: { from?: string; to?: string } = {}) {
+  const rows = await callSp<any>("usp_Store_Admin_Metrics", {
+    CompanyId: scope().companyId,
+    From: params.from || null,
+    To: params.to || null,
+  });
+  return rows[0] ?? {
+    totalOrders: 0, pendingOrders: 0, paidOrders: 0, shippedOrders: 0,
+    deliveredOrders: 0, cancelledOrders: 0, pendingReturns: 0,
+    totalRevenueUsd: 0, avgTicketUsd: 0,
+  };
+}
+
+export async function getAdminOrderDetail(orderNumber: string) {
+  const rows = await callSp<any>("usp_Store_Admin_Order_Detail", {
+    CompanyId: scope().companyId,
+    OrderNumber: orderNumber,
+  });
+  if (!rows.length) return null;
+  const head = rows[0];
+  const lines = new Map<number, any>();
+  const payments = new Map<number, any>();
+  const events: any[] = [];
+  for (const r of rows) {
+    if (r.lineNumber != null && !lines.has(r.lineNumber)) {
+      lines.set(r.lineNumber, {
+        lineNumber: r.lineNumber,
+        productCode: r.productCode,
+        productName: r.productName,
+        quantity: Number(r.quantity),
+        unitPrice: Number(r.unitPrice),
+        lineTotal: Number(r.lineTotal),
+      });
+    }
+    if (r.paymentId != null && !payments.has(r.paymentId)) {
+      payments.set(r.paymentId, {
+        paymentId: r.paymentId,
+        method: r.paymentMethod,
+        reference: r.paymentRef,
+        amount: Number(r.paymentAmount),
+        date: r.paymentDate,
+      });
+    }
+    if (r.eventCode != null) {
+      const key = `${r.eventCode}|${r.eventOccurredAt}`;
+      if (!events.some((e) => `${e.eventCode}|${e.occurredAt}` === key)) {
+        events.push({
+          eventCode: r.eventCode,
+          eventLabel: r.eventLabel,
+          description: r.eventDescription,
+          occurredAt: r.eventOccurredAt,
+        });
+      }
+    }
+  }
+  return {
+    orderNumber: head.orderNumber,
+    orderDate: head.orderDate,
+    customerCode: head.customerCode,
+    customerName: head.customerName,
+    fiscalId: head.fiscalId,
+    notes: head.notes,
+    currencyCode: head.currencyCode,
+    exchangeRate: Number(head.exchangeRate ?? 1),
+    subtotal: Number(head.subtotal),
+    taxAmount: Number(head.taxAmount),
+    totalAmount: Number(head.totalAmount),
+    isPaid: head.isPaid,
+    isVoided: head.isVoided,
+    isDelivered: head.isDelivered,
+    shipped: Boolean(head.shipped),
+    lines: Array.from(lines.values()),
+    payments: Array.from(payments.values()),
+    events,
+  };
+}
+
+// ─── RMA (devoluciones) ────────────────────────────────
+
+export async function createReturnRequest(args: {
+  customerCode: string;
+  orderNumber: string;
+  reason: string;
+  items?: Array<{
+    lineNumber?: number;
+    productCode: string;
+    productName?: string;
+    quantity?: number;
+    unitPrice?: number;
+    reason?: string;
+  }>;
+}) {
+  const { output } = await callSpOut(
+    "usp_Store_Return_Request_Create",
+    {
+      CompanyId: scope().companyId,
+      OrderNumber: args.orderNumber,
+      CustomerCode: args.customerCode,
+      Reason: args.reason,
+      ItemsJson: JSON.stringify(args.items ?? []),
+    },
+    { Resultado: sql.Int, Mensaje: sql.NVarChar(500), ReturnId: sql.BigInt }
+  );
+  return {
+    ok: Number(output.Resultado) === 1,
+    message: String(output.Mensaje || ""),
+    returnId: output.ReturnId ? Number(output.ReturnId) : null,
+  };
+}
+
+export async function listReturns(args: {
+  customerCode?: string | null;
+  status?: string | null;
+  page?: number;
+  limit?: number;
+}) {
+  const { rows, output } = await callSpOut<any>(
+    "usp_Store_Return_Request_List",
+    {
+      CompanyId: scope().companyId,
+      CustomerCode: args.customerCode ?? null,
+      Status: args.status ?? null,
+      Page: Math.max(args.page ?? 1, 1),
+      Limit: Math.min(Math.max(args.limit ?? 25, 1), 200),
+    },
+    { TotalCount: sql.BigInt }
+  );
+  return {
+    page: args.page ?? 1,
+    limit: args.limit ?? 25,
+    total: Number(output.TotalCount ?? 0),
+    rows,
+  };
+}
+
+export async function getReturnDetail(returnId: number) {
+  const rows = await callSp<any>("usp_Store_Return_Request_Get", {
+    CompanyId: scope().companyId,
+    ReturnId: returnId,
+  });
+  if (!rows.length) return null;
+  const h = rows[0];
+  const items = rows
+    .filter((r: any) => r.productCode != null)
+    .map((r: any) => ({
+      lineNumber: r.lineNumber,
+      productCode: r.productCode,
+      productName: r.productName,
+      quantity: Number(r.quantity ?? 0),
+      unitPrice: Number(r.unitPrice ?? 0),
+      reason: r.itemReason,
+    }));
+  return {
+    returnId: Number(h.returnId),
+    orderNumber: h.orderNumber,
+    customerCode: h.customerCode,
+    status: h.status,
+    reason: h.reason,
+    adminNotes: h.adminNotes,
+    refundAmount: Number(h.refundAmount ?? 0),
+    refundCurrency: h.refundCurrency,
+    refundMethod: h.refundMethod,
+    refundReference: h.refundReference,
+    requestedAt: h.requestedAt,
+    processedAt: h.processedAt,
+    items,
+  };
+}
+
+export async function setReturnStatus(args: {
+  returnId: number;
+  status: "approved" | "rejected" | "in_transit" | "received" | "refunded";
+  adminNotes?: string;
+  refundMethod?: string;
+  refundReference?: string;
+  actorUser?: string;
+}) {
+  const { output } = await callSpOut(
+    "usp_Store_Return_Request_Set_Status",
+    {
+      CompanyId: scope().companyId,
+      ReturnId: args.returnId,
+      Status: args.status,
+      AdminNotes: args.adminNotes ?? null,
+      RefundMethod: args.refundMethod ?? null,
+      RefundReference: args.refundReference ?? null,
+      ActorUser: args.actorUser ?? "admin",
+    },
+    {
+      Resultado: sql.Int,
+      Mensaje: sql.NVarChar(500),
+      OrderNumber: sql.NVarChar(60),
+      CustomerCode: sql.NVarChar(24),
+    }
+  );
+  return {
+    ok: Number(output.Resultado) === 1,
+    message: String(output.Mensaje || ""),
+    orderNumber: output.OrderNumber as string | null,
+    customerCode: output.CustomerCode as string | null,
+  };
+}

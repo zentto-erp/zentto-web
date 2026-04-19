@@ -42,6 +42,12 @@ import {
   listRecentlyViewed,
   trackRecentlyViewed,
   getOrderTracking,
+  getAdminMetrics,
+  getAdminOrderDetail,
+  createReturnRequest,
+  listReturns,
+  getReturnDetail,
+  setReturnStatus,
 } from "./service.js";
 
 export const storeRouter = Router();
@@ -760,12 +766,150 @@ storeRouter.get("/orders/:token/tracking", async (req, res) => {
   }
 });
 
+// ─── RMA — devoluciones (cliente) ─────────────────────
+
+const returnCreateSchema = z.object({
+  orderNumber: z.string().min(3).max(60),
+  reason: z.string().min(1).max(500),
+  items: z.array(z.object({
+    lineNumber: z.number().int().optional(),
+    productCode: z.string().min(1).max(60),
+    productName: z.string().max(250).optional(),
+    quantity: z.number().positive().optional(),
+    unitPrice: z.number().nonnegative().optional(),
+    reason: z.string().max(250).optional(),
+  })).max(200).optional(),
+});
+
+storeRouter.post("/returns", async (req, res) => {
+  try {
+    const customerCode = await getCustomerCodeFromAuth(req);
+    if (!customerCode) return res.status(401).json({ error: "not_authenticated" });
+    const parsed = returnCreateSchema.safeParse(req.body);
+    if (!parsed.success) return res.status(400).json({ error: "invalid_body", details: parsed.error.flatten() });
+    const result = await createReturnRequest({ customerCode, ...parsed.data });
+    if (!result.ok) return res.status(400).json(result);
+    res.status(201).json(result);
+  } catch (err: any) {
+    res.status(500).json({ error: "server_error", message: err.message });
+  }
+});
+
+storeRouter.get("/my/returns", async (req, res) => {
+  try {
+    const customerCode = await getCustomerCodeFromAuth(req);
+    if (!customerCode) return res.status(401).json({ error: "not_authenticated" });
+    const data = await listReturns({
+      customerCode,
+      status: (req.query.status as string | undefined) || null,
+      page: req.query.page ? Number(req.query.page) : undefined,
+      limit: req.query.limit ? Number(req.query.limit) : undefined,
+    });
+    res.json(data);
+  } catch (err: any) {
+    res.status(500).json({ error: "server_error", message: err.message });
+  }
+});
+
+storeRouter.get("/my/returns/:id", async (req, res) => {
+  try {
+    const customerCode = await getCustomerCodeFromAuth(req);
+    if (!customerCode) return res.status(401).json({ error: "not_authenticated" });
+    const detail = await getReturnDetail(Number(req.params.id));
+    if (!detail) return res.status(404).json({ error: "not_found" });
+    if (detail.customerCode !== customerCode) return res.status(403).json({ error: "forbidden" });
+    res.json(detail);
+  } catch (err: any) {
+    res.status(500).json({ error: "server_error", message: err.message });
+  }
+});
+
 // ─── Admin (requireJwt + isAdmin) — gestión de pedidos ──
 
 const setStatusSchema = z.object({
   status: z.enum(["shipped", "delivered", "cancelled"]),
   carrier: z.string().max(120).optional(),
   trackingNo: z.string().max(120).optional(),
+});
+
+const returnStatusSchema = z.object({
+  status: z.enum(["approved", "rejected", "in_transit", "received", "refunded"]),
+  adminNotes: z.string().max(500).optional(),
+  refundMethod: z.string().max(30).optional(),
+  refundReference: z.string().max(100).optional(),
+});
+
+storeRouter.get("/admin/metrics", requireJwt, async (req, res) => {
+  try {
+    const user = (req as AuthenticatedRequest).user;
+    if (!user?.isAdmin) return res.status(403).json({ error: "forbidden" });
+    res.json(await getAdminMetrics({
+      from: req.query.from as string | undefined,
+      to: req.query.to as string | undefined,
+    }));
+  } catch (err: any) {
+    res.status(500).json({ error: "server_error", message: err.message });
+  }
+});
+
+storeRouter.get("/admin/orders/:orderNumber", requireJwt, async (req, res) => {
+  try {
+    const user = (req as AuthenticatedRequest).user;
+    if (!user?.isAdmin) return res.status(403).json({ error: "forbidden" });
+    const detail = await getAdminOrderDetail(req.params.orderNumber);
+    if (!detail) return res.status(404).json({ error: "not_found" });
+    res.json(detail);
+  } catch (err: any) {
+    res.status(500).json({ error: "server_error", message: err.message });
+  }
+});
+
+storeRouter.get("/admin/returns", requireJwt, async (req, res) => {
+  try {
+    const user = (req as AuthenticatedRequest).user;
+    if (!user?.isAdmin) return res.status(403).json({ error: "forbidden" });
+    res.json(await listReturns({
+      customerCode: null,
+      status: (req.query.status as string | undefined) || null,
+      page: req.query.page ? Number(req.query.page) : undefined,
+      limit: req.query.limit ? Number(req.query.limit) : undefined,
+    }));
+  } catch (err: any) {
+    res.status(500).json({ error: "server_error", message: err.message });
+  }
+});
+
+storeRouter.get("/admin/returns/:id", requireJwt, async (req, res) => {
+  try {
+    const user = (req as AuthenticatedRequest).user;
+    if (!user?.isAdmin) return res.status(403).json({ error: "forbidden" });
+    const detail = await getReturnDetail(Number(req.params.id));
+    if (!detail) return res.status(404).json({ error: "not_found" });
+    res.json(detail);
+  } catch (err: any) {
+    res.status(500).json({ error: "server_error", message: err.message });
+  }
+});
+
+storeRouter.post("/admin/returns/:id/status", requireJwt, async (req, res) => {
+  try {
+    const user = (req as AuthenticatedRequest).user;
+    if (!user?.isAdmin) return res.status(403).json({ error: "forbidden" });
+    const parsed = returnStatusSchema.safeParse(req.body);
+    if (!parsed.success) return res.status(400).json({ error: "invalid_body", details: parsed.error.flatten() });
+    const result = await setReturnStatus({
+      returnId: Number(req.params.id),
+      status: parsed.data.status,
+      adminNotes: parsed.data.adminNotes,
+      refundMethod: parsed.data.refundMethod,
+      refundReference: parsed.data.refundReference,
+      actorUser: user.name || user.sub,
+    });
+    if (!result.ok) return res.status(400).json(result);
+    res.json(result);
+  } catch (err: any) {
+    res.status(500).json({ error: "server_error", message: err.message });
+  }
 });
 
 storeRouter.get("/admin/orders", requireJwt, async (req, res) => {
