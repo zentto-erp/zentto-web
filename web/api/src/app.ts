@@ -532,6 +532,12 @@ export async function createApp() {
   const { paymentAccountsRouter } = await import("./modules/payment-accounts/routes.js");
   app.use("/v1/payment-accounts", paymentAccountsRouter);
 
+  // Callback del microservicio zentto-payments — listo para cutover de Paddle webhook
+  // (hoy llega a /v1/billing/webhook; al cambiar webhook URL en Paddle dashboard a
+  // payments.zentto.net/v1/webhooks/paddle, los eventos llegarán aquí vía callbackUrl).
+  const { paymentsCallbackRouter } = await import("./modules/payments-callback/routes.js");
+  app.use("/v1/payments", paymentsCallbackRouter);
+
   // White-label brand config per tenant (F4)
   const { brandRouter } = await import("./modules/brand/routes.js");
   app.use("/v1/brand", brandRouter);
