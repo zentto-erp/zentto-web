@@ -1,0 +1,80 @@
+{
+  "name": "@zentto/vertical-auth",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Multi-tenant auth primitives para apps verticales Zentto (hotel, medical, education, tickets)",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./frontend": {
+      "types": "./dist/frontend/index.d.ts",
+      "default": "./dist/frontend/index.js"
+    },
+    "./backend": {
+      "types": "./dist/backend/index.d.ts",
+      "default": "./dist/backend/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "clean": "rimraf dist",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src --ext .ts,.tsx"
+  },
+  "keywords": [
+    "zentto",
+    "auth",
+    "multi-tenant",
+    "next-auth",
+    "express",
+    "jwt"
+  ],
+  "author": "Zentto ERP",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/zentto-erp/zentto-web.git",
+    "directory": "web/modular-frontend/packages/vertical-auth"
+  },
+  "peerDependencies": {
+    "react": ">=18",
+    "@mui/material": ">=5",
+    "next-auth": ">=5.0.0-beta",
+    "@zentto/auth-client": "*",
+    "express": ">=4",
+    "jose": ">=5"
+  },
+  "peerDependenciesMeta": {
+    "@mui/material": { "optional": true },
+    "express": { "optional": true },
+    "next-auth": { "optional": true }
+  },
+  "devDependencies": {
+    "@mui/material": "^5.15.0",
+    "@types/express": "^4.17.21",
+    "@types/node": "^20",
+    "@types/react": "^18",
+    "@zentto/auth-client": "*",
+    "express": "^4.19.2",
+    "jose": "^5.9.6",
+    "next-auth": "^5.0.0-beta.25",
+    "react": "^18",
+    "rimraf": "^5.0.5",
+    "typescript": "^5"
+  },
+  "publishConfig": {
+    "access": "restricted",
+    "registry": "https://registry.npmjs.org"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
