@@ -2,6 +2,7 @@
 
 import {
   Box,
+  Chip,
   Container,
   Typography,
   Button,
@@ -11,13 +12,6 @@ import {
   Accordion,
   AccordionSummary,
   AccordionDetails,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
 } from '@mui/material';
 import {
   MonetizationOnOutlined,
@@ -25,6 +19,8 @@ import {
   TrendingUpOutlined,
   ExpandMore as ExpandMoreIcon,
 } from '@mui/icons-material';
+import { ZenttoRecordTable } from '@zentto/shared-ui';
+import type { ColumnSpec } from '@zentto/shared-ui';
 
 const steps = [
   {
@@ -50,11 +46,37 @@ const steps = [
   },
 ];
 
+// TODO: mover a hook `useAffiliateCommissionTable()` cuando exista endpoint
+// (ver spec Ola 1 §1E — tabla de marketing, hardcoded aceptable hasta Ola 4).
 const commissions = [
-  { category: 'Electrónica', rate: '3%' },
-  { category: 'Ropa', rate: '5%' },
-  { category: 'Hogar', rate: '7%' },
-  { category: 'Software', rate: '10%' },
+  { category: 'Electrónica', rate: '3%', cookie: '30 días', min: 'USD 10' },
+  { category: 'Ropa y moda', rate: '5%', cookie: '30 días', min: 'USD 10' },
+  { category: 'Libros', rate: '4%', cookie: '30 días', min: 'USD 10' },
+  { category: 'Juguetería', rate: '6%', cookie: '30 días', min: 'USD 10' },
+  { category: 'Hogar', rate: '7%', cookie: '30 días', min: 'USD 10' },
+  { category: 'Software y SaaS', rate: '10%', cookie: '45 días', min: 'USD 20' },
+  { category: 'Servicios digitales', rate: '12%', cookie: '45 días', min: 'USD 20' },
+  { category: 'Cursos online', rate: '15%', cookie: '60 días', min: 'USD 20' },
+];
+
+const commissionRows = commissions.map((c) => ({ id: c.category, ...c }));
+
+const commissionColumns: ColumnSpec[] = [
+  { field: 'category', header: 'Categoría', flex: 2, minWidth: 160 },
+  {
+    field: 'rate',
+    header: 'Comisión',
+    width: 120,
+    renderCell: (value: unknown) => (
+      <Chip
+        label={String(value ?? '')}
+        size="small"
+        sx={{ bgcolor: '#ff9900', color: '#131921', fontWeight: 700 }}
+      />
+    ),
+  },
+  { field: 'cookie', header: 'Duración cookie', width: 140 },
+  { field: 'min', header: 'Mínimo retiro', width: 120 },
 ];
 
 const faqs = [
@@ -161,7 +183,8 @@ export default function AfiliadosPage() {
         </Grid>
       </Container>
 
-      {/* Comisiones */}
+      {/* Comisiones — usa ZenttoRecordTable (wrapper oficial de <zentto-grid>)
+          según regla crítica: NO <table> HTML ni MUI DataGrid en ningún lado. */}
       <Box sx={{ bgcolor: '#232f3e', py: { xs: 4, md: 8 } }}>
         <Container maxWidth="sm">
           <Typography
@@ -171,39 +194,17 @@ export default function AfiliadosPage() {
           >
             Comisiones
           </Typography>
-          <TableContainer
-            component={Paper}
-            sx={{ borderRadius: 3, overflow: 'hidden' }}
-          >
-            <Table>
-              <TableHead>
-                <TableRow sx={{ bgcolor: '#131921' }}>
-                  <TableCell sx={{ color: '#fff', fontWeight: 700, fontSize: '1rem' }}>
-                    Categoría
-                  </TableCell>
-                  <TableCell
-                    align="center"
-                    sx={{ color: '#ff9900', fontWeight: 700, fontSize: '1rem' }}
-                  >
-                    Comisión
-                  </TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {commissions.map((row) => (
-                  <TableRow key={row.category}>
-                    <TableCell sx={{ fontWeight: 500 }}>{row.category}</TableCell>
-                    <TableCell
-                      align="center"
-                      sx={{ fontWeight: 700, color: '#ff9900', fontSize: '1.1rem' }}
-                    >
-                      {row.rate}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
+          <Box sx={{ bgcolor: '#fff', borderRadius: 3, p: 2 }}>
+            <ZenttoRecordTable
+              recordType="ecommerce_affiliate_commission"
+              gridId="ecommerce-affiliate-commissions"
+              rowKey="id"
+              rows={commissionRows}
+              columns={commissionColumns}
+              totalCount={commissionRows.length}
+              height="auto"
+            />
+          </Box>
         </Container>
       </Box>
 

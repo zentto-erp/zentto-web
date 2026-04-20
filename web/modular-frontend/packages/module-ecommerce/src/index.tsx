@@ -42,6 +42,7 @@ export { default as ProductDetail } from "./components/ProductDetail";
 export { default as CategorySidebar } from "./components/CategorySidebar";
 export { default as SearchBar } from "./components/SearchBar";
 export { default as CartDrawer } from "./components/CartDrawer";
+export { default as MiniCartPopper } from "./components/MiniCartPopper";
 export { default as CartItem } from "./components/CartItem";
 export { default as CheckoutForm } from "./components/CheckoutForm";
 export { default as OrderSummary } from "./components/OrderSummary";
