@@ -13,7 +13,6 @@ import ListItemText from '@mui/material/ListItemText';
 import Collapse from '@mui/material/Collapse';
 import IconButton from '@mui/material/IconButton';
 import { usePathname, useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { useAuth } from '@zentto/shared-auth';
 import { useTheme } from '@mui/material/styles';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
@@ -65,32 +64,6 @@ export default function OdooLayout({
     const theme = useTheme();
     const { dynamicBrandColors: bc } = useBranding();
 
-    // Handler de navegacion con fallback a hard-nav. En Next 16 + MUI
-    // AppRouterCacheProvider (v15-appRouter) hay casos en los que router.push
-    // del Link no completa la transicion (click normal no navega, pero click
-    // derecho + nueva tab si). Se intenta primero router.push; si tras un
-    // frame la URL no cambio, se hace window.location.assign como fallback.
-    const handleMenuClick = (e: React.MouseEvent, segment: string) => {
-        if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
-        e.preventDefault();
-        const anchor = e.currentTarget as HTMLAnchorElement;
-        const fullHref = anchor.href;
-        const nextPath = `/${segment}`;
-        try {
-            router.push(nextPath);
-        } catch {
-            window.location.assign(fullHref);
-            return;
-        }
-        // Fallback: si en 250ms la URL no cambio, navegacion dura.
-        const before = window.location.pathname;
-        window.setTimeout(() => {
-            if (window.location.pathname === before) {
-                window.location.assign(fullHref);
-            }
-        }, 250);
-    };
-
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
     const hideSidebar = !navigationFields || navigationFields.length === 0;
     const fullSidebarWidth = 260;
@@ -116,8 +89,7 @@ export default function OdooLayout({
         setOpenMenus((prev) => ({ ...prev, [key]: !prev[key] }));
     };
 
-    // Cierra el sidebar en mobile tras completar la navegacion (no en el click,
-    // para no interrumpir la transition de Next.js Link con un setState sincrono).
+    // Cierra sidebar en mobile cuando cambia la ruta (evita setState concurrente en click).
     React.useEffect(() => {
         if (isMobile) {
             setSidebarOpen(false);
@@ -166,14 +138,7 @@ export default function OdooLayout({
                         />
                         {/* Contenido — ícono fijo + texto */}
                         <Box
-                            {...(hasChildren
-                                ? { onClick: () => handleToggleMenu(idx) }
-                                : {
-                                      component: Link,
-                                      href: `/${item.segment}`,
-                                      prefetch: false,
-                                      onClick: (e: React.MouseEvent) => handleMenuClick(e, item.segment),
-                                  })}
+                            onClick={() => hasChildren ? handleToggleMenu(idx) : router.push(`/${item.segment}`)}
                             sx={{
                                 position: 'relative',
                                 display: 'flex', alignItems: 'center',
@@ -181,7 +146,6 @@ export default function OdooLayout({
                                 cursor: 'pointer',
                                 color: isRouteActive ? 'text.primary' : 'text.secondary',
                                 borderRadius: 1.5,
-                                textDecoration: 'none',
                                 '&:hover': {
                                     bgcolor: isRouteActive && !hasChildren ? (t) => t.palette.mode === 'dark' ? 'rgba(255,181,71,0.25)' : 'rgba(255,181,71,0.15)' : 'action.hover',
                                 }

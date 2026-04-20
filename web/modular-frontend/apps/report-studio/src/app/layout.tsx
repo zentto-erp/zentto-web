@@ -2,7 +2,6 @@
 
 import * as React from 'react';
 import { Suspense, useEffect, useState } from 'react';
-import { AppRouterCacheProvider } from '@mui/material-nextjs/v15-appRouter';
 import CssBaseline from '@mui/material/CssBaseline';
 import InitColorSchemeScript from '@mui/material/InitColorSchemeScript';
 import { SessionProvider } from 'next-auth/react';
@@ -48,12 +47,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <SessionProvider basePath="/report-studio/api/auth">
                     <QueryProvider>
                         <AuthProvider>
-                            <AppRouterCacheProvider>
+                            
                                 <BrandedThemeProvider defaultMode="system">
                                     <CssBaseline />
                                     <AppContent>{children}</AppContent>
                                 </BrandedThemeProvider>
-                            </AppRouterCacheProvider>
+                            
                         </AuthProvider>
                     </QueryProvider>
                 </SessionProvider>
