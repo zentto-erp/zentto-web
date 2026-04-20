@@ -6,7 +6,7 @@ import {
   TextField, Button, Grid, MenuItem, Alert, Stack, Divider,
 } from '@mui/material';
 import { useRouter } from 'next/navigation';
-import { useApplySeller, useCartStore } from '@zentto/module-ecommerce';
+import { useApplyMerchant, useCartStore } from '@zentto/module-ecommerce';
 
 const steps = ['Datos de la empresa', 'Documentos', 'Método de pago', 'Confirmar'];
 
@@ -14,7 +14,7 @@ export default function VenderAplicarPage() {
   const router = useRouter();
   const customerToken = useCartStore((s) => s.customerToken);
   const customerInfo = useCartStore((s) => s.customerInfo);
-  const apply = useApplySeller();
+  const apply = useApplyMerchant();
 
   const [step, setStep] = useState(0);
   const [legalName, setLegalName] = useState('');
