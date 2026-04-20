@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useMemo } from "react";
-import { Box, MenuItem, Select, Tooltip } from "@mui/material";
+import { Autocomplete, Box, TextField, Tooltip, Typography } from "@mui/material";
 import { useStorefrontCurrencies, useStorefrontCountries, useResolveCountry } from "../hooks/useStorefront";
 import { useCartStore } from "../store/useCartStore";
+import type { StorefrontCountry, StorefrontCurrency } from "../hooks/useStorefront";
 
 /**
  * Selector de moneda + país para el header del storefront.
@@ -13,6 +14,8 @@ import { useCartStore } from "../store/useCartStore";
  *    y aplica país + currencyCode + tasa default.
  *  - El usuario puede cambiar país (que recalcula tasa por país) o moneda directamente.
  *  - Persistido en localStorage vía useCartStore.
+ *  - Usa Autocomplete para escalar a muchos países/monedas y soportar búsqueda integrada.
+ *  - Dedupe defensivo por `countryCode` / `currencyCode` (la API puede devolver repetidos).
  */
 export default function CurrencySelector() {
   const { data: countries } = useStorefrontCountries();
@@ -75,41 +78,120 @@ export default function CurrencySelector() {
     }
   };
 
-  const sortedCountries = useMemo(
-    () => (countries || []).slice().sort((a, b) => a.countryName.localeCompare(b.countryName)),
-    [countries]
-  );
+  // Dedupe + orden alfabético por nombre de país.
+  const countryOptions = useMemo<StorefrontCountry[]>(() => {
+    const unique = Array.from(
+      new Map((countries || []).map((c) => [c.countryCode, c])).values()
+    );
+    return unique.slice().sort((a, b) => a.countryName.localeCompare(b.countryName));
+  }, [countries]);
+
+  // Dedupe + orden alfabético por código de moneda.
+  const currencyOptions = useMemo<StorefrontCurrency[]>(() => {
+    const unique = Array.from(
+      new Map((currencies || []).map((c) => [c.currencyCode, c])).values()
+    );
+    return unique.slice().sort((a, b) => a.currencyCode.localeCompare(b.currencyCode));
+  }, [currencies]);
+
+  const selectedCountry =
+    countryOptions.find((c) => c.countryCode === currency.countryCode) || null;
+  const selectedCurrency =
+    currencyOptions.find((c) => c.currencyCode === currency.currencyCode) || null;
+
+  // Estilos compactos reutilizables (dark theme del header).
+  const inputSx = {
+    bgcolor: "background.paper",
+    borderRadius: 1,
+    "& .MuiOutlinedInput-root": { fontSize: 13, height: 34 },
+    "& .MuiOutlinedInput-input": { py: 0.3 },
+  } as const;
 
   return (
     <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
       <Tooltip title="País de envío / reglas fiscales">
-        <Select
+        <Autocomplete
           size="small"
-          value={currency.countryCode}
-          onChange={(e) => onCountryChange(String(e.target.value))}
-          sx={{ minWidth: 110, bgcolor: "background.paper", fontSize: 13 }}
-        >
-          {sortedCountries.map((c) => (
-            <MenuItem key={c.countryCode} value={c.countryCode}>
-              <span style={{ marginRight: 6 }}>{c.flagEmoji}</span>
-              {c.countryCode}
-            </MenuItem>
-          ))}
-        </Select>
+          options={countryOptions}
+          value={selectedCountry}
+          onChange={(_e, val) => val && onCountryChange(val.countryCode)}
+          disableClearable
+          autoHighlight
+          getOptionLabel={(opt) => `${opt.countryCode}`}
+          isOptionEqualToValue={(a, b) => a.countryCode === b.countryCode}
+          filterOptions={(opts, state) => {
+            const q = state.inputValue.trim().toLowerCase();
+            if (!q) return opts;
+            return opts.filter(
+              (o) =>
+                o.countryCode.toLowerCase().includes(q) ||
+                o.countryName.toLowerCase().includes(q)
+            );
+          }}
+          sx={{ minWidth: 110 }}
+          renderInput={(params) => (
+            <TextField
+              {...params}
+              placeholder="País"
+              sx={inputSx}
+            />
+          )}
+          renderOption={(props, option) => (
+            <Box component="li" {...props} key={option.countryCode} sx={{ fontSize: 13, gap: 1 }}>
+              <span style={{ fontSize: 16, lineHeight: 1 }}>{option.flagEmoji}</span>
+              <Typography component="span" sx={{ fontWeight: 600, fontSize: 13 }}>
+                {option.countryCode}
+              </Typography>
+              <Typography component="span" sx={{ color: "text.secondary", fontSize: 12 }}>
+                {option.countryName}
+              </Typography>
+            </Box>
+          )}
+        />
       </Tooltip>
+
       <Tooltip title="Moneda de visualización">
-        <Select
+        <Autocomplete
           size="small"
-          value={currency.currencyCode}
-          onChange={(e) => onCurrencyChange(String(e.target.value))}
-          sx={{ minWidth: 95, bgcolor: "background.paper", fontSize: 13 }}
-        >
-          {(currencies || []).map((c) => (
-            <MenuItem key={c.currencyCode} value={c.currencyCode}>
-              {c.symbol} {c.currencyCode}
-            </MenuItem>
-          ))}
-        </Select>
+          options={currencyOptions}
+          value={selectedCurrency}
+          onChange={(_e, val) => val && onCurrencyChange(val.currencyCode)}
+          disableClearable
+          autoHighlight
+          getOptionLabel={(opt) => `${opt.symbol} ${opt.currencyCode}`}
+          isOptionEqualToValue={(a, b) => a.currencyCode === b.currencyCode}
+          filterOptions={(opts, state) => {
+            const q = state.inputValue.trim().toLowerCase();
+            if (!q) return opts;
+            return opts.filter(
+              (o) =>
+                o.currencyCode.toLowerCase().includes(q) ||
+                (o.symbol || "").toLowerCase().includes(q) ||
+                (o.currencyName || "").toLowerCase().includes(q)
+            );
+          }}
+          sx={{ minWidth: 140 }}
+          renderInput={(params) => (
+            <TextField
+              {...params}
+              placeholder="Moneda"
+              sx={inputSx}
+            />
+          )}
+          renderOption={(props, option) => (
+            <Box component="li" {...props} key={option.currencyCode} sx={{ fontSize: 13, gap: 1 }}>
+              <Typography component="span" sx={{ minWidth: 22, fontWeight: 600, fontSize: 13 }}>
+                {option.symbol}
+              </Typography>
+              <Typography component="span" sx={{ fontWeight: 600, fontSize: 13 }}>
+                {option.currencyCode}
+              </Typography>
+              <Typography component="span" sx={{ color: "text.secondary", fontSize: 12 }}>
+                {option.currencyName}
+              </Typography>
+            </Box>
+          )}
+        />
       </Tooltip>
     </Box>
   );

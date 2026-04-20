@@ -87,20 +87,20 @@ export default function RegistroPage() {
 
                 <form onSubmit={handleSubmit}>
                     <FormGrid spacing={2}>
-                        <FormField xs={12}>
-                            <TextField label="Nombre completo" required value={name} onChange={(e) => setName(e.target.value)} />
+                        <FormField xs={12} sm={12} md={12}>
+                            <TextField fullWidth label="Nombre completo" required value={name} onChange={(e) => setName(e.target.value)} />
                         </FormField>
-                        <FormField xs={12}>
-                            <TextField label="Email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+                        <FormField xs={12} sm={12} md={12}>
+                            <TextField fullWidth label="Email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
                         </FormField>
-                        <FormField xs={12}>
-                            <TextField label="Telefono (opcional)" value={phone} onChange={(e) => setPhone(e.target.value)} />
+                        <FormField xs={12} sm={12} md={12}>
+                            <TextField fullWidth label="Telefono (opcional)" value={phone} onChange={(e) => setPhone(e.target.value)} />
                         </FormField>
-                        <FormField xs={12} sm={6}>
-                            <TextField label="Contraseña" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
+                        <FormField xs={12} sm={6} md={6}>
+                            <TextField fullWidth label="Contraseña" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
                         </FormField>
-                        <FormField xs={12} sm={6}>
-                            <TextField label="Confirmar contraseña" type="password" required value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
+                        <FormField xs={12} sm={6} md={6}>
+                            <TextField fullWidth label="Confirmar contraseña" type="password" required value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
                         </FormField>
                     </FormGrid>
                     <Button type="submit" variant="contained" fullWidth size="large" disabled={registerMutation.isPending} sx={{ mt: 3 }}>

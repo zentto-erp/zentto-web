@@ -28,6 +28,9 @@ import CartDrawer from "../components/CartDrawer";
 import CurrencySelector from "../components/CurrencySelector";
 import CartSyncProvider from "../components/CartSyncProvider";
 import CompareBar from "../components/CompareBar";
+import MiniCartPopper from "../components/MiniCartPopper";
+import { useStoreSearch } from "../hooks/useStoreSearch";
+import { formatPrice } from "../utils/formatCurrency";
 
 interface Props {
   children: React.ReactNode;
@@ -36,15 +39,19 @@ interface Props {
 
 export default function StoreLayout({ children, onNavigate }: Props) {
   const [searchText, setSearchText] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [userMenuAnchor, setUserMenuAnchor] = useState<null | HTMLElement>(null);
   const [searchFocused, setSearchFocused] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
+  const cartBtnRef = useRef<HTMLDivElement>(null);
+  const [miniCartOpen, setMiniCartOpen] = useState(false);
 
   const cartOpen = useCartStore((s) => s.cartOpen);
   const setCartOpen = useCartStore((s) => s.setCartOpen);
   const getItemCount = useCartStore((s) => s.getItemCount);
   const getTotal = useCartStore((s) => s.getTotal);
+  const currency = useCartStore((s) => s.currency);
   const customerToken = useCartStore((s) => s.customerToken);
   const customerInfo = useCartStore((s) => s.customerInfo);
   const setCustomerToken = useCartStore((s) => s.setCustomerToken);
@@ -58,6 +65,20 @@ export default function StoreLayout({ children, onNavigate }: Props) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const isSmall = useMediaQuery(theme.breakpoints.down("sm"));
+
+  // Debounce 250ms de `searchText` para disparar FTS sin castigar cada pulsación.
+  useEffect(() => {
+    const id = setTimeout(() => setDebouncedSearch(searchText.trim()), 250);
+    return () => clearTimeout(id);
+  }, [searchText]);
+
+  const ftsQuery = useStoreSearch({
+    query: debouncedSearch,
+    limit: 6,
+    enabled: searchFocused && debouncedSearch.length >= 2,
+  });
+  const ftsHits = ftsQuery.data?.rows ?? [];
+  const ftsTotal = ftsQuery.data?.total ?? 0;
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -90,9 +111,28 @@ export default function StoreLayout({ children, onNavigate }: Props) {
     setUserMenuAnchor(null);
   };
 
-  const showSuggestions = hydrated && searchFocused && searchTerms.length > 0;
+  const hasProductSuggestions = ftsHits.length > 0;
+  const hasHistory = searchTerms.length > 0;
+  const hasTypedQuery = debouncedSearch.length >= 2;
+  const showSuggestions =
+    hydrated &&
+    searchFocused &&
+    (hasProductSuggestions || hasHistory || hasTypedQuery);
   const cartCount = hydrated ? getItemCount() : 0;
   const cartTotal = hydrated ? getTotal() : 0;
+
+  const handleProductClick = (code: string) => {
+    setSearchFocused(false);
+    onNavigate(`/productos/${encodeURIComponent(code)}`);
+  };
+
+  const onCartIconClick = () => {
+    if (isMobile) {
+      setCartOpen(true);
+    } else {
+      setMiniCartOpen((prev) => !prev);
+    }
+  };
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", minHeight: "100vh", bgcolor: "#eaeded" }}>
@@ -208,37 +248,119 @@ export default function StoreLayout({ children, onNavigate }: Props) {
                 sx={{
                   position: "absolute", top: "100%", left: 0, right: 0, zIndex: 1300,
                   borderRadius: "0 0 6px 6px", border: "1px solid #ddd", borderTop: "none",
-                  maxHeight: 260, overflow: "auto", bgcolor: "#fff",
+                  maxHeight: 420, overflow: "auto", bgcolor: "#fff",
                 }}
               >
-                <Box sx={{ px: 2, py: 0.8, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <Typography variant="caption" sx={{ color: "#565959", fontWeight: 600, fontSize: 11 }}>
-                    Búsquedas recientes
-                  </Typography>
-                </Box>
-                <Divider />
-                {searchTerms.slice(0, 6).map((entry) => (
-                  <Box
-                    key={entry.term}
-                    onClick={() => handleSearchTermClick(entry.term)}
-                    sx={{
-                      display: "flex", alignItems: "center", px: 2, py: 0.7,
-                      cursor: "pointer", "&:hover": { bgcolor: "#f0f0f0" },
-                    }}
-                  >
-                    <HistoryIcon sx={{ fontSize: 15, color: "#999", mr: 1.5 }} />
-                    <Typography variant="body2" sx={{ flex: 1, color: "#0f1111", fontSize: 14 }}>
-                      {entry.term}
-                    </Typography>
-                    <IconButton
-                      size="small"
-                      onClick={(e) => { e.stopPropagation(); removeSearchTerm(entry.term); }}
-                      sx={{ p: 0.3 }}
-                    >
-                      <CloseIcon sx={{ fontSize: 13, color: "#aaa" }} />
-                    </IconButton>
-                  </Box>
-                ))}
+                {/* Sección: Productos (FTS) */}
+                {hasTypedQuery && (
+                  <>
+                    <Box sx={{ px: 2, py: 0.8 }}>
+                      <Typography variant="caption" sx={{ color: "#565959", fontWeight: 600, fontSize: 11 }}>
+                        Productos
+                      </Typography>
+                    </Box>
+                    <Divider />
+                    {ftsQuery.isLoading ? (
+                      <Box sx={{ px: 2, py: 1.2 }}>
+                        <Typography variant="caption" color="text.secondary">
+                          Buscando…
+                        </Typography>
+                      </Box>
+                    ) : hasProductSuggestions ? (
+                      ftsHits.map((hit) => (
+                        <Box
+                          key={hit.code}
+                          onClick={() => handleProductClick(hit.code)}
+                          sx={{
+                            display: "flex", alignItems: "center", gap: 1.2,
+                            px: 2, py: 0.8, cursor: "pointer",
+                            "&:hover": { bgcolor: "#f0f0f0" },
+                          }}
+                        >
+                          <Box
+                            sx={{
+                              width: 40, height: 40, flexShrink: 0,
+                              borderRadius: 1, bgcolor: "#f5f5f5", overflow: "hidden",
+                              display: "flex", alignItems: "center", justifyContent: "center",
+                            }}
+                          >
+                            {hit.imageUrl ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img
+                                src={hit.imageUrl}
+                                alt={hit.name}
+                                style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                              />
+                            ) : (
+                              <SearchIcon sx={{ fontSize: 18, color: "#bbb" }} />
+                            )}
+                          </Box>
+                          <Box sx={{ flex: 1, minWidth: 0 }}>
+                            <Typography
+                              variant="body2"
+                              sx={{
+                                color: "#0f1111", fontSize: 13, lineHeight: 1.3,
+                                overflow: "hidden", textOverflow: "ellipsis",
+                                display: "-webkit-box", WebkitLineClamp: 1, WebkitBoxOrient: "vertical",
+                              }}
+                              // Highlight desde el FTS (puede contener markup de mark); si no, fallback al name.
+                              dangerouslySetInnerHTML={{ __html: hit.highlight || hit.name }}
+                            />
+                            {hit.category && (
+                              <Typography variant="caption" sx={{ color: "#6d6d6d", fontSize: 11 }}>
+                                {hit.category}
+                              </Typography>
+                            )}
+                          </Box>
+                          <Typography variant="body2" sx={{ fontWeight: 700, fontSize: 13, color: "#b12704" }}>
+                            {formatPrice(hit.price, currency)}
+                          </Typography>
+                        </Box>
+                      ))
+                    ) : (
+                      <Box sx={{ px: 2, py: 1.2 }}>
+                        <Typography variant="caption" color="text.secondary">
+                          Sin resultados para &ldquo;{debouncedSearch}&rdquo;
+                        </Typography>
+                      </Box>
+                    )}
+                  </>
+                )}
+
+                {/* Sección: Búsquedas recientes */}
+                {hasHistory && (
+                  <>
+                    {hasTypedQuery && <Divider />}
+                    <Box sx={{ px: 2, py: 0.8, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <Typography variant="caption" sx={{ color: "#565959", fontWeight: 600, fontSize: 11 }}>
+                        Búsquedas recientes
+                      </Typography>
+                    </Box>
+                    <Divider />
+                    {searchTerms.slice(0, 6).map((entry) => (
+                      <Box
+                        key={entry.term}
+                        onClick={() => handleSearchTermClick(entry.term)}
+                        sx={{
+                          display: "flex", alignItems: "center", px: 2, py: 0.7,
+                          cursor: "pointer", "&:hover": { bgcolor: "#f0f0f0" },
+                        }}
+                      >
+                        <HistoryIcon sx={{ fontSize: 15, color: "#999", mr: 1.5 }} />
+                        <Typography variant="body2" sx={{ flex: 1, color: "#0f1111", fontSize: 14 }}>
+                          {entry.term}
+                        </Typography>
+                        <IconButton
+                          size="small"
+                          onClick={(e) => { e.stopPropagation(); removeSearchTerm(entry.term); }}
+                          sx={{ p: 0.3 }}
+                        >
+                          <CloseIcon sx={{ fontSize: 13, color: "#aaa" }} />
+                        </IconButton>
+                      </Box>
+                    ))}
+                  </>
+                )}
               </Paper>
             )}
           </Box>
@@ -304,7 +426,8 @@ export default function StoreLayout({ children, onNavigate }: Props) {
 
           {/* ═══ Cart ═══ */}
           <Box
-            onClick={() => setCartOpen(true)}
+            ref={cartBtnRef}
+            onClick={onCartIconClick}
             sx={{
               display: "flex", alignItems: "flex-end", cursor: "pointer",
               p: "4px 8px", borderRadius: "3px", border: "1px solid transparent",
@@ -487,6 +610,18 @@ export default function StoreLayout({ children, onNavigate }: Props) {
       <CartSyncProvider />
       <CompareBar onOpen={() => onNavigate("/comparar")} />
 
+      {/* Desktop: popper compacto con preview de items + CTAs. */}
+      {!isMobile && (
+        <MiniCartPopper
+          anchorEl={cartBtnRef.current}
+          open={miniCartOpen}
+          onClose={() => setMiniCartOpen(false)}
+          onViewCart={() => onNavigate("/carrito")}
+          onCheckout={() => onNavigate("/checkout")}
+        />
+      )}
+
+      {/* Mobile: drawer completo (se dispara desde click del icono cuando isMobile). */}
       <CartDrawer
         open={cartOpen}
         onClose={() => setCartOpen(false)}
