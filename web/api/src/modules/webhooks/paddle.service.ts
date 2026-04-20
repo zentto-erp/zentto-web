@@ -1,5 +1,6 @@
 import crypto from "node:crypto";
 import { randomBytes } from "node:crypto";
+import { notifyFromEnv } from "@zentto/platform-client/notify";
 import { provisionTenant, sendWelcomeEmail } from "../tenants/tenant.service.js";
 import { handleWebhookEvent } from "../billing/billing.service.js";
 import { provisionTenantDatabase } from "../../db/provision-tenant-db.js";
@@ -300,18 +301,19 @@ export async function handlePaddleEvent(
 
         // Email de bienvenida BYOC — incluye link de onboarding
         const byocHtml = buildByocWelcomeHtml(chosenCompanyName, onboardingUrl);
-        const notifyUrl = process.env.NOTIFY_BASE_URL ?? "https://notify.zentto.net";
         const notifyKey = process.env.NOTIFY_API_KEY;
         if (notifyKey) {
-          fetch(`${notifyUrl}/api/email/send`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json", "X-API-Key": notifyKey },
-            body: JSON.stringify({
-              to: customerEmail,
-              subject: `Zentto BYOC — Configura tu servidor para ${chosenCompanyName}`,
-              html: byocHtml,
-              from: "Zentto <no-reply@zentto.net>",
-            }),
+          const notify = notifyFromEnv({
+            baseUrl: process.env.NOTIFY_BASE_URL ?? process.env.NOTIFY_API_URL,
+            apiKey: notifyKey,
+          });
+          notify.email.send({
+            to: customerEmail,
+            subject: `Zentto BYOC — Configura tu servidor para ${chosenCompanyName}`,
+            html: byocHtml,
+            from: "Zentto <no-reply@zentto.net>",
+          }).then((r) => {
+            if (!r.ok) console.error("[paddle] Error enviando email BYOC:", r.error);
           }).catch((err) => console.error("[paddle] Error enviando email BYOC:", err));
         }
       })
