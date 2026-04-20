@@ -564,6 +564,14 @@ export function ZenttoRecordTable<T extends Record<string, unknown> = Record<str
     el?.clearSelection?.();
   }, [selectionProp, onSelectionChange]);
 
+  // ─── Registrar custom element zentto-grid (si aún no está definido) ──
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (!customElements.get('zentto-grid')) {
+      import('@zentto/datagrid').catch(() => {});
+    }
+  }, []);
+
   // ─── Bind data → web component ────────────────────────────────────
   useEffect(() => {
     const el = gridRef.current;
