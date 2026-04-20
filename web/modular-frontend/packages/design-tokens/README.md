@@ -117,11 +117,28 @@ npm run typecheck   # strict type-check, no emite
 Los consumidores **dentro del workspace** importan directamente desde `src/` vía
 `main: "src/index.ts"` (Next.js los transpila). No necesitan ejecutar `build` previo.
 
+## Publicación (npm privado, scope `@zentto/*`)
+
+Este paquete se publica a npm como **privado restricted** (scope privado pago `@zentto`).
+El workflow `.github/workflows/publish-design-tokens.yml` corre automáticamente en push a
+`main` cuando cambia `web/modular-frontend/packages/design-tokens/**`:
+
+1. `npm install --ignore-scripts` (sin ejecutar `prepare` aún).
+2. `npm run typecheck` + `npm run build` (genera `dist/`).
+3. Compara `package.json` version vs `npm view @zentto/design-tokens version`.
+4. Si son distintas: `npm publish --access restricted`.
+
+> ⚠️ **Nunca publicar público.** Scope `@zentto/*` es privado — siempre usar
+> `publishConfig.access: "restricted"`. Ver memoria `feedback_npm_private_only.md`.
+
+Para bumpear versión: editar `version` en `package.json`, commit, PR a `developer`, merge a
+`main`, y el workflow publica automáticamente.
+
 ## Roadmap
 
 - CRM-115 (este paquete, merged a `developer`).
 - Dashboard notify consume `@zentto/design-tokens/css` en `globals.css` (issue separado).
-- `npm publish --access restricted` al scope `@zentto/*` (acción manual del owner).
+- v0.1.0 publicado a npm privado (issue #437).
 
 ## Referencias
 

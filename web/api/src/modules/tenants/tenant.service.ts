@@ -1,3 +1,4 @@
+import { notifyFromEnv } from "@zentto/platform-client/notify";
 import { callSp } from "../../db/query.js";
 import { hashPassword } from "../../auth/password.js";
 import { validateCompanyLimit } from "../iam/enforcement/company-limit.guard.js";
@@ -109,9 +110,10 @@ export async function sendWelcomeEmail(
   adminUserCode: string = "ADMIN",
   magicLinkUrl?: string
 ): Promise<void> {
-  const notifyUrl = process.env.NOTIFY_BASE_URL ?? "https://notify.zentto.net";
-  // Acepta NOTIFY_API_KEY (directo) o AUTH_MAIL_WEBHOOK_TOKEN (inyectado por deploy)
-  const notifyKey = process.env.NOTIFY_API_KEY || process.env.AUTH_MAIL_WEBHOOK_TOKEN;
+  // Acepta NOTIFY_API_KEY (directo) o AUTH_MAIL_WEBHOOK_TOKEN (inyectado por deploy).
+  // Se construye un NotifyClient explícito para honrar ambos fallbacks sin depender
+  // del default de env vars que usa `notifyFromEnv`.
+  const notifyKey = process.env.NOTIFY_API_KEY || process.env.AUTH_MAIL_WEBHOOK_TOKEN || "";
   const loginUrl = `${tenantUrl || "https://app.zentto.net"}/authentication/login`;
   const useMagicLink = Boolean(magicLinkUrl);
 
@@ -119,6 +121,11 @@ export async function sendWelcomeEmail(
     console.warn("[welcome-email] NOTIFY_API_KEY / AUTH_MAIL_WEBHOOK_TOKEN no configurada — email NO enviado a", ownerEmail);
     return;
   }
+
+  const notify = notifyFromEnv({
+    baseUrl: process.env.NOTIFY_BASE_URL ?? process.env.NOTIFY_API_URL,
+    apiKey: notifyKey,
+  });
 
   const html = `
   <div style="font-family:'Segoe UI',Arial,sans-serif;max-width:620px;margin:0 auto;background:#f8f9fa;padding:0">
@@ -217,25 +224,20 @@ export async function sendWelcomeEmail(
 
   // Reintentos: 3 intentos con backoff exponencial. Solo reintenta errores
   // transitorios (red, 5xx). 4xx (auth/payload inválido) NO se reintenta.
+  // Nota: el SDK ya incluye 1 retry interno; aquí envolvemos con withRetry
+  // externo para mantener el mismo comportamiento (3 intentos totales) y la
+  // clasificación isHttp4xx → no-retry sobre errores del wire de notify.
   const { withRetry, isHttp4xx } = await import("../_shared/retry.js");
   try {
     await withRetry(async () => {
-      const res = await fetch(`${notifyUrl}/api/email/send`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-API-Key": notifyKey,
-        },
-        body: JSON.stringify({
-          to: ownerEmail,
-          subject: `Bienvenido a Zentto — Tu cuenta ${legalName} está lista`,
-          html,
-          from: "Zentto <no-reply@zentto.net>",
-        }),
+      const result = await notify.email.send({
+        to: ownerEmail,
+        subject: `Bienvenido a Zentto — Tu cuenta ${legalName} está lista`,
+        html,
+        from: "Zentto <no-reply@zentto.net>",
       });
-      if (!res.ok) {
-        const body = await res.text().catch(() => "");
-        throw new Error(`notify_${res.status}: ${body.slice(0, 200)}`);
+      if (!result.ok) {
+        throw new Error(`notify_error: ${result.error ?? "unknown"}`);
       }
     }, {
       attempts: 3,
