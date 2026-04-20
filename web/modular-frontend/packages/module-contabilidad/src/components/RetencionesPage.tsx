@@ -9,7 +9,7 @@ import {
 import type { ColumnDef } from "@zentto/datagrid-core";
 import AddIcon from "@mui/icons-material/Add";
 import { useGridLayoutSync, useCountries, useLookup } from "@zentto/shared-api";
-import { ContextActionHeader } from "@zentto/shared-ui";
+import { ModulePageShell } from "@zentto/shared-ui";
 import { useRetencionesList, useGenerarRetencion, type WithholdingFilter } from "../hooks/useFiscalTributaria";
 import { buildContabilidadGridId, useContabilidadGridId, useContabilidadGridRegistration } from "./zenttoGridPersistence";
 import ConceptosRetencionPage from "./ConceptosRetencionPage";
@@ -102,15 +102,17 @@ function ComprobantesTab() {
   if (!registered) return <Box sx={{ display: "flex", justifyContent: "center", mt: 10 }}><CircularProgress /></Box>;
 
   return (
-    <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-      <ContextActionHeader title="Comprobantes de Retencion" primaryAction={{ label: "Generar retencion", onClick: () => setOpenGen(true) }} />
-      <Box sx={{ p: { xs: 2, md: 3 }, flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-        <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, width: "100%", elevation: 0, border: "1px solid #E5E7EB" }}>
+    <>
+      <ModulePageShell
+        actions={<Button variant="contained" onClick={() => setOpenGen(true)}>Generar retencion</Button>}
+        sx={{ display: "flex", flexDirection: "column", minHeight: 500 }}
+      >
+        <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 500, width: "100%", elevation: 0, border: (t) => `1px solid ${t.palette.divider}` }}>
           <zentto-grid ref={gridRef} default-currency="VES" export-filename="retenciones" height="100%" show-totals
             enable-toolbar enable-header-menu enable-header-filters enable-clipboard enable-quick-search enable-context-menu enable-status-bar enable-configurator
             enable-create create-label="Nueva Retencion"></zentto-grid>
         </Paper>
-      </Box>
+      </ModulePageShell>
 
       <Dialog open={openGen} onClose={() => setOpenGen(false)} maxWidth="xs" fullWidth>
         <DialogTitle>Generar retencion</DialogTitle>
@@ -135,7 +137,7 @@ function ComprobantesTab() {
             startIcon={generarMutation.isPending ? <CircularProgress size={16} /> : <AddIcon />}>Generar</Button>
         </DialogActions>
       </Dialog>
-    </Box>
+    </>
   );
 }
 

@@ -7,7 +7,7 @@ import {
 } from "@mui/material";
 import type { ColumnDef } from "@zentto/datagrid-core";
 import { useGridLayoutSync, formatCurrency } from "@zentto/shared-api";
-import { ContextActionHeader } from "@zentto/shared-ui";
+import { ModulePageShell } from "@zentto/shared-ui";
 import {
   useInflationIndices, useUpsertInflationIndex, useMonetaryClassifications, useUpsertMonetaryClass,
   useAutoClassifyAccounts, useCalculateInflation, usePostInflation, useVoidInflation,
@@ -185,13 +185,12 @@ export default function InflacionAjustePage() {
   if (!registered) { return <Box sx={{ display: "flex", justifyContent: "center", mt: 10 }}><CircularProgress /></Box>; }
 
   return (
-    <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-      <ContextActionHeader title="Ajuste por Inflacion" />
-      <Box sx={{ p: { xs: 2, md: 3 }, flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
+    <>
+      <ModulePageShell sx={{ display: "flex", flexDirection: "column", minHeight: 500 }}>
         <Stack direction="row" alignItems="center" spacing={1} mb={1}>
           <Chip label="BA VEN-NIF 2 / NIC 29 / DPC-10" color="primary" size="small" variant="outlined" />
         </Stack>
-        <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, width: "100%", border: "1px solid #E5E7EB" }}>
+        <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 500, width: "100%", border: (t) => `1px solid ${t.palette.divider}` }}>
           <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ borderBottom: 1, borderColor: "divider", px: 2 }}>
             <Tab label="Indices INPC" /><Tab label="Clasificacion monetaria" /><Tab label="Calcular ajuste" /><Tab label="Historial" />
           </Tabs>
@@ -255,7 +254,7 @@ export default function InflacionAjustePage() {
             </Box>
           </TabPanel>
         </Paper>
-      </Box>
+      </ModulePageShell>
 
       {/* Dialog: Agregar Indice INPC */}
       <Dialog open={indiceDialogOpen} onClose={() => setIndiceDialogOpen(false)} maxWidth="xs" fullWidth>
@@ -304,7 +303,7 @@ export default function InflacionAjustePage() {
           <Button variant="contained" color="error" onClick={handleVoid} disabled={voidMutation.isPending}>Anular</Button>
         </DialogActions>
       </Dialog>
-    </Box>
+    </>
   );
 }
 

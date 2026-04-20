@@ -15,7 +15,7 @@ import {
   useCreateCuenta, useUpdateCuenta, useDeleteCuenta,
 } from "../hooks/useContabilidad";
 import EditableDataGrid from "./EditableDataGrid";
-import { ContextActionHeader, DatePicker } from "@zentto/shared-ui";
+import { ModulePageShell, DatePicker } from "@zentto/shared-ui";
 import dayjs from "dayjs";
 import { useGridLayoutSync, toDateOnly } from "@zentto/shared-api";
 import { useTimezone } from "@zentto/shared-auth";
@@ -136,21 +136,27 @@ export default function PlanCuentasPageMejorado() {
   };
 
   return (
-    <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-      <ContextActionHeader title="Plan de Cuentas"
-        primaryAction={{ label: "Nueva cuenta", onClick: () => console.log("Nueva cuenta activada") }}
-        secondaryActions={[
-          { label: seedMutation.isPending ? "Creando..." : "Crear datos ejemplo", onClick: handleSeedData, disabled: seedMutation.isPending },
-          { label: "Nuevo asiento", onClick: () => router.push("/asientos/new") },
-        ]}
-      />
+    <>
+      <ModulePageShell
+        actions={
+          <>
+            <Button variant="contained" onClick={() => console.log("Nueva cuenta activada")}>Nueva cuenta</Button>
+            <Button variant="outlined" onClick={handleSeedData} disabled={seedMutation.isPending}>
+              {seedMutation.isPending ? "Creando..." : "Crear datos ejemplo"}
+            </Button>
+            <Button variant="outlined" onClick={() => router.push("/asientos/new")}>Nuevo asiento</Button>
+          </>
+        }
+        tabs={
+          <Paper>
+            <Tabs value={tabValue} onChange={(_, v) => setTabValue(v)} variant="scrollable" scrollButtons="auto">
+              <Tab label="Todas" /><Tab label="Activos" sx={{ color: "success.main" }} /><Tab label="Pasivos" sx={{ color: "error.main" }} />
+              <Tab label="Capital" sx={{ color: "info.main" }} /><Tab label="Ingresos" sx={{ color: "warning.main" }} /><Tab label="Gastos" sx={{ color: "secondary.main" }} />
+            </Tabs>
+          </Paper>
+        }
+      >
       {error && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>{error}</Alert>}
-      <Paper sx={{ mb: 2 }}>
-        <Tabs value={tabValue} onChange={(_, v) => setTabValue(v)} variant="scrollable" scrollButtons="auto">
-          <Tab label="Todas" /><Tab label="Activos" sx={{ color: "success.main" }} /><Tab label="Pasivos" sx={{ color: "error.main" }} />
-          <Tab label="Capital" sx={{ color: "info.main" }} /><Tab label="Ingresos" sx={{ color: "warning.main" }} /><Tab label="Gastos" sx={{ color: "secondary.main" }} />
-        </Tabs>
-      </Paper>
       <Card sx={{ mb: 2 }}>
         <CardContent>
           <Stack direction="row" spacing={3}>
@@ -173,8 +179,9 @@ export default function PlanCuentasPageMejorado() {
         defaultNewRow={{ codCuenta: "", descripcion: "", tipo: "A", nivel: 3 }}
       />
 
+      </ModulePageShell>
       <MayorAnaliticoDialog open={!!cuentaMayor} onClose={() => setCuentaMayor(null)} cuenta={cuentaMayor} />
-    </Box>
+    </>
   );
 }
 

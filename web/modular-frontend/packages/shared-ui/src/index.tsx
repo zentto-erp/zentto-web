@@ -44,6 +44,10 @@ export type { DashboardKpiCardProps } from './components/DashboardKpiCard';
 export { default as DashboardSection } from './components/DashboardSection';
 export type { DashboardSectionProps } from './components/DashboardSection';
 
+// Module page shell (subpáginas unificadas sin título)
+export { default as ModulePageShell } from './components/ModulePageShell';
+export type { ModulePageShellProps } from './components/ModulePageShell';
+
 // Components
 export { default as Copyright } from './components/Copyright';
 export { default as Logo } from './components/Logo';

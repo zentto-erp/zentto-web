@@ -23,7 +23,7 @@ import {
 } from "@mui/material";
 import type { ColumnDef } from "@zentto/datagrid-core";
 import { useGridLayoutSync, formatCurrency } from "@zentto/shared-api";
-import { ContextActionHeader, DatePicker, FormGrid, FormField } from "@zentto/shared-ui";
+import { ModulePageShell, DatePicker, FormGrid, FormField } from "@zentto/shared-ui";
 import dayjs from "dayjs";
 
 
@@ -160,11 +160,9 @@ export default function ActivosFijosListPage() {
   }
 
   return (
-    <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-      <ContextActionHeader title="Activos fijos" />
-
-      <Box sx={{ p: { xs: 2, md: 3 }, flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-        <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, width: "100%", elevation: 0, border: "1px solid #E5E7EB" }}>
+    <>
+      <ModulePageShell sx={{ display: "flex", flexDirection: "column", minHeight: 500 }}>
+        <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 500, width: "100%", elevation: 0, border: (t) => `1px solid ${t.palette.divider}` }}>
           <zentto-grid
             ref={gridRef}
             default-currency="VES"
@@ -183,7 +181,7 @@ export default function ActivosFijosListPage() {
             enable-configurator
           ></zentto-grid>
         </Paper>
-      </Box>
+      </ModulePageShell>
 
       {/* Dialog Crear Activo */}
       <Dialog open={openCreate} onClose={() => setOpenCreate(false)} maxWidth="md" fullWidth>
@@ -290,7 +288,7 @@ export default function ActivosFijosListPage() {
           </Button>
         </DialogActions>
       </Dialog>
-    </Box>
+    </>
   );
 }
 
