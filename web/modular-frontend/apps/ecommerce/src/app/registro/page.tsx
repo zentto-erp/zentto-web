@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Box, Typography, TextField, Button, Paper, Alert, Link as MuiLink } from '@mui/material';
+import EmailOutlined from '@mui/icons-material/EmailOutlined';
 import { FormGrid, FormField } from '@zentto/shared-ui';
 import { useCustomerRegister } from '@zentto/module-ecommerce';
 
@@ -48,14 +49,17 @@ export default function RegistroPage() {
         return (
             <Box sx={{ maxWidth: 480, mx: 'auto', py: 6 }}>
                 <Paper sx={{ p: 5, textAlign: 'center' }}>
-                    <Typography sx={{ fontSize: 56, lineHeight: 1, mb: 2 }}>&#9993;</Typography>
+                    <EmailOutlined
+                        aria-hidden="true"
+                        sx={{ fontSize: 56, color: '#ff9900', mb: 2, display: 'block', mx: 'auto' }}
+                    />
                     <Typography variant="h5" fontWeight={700} gutterBottom>
                         Revisa tu correo
                     </Typography>
                     <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                         Enviamos un enlace de confirmacion a:
                     </Typography>
-                    <Typography variant="body1" fontWeight={600} sx={{ mb: 2 }}>
+                    <Typography variant="body1" fontWeight={600} component="strong" sx={{ mb: 2, display: 'block' }}>
                         {email}
                     </Typography>
                     <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 3, maxWidth: 340, mx: 'auto' }}>

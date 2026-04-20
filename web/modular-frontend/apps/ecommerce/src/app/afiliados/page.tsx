@@ -2,6 +2,7 @@
 
 import {
   Box,
+  Chip,
   Container,
   Typography,
   Button,
@@ -45,18 +46,37 @@ const steps = [
   },
 ];
 
+// TODO: mover a hook `useAffiliateCommissionTable()` cuando exista endpoint
+// (ver spec Ola 1 §1E — tabla de marketing, hardcoded aceptable hasta Ola 4).
 const commissions = [
-  { category: 'Electrónica', rate: '3%' },
-  { category: 'Ropa', rate: '5%' },
-  { category: 'Hogar', rate: '7%' },
-  { category: 'Software', rate: '10%' },
+  { category: 'Electrónica', rate: '3%', cookie: '30 días', min: 'USD 10' },
+  { category: 'Ropa y moda', rate: '5%', cookie: '30 días', min: 'USD 10' },
+  { category: 'Libros', rate: '4%', cookie: '30 días', min: 'USD 10' },
+  { category: 'Juguetería', rate: '6%', cookie: '30 días', min: 'USD 10' },
+  { category: 'Hogar', rate: '7%', cookie: '30 días', min: 'USD 10' },
+  { category: 'Software y SaaS', rate: '10%', cookie: '45 días', min: 'USD 20' },
+  { category: 'Servicios digitales', rate: '12%', cookie: '45 días', min: 'USD 20' },
+  { category: 'Cursos online', rate: '15%', cookie: '60 días', min: 'USD 20' },
 ];
 
 const commissionRows = commissions.map((c) => ({ id: c.category, ...c }));
 
 const commissionColumns: ColumnSpec[] = [
-  { field: 'category', header: 'Categoría', flex: 1, minWidth: 160 },
-  { field: 'rate', header: 'Comisión', width: 140 },
+  { field: 'category', header: 'Categoría', flex: 2, minWidth: 160 },
+  {
+    field: 'rate',
+    header: 'Comisión',
+    width: 120,
+    renderCell: (value: unknown) => (
+      <Chip
+        label={String(value ?? '')}
+        size="small"
+        sx={{ bgcolor: '#ff9900', color: '#131921', fontWeight: 700 }}
+      />
+    ),
+  },
+  { field: 'cookie', header: 'Duración cookie', width: 140 },
+  { field: 'min', header: 'Mínimo retiro', width: 120 },
 ];
 
 const faqs = [

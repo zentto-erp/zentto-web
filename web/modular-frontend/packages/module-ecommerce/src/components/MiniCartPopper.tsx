@@ -37,13 +37,18 @@ interface Props {
 export default function MiniCartPopper({ anchorEl, open, onClose, onViewCart, onCheckout }: Props) {
   const items = useCartStore((s) => s.items);
   const getSubtotal = useCartStore((s) => s.getSubtotal);
+  const getTaxTotal = useCartStore((s) => s.getTaxTotal);
+  const getTotal = useCartStore((s) => s.getTotal);
   const getItemCount = useCartStore((s) => s.getItemCount);
   const currency = useCartStore((s) => s.currency);
 
   const itemCount = getItemCount();
   const subtotal = getSubtotal();
+  const taxTotal = getTaxTotal();
+  const total = getTotal();
   const preview = items.slice(0, 3);
   const remaining = Math.max(0, items.length - preview.length);
+  const taxPct = Math.round((currency.taxRate ?? 0) * 100);
 
   return (
     <Popper
@@ -78,7 +83,7 @@ export default function MiniCartPopper({ anchorEl, open, onClose, onViewCart, on
             }}
           >
             <Typography variant="subtitle2" fontWeight={700} sx={{ fontSize: 14 }}>
-              Tu carrito ({itemCount})
+              Carrito ({itemCount})
             </Typography>
             <IconButton size="small" onClick={onClose} sx={{ color: "#fff", p: 0.5 }}>
               <CloseIcon sx={{ fontSize: 18 }} />
@@ -169,14 +174,33 @@ export default function MiniCartPopper({ anchorEl, open, onClose, onViewCart, on
 
               <Divider />
 
-              {/* Subtotal + CTAs */}
+              {/* Subtotal + IVA + Total + CTAs */}
               <Box sx={{ p: 2 }}>
-                <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1.2 }}>
+                <Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.5 }}>
                   <Typography variant="body2" color="text.secondary">
                     Subtotal
                   </Typography>
-                  <Typography variant="body2" fontWeight={700}>
+                  <Typography variant="body2" fontWeight={500}>
                     {formatPrice(subtotal, currency)}
+                  </Typography>
+                </Box>
+                {taxTotal > 0 && (
+                  <Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.5 }}>
+                    <Typography variant="body2" color="text.secondary">
+                      {currency.taxName || "IVA"}{taxPct ? ` (${taxPct}%)` : ""}
+                    </Typography>
+                    <Typography variant="body2" fontWeight={500}>
+                      {formatPrice(taxTotal, currency)}
+                    </Typography>
+                  </Box>
+                )}
+                <Divider sx={{ my: 1 }} />
+                <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1.2 }}>
+                  <Typography variant="body2" fontWeight={700}>
+                    Total
+                  </Typography>
+                  <Typography variant="body1" fontWeight={700} sx={{ color: "#b12704" }}>
+                    {formatPrice(total, currency)}
                   </Typography>
                 </Box>
 

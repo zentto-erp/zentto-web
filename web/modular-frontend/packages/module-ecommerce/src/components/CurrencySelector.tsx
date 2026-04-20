@@ -7,16 +7,68 @@ import { useCartStore } from "../store/useCartStore";
 import type { StorefrontCountry, StorefrontCurrency } from "../hooks/useStorefront";
 
 /**
- * Selector de moneda + país para el header del storefront.
+ * Selector de país + moneda unificado para el header del storefront.
  *
  * Comportamiento:
  *  - Al montar (primera vez), resuelve país por IP (CF-IPCountry → endpoint /resolve)
  *    y aplica país + currencyCode + tasa default.
- *  - El usuario puede cambiar país (que recalcula tasa por país) o moneda directamente.
+ *  - Un único `<Autocomplete>` agrupado por continente (spec Ola 1 §1A), con búsqueda
+ *    por nombre de país, código ISO, moneda o símbolo.
  *  - Persistido en localStorage vía useCartStore.
- *  - Usa Autocomplete para escalar a muchos países/monedas y soportar búsqueda integrada.
- *  - Dedupe defensivo por `countryCode` / `currencyCode` (la API puede devolver repetidos).
+ *  - Dedupe defensivo por `countryCode` (la API puede devolver repetidos).
+ *
+ * Mobile: el layout del header esconde este componente (solo se muestra >= md).
+ * El drawer mobile recibirá su propia copia full-width en la sección "Envío y moneda".
  */
+
+interface CountryOption extends StorefrontCountry {
+  /** Moneda resuelta (symbol + name) — si la API de currencies la conoce. */
+  currencyMatch: StorefrontCurrency | undefined;
+  /** Continente calculado localmente para `groupBy` del Autocomplete. */
+  continent: string;
+}
+
+/**
+ * Mapa ISO-3166 alpha-2 → continente (continentes relevantes para Zentto).
+ * Usamos estos buckets: "Latinoamérica", "Norteamérica", "Europa", "Asia",
+ * "África", "Oceanía", "Otros". Faltantes caen en "Otros" sin bloquear.
+ */
+const CONTINENT_BY_COUNTRY: Record<string, string> = {
+  // Latinoamérica (México + Centro/Sudamérica + Caribe español)
+  AR: "Latinoamérica", BO: "Latinoamérica", BR: "Latinoamérica", CL: "Latinoamérica",
+  CO: "Latinoamérica", CR: "Latinoamérica", CU: "Latinoamérica", DO: "Latinoamérica",
+  EC: "Latinoamérica", SV: "Latinoamérica", GT: "Latinoamérica", HN: "Latinoamérica",
+  MX: "Latinoamérica", NI: "Latinoamérica", PA: "Latinoamérica", PY: "Latinoamérica",
+  PE: "Latinoamérica", PR: "Latinoamérica", UY: "Latinoamérica", VE: "Latinoamérica",
+  // Norteamérica
+  US: "Norteamérica", CA: "Norteamérica",
+  // Europa
+  ES: "Europa", PT: "Europa", FR: "Europa", DE: "Europa", IT: "Europa", GB: "Europa",
+  IE: "Europa", NL: "Europa", BE: "Europa", LU: "Europa", CH: "Europa", AT: "Europa",
+  SE: "Europa", NO: "Europa", DK: "Europa", FI: "Europa", PL: "Europa", CZ: "Europa",
+  RO: "Europa", HU: "Europa", GR: "Europa", BG: "Europa", HR: "Europa", SI: "Europa",
+  SK: "Europa", EE: "Europa", LV: "Europa", LT: "Europa", IS: "Europa",
+  // Asia
+  CN: "Asia", JP: "Asia", KR: "Asia", IN: "Asia", ID: "Asia", PH: "Asia",
+  TH: "Asia", VN: "Asia", MY: "Asia", SG: "Asia", AE: "Asia", SA: "Asia",
+  IL: "Asia", TR: "Asia",
+  // África
+  ZA: "África", EG: "África", MA: "África", NG: "África", KE: "África",
+  // Oceanía
+  AU: "Oceanía", NZ: "Oceanía",
+};
+
+/** Orden de presentación de continentes (Latinoamérica primero — base LATAM). */
+const CONTINENT_ORDER: Record<string, number> = {
+  Latinoamérica: 0,
+  Norteamérica: 1,
+  Europa: 2,
+  Asia: 3,
+  África: 4,
+  Oceanía: 5,
+  Otros: 9,
+};
+
 export default function CurrencySelector() {
   const { data: countries } = useStorefrontCountries();
   const { data: currencies } = useStorefrontCurrencies();
@@ -40,12 +92,6 @@ export default function CurrencySelector() {
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [resolved?.countryCode, currencies?.length]);
-
-  const onCurrencyChange = (code: string) => {
-    const m = currencies?.find((c) => c.currencyCode === code);
-    if (!m) return;
-    setCurrency({ ...currency, currencyCode: m.currencyCode, symbol: m.symbol, rateToBase: Number(m.rateToBase) });
-  };
 
   const onCountryChange = async (code: string) => {
     if (!code) return;
@@ -78,28 +124,29 @@ export default function CurrencySelector() {
     }
   };
 
-  // Dedupe + orden alfabético por nombre de país.
-  const countryOptions = useMemo<StorefrontCountry[]>(() => {
+  // Dedupe + enriquecer con continente + moneda matched + orden alfabético.
+  const countryOptions = useMemo<CountryOption[]>(() => {
     const unique = Array.from(
       new Map((countries || []).map((c) => [c.countryCode, c])).values()
     );
-    return unique.slice().sort((a, b) => a.countryName.localeCompare(b.countryName));
-  }, [countries]);
-
-  // Dedupe + orden alfabético por código de moneda.
-  const currencyOptions = useMemo<StorefrontCurrency[]>(() => {
-    const unique = Array.from(
-      new Map((currencies || []).map((c) => [c.currencyCode, c])).values()
-    );
-    return unique.slice().sort((a, b) => a.currencyCode.localeCompare(b.currencyCode));
-  }, [currencies]);
+    const enriched: CountryOption[] = unique.map((c) => ({
+      ...c,
+      currencyMatch: currencies?.find((cc) => cc.currencyCode === c.currencyCode),
+      continent: CONTINENT_BY_COUNTRY[c.countryCode] || "Otros",
+    }));
+    // Orden: continente (según CONTINENT_ORDER) luego nombre de país.
+    enriched.sort((a, b) => {
+      const ca = CONTINENT_ORDER[a.continent] ?? 9;
+      const cb = CONTINENT_ORDER[b.continent] ?? 9;
+      if (ca !== cb) return ca - cb;
+      return a.countryName.localeCompare(b.countryName);
+    });
+    return enriched;
+  }, [countries, currencies]);
 
   const selectedCountry =
     countryOptions.find((c) => c.countryCode === currency.countryCode) || null;
-  const selectedCurrency =
-    currencyOptions.find((c) => c.currencyCode === currency.currencyCode) || null;
 
-  // Estilos compactos reutilizables (dark theme del header).
   const inputSx = {
     bgcolor: "background.paper",
     borderRadius: 1,
@@ -108,8 +155,8 @@ export default function CurrencySelector() {
   } as const;
 
   return (
-    <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
-      <Tooltip title="País de envío / reglas fiscales">
+    <Tooltip title="Seleccionar país y moneda (reglas fiscales + visualización)">
+      <Box>
         <Autocomplete
           size="small"
           options={countryOptions}
@@ -117,82 +164,64 @@ export default function CurrencySelector() {
           onChange={(_e, val) => val && onCountryChange(val.countryCode)}
           disableClearable
           autoHighlight
-          getOptionLabel={(opt) => `${opt.countryCode}`}
+          groupBy={(opt) => opt.continent}
+          getOptionLabel={(opt) =>
+            `${opt.flagEmoji} ${opt.countryCode} · ${opt.currencyMatch?.symbol ?? opt.currencySymbol ?? ""} ${opt.currencyCode}`.trim()
+          }
           isOptionEqualToValue={(a, b) => a.countryCode === b.countryCode}
           filterOptions={(opts, state) => {
             const q = state.inputValue.trim().toLowerCase();
             if (!q) return opts;
-            return opts.filter(
-              (o) =>
-                o.countryCode.toLowerCase().includes(q) ||
-                o.countryName.toLowerCase().includes(q)
-            );
+            return opts.filter((o) => {
+              const hay =
+                o.countryCode.toLowerCase() +
+                " " +
+                o.countryName.toLowerCase() +
+                " " +
+                (o.currencyCode || "").toLowerCase() +
+                " " +
+                (o.currencyMatch?.symbol || o.currencySymbol || "").toLowerCase() +
+                " " +
+                (o.currencyMatch?.currencyName || "").toLowerCase();
+              return hay.includes(q);
+            });
           }}
-          sx={{ minWidth: 110 }}
+          sx={{ minWidth: { xs: 160, md: 200 } }}
+          slotProps={{
+            paper: { sx: { minWidth: 280 } },
+          }}
           renderInput={(params) => (
             <TextField
               {...params}
-              placeholder="País"
+              placeholder="País / Moneda"
+              inputProps={{
+                ...params.inputProps,
+                "aria-label": "Seleccionar país y moneda",
+              }}
               sx={inputSx}
             />
           )}
           renderOption={(props, option) => (
-            <Box component="li" {...props} key={option.countryCode} sx={{ fontSize: 13, gap: 1 }}>
+            <Box
+              component="li"
+              {...props}
+              key={option.countryCode}
+              sx={{ fontSize: 13, gap: 1, display: "flex", alignItems: "center" }}
+            >
               <span style={{ fontSize: 16, lineHeight: 1 }}>{option.flagEmoji}</span>
-              <Typography component="span" sx={{ fontWeight: 600, fontSize: 13 }}>
+              <Typography component="span" sx={{ fontWeight: 600, fontSize: 13, minWidth: 28 }}>
                 {option.countryCode}
               </Typography>
-              <Typography component="span" sx={{ color: "text.secondary", fontSize: 12 }}>
+              <Typography component="span" sx={{ color: "text.primary", fontSize: 13, flex: 1 }}>
                 {option.countryName}
               </Typography>
-            </Box>
-          )}
-        />
-      </Tooltip>
-
-      <Tooltip title="Moneda de visualización">
-        <Autocomplete
-          size="small"
-          options={currencyOptions}
-          value={selectedCurrency}
-          onChange={(_e, val) => val && onCurrencyChange(val.currencyCode)}
-          disableClearable
-          autoHighlight
-          getOptionLabel={(opt) => `${opt.symbol} ${opt.currencyCode}`}
-          isOptionEqualToValue={(a, b) => a.currencyCode === b.currencyCode}
-          filterOptions={(opts, state) => {
-            const q = state.inputValue.trim().toLowerCase();
-            if (!q) return opts;
-            return opts.filter(
-              (o) =>
-                o.currencyCode.toLowerCase().includes(q) ||
-                (o.symbol || "").toLowerCase().includes(q) ||
-                (o.currencyName || "").toLowerCase().includes(q)
-            );
-          }}
-          sx={{ minWidth: 140 }}
-          renderInput={(params) => (
-            <TextField
-              {...params}
-              placeholder="Moneda"
-              sx={inputSx}
-            />
-          )}
-          renderOption={(props, option) => (
-            <Box component="li" {...props} key={option.currencyCode} sx={{ fontSize: 13, gap: 1 }}>
-              <Typography component="span" sx={{ minWidth: 22, fontWeight: 600, fontSize: 13 }}>
-                {option.symbol}
-              </Typography>
-              <Typography component="span" sx={{ fontWeight: 600, fontSize: 13 }}>
-                {option.currencyCode}
-              </Typography>
               <Typography component="span" sx={{ color: "text.secondary", fontSize: 12 }}>
-                {option.currencyName}
+                {option.currencyMatch?.symbol || option.currencySymbol || ""} {option.currencyCode}
               </Typography>
             </Box>
           )}
         />
-      </Tooltip>
-    </Box>
+      </Box>
+    </Tooltip>
   );
 }
