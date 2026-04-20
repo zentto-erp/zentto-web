@@ -169,11 +169,11 @@ export default function PlantillasReportePage() {
             minWidth: 300,
             display: "flex",
             flexDirection: "column",
-            border: "1px solid #E5E7EB",
+            border: "1px solid var(--mui-palette-divider)",
             elevation: 0,
           }}
         >
-          <Box sx={{ p: 2, borderBottom: "1px solid #E5E7EB" }}>
+          <Box sx={{ p: 2, borderBottom: "1px solid var(--mui-palette-divider)" }}>
             <Typography variant="subtitle1" fontWeight={700} gutterBottom>
               Plantillas de Reporte
             </Typography>
@@ -233,7 +233,7 @@ export default function PlantillasReportePage() {
             )}
           </Box>
 
-          <Box sx={{ p: 1.5, borderTop: "1px solid #E5E7EB" }}>
+          <Box sx={{ p: 1.5, borderTop: "1px solid var(--mui-palette-divider)" }}>
             <Button
               fullWidth
               variant="outlined"
@@ -251,7 +251,7 @@ export default function PlantillasReportePage() {
             flex: 1,
             display: "flex",
             flexDirection: "column",
-            border: "1px solid #E5E7EB",
+            border: "1px solid var(--mui-palette-divider)",
             elevation: 0,
             minHeight: 0,
           }}
@@ -275,7 +275,7 @@ export default function PlantillasReportePage() {
           ) : (
             <>
               {/* Header */}
-              <Box sx={{ p: 2, borderBottom: "1px solid #E5E7EB" }}>
+              <Box sx={{ p: 2, borderBottom: "1px solid var(--mui-palette-divider)" }}>
                 <Stack direction="row" spacing={2} alignItems="flex-start" flexWrap="wrap">
                   <TextField
                     label="Nombre del Reporte"
@@ -341,7 +341,7 @@ export default function PlantillasReportePage() {
               </Box>
 
               {/* Toolbar */}
-              <Box sx={{ px: 2, py: 1, borderBottom: "1px solid #E5E7EB" }}>
+              <Box sx={{ px: 2, py: 1, borderBottom: "1px solid var(--mui-palette-divider)" }}>
                 <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
                   <Button
                     variant="contained"
@@ -422,7 +422,7 @@ export default function PlantillasReportePage() {
                       fontSize: 14,
                       lineHeight: 1.6,
                       padding: 16,
-                      border: "1px solid #E5E7EB",
+                      border: "1px solid var(--mui-palette-divider)",
                       borderRadius: 8,
                       resize: "none",
                       outline: "none",
