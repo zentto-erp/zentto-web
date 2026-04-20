@@ -28,11 +28,10 @@ import React, {
   useMemo,
   useRef,
   useState,
+  type ReactElement,
   type ReactNode,
 } from 'react';
-import { createRoot, type Root } from 'react-dom/client';
-import { flushSync } from 'react-dom';
-import { ThemeProvider, useTheme, type Theme } from '@mui/material/styles';
+import { createPortal } from 'react-dom';
 import {
   Box,
   Button,
@@ -496,34 +495,61 @@ function getRowId(row: unknown, rowKey: string): string | number | undefined {
   return undefined;
 }
 
-// ─── React-cell adapter ─────────────────────────────────────────────
+// ─── React-cell adapter (via Portals) ───────────────────────────────
 //
 // `<zentto-grid>` acepta `renderCell: (v, row) => string | Node` (desde
 // @zentto/datagrid v1.5.0). Los consumidores Zentto suelen devolver JSX
-// (ej. `<Chip label={...} />`) que — sin adaptación — se inyecta como
-// `[object Object]` al stringificarse para `.innerHTML`.
+// (ej. `<Chip label={...} />`).
 //
-// Este adapter intercepta cada `renderCell`: si retorna un React element,
-// lo monta vía `createRoot` en un contenedor DOM real envuelto con el mismo
-// `ThemeProvider` del árbol padre (preserva theming, branding, locale) y
-// retorna el Node al grid, que lo adjunta directo sin stringificar.
+// Enfoque: el adapter devuelve al grid un `<span>` vacío y guarda el par
+// (span, ReactElement) en un registro. Un componente interno render-ea
+// los elementos usando `createPortal` dentro del árbol React de
+// `ZenttoRecordTable`, de forma que los chips heredan TODOS los providers
+// (MUI ThemeProvider, Emotion CacheProvider, BrandingProvider, i18n, etc).
 //
-// Strings y Nodes pasan sin tocar. Objetos arbitrarios caen a `String(...)`.
+// Esto resuelve el caso donde `createRoot` detached perdía los estilos
+// generados dinámicamente por Emotion (los chips salían como texto plano).
 
-function mountReactInNode(element: React.ReactElement, theme: Theme): HTMLElement {
-  const container = document.createElement('span');
-  container.style.display = 'contents';
-  const root: Root = createRoot(container);
-  flushSync(() => {
-    root.render(<ThemeProvider theme={theme}>{element}</ThemeProvider>);
-  });
-  // Nota: intencionalmente no hacemos unmount — el Node vive mientras el
-  // grid lo tenga en el DOM. React se limpia naturalmente en page unload.
-  // Si el grid lo descarta sin unmount, el leak es pequeño (un chip por celda).
-  return container;
+type CellPortal = { container: HTMLElement; element: ReactElement };
+
+function useCellPortals() {
+  const portalsRef = useRef<CellPortal[]>([]);
+  const [, forceRender] = useState(0);
+  const scheduledRef = useRef(false);
+
+  const scheduleRender = useCallback(() => {
+    if (scheduledRef.current) return;
+    scheduledRef.current = true;
+    queueMicrotask(() => {
+      scheduledRef.current = false;
+      forceRender((v) => v + 1);
+    });
+  }, []);
+
+  const register = useCallback(
+    (element: ReactElement): HTMLElement => {
+      const container = document.createElement('span');
+      portalsRef.current.push({ container, element });
+      scheduleRender();
+      return container;
+    },
+    [scheduleRender],
+  );
+
+  // Cada vez que cambian rows/columns el consumer puede resetear para
+  // liberar refs a celdas viejas (los containers salieron del DOM del grid).
+  const reset = useCallback(() => {
+    portalsRef.current = [];
+    scheduleRender();
+  }, [scheduleRender]);
+
+  return { register, reset, portals: portalsRef.current };
 }
 
-function adaptColumnsForReactCells(cols: ColumnSpec[], theme: Theme): ColumnSpec[] {
+function adaptColumnsForReactCells(
+  cols: ColumnSpec[],
+  register: (element: ReactElement) => HTMLElement,
+): ColumnSpec[] {
   return cols.map((col) => {
     const original = col.renderCell as ((v: unknown, r: unknown) => unknown) | undefined;
     if (typeof original !== 'function') return col;
@@ -536,7 +562,7 @@ function adaptColumnsForReactCells(cols: ColumnSpec[], theme: Theme): ColumnSpec
         if (result instanceof Node) return result;
         if (React.isValidElement(result)) {
           try {
-            return mountReactInNode(result, theme);
+            return register(result);
           } catch {
             return '';
           }
@@ -627,11 +653,12 @@ export function ZenttoRecordTable<T extends Record<string, unknown> = Record<str
   }, []);
 
   // ─── Bind data → web component ────────────────────────────────────
-  // Adapt columns: JSX en renderCell → Node DOM con theme preservado.
-  const theme = useTheme();
+  // JSX en renderCell se renderiza vía createPortal dentro del árbol
+  // de ZenttoRecordTable, preservando ThemeProvider + Emotion cache.
+  const cellPortals = useCellPortals();
   const adaptedColumns = useMemo(
-    () => adaptColumnsForReactCells(columns, theme),
-    [columns, theme],
+    () => adaptColumnsForReactCells(columns, cellPortals.register),
+    [columns, cellPortals.register],
   );
 
   useEffect(() => {
@@ -639,6 +666,13 @@ export function ZenttoRecordTable<T extends Record<string, unknown> = Record<str
     if (!el) return;
     (el as unknown as { columns: unknown }).columns = adaptedColumns;
   }, [adaptedColumns]);
+
+  // Si cambian rows o columns, los containers previos ya no son válidos.
+  useEffect(() => {
+    cellPortals.reset();
+    // `reset` es estable (useCallback). Deps intencionales: rows, columns.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rows, columns]);
 
   useEffect(() => {
     const el = gridRef.current;
@@ -726,6 +760,11 @@ export function ZenttoRecordTable<T extends Record<string, unknown> = Record<str
         gap: `${token.layout.sectionGap / 2}px`,
       }}
     >
+      {/* ─── Portals: JSX de renderCell montado en el árbol React ───
+           Preserva ThemeProvider, Emotion cache, i18n, etc. */}
+      {cellPortals.portals.map(({ container, element }, i) =>
+        createPortal(element, container, `cell-${i}`),
+      )}
       {/* ─── Header: filter panel + saved views + density ─────────── */}
       <Stack
         direction={{ xs: 'column', sm: 'row' }}
