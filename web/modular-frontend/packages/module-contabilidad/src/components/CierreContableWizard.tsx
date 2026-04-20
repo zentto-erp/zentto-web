@@ -481,10 +481,6 @@ export default function CierreContableWizard() {
 
   return (
     <Box sx={{ maxWidth: 900, mx: "auto" }}>
-      <Typography variant="h5" fontWeight={700} sx={{ mb: 3 }}>
-        Cierre contable
-      </Typography>
-
       {/* Stepper */}
       <Paper sx={{ p: 3, mb: 3, borderRadius: 2 }}>
         <Stepper activeStep={activeStep} alternativeLabel>

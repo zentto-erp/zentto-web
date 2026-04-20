@@ -56,9 +56,6 @@ export function FiscalPage() {
 
     return (
         <Box sx={{ p: 3 }}>
-            <Typography variant="h4" fontWeight="bold" gutterBottom>
-                Módulo Fiscal
-            </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                 Estado de impresora fiscal, reportes X/Z, reporte mensual, memoria fiscal y documentos no fiscales.
             </Typography>

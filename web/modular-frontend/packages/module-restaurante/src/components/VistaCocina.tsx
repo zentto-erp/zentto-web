@@ -43,10 +43,6 @@ export function VistaCocina({ comandas, onMarcarListo }: VistaCocinaProps) {
 
     return (
         <Box sx={{ height: '100%', p: 2 }}>
-            <Typography variant="h4" gutterBottom fontWeight="bold">
-                🍳 Cocina - Pedidos Pendientes
-            </Typography>
-
             <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
                 <Chip 
                     label={`${comandas.length} Pedidos pendientes`}

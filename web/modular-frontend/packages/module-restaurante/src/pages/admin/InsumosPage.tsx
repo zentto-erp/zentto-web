@@ -166,11 +166,6 @@ export function InsumosPage() {
 
     return (
         <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', height: '100%' }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                <Typography variant="h4" fontWeight="bold">
-                    Insumos Restaurante
-                </Typography>
-            </Box>
 
             <Paper sx={{ p: 2, mb: 2 }}>
                 <TextField

@@ -116,8 +116,6 @@ export default function CreateShipment({ onNavigate }: Props) {
 
   return (
     <Box sx={{ maxWidth: 900, mx: "auto" }}>
-      <Typography variant="h5" fontWeight={700} sx={{ mb: 3 }}>Nuevo Envío</Typography>
-
       <Stepper activeStep={step} sx={{ mb: 4 }}>
         {steps.map((s) => <Step key={s}><StepLabel>{s}</StepLabel></Step>)}
       </Stepper>

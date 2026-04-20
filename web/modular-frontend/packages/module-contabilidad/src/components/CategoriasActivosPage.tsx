@@ -8,7 +8,7 @@ import {
 } from "@mui/material";
 import type { ColumnDef } from "@zentto/datagrid-core";
 import { useGridLayoutSync } from "@zentto/shared-api";
-import { ContextActionHeader } from "@zentto/shared-ui";
+import { ModulePageShell } from "@zentto/shared-ui";
 import {
   useCategoriasList, useUpsertCategoria, type FixedAssetCategory,
 } from "../hooks/useActivosFijos";
@@ -134,11 +134,9 @@ export default function CategoriasActivosPage() {
   }
 
   return (
-    <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-      <ContextActionHeader title="Categorias de Activos Fijos" />
-
-      <Box sx={{ p: { xs: 2, md: 3 }, flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-        <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, width: "100%", elevation: 0, border: "1px solid #E5E7EB" }}>
+    <>
+      <ModulePageShell sx={{ display: "flex", flexDirection: "column", minHeight: 500 }}>
+        <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 500, width: "100%", elevation: 0, border: (t) => `1px solid ${t.palette.divider}` }}>
           <zentto-grid
             ref={gridRef}
             default-currency="VES"
@@ -156,7 +154,7 @@ export default function CategoriasActivosPage() {
             enable-configurator
           ></zentto-grid>
         </Paper>
-      </Box>
+      </ModulePageShell>
 
       <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="sm" fullWidth>
         <DialogTitle>{isEditing ? "Editar categoria" : "Nueva categoria"}</DialogTitle>
@@ -203,7 +201,7 @@ export default function CategoriasActivosPage() {
           </Button>
         </DialogActions>
       </Dialog>
-    </Box>
+    </>
   );
 }
 

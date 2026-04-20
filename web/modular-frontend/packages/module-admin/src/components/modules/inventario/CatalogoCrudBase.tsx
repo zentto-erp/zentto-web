@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Stack, TextField, Typography } from '@mui/material';
-import { ContextActionHeader } from '@zentto/shared-ui';
+import { ModulePageShell } from '@zentto/shared-ui';
 import type { ColumnDef } from '@zentto/datagrid-core';
 import { useGridLayoutSync } from '@zentto/shared-api';
 import { useScopedGridId, useAdminGridRegistration } from '../../../lib/zentto-grid';
@@ -397,15 +397,11 @@ export default function CatalogoCrudBase({ endpoint, title, apiClient, fields, t
   const isCreateDisabled = resolvedFields.some((f) => f.required && !asString(createValues[f.name]).trim());
 
   return (
-    <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-      <ContextActionHeader
-        title={title}
-      />
-
-      <Box sx={{ p: { xs: 1, md: 3 }, flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+    <>
+      <ModulePageShell sx={{ display: 'flex', flexDirection: 'column', minHeight: 500 }}>
         {feedback && <Alert severity={feedback.type} sx={{ mb: 2 }}>{feedback.message}</Alert>}
 
-        <Box sx={{ mt: 0, flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 500 }}>
           {registered && (
             <zentto-grid
               ref={gridRef}
@@ -426,7 +422,7 @@ export default function CatalogoCrudBase({ endpoint, title, apiClient, fields, t
             ></zentto-grid>
           )}
         </Box>
-      </Box>
+      </ModulePageShell>
 
       <Dialog open={createDialogOpen} onClose={() => !createMutation.isPending && setCreateDialogOpen(false)} fullWidth maxWidth="sm">
         <DialogTitle>Nuevo {title}</DialogTitle>
@@ -455,7 +451,7 @@ export default function CatalogoCrudBase({ endpoint, title, apiClient, fields, t
           </Button>
         </DialogActions>
       </Dialog>
-    </Box>
+    </>
   );
 }
 
