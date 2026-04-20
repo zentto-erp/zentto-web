@@ -45,6 +45,21 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
+    masterKeyAuth:
+      type: apiKey
+      in: header
+      name: X-Master-Key
+      description: Master API key estatica (provisioning, backoffice). Configurada via MASTER_API_KEY.
+    tenantKeyAuth:
+      type: apiKey
+      in: header
+      name: X-Tenant-Key
+      description: Public API key con scopes limitados (ej. landing:lead:create). Se crea via backoffice.
+    backofficeTokenAuth:
+      type: apiKey
+      in: header
+      name: X-Backoffice-Token
+      description: Sesion JWT 2FA del backoffice (alternativa a masterKeyAuth para humanos).
   schemas:
     LoginRequest:
       type: object
@@ -1280,6 +1295,193 @@ components:
         ordersTotal:      { type: integer }
         grossSalesUsd:    { type: number }
         payoutsPaidUsd:   { type: number }
+    # ══════════════════════════════════════════════════════════════════════════
+    # Lanzamiento multinicho (Lote 1.B2)
+    # Schemas para pricing / catalog / license / subscriptions / landing / tenants
+    # Ver docs/lanzamiento/MATRIZ_COMERCIAL_V1.md
+    # ══════════════════════════════════════════════════════════════════════════
+    PricingPlan:
+      type: object
+      description: Plan comercial publico (resumen para listados).
+      properties:
+        PricingPlanId: { type: integer, format: int64 }
+        Name: { type: string, example: "Pro" }
+        Slug: { type: string, example: "erp-pro" }
+        VerticalType:
+          type: string
+          description: Vertical al que pertenece el plan.
+          enum: [erp, medical, tickets, hotel, education, rental, none, pos, restaurante, ecommerce, crm, contabilidad, inmobiliario]
+        MonthlyPrice: { type: number, format: float, example: 99.00 }
+        AnnualPrice: { type: number, format: float, example: 990.00 }
+        TransactionFeePercent: { type: number, format: float, example: 0.5 }
+        MaxUsers: { type: integer, example: 10 }
+        MaxTransactions: { type: integer, example: 1000 }
+        Features:
+          type: array
+          items: { type: string }
+        IsActive: { type: boolean }
+        CompanyId: { type: integer, format: int64 }
+        CreatedAt: { type: string, format: date-time }
+    PricingPlanDetail:
+      allOf:
+        - $ref: "#/components/schemas/PricingPlan"
+        - type: object
+          description: Detalle extendido del plan (incluye metadata de Paddle y taxonomia comercial).
+          properties:
+            ProductCode: { type: string, example: "erp-core" }
+            Description: { type: string }
+            BillingCycleDefault:
+              type: string
+              enum: [monthly, annual, both]
+            Tier:
+              type: string
+              nullable: true
+              description: Taxonomia comercial del plan. Ver MATRIZ_COMERCIAL_V1.
+              enum: [core, bundle, addon, enterprise]
+            IsAddon: { type: boolean }
+            IsTrialOnly: { type: boolean }
+            TrialDays: { type: integer }
+            ModuleCodes:
+              type: array
+              items: { type: string }
+              description: Modulos que el plan activa al aplicarse al tenant.
+            Limits:
+              type: object
+              additionalProperties: true
+              description: Limites del plan (apiCalls, storage, etc).
+            SortOrder: { type: integer }
+            PaddleProductId: { type: string, example: "pro_xxx" }
+            PaddlePriceIdMonthly: { type: string, example: "pri_xxx" }
+            PaddlePriceIdAnnual: { type: string, example: "pri_xxx" }
+            PaddleSyncStatus:
+              type: string
+              enum: [draft, syncing, synced, error, skip]
+    CatalogProduct:
+      type: object
+      description: Producto del catalogo — agrupa un `core` y sus `bundle`/`addon` relacionados.
+      properties:
+        ProductCode: { type: string, example: "erp-core" }
+        VerticalType:
+          type: string
+          enum: [erp, medical, tickets, hotel, education, rental, none, pos, restaurante, ecommerce, crm, contabilidad, inmobiliario]
+        IsAddon: { type: boolean }
+        Plans:
+          type: array
+          items: { $ref: "#/components/schemas/PricingPlanDetail" }
+    SubdomainCheckResponse:
+      type: object
+      properties:
+        slug: { type: string, example: "acme" }
+        available: { type: boolean }
+        normalized: { type: string }
+        reason:
+          type: string
+          nullable: true
+          description: Motivo por el que no esta disponible (si `available=false`).
+    LicenseValidateResponse:
+      type: object
+      properties:
+        ok: { type: boolean }
+        reason:
+          type: string
+          nullable: true
+          enum: [null, invalid_key, expired, revoked, rate_limit_exceeded, internal_error]
+    Subscription:
+      type: object
+      description: Estado de suscripcion del tenant (self-service).
+      properties:
+        SubscriptionId: { type: integer, format: int64 }
+        CompanyId: { type: integer, format: int64 }
+        Source:
+          type: string
+          enum: [paddle, trial, manual]
+        Plan: { type: string, example: "PRO" }
+        BillingCycle:
+          type: string
+          enum: [monthly, annual]
+        MonthlyRecurringRevenue: { type: number, format: float }
+        Status:
+          type: string
+          enum: [trialing, active, past_due, paused, cancelled, expired]
+        PaddleSubscriptionId: { type: string, nullable: true }
+        PaddleCustomerId: { type: string, nullable: true }
+        TrialEndsAt: { type: string, format: date-time, nullable: true }
+        PaidUntilAt: { type: string, format: date-time, nullable: true }
+        CreatedAt: { type: string, format: date-time }
+    SubscriptionEntitlements:
+      type: object
+      description: Modulos activos y plan efectivo del tenant.
+      properties:
+        CompanyId: { type: integer, format: int64 }
+        ModuleCodes:
+          type: array
+          items: { type: string }
+        Plans:
+          type: array
+          items: { type: string }
+        ExpiresAt: { type: string, format: date-time, nullable: true }
+        IsActive: { type: boolean }
+    LeadRegisterRequest:
+      type: object
+      required: [email]
+      properties:
+        email: { type: string, format: email }
+        name: { type: string }
+        company: { type: string }
+        phone: { type: string }
+        country: { type: string, example: "VE" }
+        source:
+          type: string
+          description: Canal de origen (google-ads, organic, referral, ...).
+        topic:
+          type: string
+          description: Tema de interes (pricing, demo, support, ...).
+        message: { type: string, maxLength: 2000 }
+    LeadRegisterResponse:
+      type: object
+      properties:
+        ok: { type: boolean }
+        mensaje: { type: string, example: "Lead registrado" }
+        targetCompanyId:
+          type: integer
+          format: int64
+          nullable: true
+          description: CompanyId destino donde se guardo el lead. Null si default Zentto.
+    ProvisionTenantRequest:
+      type: object
+      required: [companyCode, legalName, ownerEmail, countryCode, baseCurrency, adminUserCode, adminPassword, plan]
+      properties:
+        companyCode: { type: string, minLength: 2, maxLength: 50, example: "ACME" }
+        legalName: { type: string, example: "ACME Corp S.A." }
+        ownerEmail: { type: string, format: email }
+        countryCode: { type: string, minLength: 2, maxLength: 3, example: "VE" }
+        baseCurrency: { type: string, minLength: 3, maxLength: 3, example: "USD" }
+        adminUserCode: { type: string, example: "ADMIN" }
+        adminPassword: { type: string, minLength: 8 }
+        plan:
+          type: string
+          enum: [FREE, STARTER, PRO, ENTERPRISE]
+        paddleSubscriptionId: { type: string, nullable: true }
+    ProvisionTenantResponse:
+      type: object
+      properties:
+        ok: { type: boolean }
+        companyId: { type: integer, format: int64 }
+        userId: { type: string }
+        mensaje: { type: string }
+    TenantResolveResponse:
+      type: object
+      description: Identidad publica del tenant (no expone campos sensibles).
+      properties:
+        CompanyId: { type: integer, format: int64 }
+        CompanyCode: { type: string }
+        LegalName: { type: string }
+        OwnerEmail: { type: string, format: email, nullable: true }
+        Plan: { type: string, nullable: true }
+        TenantStatus:
+          type: string
+          enum: [active, trial, suspended, pending]
+        TenantSubdomain: { type: string, nullable: true }
   parameters:
     IdParam:
       in: path
@@ -12231,4 +12433,381 @@ paths:
       responses:
         "200": { description: Suspendido }
         "403": { $ref: "#/components/responses/Forbidden" }
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # Lanzamiento multinicho — Lote 1.B2
+  # Endpoints publicos y self-service de:
+  #   pricing / catalog / license / subscriptions / landing / tenants
+  # Ver docs/lanzamiento/AUDIT_INTEGRACION.md §2 (G-03) y MATRIZ_COMERCIAL_V1.md
+  # ════════════════════════════════════════════════════════════════════════════
+
+  # ── Pricing (publico) ──────────────────────────────────────────────────────
+  /v1/pricing/plans:
+    get:
+      tags: [Pricing]
+      summary: Lista planes publicos (legacy, mantener hasta consolidar con /v1/catalog/plans)
+      description: |
+        Endpoint publico de listado de planes. Esta ruta y `/v1/catalog/plans`
+        exponen informacion similar. `/v1/catalog/plans` es el canonico;
+        `/v1/pricing/plans` se preserva por compatibilidad con landings antiguas.
+      security: []
+      parameters:
+        - name: vertical
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [erp, medical, tickets, hotel, education, rental, none, pos, restaurante, ecommerce, crm, contabilidad, inmobiliario]
+      responses:
+        "200":
+          description: Lista de planes
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/PricingPlan" }
+  /v1/pricing/plans/{slug}:
+    get:
+      tags: [Pricing]
+      summary: Detalle de un plan por slug (legacy)
+      security: []
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema: { type: string, example: "erp-pro" }
+      responses:
+        "200":
+          description: Detalle del plan
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PricingPlan" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  # ── Catalog (publico) ──────────────────────────────────────────────────────
+  /v1/catalog/plans:
+    get:
+      tags: [Catalog]
+      summary: Lista planes del catalogo comercial (canonico)
+      description: |
+        Endpoint publico canonico para listados de planes. Soporta filtro por
+        vertical, por producto y toggle de planes trial. Usado por landings
+        publicas y checkout.
+      security: []
+      parameters:
+        - name: vertical
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [erp, medical, tickets, hotel, education, rental, none, pos, restaurante, ecommerce, crm, contabilidad, inmobiliario]
+        - name: product
+          in: query
+          required: false
+          schema: { type: string, description: "ProductCode (ej. erp-core)" }
+        - name: includeTrial
+          in: query
+          required: false
+          schema: { type: boolean, default: true }
+      responses:
+        "200":
+          description: Lista de planes extendidos
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/PricingPlanDetail" }
+  /v1/catalog/plans/{slug}:
+    get:
+      tags: [Catalog]
+      summary: Detalle de un plan por slug (canonico)
+      security: []
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Detalle del plan
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PricingPlanDetail" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /v1/catalog/products:
+    get:
+      tags: [Catalog]
+      summary: Productos del catalogo agrupados (core + bundles + addons)
+      security: []
+      parameters:
+        - name: vertical
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [erp, medical, tickets, hotel, education, rental, none, pos, restaurante, ecommerce, crm, contabilidad, inmobiliario]
+      responses:
+        "200":
+          description: Lista de productos con sus planes
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/CatalogProduct" }
+  /v1/catalog/subdomain-check/{slug}:
+    get:
+      tags: [Catalog]
+      summary: Verifica disponibilidad de un subdominio para signup
+      description: |
+        Valida que el slug no este reservado ni ya asignado a un tenant. Usado
+        por el formulario de registro publico antes de provisionar un tenant.
+      security: []
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema: { type: string, example: "acme" }
+      responses:
+        "200":
+          description: Resultado del chequeo
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SubdomainCheckResponse" }
+
+  # ── License (publico de validacion) ────────────────────────────────────────
+  /v1/license/validate:
+    get:
+      tags: [License]
+      summary: Valida una licencia (uso BYOC / instalaciones on-prem)
+      description: |
+        Endpoint publico con rate-limit (20 req/min por IP). Usado por
+        instalaciones BYOC/on-prem para validar que su licencia sigue vigente.
+        No revela informacion del tenant cuando la licencia es invalida.
+      security: []
+      parameters:
+        - name: code
+          in: query
+          required: true
+          schema: { type: string, description: "Codigo de la licencia." }
+        - name: key
+          in: query
+          required: true
+          schema: { type: string, description: "Clave de validacion." }
+      responses:
+        "200":
+          description: Resultado de la validacion (siempre 200 salvo error interno)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LicenseValidateResponse" }
+        "429":
+          description: Rate limit excedido
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LicenseValidateResponse" }
+
+  # ── Subscriptions (self-service — JWT) ────────────────────────────────────
+  /v1/subscriptions/me:
+    get:
+      tags: [Subscriptions]
+      summary: Estado actual de la suscripcion del tenant autenticado
+      parameters:
+        - name: X-Company-Id
+          in: header
+          required: false
+          schema: { type: integer, format: int64 }
+          description: Override del CompanyId del JWT. Usado cuando el usuario opera sobre un tenant distinto al default.
+      responses:
+        "200":
+          description: Suscripcion actual
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  subscription:
+                    oneOf:
+                      - $ref: "#/components/schemas/Subscription"
+                      - type: "null"
+        "401": { $ref: "#/components/responses/Unauthorized" }
+  /v1/subscriptions/entitlements:
+    get:
+      tags: [Subscriptions]
+      summary: Modulos y limites activos para el tenant
+      description: |
+        Devuelve la union de `ModuleCodes` activos (plan core + addons vigentes).
+        Usado por el frontend y por `@zentto/platform-client/license` (Lote 1.C).
+      parameters:
+        - name: X-Company-Id
+          in: header
+          required: false
+          schema: { type: integer, format: int64 }
+      responses:
+        "200":
+          description: Entitlements efectivos
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  entitlements: { $ref: "#/components/schemas/SubscriptionEntitlements" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+  /v1/subscriptions/items:
+    post:
+      tags: [Subscriptions]
+      summary: Agrega un addon a la suscripcion (checkout Paddle o direct add)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [addonSlug]
+              properties:
+                addonSlug: { type: string, example: "advanced-analytics" }
+                billingCycle:
+                  type: string
+                  enum: [monthly, annual]
+                  default: monthly
+      responses:
+        "200":
+          description: Addon agregado (direct) o checkout URL generado (Paddle)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  mode:
+                    type: string
+                    enum: [paddle_checkout, direct_add]
+                  transactionId: { type: string, nullable: true }
+                  checkoutUrl: { type: string, format: uri, nullable: true }
+                  mensaje: { type: string, nullable: true }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+  /v1/subscriptions/items/{id}:
+    delete:
+      tags: [Subscriptions]
+      summary: Remueve un addon activo de la suscripcion
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer, format: int64, description: "SubscriptionItemId" }
+      responses:
+        "200":
+          description: Addon removido
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  mensaje: { type: string }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  # ── Landing (publico o tenant-key) ─────────────────────────────────────────
+  /api/landing/register:
+    post:
+      tags: [Landing]
+      summary: Registra un lead desde una landing publica
+      description: |
+        Acepta leads sin autenticacion (se asigna a la empresa "Zentto" por
+        defecto) o con `X-Tenant-Key` scoped a `landing:lead:create` para
+        enrutar el lead al tenant correspondiente. El middleware de subdomain
+        tambien puede resolver `CompanyId` automaticamente si la peticion
+        viene de un subdominio conocido.
+      security:
+        - tenantKeyAuth: []
+        - {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/LeadRegisterRequest" }
+      responses:
+        "200":
+          description: Lead registrado
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LeadRegisterResponse" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "403":
+          description: X-Tenant-Key invalido o sin scope
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
+  # ── Tenants (provisioning y resolucion publica) ────────────────────────────
+  /api/tenants/provision:
+    post:
+      tags: [Tenants]
+      summary: Aprovisiona un tenant nuevo (company + admin user + schemas)
+      description: |
+        Operacion idempotente a nivel de `companyCode` cuando el tenant esta en
+        estado `pending`. Requiere master-key. Dispara creacion de empresa,
+        usuario admin y aplicacion del plan (`usp_Cfg_Plan_ApplyModules`).
+      security:
+        - masterKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ProvisionTenantRequest" }
+      responses:
+        "201":
+          description: Tenant aprovisionado
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProvisionTenantResponse" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "409":
+          description: Conflicto — companyCode o ownerEmail ya existen con tenant activo
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+  /api/tenants/resolve-by-email/{email}:
+    get:
+      tags: [Tenants]
+      summary: Resuelve tenant por email del owner (publico — billing success page)
+      description: |
+        Endpoint publico usado por la pagina de exito del checkout Paddle para
+        mostrar al comprador su subdominio recien aprovisionado.
+      security: []
+      parameters:
+        - name: email
+          in: path
+          required: true
+          schema: { type: string, format: email }
+      responses:
+        "200":
+          description: Identidad publica del tenant
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TenantResolveResponse" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /api/tenants/resolve/{subdomain}:
+    get:
+      tags: [Tenants]
+      summary: Resuelve tenant por subdominio (publico — multi-tenant routing)
+      description: |
+        Endpoint publico usado por el middleware subdomain del frontend para
+        mapear `acme.zentto.net` -> `CompanyId`.
+      security: []
+      parameters:
+        - name: subdomain
+          in: path
+          required: true
+          schema: { type: string, example: "acme" }
+      responses:
+        "200":
+          description: Identidad publica del tenant
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TenantResolveResponse" }
+        "404": { $ref: "#/components/responses/NotFound" }
 
