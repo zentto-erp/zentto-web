@@ -20,7 +20,7 @@ import DownloadIcon from "@mui/icons-material/Download";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import { formatCurrency } from "@zentto/shared-api";
 import {
-  ContextActionHeader,
+  ModulePageShell,
   RightDetailDrawer,
   useDrawerQueryParam,
   ZenttoRecordTable,
@@ -591,9 +591,7 @@ export default function LeadsPage() {
 
   /* ─── Render ─── */
   return (
-    <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-      <ContextActionHeader title="Leads" />
-
+    <ModulePageShell sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
       <Box sx={{ flex: 1, minHeight: 0 }}>
         <ZenttoRecordTable
           recordType={RECORD_TYPE}
@@ -858,6 +856,6 @@ export default function LeadsPage() {
         variant="danger"
         loading={deleteLead.isPending}
       />
-    </Box>
+    </ModulePageShell>
   );
 }

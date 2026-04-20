@@ -16,7 +16,7 @@ import {
   Divider,
 } from "@mui/material";
 import SaveIcon from "@mui/icons-material/Save";
-import { ContextActionHeader } from "@zentto/shared-ui";
+import { ModulePageShell } from "@zentto/shared-ui";
 import { useGridLayoutSync } from "@zentto/shared-api";
 import { useFiscalConfig, useSaveFiscalConfig, useFiscalCountries, useFiscalTaxRates } from "../hooks/useAuditoria";
 import type { ColumnDef } from "@zentto/datagrid-core";
@@ -99,17 +99,11 @@ export default function FiscalConfigPage() {
   }, [registered, taxRateOptions]);
 
   return (
-    <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-      <ContextActionHeader
-        title="Configuración Fiscal"
-        primaryAction={{
-          label: "Guardar",
-          onClick: handleSave,
-          disabled: !dirty || saveMutation.isPending,
-        }}
-      />
-
-      <Box sx={{ p: { xs: 2, md: 3 }, flex: 1, overflow: "auto" }}>
+    <ModulePageShell
+      actions={<Button variant="contained" onClick={handleSave} disabled={!dirty || saveMutation.isPending}>Guardar</Button>}
+      sx={{ display: "flex", flexDirection: "column" }}
+    >
+      <Box sx={{ flex: 1, overflow: "auto" }}>
         {saveMutation.isSuccess && (
           <Alert severity="success" sx={{ mb: 2 }}>Configuración guardada correctamente</Alert>
         )}
@@ -303,7 +297,7 @@ export default function FiscalConfigPage() {
           </Stack>
         )}
       </Box>
-    </Box>
+    </ModulePageShell>
   );
 }
 

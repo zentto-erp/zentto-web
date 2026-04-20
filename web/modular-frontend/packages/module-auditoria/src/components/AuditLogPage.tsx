@@ -15,7 +15,7 @@ import {
   Alert,
   CircularProgress,
 } from "@mui/material";
-import { ContextActionHeader } from "@zentto/shared-ui";
+import { ModulePageShell } from "@zentto/shared-ui";
 import { formatDateTime, useGridLayoutSync } from "@zentto/shared-api";
 import { useTimezone } from "@zentto/shared-auth";
 import { useAuditLogs, useAuditLogDetail, type AuditLogFilter } from "../hooks/useAuditoria";
@@ -106,12 +106,9 @@ const { data, isLoading } = useAuditLogs(filter);
   }, [registered, rows]);
 
   return (
-    <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-      <ContextActionHeader title="Bitácora de Auditoría" />
-
-      <Box sx={{ p: { xs: 2, md: 3 }, flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-        {/* Grid */}
-        <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, border: "1px solid #E5E7EB" }}>
+    <ModulePageShell sx={{ display: "flex", flexDirection: "column", minHeight: 500 }}>
+      {/* Grid */}
+      <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 500, border: (t) => `1px solid ${t.palette.divider}` }}>
           <zentto-grid
         grid-id={GRID_ID}
         ref={gridRef}
@@ -127,7 +124,6 @@ const { data, isLoading } = useAuditLogs(filter);
         enable-configurator
       ></zentto-grid>
         </Paper>
-      </Box>
 
       {/* Detail Dialog */}
       <Dialog open={selectedId != null} onClose={() => setSelectedId(null)} maxWidth="md" fullWidth>
@@ -174,7 +170,7 @@ const { data, isLoading } = useAuditLogs(filter);
           <Button onClick={() => setSelectedId(null)}>Cerrar</Button>
         </DialogActions>
       </Dialog>
-    </Box>
+    </ModulePageShell>
   );
 }
 

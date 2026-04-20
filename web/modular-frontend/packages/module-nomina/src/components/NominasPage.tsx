@@ -5,7 +5,7 @@ import {
   Box, Typography, Button, TextField, Chip, Dialog, DialogTitle, DialogContent, DialogActions,
   Stack, CircularProgress, Switch, FormControlLabel,
 } from "@mui/material";
-import { DatePicker, ContextActionHeader } from "@zentto/shared-ui";
+import { DatePicker, ModulePageShell } from "@zentto/shared-ui";
 import type { ColumnDef } from "@zentto/datagrid-core";
 import dayjs from "dayjs";
 import { formatCurrency } from "@zentto/shared-api";
@@ -98,13 +98,16 @@ export default function NominasPage() {
   if (view === "batch") return <NominaBatchWizard onBack={() => setView("list")} />;
 
   return (
-    <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-      <ContextActionHeader title="Procesos de Nómina"
-        primaryAction={{ label: "Nómina Masiva", onClick: () => setView("batch") }}
-        secondaryActions={[{ label: "Procesar Individual", onClick: () => setProcesarOpen(true) }]}
-      />
-
-      <Box sx={{ p: { xs: 2, md: 3 }, flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
+    <>
+      <ModulePageShell
+        actions={
+          <>
+            <Button variant="contained" onClick={() => setView("batch")}>Nómina Masiva</Button>
+            <Button variant="outlined" onClick={() => setProcesarOpen(true)}>Procesar Individual</Button>
+          </>
+        }
+        sx={{ display: "flex", flexDirection: "column", minHeight: 500 }}
+      >
         <Box sx={{ flex: 1, minHeight: 0 }}>
           <zentto-grid ref={gridRef} height="calc(100vh - 200px)" show-totals enable-toolbar enable-header-menu enable-header-filters enable-clipboard enable-quick-search enable-context-menu enable-status-bar enable-configurator enable-grouping enable-pivot />
         </Box>
@@ -142,8 +145,8 @@ export default function NominasPage() {
             <Button variant="contained" onClick={handleProcesar} disabled={procesarMutation.isPending}>Procesar</Button>
           </DialogActions>
         </Dialog>
-      </Box>
-    </Box>
+      </ModulePageShell>
+    </>
   );
 }
 

@@ -18,7 +18,7 @@ import DownloadIcon from "@mui/icons-material/Download";
 import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
 import ThumbDownIcon from "@mui/icons-material/ThumbDown";
 import {
-  ContextActionHeader,
+  ModulePageShell,
   DeleteDialog,
   FormDialog,
   RightDetailDrawer,
@@ -508,9 +508,7 @@ export default function DealsPage() {
   );
 
   return (
-    <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-      <ContextActionHeader title="Deals" />
-
+    <ModulePageShell sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
       <Box sx={{ flex: 1, minHeight: 0 }}>
         <ZenttoRecordTable
           recordType={RECORD_TYPE}
@@ -781,6 +779,6 @@ export default function DealsPage() {
           />
         </Stack>
       </FormDialog>
-    </Box>
+    </ModulePageShell>
   );
 }

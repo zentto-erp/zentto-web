@@ -146,7 +146,7 @@ export function buildNavigation(isAdmin: boolean, modulos: string[], pathname: s
             icon: <MenuBookIcon />,
             children: [
                 { kind: 'page', segment: 'contabilidad/asientos', title: 'Asientos', icon: <ReceiptLongIcon /> },
-                { kind: 'page', segment: 'contabilidad/asientos/nuevo', title: 'Nuevo Asiento', icon: <AddCircleOutlineIcon /> },
+                { kind: 'page', segment: 'contabilidad/asientos/new', title: 'Nuevo Asiento', icon: <AddCircleOutlineIcon /> },
                 { kind: 'page', segment: 'contabilidad/recurrentes', title: 'Recurrentes', icon: <RepeatIcon /> },
             ],
         });
@@ -173,17 +173,16 @@ export function buildNavigation(isAdmin: boolean, modulos: string[], pathname: s
                 { kind: 'page', segment: 'contabilidad/activos-fijos', title: 'Inventario AF', icon: <InventoryIcon /> },
                 { kind: 'page', segment: 'contabilidad/activos-fijos/categorias', title: 'Categorías AF', icon: <CategoryIcon /> },
                 { kind: 'page', segment: 'contabilidad/activos-fijos/depreciacion', title: 'Depreciación', icon: <TrendingDownIcon /> },
-                { kind: 'page', segment: 'contabilidad/activos-fijos/reportes', title: 'Reportes AF', icon: <MenuBookIcon /> },
             ],
         });
 
         nav.push({
             kind: 'page',
-            segment: 'contabilidad/fiscal/libros',
+            segment: 'contabilidad/fiscal/libro',
             title: 'Fiscal',
             icon: <GavelIcon />,
             children: [
-                { kind: 'page', segment: 'contabilidad/fiscal/libros', title: 'Libros Fiscales', icon: <MenuBookIcon /> },
+                { kind: 'page', segment: 'contabilidad/fiscal/libro', title: 'Libros Fiscales', icon: <MenuBookIcon /> },
                 { kind: 'page', segment: 'contabilidad/fiscal/declaraciones', title: 'Declaraciones', icon: <SettingsIcon /> },
                 { kind: 'page', segment: 'contabilidad/fiscal/retenciones', title: 'Retenciones', icon: <PaymentsIcon /> },
             ],
@@ -191,11 +190,11 @@ export function buildNavigation(isAdmin: boolean, modulos: string[], pathname: s
 
         nav.push({
             kind: 'page',
-            segment: 'contabilidad/conciliacion',
+            segment: 'contabilidad/conciliacion-bancaria',
             title: 'Procesos',
             icon: <CompareArrowsIcon />,
             children: [
-                { kind: 'page', segment: 'contabilidad/conciliacion', title: 'Conciliación Bancaria', icon: <AccountBalanceIcon /> },
+                { kind: 'page', segment: 'contabilidad/conciliacion-bancaria', title: 'Conciliación Bancaria', icon: <AccountBalanceIcon /> },
                 { kind: 'page', segment: 'contabilidad/cierre', title: 'Cierre Contable', icon: <LockIcon /> },
             ],
         });

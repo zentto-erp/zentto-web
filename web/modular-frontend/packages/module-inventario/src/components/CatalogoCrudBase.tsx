@@ -7,7 +7,7 @@ import {
   Paper, Stack, TextField, Typography,
 } from '@mui/material';
 import type { ColumnDef } from '@zentto/datagrid-core';
-import { ContextActionHeader } from '@zentto/shared-ui';
+import { ModulePageShell } from '@zentto/shared-ui';
 import { useGridLayoutSync } from '@zentto/shared-api';
 import { useInventarioGridRegistration } from './zenttoGridPersistence';
 
@@ -203,15 +203,14 @@ export default function CatalogoCrudBase({ endpoint, title, apiClient, fields, t
   const isFormDisabled = resolvedFields.some((f) => f.required && !asString(formValues[f.name]).trim());
 
   return (
-    <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-      <ContextActionHeader title={title}
-        primaryAction={{ label: 'Nuevo', onClick: () => { setFormValues({}); setEditKey(null); setDialogOpen(true); } }}
-      />
-
-      <Box sx={{ p: { xs: 1, md: 3 }, flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+    <>
+      <ModulePageShell
+        actions={<Button variant="contained" onClick={() => { setFormValues({}); setEditKey(null); setDialogOpen(true); }}>Nuevo</Button>}
+        sx={{ display: 'flex', flexDirection: 'column', minHeight: 500 }}
+      >
         {feedback && <Alert severity={feedback.type} sx={{ mb: 2 }}>{feedback.message}</Alert>}
 
-        <Box sx={{ mt: 0, flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 500 }}>
           <Box sx={{ width: '100%', minHeight: 420 }}>
             <zentto-grid ref={gridRef} grid-id={gridId} height="420px"
               enable-toolbar enable-header-menu enable-header-filters enable-clipboard
@@ -220,7 +219,7 @@ export default function CatalogoCrudBase({ endpoint, title, apiClient, fields, t
             />
           </Box>
         </Box>
-      </Box>
+      </ModulePageShell>
 
       <Dialog open={dialogOpen} onClose={() => !createMutation.isPending && setDialogOpen(false)} fullWidth maxWidth="sm">
         <DialogTitle>{editKey != null ? `Editar ${title}` : `Nuevo ${title}`}</DialogTitle>
@@ -248,7 +247,7 @@ export default function CatalogoCrudBase({ endpoint, title, apiClient, fields, t
           <Button variant="contained" onClick={() => createMutation.mutate()} disabled={createMutation.isPending || isFormDisabled}>Guardar</Button>
         </DialogActions>
       </Dialog>
-    </Box>
+    </>
   );
 }
 
