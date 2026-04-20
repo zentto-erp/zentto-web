@@ -26,7 +26,7 @@
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "react-hot-toast": "^2.5.1",
-    "@zentto/datagrid": "*",
+    "@zentto/datagrid": "^1.5.0",
     "@zentto/design-tokens": "0.1.0",
     "@zentto/shared-auth": "0.1.0",
     "@zentto/shared-api": "0.1.0",

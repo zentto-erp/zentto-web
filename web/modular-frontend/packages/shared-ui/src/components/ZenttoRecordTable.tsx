@@ -30,6 +30,9 @@ import React, {
   useState,
   type ReactNode,
 } from 'react';
+import { createRoot, type Root } from 'react-dom/client';
+import { flushSync } from 'react-dom';
+import { ThemeProvider, useTheme, type Theme } from '@mui/material/styles';
 import {
   Box,
   Button,
@@ -493,6 +496,57 @@ function getRowId(row: unknown, rowKey: string): string | number | undefined {
   return undefined;
 }
 
+// ─── React-cell adapter ─────────────────────────────────────────────
+//
+// `<zentto-grid>` acepta `renderCell: (v, row) => string | Node` (desde
+// @zentto/datagrid v1.5.0). Los consumidores Zentto suelen devolver JSX
+// (ej. `<Chip label={...} />`) que — sin adaptación — se inyecta como
+// `[object Object]` al stringificarse para `.innerHTML`.
+//
+// Este adapter intercepta cada `renderCell`: si retorna un React element,
+// lo monta vía `createRoot` en un contenedor DOM real envuelto con el mismo
+// `ThemeProvider` del árbol padre (preserva theming, branding, locale) y
+// retorna el Node al grid, que lo adjunta directo sin stringificar.
+//
+// Strings y Nodes pasan sin tocar. Objetos arbitrarios caen a `String(...)`.
+
+function mountReactInNode(element: React.ReactElement, theme: Theme): HTMLElement {
+  const container = document.createElement('span');
+  container.style.display = 'contents';
+  const root: Root = createRoot(container);
+  flushSync(() => {
+    root.render(<ThemeProvider theme={theme}>{element}</ThemeProvider>);
+  });
+  // Nota: intencionalmente no hacemos unmount — el Node vive mientras el
+  // grid lo tenga en el DOM. React se limpia naturalmente en page unload.
+  // Si el grid lo descarta sin unmount, el leak es pequeño (un chip por celda).
+  return container;
+}
+
+function adaptColumnsForReactCells(cols: ColumnSpec[], theme: Theme): ColumnSpec[] {
+  return cols.map((col) => {
+    const original = col.renderCell as ((v: unknown, r: unknown) => unknown) | undefined;
+    if (typeof original !== 'function') return col;
+    return {
+      ...col,
+      renderCell: (value: unknown, row: unknown) => {
+        const result = original(value, row);
+        if (result == null) return '';
+        if (typeof result === 'string') return result;
+        if (result instanceof Node) return result;
+        if (React.isValidElement(result)) {
+          try {
+            return mountReactInNode(result, theme);
+          } catch {
+            return '';
+          }
+        }
+        return String(result);
+      },
+    };
+  });
+}
+
 // ─── Main component ─────────────────────────────────────────────────
 
 export function ZenttoRecordTable<T extends Record<string, unknown> = Record<string, unknown>>(
@@ -573,11 +627,18 @@ export function ZenttoRecordTable<T extends Record<string, unknown> = Record<str
   }, []);
 
   // ─── Bind data → web component ────────────────────────────────────
+  // Adapt columns: JSX en renderCell → Node DOM con theme preservado.
+  const theme = useTheme();
+  const adaptedColumns = useMemo(
+    () => adaptColumnsForReactCells(columns, theme),
+    [columns, theme],
+  );
+
   useEffect(() => {
     const el = gridRef.current;
     if (!el) return;
-    (el as unknown as { columns: unknown }).columns = columns;
-  }, [columns]);
+    (el as unknown as { columns: unknown }).columns = adaptedColumns;
+  }, [adaptedColumns]);
 
   useEffect(() => {
     const el = gridRef.current;
