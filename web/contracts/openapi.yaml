@@ -1281,7 +1281,6 @@ components:
         grossSalesUsd:    { type: number }
         payoutsPaidUsd:   { type: number }
   parameters:
-  parameters:
     IdParam:
       in: path
       name: id
@@ -10903,14 +10902,6 @@ paths:
       tags: [CMS]
       summary: Admin — crea un post (draft por defecto)
       security: [{ bearerAuth: [] }]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema: { $ref: "#/components/schemas/CmsPostUpsertInput" }
-      responses:
-        "201":
-          description: Post creado
       requestBody:
         required: true
         content:
