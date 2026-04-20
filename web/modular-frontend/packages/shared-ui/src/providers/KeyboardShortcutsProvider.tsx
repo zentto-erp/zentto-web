@@ -86,16 +86,16 @@ export function useKeyboardShortcut(
   handlerRef.current = handler;
 
   const ctx = React.useContext(KeyboardShortcutsContext);
+  const register = ctx?.registerShortcut;
 
   React.useEffect(() => {
-    if (!ctx || !description) return;
-    const unregister = ctx.registerShortcut({
+    if (!register || !description) return;
+    return register({
       combo,
       description,
       group: group ?? 'General',
     });
-    return unregister;
-  }, [ctx, combo, description, group]);
+  }, [register, combo, description, group]);
 
   React.useEffect(() => {
     if (disabled) return;
