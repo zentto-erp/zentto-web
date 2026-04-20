@@ -728,6 +728,234 @@ components:
         seoTitle:       { type: string }
         seoDescription: { type: string }
 
+    # ═══════════════════════════════════════════════════════════════════
+    # Store Admin — Ola 2 (feat/ecommerce-admin-productos)
+    # ═══════════════════════════════════════════════════════════════════
+    StoreProductUpsertRequest:
+      type: object
+      required: [code, name]
+      properties:
+        code: { type: string, maxLength: 80, description: Identificador único del producto por compañía }
+        name: { type: string, maxLength: 250 }
+        category: { type: string, maxLength: 50, nullable: true }
+        brand:    { type: string, maxLength: 20, nullable: true }
+        price:             { type: number, format: double, minimum: 0 }
+        compareAtPrice:    { type: number, format: double, minimum: 0, nullable: true, description: Precio tachado (estrategia comparativa) }
+        costPrice:         { type: number, format: double, minimum: 0 }
+        stockQty:          { type: number, format: double }
+        shortDescription:  { type: string, maxLength: 500, nullable: true }
+        longDescription:   { type: string, nullable: true }
+        metaTitle:         { type: string, maxLength: 200, nullable: true }
+        metaDescription:   { type: string, maxLength: 320, nullable: true }
+        slug:              { type: string, maxLength: 200, nullable: true }
+        barcode:           { type: string, maxLength: 50, nullable: true }
+        unitCode:          { type: string, maxLength: 20, default: UND }
+        taxRate:           { type: number, format: double, minimum: 0, maximum: 100 }
+        weightKg:          { type: number, format: double, minimum: 0, nullable: true }
+        isService:         { type: boolean, default: false }
+        isPublished:       { type: boolean, default: false }
+    StoreProductUpsertResponse:
+      type: object
+      properties:
+        ok:        { type: boolean }
+        resultado: { type: integer }
+        mensaje:   { type: string, nullable: true }
+        code:      { type: string, nullable: true }
+    StoreProductImageItem:
+      type: object
+      required: [url]
+      properties:
+        url:              { type: string, format: uri, maxLength: 500 }
+        altText:          { type: string, maxLength: 255, nullable: true, description: WCAG - obligatorio en UI, opcional en contrato }
+        role:             { type: string, maxLength: 50, nullable: true, example: PRODUCT_IMAGE }
+        isPrimary:        { type: boolean, default: false }
+        sortOrder:        { type: integer, minimum: 0 }
+        storageKey:       { type: string, maxLength: 500, nullable: true }
+        storageProvider:  { type: string, maxLength: 30, nullable: true, enum: [hetzner-s3, local, s3, r2] }
+        mimeType:         { type: string, maxLength: 100, nullable: true }
+        originalFileName: { type: string, maxLength: 255, nullable: true }
+    StoreProductImagesSetRequest:
+      type: object
+      required: [images]
+      properties:
+        images:
+          type: array
+          maxItems: 50
+          items: { $ref: "#/components/schemas/StoreProductImageItem" }
+    StoreProductHighlightItem:
+      type: object
+      required: [text]
+      properties:
+        text:      { type: string, minLength: 1, maxLength: 500 }
+        sortOrder: { type: integer, minimum: 0 }
+    StoreProductHighlightsSetRequest:
+      type: object
+      required: [highlights]
+      properties:
+        highlights:
+          type: array
+          maxItems: 20
+          items: { $ref: "#/components/schemas/StoreProductHighlightItem" }
+    StoreProductSpecItem:
+      type: object
+      required: [key, value]
+      properties:
+        group:     { type: string, maxLength: 100, example: General }
+        key:       { type: string, minLength: 1, maxLength: 100 }
+        value:     { type: string, maxLength: 500 }
+        sortOrder: { type: integer, minimum: 0 }
+    StoreProductSpecsSetRequest:
+      type: object
+      required: [specs]
+      properties:
+        specs:
+          type: array
+          maxItems: 100
+          items: { $ref: "#/components/schemas/StoreProductSpecItem" }
+    StoreProductListItem:
+      type: object
+      properties:
+        id:              { type: integer }
+        code:            { type: string }
+        name:            { type: string }
+        category:        { type: string, nullable: true }
+        categoryName:    { type: string, nullable: true }
+        brandCode:       { type: string, nullable: true }
+        brandName:       { type: string, nullable: true }
+        price:           { type: number, format: double }
+        compareAtPrice:  { type: number, format: double, nullable: true }
+        costPrice:       { type: number, format: double }
+        stock:           { type: number, format: double }
+        isService:       { type: boolean }
+        isPublished:     { type: boolean }
+        publishedAt:     { type: string, format: date-time, nullable: true }
+        imageUrl:        { type: string, nullable: true }
+        slug:            { type: string, nullable: true }
+        createdAt:       { type: string, format: date-time }
+        updatedAt:       { type: string, format: date-time }
+    StoreProductListResponse:
+      type: object
+      properties:
+        page:  { type: integer }
+        limit: { type: integer }
+        total: { type: integer }
+        rows:
+          type: array
+          items: { $ref: "#/components/schemas/StoreProductListItem" }
+    StoreProductDetail:
+      allOf:
+        - $ref: "#/components/schemas/StoreProductListItem"
+        - type: object
+          properties:
+            shortDescription: { type: string, nullable: true }
+            longDescription:  { type: string, nullable: true }
+            metaTitle:        { type: string, nullable: true }
+            metaDescription:  { type: string, nullable: true }
+            barCode:          { type: string, nullable: true }
+            unitCode:         { type: string, nullable: true }
+            taxRate:          { type: number, format: double }
+            weightKg:         { type: number, format: double, nullable: true }
+            images:
+              type: array
+              items: { $ref: "#/components/schemas/StoreProductImageItem" }
+            highlights:
+              type: array
+              items: { $ref: "#/components/schemas/StoreProductHighlightItem" }
+            specs:
+              type: array
+              items: { $ref: "#/components/schemas/StoreProductSpecItem" }
+    StorePublishToggleRequest:
+      type: object
+      properties:
+        publish: { type: boolean, description: "Si se omite, alterna el estado actual" }
+    StorePublishToggleResponse:
+      type: object
+      properties:
+        ok:          { type: boolean }
+        mensaje:     { type: string, nullable: true }
+        isPublished: { type: boolean }
+    StoreCategoryUpsertRequest:
+      type: object
+      required: [code, name]
+      properties:
+        code:        { type: string, maxLength: 20 }
+        name:        { type: string, maxLength: 100 }
+        description: { type: string, maxLength: 500, nullable: true }
+    StoreCategoryItem:
+      type: object
+      properties:
+        code: { type: string }
+        name: { type: string }
+        description: { type: string, nullable: true }
+        productCount: { type: integer }
+    StoreCategoryList:
+      type: object
+      properties:
+        rows:
+          type: array
+          items: { $ref: "#/components/schemas/StoreCategoryItem" }
+    StoreBrandUpsertRequest:
+      $ref: "#/components/schemas/StoreCategoryUpsertRequest"
+    StoreBrandItem:
+      type: object
+      properties:
+        code: { type: string }
+        name: { type: string }
+        description: { type: string, nullable: true }
+        productCount: { type: integer }
+    StoreBrandList:
+      type: object
+      properties:
+        rows:
+          type: array
+          items: { $ref: "#/components/schemas/StoreBrandItem" }
+    StoreReviewItem:
+      type: object
+      properties:
+        reviewId:      { type: integer }
+        productCode:   { type: string }
+        productName:   { type: string, nullable: true }
+        rating:        { type: integer, minimum: 1, maximum: 5 }
+        title:         { type: string, nullable: true }
+        comment:       { type: string }
+        reviewerName:  { type: string }
+        reviewerEmail: { type: string, nullable: true }
+        status:        { type: string, enum: [pending, approved, rejected] }
+        isVerified:    { type: boolean }
+        createdAt:     { type: string, format: date-time }
+        moderatedAt:   { type: string, format: date-time, nullable: true }
+        moderatorUser: { type: string, nullable: true }
+    StoreReviewList:
+      type: object
+      properties:
+        page:  { type: integer }
+        limit: { type: integer }
+        total: { type: integer }
+        rows:
+          type: array
+          items: { $ref: "#/components/schemas/StoreReviewItem" }
+    StoreReviewModerateRequest:
+      type: object
+      required: [status]
+      properties:
+        status:    { type: string, enum: [approved, rejected, pending] }
+        moderator: { type: string, maxLength: 60 }
+    StoreAdminOkMensaje:
+      type: object
+      properties:
+        ok:      { type: boolean }
+        mensaje: { type: string, nullable: true }
+        count:   { type: integer }
+    StoreUploadProductImageResponse:
+      type: object
+      properties:
+        ok:              { type: boolean }
+        url:             { type: string, format: uri, description: URL pública (CDN o storage público) }
+        filename:        { type: string }
+        storageKey:      { type: string }
+        storageProvider: { type: string, enum: [hetzner-s3, local] }
+        mimeType:        { type: string }
+        fileSizeBytes:   { type: integer }
   parameters:
     IdParam:
       in: path
@@ -10358,6 +10586,14 @@ paths:
       responses:
         "201":
           description: Post creado
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CmsPostUpsertInput" }
+      responses:
+        "201":
+          description: Post creado
 
   /v1/cms/posts/{id}:
     parameters:
@@ -10473,3 +10709,444 @@ paths:
       responses:
         "200":
           description: Página publicada
+  # ═══════════════════════════════════════════════════════════════════════
+  # Store Admin — Ola 2 (feat/ecommerce-admin-productos)
+  # Backoffice del ecommerce. Todos los endpoints requieren JWT + isAdmin
+  # (middleware requireJwt + requireAdmin + requireCompanyScope).
+  # Multi-tenant: scope viene del JWT, no del fallback companyId=1.
+  # ═══════════════════════════════════════════════════════════════════════
+
+  /store/admin/products:
+    get:
+      tags: [Store Admin]
+      summary: Lista paginada de productos del catálogo
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: search
+          schema: { type: string }
+          description: Busca en code, name y barcode
+        - in: query
+          name: category
+          schema: { type: string }
+        - in: query
+          name: brand
+          schema: { type: string }
+        - in: query
+          name: published
+          schema: { type: string, enum: [published, draft] }
+        - in: query
+          name: lowStockOnly
+          schema: { type: string, enum: ["0", "1", "true", "false"] }
+        - in: query
+          name: lowStockLimit
+          schema: { type: integer }
+        - in: query
+          name: page
+          schema: { type: integer, minimum: 1, default: 1 }
+        - in: query
+          name: limit
+          schema: { type: integer, minimum: 1, maximum: 200, default: 25 }
+      responses:
+        "200":
+          description: Productos paginados
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StoreProductListResponse" }
+        "401": { description: "Missing company scope / invalid token" }
+        "403": { description: "Requiere isAdmin" }
+    post:
+      tags: [Store Admin]
+      summary: Crea un producto nuevo
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/StoreProductUpsertRequest" }
+      responses:
+        "201":
+          description: Producto creado
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StoreProductUpsertResponse" }
+        "400": { description: "invalid_body" }
+        "401": { description: "Missing company scope" }
+        "403": { description: "Requiere isAdmin" }
+
+  /store/admin/products/{code}:
+    parameters:
+      - in: path
+        name: code
+        required: true
+        schema: { type: string }
+    get:
+      tags: [Store Admin]
+      summary: Detalle completo del producto (incluye imágenes, highlights, specs)
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Producto encontrado
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StoreProductDetail" }
+        "404": { description: "not_found" }
+    put:
+      tags: [Store Admin]
+      summary: Actualiza un producto existente (upsert por code)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/StoreProductUpsertRequest" }
+      responses:
+        "200":
+          description: Producto actualizado
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StoreProductUpsertResponse" }
+    delete:
+      tags: [Store Admin]
+      summary: Elimina un producto (soft delete si hay dependencias)
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Producto eliminado
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StoreAdminOkMensaje" }
+
+  /store/admin/products/{code}/publish-toggle:
+    parameters:
+      - in: path
+        name: code
+        required: true
+        schema: { type: string }
+    post:
+      tags: [Store Admin]
+      summary: Publica / despublica un producto (toggle o explícito)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/StorePublishToggleRequest" }
+      responses:
+        "200":
+          description: Nuevo estado
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StorePublishToggleResponse" }
+
+  /store/admin/products/{code}/images:
+    parameters:
+      - in: path
+        name: code
+        required: true
+        schema: { type: string }
+    put:
+      tags: [Store Admin]
+      summary: Reemplaza el conjunto de imágenes del producto
+      description: |
+        El alt-text es obligatorio por WCAG (validado en UI). El orden del
+        array define el orden visual en storefront. `isPrimary` marca la
+        imagen principal (solo una debe ser true).
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/StoreProductImagesSetRequest" }
+      responses:
+        "200":
+          description: Imágenes actualizadas
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StoreAdminOkMensaje" }
+
+  /store/admin/products/{code}/highlights:
+    parameters:
+      - in: path
+        name: code
+        required: true
+        schema: { type: string }
+    put:
+      tags: [Store Admin]
+      summary: Reemplaza los highlights (bullets) del producto
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/StoreProductHighlightsSetRequest" }
+      responses:
+        "200":
+          description: Highlights actualizados
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StoreAdminOkMensaje" }
+
+  /store/admin/products/{code}/specs:
+    parameters:
+      - in: path
+        name: code
+        required: true
+        schema: { type: string }
+    put:
+      tags: [Store Admin]
+      summary: Reemplaza las especificaciones técnicas (key/value agrupadas)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/StoreProductSpecsSetRequest" }
+      responses:
+        "200":
+          description: Specs actualizadas
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StoreAdminOkMensaje" }
+
+  /store/admin/categories:
+    get:
+      tags: [Store Admin]
+      summary: Lista categorías (reutiliza endpoint público scoped con admin)
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Categorías
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StoreCategoryList" }
+    post:
+      tags: [Store Admin]
+      summary: Crea una categoría
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/StoreCategoryUpsertRequest" }
+      responses:
+        "201":
+          description: Categoría creada
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StoreAdminOkMensaje" }
+
+  /store/admin/categories/{code}:
+    parameters:
+      - in: path
+        name: code
+        required: true
+        schema: { type: string }
+    get:
+      tags: [Store Admin]
+      summary: Obtiene una categoría (subset del list)
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Categoría
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StoreCategoryItem" }
+    put:
+      tags: [Store Admin]
+      summary: Actualiza la categoría (upsert por code)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/StoreCategoryUpsertRequest" }
+      responses:
+        "200":
+          description: Categoría actualizada
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StoreAdminOkMensaje" }
+    delete:
+      tags: [Store Admin]
+      summary: Elimina una categoría
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Categoría eliminada
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StoreAdminOkMensaje" }
+
+  /store/admin/brands:
+    get:
+      tags: [Store Admin]
+      summary: Lista marcas
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Marcas
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StoreBrandList" }
+    post:
+      tags: [Store Admin]
+      summary: Crea una marca
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/StoreBrandUpsertRequest" }
+      responses:
+        "201":
+          description: Marca creada
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StoreAdminOkMensaje" }
+
+  /store/admin/brands/{code}:
+    parameters:
+      - in: path
+        name: code
+        required: true
+        schema: { type: string }
+    get:
+      tags: [Store Admin]
+      summary: Obtiene una marca
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Marca
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StoreBrandItem" }
+    put:
+      tags: [Store Admin]
+      summary: Actualiza la marca
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/StoreBrandUpsertRequest" }
+      responses:
+        "200":
+          description: Marca actualizada
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StoreAdminOkMensaje" }
+    delete:
+      tags: [Store Admin]
+      summary: Elimina una marca
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Marca eliminada
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StoreAdminOkMensaje" }
+
+  /store/admin/reviews:
+    get:
+      tags: [Store Admin]
+      summary: Lista reviews del catálogo (para moderación)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: status
+          schema: { type: string, enum: [pending, approved, rejected] }
+        - in: query
+          name: search
+          schema: { type: string }
+        - in: query
+          name: page
+          schema: { type: integer, minimum: 1, default: 1 }
+        - in: query
+          name: limit
+          schema: { type: integer, minimum: 1, maximum: 200, default: 25 }
+      responses:
+        "200":
+          description: Reviews
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StoreReviewList" }
+
+  /store/admin/reviews/{id}/moderate:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema: { type: integer }
+    post:
+      tags: [Store Admin]
+      summary: Modera un review (aprobar / rechazar / revertir a pendiente)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/StoreReviewModerateRequest" }
+      responses:
+        "200":
+          description: Estado del review actualizado
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StoreAdminOkMensaje" }
+
+  /store/admin/uploads/product-image:
+    post:
+      tags: [Store Admin]
+      summary: Sube una imagen al bucket Hetzner S3 (zentto-product-images)
+      description: |
+        Multipart `file`. Si las env vars `HETZNER_S3_PRODUCT_IMAGES_*` están
+        configuradas, el archivo va directamente al bucket público con key
+        `c{companyId}/b{branchId}/products/{yyyy}/{mm}/{uuid}{ext}`. Si no,
+        fallback a disk storage (log warning al arranque).
+
+        La imagen devuelta en `url` se pasa luego a `PUT /store/admin/products/{code}/images`
+        dentro del array `images[]`.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: "Imagen JPG/PNG/WebP/GIF/SVG, máx 5 MB"
+      responses:
+        "201":
+          description: Imagen subida
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StoreUploadProductImageResponse" }
+        "400": { description: "missing_file | tipo_de_archivo_no_permitido" }
+        "401": { description: "Missing company scope" }
+        "403": { description: "Requiere isAdmin" }

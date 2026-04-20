@@ -46,5 +46,18 @@ export const env = {
     publicBaseUrl: process.env.MEDIA_PUBLIC_BASE_URL || "",
     maxFileSizeMb: Number(process.env.MEDIA_MAX_FILE_SIZE_MB || 5),
   },
+  /**
+   * Hetzner S3 bucket para imágenes de productos del ecommerce (público, con CORS).
+   * Declarado como objeto opcional: si las vars no existen, el upload cae a disk
+   * storage (ver admin-products.routes.ts). Documentado en:
+   *   docs/integration/ecommerce-2026-04-review.md (Ola 2 aplicada: storage de imágenes)
+   */
+  productImagesS3: {
+    bucket: process.env.HETZNER_S3_PRODUCT_IMAGES_BUCKET || "",
+    endpoint: process.env.HETZNER_S3_PRODUCT_IMAGES_ENDPOINT || "",
+    accessKey: process.env.HETZNER_S3_PRODUCT_IMAGES_ACCESS_KEY || "",
+    secretKey: process.env.HETZNER_S3_PRODUCT_IMAGES_SECRET_KEY || "",
+    region: process.env.HETZNER_S3_PRODUCT_IMAGES_REGION || "nbg1",
+    publicUrl: process.env.HETZNER_S3_PRODUCT_IMAGES_PUBLIC_URL || "",
+  },
 };
-

@@ -2,7 +2,8 @@
  * admin-products.routes.ts — Backoffice ecommerce CRUD.
  *
  * Montado bajo /store/admin/... en app.ts.
- * Todos los endpoints requieren JWT + role=admin.
+ * Todos los endpoints requieren JWT + role=admin (middleware requireAdmin
+ * centralizado en web/api/src/middleware/auth.ts:273).
  *
  * Endpoints:
  *   GET    /store/admin/products
@@ -24,17 +25,24 @@
  *   GET /store/admin/reviews
  *   POST /store/admin/reviews/:id/moderate
  *
- *   POST /store/admin/uploads/product-image (multer)
+ *   POST /store/admin/uploads/product-image (multer memoryStorage + Hetzner S3)
+ *
+ * Integración:
+ *   - B4 reviewer: requireAdmin (no más user.isAdmin ad-hoc).
+ *   - B2 reviewer: requireCompanyScope — exige companyId del JWT, 401 si falta.
+ *   - B3 reviewer: uploads a bucket Hetzner S3 (zentto-product-images) con
+ *     fallback a disk-storage si las env vars no están configuradas.
  */
 
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
-import { Router } from "express";
+import { Router, type Request, type Response, type NextFunction } from "express";
 import multer from "multer";
+import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { z } from "zod";
 import { env } from "../../config/env.js";
-import { requireJwt, type AuthenticatedRequest } from "../../middleware/auth.js";
+import { requireJwt, requireAdmin, type AuthenticatedRequest } from "../../middleware/auth.js";
 import { listCategories, listBrands } from "./service.js";
 import {
   listAdminProducts,
@@ -55,12 +63,26 @@ import {
 
 export const adminProductsRouter = Router();
 
-// ─── Middleware admin guard ───────────────────────────
-adminProductsRouter.use(requireJwt, (req, res, next) => {
+// ─── B2: requireCompanyScope ──────────────────────────
+// Exige que el JWT aporte companyId — endpoints admin escriben tablas
+// multi-tenant y no pueden depender del fallback companyId=1 de scope().
+function requireCompanyScope(req: Request, res: Response, next: NextFunction) {
   const user = (req as AuthenticatedRequest).user;
-  if (!user?.isAdmin) return res.status(403).json({ error: "forbidden" });
+  const companyId = Number((user as any)?.companyId ?? 0);
+  if (!Number.isFinite(companyId) || companyId <= 0) {
+    return res.status(401).json({
+      error: "missing_company_scope",
+      message: "Token sin companyId — endpoint admin requiere scope explícito.",
+    });
+  }
   return next();
-});
+}
+
+// ─── Middleware admin guard ───────────────────────────
+// requireJwt → popula req.user desde el JWT
+// requireAdmin → exige user.isAdmin (centralizado en auth.ts:273)
+// requireCompanyScope → exige companyId del token (no default a 1)
+adminProductsRouter.use(requireJwt, requireAdmin, requireCompanyScope);
 
 // ═══════════════════════════════════════════════════════════════════════
 // PRODUCTOS
@@ -423,7 +445,7 @@ adminProductsRouter.post("/reviews/:id/moderate", async (req, res) => {
 });
 
 // ═══════════════════════════════════════════════════════════════════════
-// UPLOADS — product images
+// UPLOADS — product images (Hetzner S3 + fallback disk)
 // ═══════════════════════════════════════════════════════════════════════
 
 const UPLOAD_MAX_BYTES = Math.max(1, Number(env.media?.maxFileSizeMb || 5)) * 1024 * 1024;
@@ -436,6 +458,35 @@ const ALLOWED_IMAGE_MIMES = new Set([
   "image/svg+xml",
 ]);
 
+const PRODUCT_IMAGES_S3 = env.productImagesS3;
+const s3Configured = Boolean(
+  PRODUCT_IMAGES_S3?.bucket &&
+  PRODUCT_IMAGES_S3?.endpoint &&
+  PRODUCT_IMAGES_S3?.accessKey &&
+  PRODUCT_IMAGES_S3?.secretKey
+);
+
+if (!s3Configured) {
+  // Aviso una sola vez al arranque — el fallback a disk storage sigue funcionando
+  // pero no es apto para blue/green ni escalado horizontal.
+  // eslint-disable-next-line no-console
+  console.warn(
+    "[admin-products] S3 not configured for product images (HETZNER_S3_PRODUCT_IMAGES_* env vars missing) — using local disk fallback. Not suitable for production."
+  );
+}
+
+const s3Client: S3Client | null = s3Configured
+  ? new S3Client({
+      region: PRODUCT_IMAGES_S3!.region || "nbg1",
+      endpoint: PRODUCT_IMAGES_S3!.endpoint,
+      credentials: {
+        accessKeyId: PRODUCT_IMAGES_S3!.accessKey!,
+        secretAccessKey: PRODUCT_IMAGES_S3!.secretKey!,
+      },
+      forcePathStyle: true,
+    })
+  : null;
+
 function getProductImageStorageFolder(companyId: number) {
   const base = env.media?.storagePath || "./storage/media";
   const now = new Date();
@@ -444,27 +495,17 @@ function getProductImageStorageFolder(companyId: number) {
   return path.join(base, `c${companyId}`, "products", yyyy, mm);
 }
 
-const productImageStorage = multer.diskStorage({
-  destination(_req, _file, cb) {
-    try {
-      // companyId será 1 por defecto en el contexto del admin — el upload es por archivo
-      // y luego setProductImages liga vía URL.
-      const folder = getProductImageStorageFolder(1);
-      fs.mkdirSync(folder, { recursive: true });
-      cb(null, folder);
-    } catch (err) {
-      cb(err as Error, env.media?.storagePath || "./storage/media");
-    }
-  },
-  filename(_req, file, cb) {
-    const ext = path.extname(file.originalname) || "";
-    const id = crypto.randomUUID().replace(/-/g, "");
-    cb(null, `${id}${ext}`);
-  },
-});
+function buildObjectKey(companyId: number, branchId: number, ext: string) {
+  const now = new Date();
+  const yyyy = String(now.getUTCFullYear());
+  const mm = String(now.getUTCMonth() + 1).padStart(2, "0");
+  const id = crypto.randomUUID().replace(/-/g, "");
+  return `c${companyId}/b${branchId}/products/${yyyy}/${mm}/${id}${ext}`;
+}
 
+// memoryStorage — el buffer va directo a S3 (o a disk en fallback).
 const productImageUploader = multer({
-  storage: productImageStorage,
+  storage: multer.memoryStorage(),
   limits: { fileSize: UPLOAD_MAX_BYTES, files: 1 },
   fileFilter: (_req, file, cb) => {
     if (!ALLOWED_IMAGE_MIMES.has(String(file.mimetype || "").toLowerCase())) {
@@ -482,8 +523,54 @@ adminProductsRouter.post(
       const file = req.file;
       if (!file) return res.status(400).json({ error: "missing_file" });
 
+      const user = (req as AuthenticatedRequest).user;
+      const companyId = Number((user as any)?.companyId ?? 0) || 1;
+      const branchId = Number((user as any)?.branchId ?? 0) || 1;
+
+      const ext = (path.extname(file.originalname) || "").toLowerCase();
+
+      // ── Rama S3 (producción) ─────────────────────────
+      if (s3Configured && s3Client && PRODUCT_IMAGES_S3) {
+        const objectKey = buildObjectKey(companyId, branchId, ext);
+
+        await s3Client.send(
+          new PutObjectCommand({
+            Bucket: PRODUCT_IMAGES_S3.bucket!,
+            Key: objectKey,
+            Body: file.buffer,
+            ContentType: file.mimetype,
+            ContentLength: file.size,
+            ACL: "public-read",
+            CacheControl: "public, max-age=31536000, immutable",
+          })
+        );
+
+        const publicBase =
+          PRODUCT_IMAGES_S3.publicUrl?.replace(/\/+$/, "") ||
+          `${PRODUCT_IMAGES_S3.endpoint!.replace(/\/+$/, "")}/${PRODUCT_IMAGES_S3.bucket}`;
+        const url = `${publicBase}/${objectKey}`;
+
+        return res.status(201).json({
+          ok: true,
+          url,
+          filename: file.originalname,
+          storageKey: objectKey,
+          storageProvider: "hetzner-s3",
+          mimeType: file.mimetype,
+          fileSizeBytes: file.size,
+        });
+      }
+
+      // ── Rama fallback (disco local) ──────────────────
+      const folder = getProductImageStorageFolder(companyId);
+      fs.mkdirSync(folder, { recursive: true });
+      const id = crypto.randomUUID().replace(/-/g, "");
+      const filename = `${id}${ext}`;
+      const filePath = path.join(folder, filename);
+      fs.writeFileSync(filePath, file.buffer);
+
       const basePath = env.media?.storagePath || "./storage/media";
-      const storageKeyRaw = path.relative(basePath, file.path).replace(/\\/g, "/");
+      const storageKeyRaw = path.relative(basePath, filePath).replace(/\\/g, "/");
       const publicBaseUrl = env.media?.publicBaseUrl || "/media-files";
       const url = `${publicBaseUrl.replace(/\/+$/, "")}/${storageKeyRaw.replace(/^\/+/, "")}`;
 

@@ -12,9 +12,27 @@ import { callSp, callSpOut, sql } from "../../db/query.js";
 import { getActiveScope } from "../_shared/scope.js";
 import { invalidatePrefix } from "../../lib/storefront-cache.js";
 
-function scope() {
+/**
+ * scope() — endpoints admin del ecommerce.
+ *
+ * A diferencia de `service.ts` (storefront público) que usa fallback a
+ * companyId=1, este módulo EXIGE que el scope venga del JWT del admin.
+ *
+ * Lanzar aquí (no 401) es intencional: la ruta ya pasó por `requireJwt +
+ * requireAdmin + requireCompanyScope` (ver admin-products.routes.ts). Si aún
+ * así getActiveScope devuelve null, es una invariante rota — falla rápido
+ * para que observability lo capture y nunca se escriba al tenant equivocado.
+ *
+ * Referencia reviewer: docs/integration/ecommerce-2026-04-review.md (B2).
+ */
+function scope(): { companyId: number; branchId: number } {
   const s = getActiveScope();
-  return { companyId: s?.companyId ?? 1, branchId: s?.branchId ?? 1 };
+  if (!s || !s.companyId || !s.branchId) {
+    throw new Error(
+      "admin-products.service: scope sin companyId/branchId — requireCompanyScope debe correr antes."
+    );
+  }
+  return { companyId: s.companyId, branchId: s.branchId };
 }
 
 // ─── Tipos ─────────────────────────────────────────────
