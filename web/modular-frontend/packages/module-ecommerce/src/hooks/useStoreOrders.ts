@@ -39,7 +39,7 @@ export function useCheckout() {
   const clearCart = useCartStore((s) => s.clearCart);
 
   return useMutation({
-    mutationFn: (payload: {
+    mutationFn: async (payload: {
       customer: {
         name: string;
         email: string;
@@ -65,7 +65,19 @@ export function useCheckout() {
       currencyCode?: string;
       exchangeRate?: number;
       countryCode?: string;
-    }) => storePost("/store/checkout", payload),
+      referralCode?: string;
+    }) => {
+      // Inyectar referralCode desde cookie zentto_ref si no vino explícito
+      let finalPayload = payload;
+      if (!payload.referralCode && typeof document !== "undefined") {
+        try {
+          const { getReferralCode } = await import("../utils/affiliate");
+          const code = getReferralCode();
+          if (code) finalPayload = { ...payload, referralCode: code };
+        } catch { /* ignore */ }
+      }
+      return storePost("/store/checkout", finalPayload);
+    },
     onSuccess: () => {
       clearCart();
     },

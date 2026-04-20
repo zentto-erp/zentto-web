@@ -14,7 +14,7 @@ import {
   CircularProgress,
   Chip,
 } from "@mui/material";
-import { ContextActionHeader, DatePicker, FormGrid, FormField } from "@zentto/shared-ui";
+import { ModulePageShell, DatePicker, FormGrid, FormField } from "@zentto/shared-ui";
 import dayjs from "dayjs";
 import PrintIcon from "@mui/icons-material/Print";
 import { toDateOnly, formatDateTime, useGridLayoutSync } from "@zentto/shared-api";
@@ -141,10 +141,7 @@ export default function AuditoriaReportesPage() {
 
 
   return (
-    <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-      <ContextActionHeader title="Reportes de Auditoría" />
-
-      <Box sx={{ p: { xs: 2, md: 3 }, flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
+    <ModulePageShell sx={{ display: "flex", flexDirection: "column", minHeight: 500 }}>
         {/* Filters */}
         <FormGrid spacing={2} sx={{ mb: 2 }} alignItems="center">
           <FormField xs={12} sm={3}>
@@ -233,8 +230,7 @@ export default function AuditoriaReportesPage() {
             )}
           </Paper>
         )}
-      </Box>
-    </Box>
+    </ModulePageShell>
   );
 }
 

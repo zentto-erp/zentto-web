@@ -10,7 +10,7 @@ import {
 } from "@mui/material";
 import dayjs from "dayjs";
 import {
-  ContextActionHeader,
+  ModulePageShell,
   DatePicker,
   FormDialog,
   RightDetailDrawer,
@@ -391,8 +391,7 @@ export default function ActividadesPage() {
 
   /* ─── Render ───────────────────────────────────────────────── */
   return (
-    <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-      <ContextActionHeader title="Actividades" />
+    <ModulePageShell sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
 
       <ZenttoRecordTable<Record<string, unknown>>
         recordType="activity"
@@ -522,7 +521,7 @@ export default function ActividadesPage() {
       >
         <Box>¿Seguro que deseas eliminar esta actividad? Esta acción no se puede deshacer.</Box>
       </FormDialog>
-    </Box>
+    </ModulePageShell>
   );
 }
 

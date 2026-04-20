@@ -7,7 +7,7 @@ import {
   Chip,
   CircularProgress,
 } from "@mui/material";
-import { ContextActionHeader } from "@zentto/shared-ui";
+import { ModulePageShell } from "@zentto/shared-ui";
 import { formatDateTime, useGridLayoutSync } from "@zentto/shared-api";
 import { useTimezone } from "@zentto/shared-auth";
 import { useFiscalRecords, type FiscalRecordFilter } from "../hooks/useAuditoria";
@@ -109,11 +109,8 @@ const { data, isLoading } = useFiscalRecords(filter);
   }, [registered, rows]);
 
   return (
-    <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-      <ContextActionHeader title="Registros Fiscales" />
-
-      <Box sx={{ p: { xs: 2, md: 3 }, flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-        <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, border: "1px solid #E5E7EB" }}>
+    <ModulePageShell sx={{ display: "flex", flexDirection: "column", minHeight: 500 }}>
+        <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 500, border: (t) => `1px solid ${t.palette.divider}` }}>
           <zentto-grid
         grid-id={GRID_ID}
         ref={gridRef}
@@ -129,8 +126,7 @@ const { data, isLoading } = useFiscalRecords(filter);
         enable-configurator
       ></zentto-grid>
         </Paper>
-      </Box>
-    </Box>
+    </ModulePageShell>
   );
 }
 

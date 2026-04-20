@@ -60,9 +60,6 @@ export function PosDashboardPage() {
 
     return (
         <Box sx={{ p: 3 }}>
-            <Typography variant="h4" gutterBottom fontWeight="bold">
-                Punto de Venta
-            </Typography>
             <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
                 Bienvenido al sistema de facturación. Seleccione una acción para comenzar.
             </Typography>

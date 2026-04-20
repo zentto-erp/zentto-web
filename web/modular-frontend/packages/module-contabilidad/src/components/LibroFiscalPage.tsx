@@ -9,7 +9,7 @@ import type { ColumnDef } from "@zentto/datagrid-core";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import AutorenewIcon from "@mui/icons-material/Autorenew";
 import { useGridLayoutSync } from "@zentto/shared-api";
-import { ContextActionHeader } from "@zentto/shared-ui";
+import { ModulePageShell } from "@zentto/shared-ui";
 import {
   useGenerarLibroFiscal, useLibroFiscal, useResumenLibroFiscal, type TaxBookFilter,
 } from "../hooks/useFiscalTributaria";
@@ -96,10 +96,8 @@ export default function LibroFiscalPage() {
   }
 
   return (
-    <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-      <ContextActionHeader title="Libro fiscal de compras / ventas" />
-
-      <Box sx={{ p: { xs: 2, md: 3 }, flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
+    <>
+      <ModulePageShell sx={{ display: "flex", flexDirection: "column", minHeight: 500 }}>
         <Stack direction="row" spacing={2} mb={2} alignItems="center" flexWrap="wrap">
           <FormControl size="small" sx={{ minWidth: 160 }}>
             <InputLabel>Tipo de libro</InputLabel>
@@ -126,7 +124,7 @@ export default function LibroFiscalPage() {
           <Button variant="outlined" startIcon={<FileDownloadIcon />} disabled={rows.length === 0}>Exportar</Button>
         </Stack>
 
-        <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, width: "100%", elevation: 0, border: "1px solid #E5E7EB" }}>
+        <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 500, width: "100%", elevation: 0, border: (t) => `1px solid ${t.palette.divider}` }}>
           <zentto-grid
             ref={gridRef}
             default-currency="VES"
@@ -145,7 +143,7 @@ export default function LibroFiscalPage() {
         </Paper>
 
         {resumenRows.length > 0 && (
-          <Paper sx={{ mt: 3, p: 2, border: "1px solid #E5E7EB" }}>
+          <Paper sx={{ mt: 3, p: 2, border: (t) => `1px solid ${t.palette.divider}` }}>
             <Typography variant="h6" fontWeight={600} mb={1}>Resumen por tasa impositiva</Typography>
             <Divider sx={{ mb: 2 }} />
             <Box sx={{ height: 200 }}>
@@ -166,8 +164,8 @@ export default function LibroFiscalPage() {
             </Box>
           </Paper>
         )}
-      </Box>
-    </Box>
+      </ModulePageShell>
+    </>
   );
 }
 

@@ -72,11 +72,7 @@ export default function DepreciacionWizard() {
   };
 
   return (
-    <Box sx={{ p: { xs: 2, md: 3 } }}>
-      <Typography variant="h5" sx={{ mb: 3, fontWeight: 700 }}>
-        Calculo de Depreciacion
-      </Typography>
-
+    <Box>
       <CustomStepper steps={steps} activeStep={activeStep} />
 
       <Paper sx={{ mt: 3, p: 3 }}>

@@ -35,7 +35,7 @@ function MetricCard({ label, value, icon, color = "#0072c6", hint }: MetricCardP
         <Typography variant="caption" color="text.secondary" sx={{ display: "block", lineHeight: 1.2 }}>
           {label}
         </Typography>
-        <Typography variant="h5" fontWeight={700} sx={{ color: "#0f1111", lineHeight: 1.2 }}>
+        <Typography variant="h5" fontWeight={700} sx={{ lineHeight: 1.2 }}>
           {value}
         </Typography>
         {hint && (
@@ -71,7 +71,6 @@ export default function AdminEcommerceDashboard() {
   return (
     <Box>
       <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
-        <Typography variant="h5" fontWeight={700}>Dashboard ecommerce</Typography>
         <Chip size="small" label="Últimos 30 días" />
       </Box>
 

@@ -36,8 +36,7 @@ export default function ShipmentsList({ onNavigate }: Props) {
 
   return (
     <Box>
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3, flexWrap: "wrap", gap: 2 }}>
-        <Typography variant="h5" fontWeight={700}>Mis Envíos</Typography>
+      <Box sx={{ display: "flex", justifyContent: "flex-end", alignItems: "center", mb: 3, flexWrap: "wrap", gap: 2 }}>
         <Button variant="contained" startIcon={<AddBoxIcon />} onClick={() => onNavigate("/envios/nuevo")}>
           Nuevo Envío
         </Button>

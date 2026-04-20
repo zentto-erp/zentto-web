@@ -56,11 +56,6 @@ export default function PerfAndCachePanel() {
 
   return (
     <Box>
-      <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
-        <SpeedIcon color="primary" />
-        <Typography variant="h5" fontWeight={700}>Performance & Cache</Typography>
-      </Box>
-
       {/* Cache stats */}
       <Paper sx={{ p: 2.5, mb: 2 }}>
         <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 1.5 }}>

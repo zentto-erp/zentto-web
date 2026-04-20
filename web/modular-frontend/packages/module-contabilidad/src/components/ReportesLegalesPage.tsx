@@ -198,11 +198,7 @@ export default function ReportesLegalesPage() {
   // ─── Render ─────────────────────────────────────────────────
 
   return (
-    <Box sx={{ p: 3, maxWidth: 1200, mx: "auto" }}>
-      <Typography variant="h5" fontWeight={700} gutterBottom>
-        Reportes Legales
-      </Typography>
-
+    <Box sx={{ maxWidth: 1200, mx: "auto" }}>
       {/* Country selector + date filters */}
       <Paper variant="outlined" sx={{ p: 2, mb: 2 }}>
         <FormGrid spacing={2} alignItems="center">

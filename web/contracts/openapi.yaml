@@ -728,6 +728,558 @@ components:
         seoTitle:       { type: string }
         seoDescription: { type: string }
 
+    # ═══════════════════════════════════════════════════════════════════
+    # Store Admin — Ola 2 (feat/ecommerce-admin-productos)
+    # ═══════════════════════════════════════════════════════════════════
+    StoreProductUpsertRequest:
+      type: object
+      required: [code, name]
+      properties:
+        code: { type: string, maxLength: 80, description: Identificador único del producto por compañía }
+        name: { type: string, maxLength: 250 }
+        category: { type: string, maxLength: 50, nullable: true }
+        brand:    { type: string, maxLength: 20, nullable: true }
+        price:             { type: number, format: double, minimum: 0 }
+        compareAtPrice:    { type: number, format: double, minimum: 0, nullable: true, description: Precio tachado (estrategia comparativa) }
+        costPrice:         { type: number, format: double, minimum: 0 }
+        stockQty:          { type: number, format: double }
+        shortDescription:  { type: string, maxLength: 500, nullable: true }
+        longDescription:   { type: string, nullable: true }
+        metaTitle:         { type: string, maxLength: 200, nullable: true }
+        metaDescription:   { type: string, maxLength: 320, nullable: true }
+        slug:              { type: string, maxLength: 200, nullable: true }
+        barcode:           { type: string, maxLength: 50, nullable: true }
+        unitCode:          { type: string, maxLength: 20, default: UND }
+        taxRate:           { type: number, format: double, minimum: 0, maximum: 100 }
+        weightKg:          { type: number, format: double, minimum: 0, nullable: true }
+        isService:         { type: boolean, default: false }
+        isPublished:       { type: boolean, default: false }
+    StoreProductUpsertResponse:
+      type: object
+      properties:
+        ok:        { type: boolean }
+        resultado: { type: integer }
+        mensaje:   { type: string, nullable: true }
+        code:      { type: string, nullable: true }
+    StoreProductImageItem:
+      type: object
+      required: [url]
+      properties:
+        url:              { type: string, format: uri, maxLength: 500 }
+        altText:          { type: string, maxLength: 255, nullable: true, description: WCAG - obligatorio en UI, opcional en contrato }
+        role:             { type: string, maxLength: 50, nullable: true, example: PRODUCT_IMAGE }
+        isPrimary:        { type: boolean, default: false }
+        sortOrder:        { type: integer, minimum: 0 }
+        storageKey:       { type: string, maxLength: 500, nullable: true }
+        storageProvider:  { type: string, maxLength: 30, nullable: true, enum: [hetzner-s3, local, s3, r2] }
+        mimeType:         { type: string, maxLength: 100, nullable: true }
+        originalFileName: { type: string, maxLength: 255, nullable: true }
+    StoreProductImagesSetRequest:
+      type: object
+      required: [images]
+      properties:
+        images:
+          type: array
+          maxItems: 50
+          items: { $ref: "#/components/schemas/StoreProductImageItem" }
+    StoreProductHighlightItem:
+      type: object
+      required: [text]
+      properties:
+        text:      { type: string, minLength: 1, maxLength: 500 }
+        sortOrder: { type: integer, minimum: 0 }
+    StoreProductHighlightsSetRequest:
+      type: object
+      required: [highlights]
+      properties:
+        highlights:
+          type: array
+          maxItems: 20
+          items: { $ref: "#/components/schemas/StoreProductHighlightItem" }
+    StoreProductSpecItem:
+      type: object
+      required: [key, value]
+      properties:
+        group:     { type: string, maxLength: 100, example: General }
+        key:       { type: string, minLength: 1, maxLength: 100 }
+        value:     { type: string, maxLength: 500 }
+        sortOrder: { type: integer, minimum: 0 }
+    StoreProductSpecsSetRequest:
+      type: object
+      required: [specs]
+      properties:
+        specs:
+          type: array
+          maxItems: 100
+          items: { $ref: "#/components/schemas/StoreProductSpecItem" }
+    StoreProductListItem:
+      type: object
+      properties:
+        id:              { type: integer }
+        code:            { type: string }
+        name:            { type: string }
+        category:        { type: string, nullable: true }
+        categoryName:    { type: string, nullable: true }
+        brandCode:       { type: string, nullable: true }
+        brandName:       { type: string, nullable: true }
+        price:           { type: number, format: double }
+        compareAtPrice:  { type: number, format: double, nullable: true }
+        costPrice:       { type: number, format: double }
+        stock:           { type: number, format: double }
+        isService:       { type: boolean }
+        isPublished:     { type: boolean }
+        publishedAt:     { type: string, format: date-time, nullable: true }
+        imageUrl:        { type: string, nullable: true }
+        slug:            { type: string, nullable: true }
+        createdAt:       { type: string, format: date-time }
+        updatedAt:       { type: string, format: date-time }
+    StoreProductListResponse:
+      type: object
+      properties:
+        page:  { type: integer }
+        limit: { type: integer }
+        total: { type: integer }
+        rows:
+          type: array
+          items: { $ref: "#/components/schemas/StoreProductListItem" }
+    StoreProductDetail:
+      allOf:
+        - $ref: "#/components/schemas/StoreProductListItem"
+        - type: object
+          properties:
+            shortDescription: { type: string, nullable: true }
+            longDescription:  { type: string, nullable: true }
+            metaTitle:        { type: string, nullable: true }
+            metaDescription:  { type: string, nullable: true }
+            barCode:          { type: string, nullable: true }
+            unitCode:         { type: string, nullable: true }
+            taxRate:          { type: number, format: double }
+            weightKg:         { type: number, format: double, nullable: true }
+            images:
+              type: array
+              items: { $ref: "#/components/schemas/StoreProductImageItem" }
+            highlights:
+              type: array
+              items: { $ref: "#/components/schemas/StoreProductHighlightItem" }
+            specs:
+              type: array
+              items: { $ref: "#/components/schemas/StoreProductSpecItem" }
+    StorePublishToggleRequest:
+      type: object
+      properties:
+        publish: { type: boolean, description: "Si se omite, alterna el estado actual" }
+    StorePublishToggleResponse:
+      type: object
+      properties:
+        ok:          { type: boolean }
+        mensaje:     { type: string, nullable: true }
+        isPublished: { type: boolean }
+    StoreCategoryUpsertRequest:
+      type: object
+      required: [code, name]
+      properties:
+        code:        { type: string, maxLength: 20 }
+        name:        { type: string, maxLength: 100 }
+        description: { type: string, maxLength: 500, nullable: true }
+    StoreCategoryItem:
+      type: object
+      properties:
+        code: { type: string }
+        name: { type: string }
+        description: { type: string, nullable: true }
+        productCount: { type: integer }
+    StoreCategoryList:
+      type: object
+      properties:
+        rows:
+          type: array
+          items: { $ref: "#/components/schemas/StoreCategoryItem" }
+    StoreBrandUpsertRequest:
+      $ref: "#/components/schemas/StoreCategoryUpsertRequest"
+    StoreBrandItem:
+      type: object
+      properties:
+        code: { type: string }
+        name: { type: string }
+        description: { type: string, nullable: true }
+        productCount: { type: integer }
+    StoreBrandList:
+      type: object
+      properties:
+        rows:
+          type: array
+          items: { $ref: "#/components/schemas/StoreBrandItem" }
+    StoreReviewItem:
+      type: object
+      properties:
+        reviewId:      { type: integer }
+        productCode:   { type: string }
+        productName:   { type: string, nullable: true }
+        rating:        { type: integer, minimum: 1, maximum: 5 }
+        title:         { type: string, nullable: true }
+        comment:       { type: string }
+        reviewerName:  { type: string }
+        reviewerEmail: { type: string, nullable: true }
+        status:        { type: string, enum: [pending, approved, rejected] }
+        isVerified:    { type: boolean }
+        createdAt:     { type: string, format: date-time }
+        moderatedAt:   { type: string, format: date-time, nullable: true }
+        moderatorUser: { type: string, nullable: true }
+    StoreReviewList:
+      type: object
+      properties:
+        page:  { type: integer }
+        limit: { type: integer }
+        total: { type: integer }
+        rows:
+          type: array
+          items: { $ref: "#/components/schemas/StoreReviewItem" }
+    StoreReviewModerateRequest:
+      type: object
+      required: [status]
+      properties:
+        status:    { type: string, enum: [approved, rejected, pending] }
+        moderator: { type: string, maxLength: 60 }
+    StoreAdminOkMensaje:
+      type: object
+      properties:
+        ok:      { type: boolean }
+        mensaje: { type: string, nullable: true }
+        count:   { type: integer }
+    StoreUploadProductImageResponse:
+      type: object
+      properties:
+        ok:              { type: boolean }
+        url:             { type: string, format: uri, description: URL pública (CDN o storage público) }
+        filename:        { type: string }
+        storageKey:      { type: string }
+        storageProvider: { type: string, enum: [hetzner-s3, local] }
+        mimeType:        { type: string }
+        fileSizeBytes:   { type: integer }
+# ─── Store CMS ──────────────────────────────────────────────────────────
+    LandingConfig:
+      type: object
+      description: |
+        Configuración JSONB libre del layout visual de una página CMS.
+        Contiene arreglo de bloques tipados (Hero, FAQ, Stats, Team, Timeline,
+        Jobs, ReturnSteps, richtext, etc.) que el `StudioPageRenderer`
+        renderiza en orden.
+      properties:
+        sections:
+          type: array
+          description: Bloques del layout en orden de render.
+          items:
+            type: object
+            required: [type]
+            properties:
+              type:
+                type: string
+                description: Tipo de bloque (hero, faq, stats, team, timeline, jobs, return-steps, richtext, ...)
+                example: hero
+              id:
+                type: string
+                description: Id estable del bloque (para reordenar/editar).
+              data:
+                type: object
+                description: Payload propio del bloque. Estructura depende de `type`.
+                additionalProperties: true
+        theme:
+          type: object
+          description: Overrides de tema (colores, tipografía) opcionales.
+          additionalProperties: true
+      additionalProperties: true
+
+    CmsPage:
+      type: object
+      required: [cmsPageId, slug, title, status]
+      properties:
+        cmsPageId: { type: integer, example: 42 }
+        slug:      { type: string, example: "acerca" }
+        title:     { type: string, example: "Acerca de Zentto" }
+        subtitle:  { type: string, nullable: true }
+        templateKey:
+          type: string
+          nullable: true
+          description: Template visual a usar (ej. `about`, `contact`, `faq`, `jobs`).
+        config:
+          $ref: "#/components/schemas/LandingConfig"
+        seo:
+          type: object
+          additionalProperties: true
+          description: Metadatos SEO (title, description, og:image, canonical).
+        status:
+          type: string
+          enum: [draft, published, archived]
+        publishedAt: { type: string, format: date-time, nullable: true }
+        updatedAt:   { type: string, format: date-time }
+        createdAt:   { type: string, format: date-time }
+
+    CmsPageUpsert:
+      type: object
+      required: [slug, title]
+      properties:
+        slug:        { type: string, maxLength: 120 }
+        title:       { type: string, maxLength: 200 }
+        subtitle:    { type: string, maxLength: 300, nullable: true }
+        templateKey: { type: string, maxLength: 80, nullable: true }
+        config:
+          $ref: "#/components/schemas/LandingConfig"
+        seo:
+          type: object
+          additionalProperties: true
+        status:
+          type: string
+          enum: [draft, published, archived]
+          default: draft
+
+    PressRelease:
+      type: object
+      required: [pressReleaseId, slug, title, status]
+      properties:
+        pressReleaseId: { type: integer }
+        slug:           { type: string, example: "zentto-raises-seed-round-2026" }
+        title:          { type: string }
+        excerpt:        { type: string, nullable: true }
+        body:           { type: string, nullable: true, description: "Contenido Markdown/HTML del press release." }
+        coverImageUrl:  { type: string, nullable: true }
+        tags:
+          type: array
+          items: { type: string }
+        status:
+          type: string
+          enum: [draft, published, archived]
+        publishedAt: { type: string, format: date-time, nullable: true }
+        updatedAt:   { type: string, format: date-time }
+        createdAt:   { type: string, format: date-time }
+
+    PressReleaseUpsert:
+      type: object
+      required: [slug, title]
+      properties:
+        slug:          { type: string, maxLength: 160 }
+        title:         { type: string, maxLength: 240 }
+        excerpt:       { type: string, maxLength: 600, nullable: true }
+        body:          { type: string, nullable: true }
+        coverImageUrl: { type: string, maxLength: 500, nullable: true }
+        tags:
+          type: array
+          items: { type: string }
+        status:
+          type: string
+          enum: [draft, published, archived]
+          default: draft
+
+    ContactMessage:
+      type: object
+      required: [name, email, message]
+      properties:
+        name:    { type: string, minLength: 1, maxLength: 160 }
+        email:   { type: string, format: email }
+        phone:   { type: string, maxLength: 40, nullable: true }
+        subject: { type: string, maxLength: 240, nullable: true }
+        message: { type: string, minLength: 1 }
+        source:
+          type: string
+          maxLength: 60
+          description: Identificador de la fuente (p.ej. `contact`, `footer-form`). Default `contact`.
+    Affiliate:
+      type: object
+      description: Afiliado del programa de referidos de Zentto Store.
+      properties:
+        id:            { type: integer, format: int64 }
+        customerId:    { type: integer, nullable: true }
+        referralCode:  { type: string, example: "ABC123" }
+        status:
+          type: string
+          enum: [pending, active, suspended, rejected]
+        legalName:     { type: string, nullable: true }
+        contactEmail:  { type: string, format: email, nullable: true }
+        taxId:         { type: string, nullable: true }
+        payoutMethod:  { type: string, nullable: true, example: "paypal" }
+        createdAt:     { type: string, format: date-time }
+        approvedAt:    { type: string, format: date-time, nullable: true }
+        pendingAmount: { type: number, format: double }
+        paidAmount:    { type: number, format: double }
+    AffiliateRegisterRequest:
+      type: object
+      required: [legalName]
+      properties:
+        legalName:      { type: string, minLength: 2, maxLength: 200 }
+        taxId:          { type: string, maxLength: 40 }
+        contactEmail:   { type: string, format: email }
+        payoutMethod:   { type: string, enum: [paypal, stripe, transferencia, usdt] }
+        payoutDetails:
+          type: object
+          additionalProperties: true
+          description: "Detalles del método de pago (IBAN/cuenta/email PayPal). Sensible — se almacena cifrado."
+    AffiliateCommissionRate:
+      type: object
+      description: Tasa de comisión por categoría de producto.
+      properties:
+        category:  { type: string, example: "Electrónica" }
+        rate:      { type: number, example: 3.00 }
+        isDefault: { type: boolean }
+    AffiliateCommission:
+      type: object
+      description: Comisión generada por una orden atribuida.
+      properties:
+        id:               { type: integer, format: int64 }
+        affiliateId:      { type: integer, format: int64 }
+        orderNumber:      { type: string }
+        rate:             { type: number }
+        category:         { type: string, nullable: true }
+        commissionAmount: { type: number }
+        currencyCode:     { type: string, example: "USD" }
+        status:
+          type: string
+          enum: [pending, approved, paid, reversed]
+        createdAt:        { type: string, format: date-time }
+        paidAt:           { type: string, format: date-time, nullable: true }
+    AffiliatePayout:
+      type: object
+      description: Lote de pago a afiliado (periódico).
+      properties:
+        id:           { type: integer, format: int64 }
+        affiliateId:  { type: integer, format: int64 }
+        periodStart:  { type: string, format: date }
+        periodEnd:    { type: string, format: date }
+        totalAmount:  { type: number }
+        currencyCode: { type: string }
+        status:
+          type: string
+          enum: [pending, processing, paid, failed]
+        paidAt:         { type: string, format: date-time, nullable: true }
+        transactionRef: { type: string, nullable: true }
+    AffiliateDashboard:
+      type: object
+      description: Métricas y serie mensual del afiliado logueado.
+      properties:
+        affiliateId:     { type: integer }
+        referralCode:    { type: string }
+        status:          { type: string, enum: [pending, active, suspended, rejected] }
+        legalName:       { type: string, nullable: true }
+        clicksTotal:     { type: integer }
+        conversions:     { type: integer }
+        pendingAmount:   { type: number }
+        approvedAmount:  { type: number }
+        paidAmount:      { type: number }
+        totalEarned:     { type: number }
+        currencyCode:    { type: string }
+        monthly:
+          type: array
+          items:
+            type: object
+            properties:
+              mon:    { type: string, example: "2026-04" }
+              amount: { type: number }
+    AffiliateTrackClickRequest:
+      type: object
+      required: [referralCode]
+      properties:
+        referralCode: { type: string, minLength: 3, maxLength: 20 }
+        sessionId:    { type: string, nullable: true }
+        referer:      { type: string, nullable: true }
+    AffiliateBulkStatusRequest:
+      type: object
+      required: [ids, status]
+      properties:
+        ids:
+          type: array
+          items: { type: integer, format: int64 }
+          minItems: 1
+          maxItems: 500
+        status:
+          type: string
+          enum: [approved, paid, reversed]
+
+    # ─── Store Marketplace — Merchant (Ola 4) ─────────────
+    # NOTA: En UI pública se muestra "Vendedor" y la ruta es /vender.
+    # El recurso API se llama "merchant" para evitar colisión con master.Seller del ERP.
+    Merchant:
+      type: object
+      description: Comerciante externo del marketplace (llamado "Vendedor" en UI pública).
+      properties:
+        id:              { type: integer, format: int64 }
+        customerId:      { type: integer, nullable: true }
+        legalName:       { type: string }
+        taxId:           { type: string, nullable: true }
+        storeSlug:       { type: string }
+        description:     { type: string, nullable: true }
+        logoUrl:         { type: string, format: uri, nullable: true }
+        bannerUrl:       { type: string, format: uri, nullable: true }
+        contactEmail:    { type: string, format: email, nullable: true }
+        contactPhone:    { type: string, nullable: true }
+        status:
+          type: string
+          enum: [pending, approved, suspended, rejected]
+        commissionRate:  { type: number, example: 15.00 }
+        payoutMethod:    { type: string, nullable: true }
+        rejectionReason: { type: string, nullable: true }
+        createdAt:       { type: string, format: date-time }
+        approvedAt:      { type: string, format: date-time, nullable: true }
+    MerchantApplyRequest:
+      type: object
+      required: [legalName]
+      properties:
+        legalName:     { type: string, minLength: 2, maxLength: 200 }
+        taxId:         { type: string, maxLength: 40 }
+        storeSlug:     { type: string, maxLength: 80 }
+        description:   { type: string, maxLength: 5000 }
+        logoUrl:       { type: string, format: uri, maxLength: 500 }
+        contactEmail:  { type: string, format: email }
+        contactPhone:  { type: string, maxLength: 40 }
+        payoutMethod:  { type: string, maxLength: 30 }
+        payoutDetails:
+          type: object
+          additionalProperties: true
+    MerchantProduct:
+      type: object
+      description: Producto propuesto por un comerciante. Debe aprobarse antes de salir a catálogo.
+      properties:
+        id:           { type: integer, format: int64 }
+        merchantId:   { type: integer, format: int64 }
+        merchantName: { type: string }
+        productCode:  { type: string }
+        name:         { type: string }
+        description:  { type: string, nullable: true }
+        price:        { type: number }
+        stock:        { type: number }
+        category:     { type: string, nullable: true }
+        imageUrl:     { type: string, format: uri, nullable: true }
+        status:
+          type: string
+          enum: [draft, pending_review, approved, rejected]
+        reviewNotes:  { type: string, nullable: true }
+        createdAt:    { type: string, format: date-time }
+        updatedAt:    { type: string, format: date-time }
+    MerchantProductSubmitRequest:
+      type: object
+      required: [name, price, stock]
+      properties:
+        productId:   { type: integer, format: int64, description: "Si presente, actualiza el producto existente." }
+        code:        { type: string, maxLength: 64 }
+        name:        { type: string, minLength: 2, maxLength: 250 }
+        description: { type: string, maxLength: 5000 }
+        price:       { type: number, minimum: 0 }
+        stock:       { type: number, minimum: 0 }
+        category:    { type: string, maxLength: 80 }
+        imageUrl:    { type: string, format: uri, maxLength: 500 }
+        submit:      { type: boolean, description: "true = enviar a revisión admin; false = guardar como draft." }
+    MerchantDashboard:
+      type: object
+      description: Métricas agregadas del comerciante logueado.
+      properties:
+        merchantId:       { type: integer }
+        legalName:        { type: string }
+        storeSlug:        { type: string }
+        status:           { type: string, enum: [pending, approved, suspended, rejected] }
+        commissionRate:   { type: number }
+        productsTotal:    { type: integer }
+        productsApproved: { type: integer }
+        productsPending:  { type: integer }
+        ordersTotal:      { type: integer }
+        grossSalesUsd:    { type: number }
+        payoutsPaidUsd:   { type: number }
   parameters:
     IdParam:
       in: path
@@ -10473,3 +11025,1210 @@ paths:
       responses:
         "200":
           description: Página publicada
+  # ═══════════════════════════════════════════════════════════════════════
+  # Store Admin — Ola 2 (feat/ecommerce-admin-productos)
+  # Backoffice del ecommerce. Todos los endpoints requieren JWT + isAdmin
+  # (middleware requireJwt + requireAdmin + requireCompanyScope).
+  # Multi-tenant: scope viene del JWT, no del fallback companyId=1.
+  # ═══════════════════════════════════════════════════════════════════════
+
+  /store/admin/products:
+    get:
+      tags: [Store Admin]
+      summary: Lista paginada de productos del catálogo
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: search
+          schema: { type: string }
+          description: Busca en code, name y barcode
+        - in: query
+          name: category
+          schema: { type: string }
+        - in: query
+          name: brand
+          schema: { type: string }
+        - in: query
+          name: published
+          schema: { type: string, enum: [published, draft] }
+        - in: query
+          name: lowStockOnly
+          schema: { type: string, enum: ["0", "1", "true", "false"] }
+        - in: query
+          name: lowStockLimit
+          schema: { type: integer }
+        - in: query
+          name: page
+          schema: { type: integer, minimum: 1, default: 1 }
+        - in: query
+          name: limit
+          schema: { type: integer, minimum: 1, maximum: 200, default: 25 }
+      responses:
+        "200":
+          description: Productos paginados
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StoreProductListResponse" }
+        "401": { description: "Missing company scope / invalid token" }
+        "403": { description: "Requiere isAdmin" }
+    post:
+      tags: [Store Admin]
+      summary: Crea un producto nuevo
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/StoreProductUpsertRequest" }
+      responses:
+        "201":
+          description: Producto creado
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StoreProductUpsertResponse" }
+        "400": { description: "invalid_body" }
+        "401": { description: "Missing company scope" }
+        "403": { description: "Requiere isAdmin" }
+
+  /store/admin/products/{code}:
+    parameters:
+      - in: path
+        name: code
+        required: true
+        schema: { type: string }
+    get:
+      tags: [Store Admin]
+      summary: Detalle completo del producto (incluye imágenes, highlights, specs)
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Producto encontrado
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StoreProductDetail" }
+        "404": { description: "not_found" }
+    put:
+      tags: [Store Admin]
+      summary: Actualiza un producto existente (upsert por code)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/StoreProductUpsertRequest" }
+      responses:
+        "200":
+          description: Producto actualizado
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StoreProductUpsertResponse" }
+    delete:
+      tags: [Store Admin]
+      summary: Elimina un producto (soft delete si hay dependencias)
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Producto eliminado
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StoreAdminOkMensaje" }
+
+  /store/admin/products/{code}/publish-toggle:
+    parameters:
+      - in: path
+        name: code
+        required: true
+        schema: { type: string }
+    post:
+      tags: [Store Admin]
+      summary: Publica / despublica un producto (toggle o explícito)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/StorePublishToggleRequest" }
+      responses:
+        "200":
+          description: Nuevo estado
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StorePublishToggleResponse" }
+
+  /store/admin/products/{code}/images:
+    parameters:
+      - in: path
+        name: code
+        required: true
+        schema: { type: string }
+    put:
+      tags: [Store Admin]
+      summary: Reemplaza el conjunto de imágenes del producto
+      description: |
+        El alt-text es obligatorio por WCAG (validado en UI). El orden del
+        array define el orden visual en storefront. `isPrimary` marca la
+        imagen principal (solo una debe ser true).
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/StoreProductImagesSetRequest" }
+      responses:
+        "200":
+          description: Imágenes actualizadas
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StoreAdminOkMensaje" }
+
+  /store/admin/products/{code}/highlights:
+    parameters:
+      - in: path
+        name: code
+        required: true
+        schema: { type: string }
+    put:
+      tags: [Store Admin]
+      summary: Reemplaza los highlights (bullets) del producto
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/StoreProductHighlightsSetRequest" }
+      responses:
+        "200":
+          description: Highlights actualizados
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StoreAdminOkMensaje" }
+
+  /store/admin/products/{code}/specs:
+    parameters:
+      - in: path
+        name: code
+        required: true
+        schema: { type: string }
+    put:
+      tags: [Store Admin]
+      summary: Reemplaza las especificaciones técnicas (key/value agrupadas)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/StoreProductSpecsSetRequest" }
+      responses:
+        "200":
+          description: Specs actualizadas
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StoreAdminOkMensaje" }
+
+  /store/admin/categories:
+    get:
+      tags: [Store Admin]
+      summary: Lista categorías (reutiliza endpoint público scoped con admin)
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Categorías
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StoreCategoryList" }
+    post:
+      tags: [Store Admin]
+      summary: Crea una categoría
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/StoreCategoryUpsertRequest" }
+      responses:
+        "201":
+          description: Categoría creada
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StoreAdminOkMensaje" }
+
+  /store/admin/categories/{code}:
+    parameters:
+      - in: path
+        name: code
+        required: true
+        schema: { type: string }
+    get:
+      tags: [Store Admin]
+      summary: Obtiene una categoría (subset del list)
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Categoría
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StoreCategoryItem" }
+    put:
+      tags: [Store Admin]
+      summary: Actualiza la categoría (upsert por code)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/StoreCategoryUpsertRequest" }
+      responses:
+        "200":
+          description: Categoría actualizada
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StoreAdminOkMensaje" }
+    delete:
+      tags: [Store Admin]
+      summary: Elimina una categoría
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Categoría eliminada
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StoreAdminOkMensaje" }
+
+  /store/admin/brands:
+    get:
+      tags: [Store Admin]
+      summary: Lista marcas
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Marcas
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StoreBrandList" }
+    post:
+      tags: [Store Admin]
+      summary: Crea una marca
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/StoreBrandUpsertRequest" }
+      responses:
+        "201":
+          description: Marca creada
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StoreAdminOkMensaje" }
+
+  /store/admin/brands/{code}:
+    parameters:
+      - in: path
+        name: code
+        required: true
+        schema: { type: string }
+    get:
+      tags: [Store Admin]
+      summary: Obtiene una marca
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Marca
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StoreBrandItem" }
+    put:
+      tags: [Store Admin]
+      summary: Actualiza la marca
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/StoreBrandUpsertRequest" }
+      responses:
+        "200":
+          description: Marca actualizada
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StoreAdminOkMensaje" }
+    delete:
+      tags: [Store Admin]
+      summary: Elimina una marca
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Marca eliminada
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StoreAdminOkMensaje" }
+
+  /store/admin/reviews:
+    get:
+      tags: [Store Admin]
+      summary: Lista reviews del catálogo (para moderación)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: status
+          schema: { type: string, enum: [pending, approved, rejected] }
+        - in: query
+          name: search
+          schema: { type: string }
+        - in: query
+          name: page
+          schema: { type: integer, minimum: 1, default: 1 }
+        - in: query
+          name: limit
+          schema: { type: integer, minimum: 1, maximum: 200, default: 25 }
+      responses:
+        "200":
+          description: Reviews
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StoreReviewList" }
+
+  /store/admin/reviews/{id}/moderate:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema: { type: integer }
+    post:
+      tags: [Store Admin]
+      summary: Modera un review (aprobar / rechazar / revertir a pendiente)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/StoreReviewModerateRequest" }
+      responses:
+        "200":
+          description: Estado del review actualizado
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StoreAdminOkMensaje" }
+
+  /store/admin/uploads/product-image:
+    post:
+      tags: [Store Admin]
+      summary: Sube una imagen al bucket Hetzner S3 (zentto-product-images)
+      description: |
+        Multipart `file`. Si las env vars `HETZNER_S3_PRODUCT_IMAGES_*` están
+        configuradas, el archivo va directamente al bucket público con key
+        `c{companyId}/b{branchId}/products/{yyyy}/{mm}/{uuid}{ext}`. Si no,
+        fallback a disk storage (log warning al arranque).
+
+        La imagen devuelta en `url` se pasa luego a `PUT /store/admin/products/{code}/images`
+        dentro del array `images[]`.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: "Imagen JPG/PNG/WebP/GIF/SVG, máx 5 MB"
+      responses:
+        "201":
+          description: Imagen subida
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StoreUploadProductImageResponse" }
+        "400": { description: "missing_file | tipo_de_archivo_no_permitido" }
+        "401": { description: "Missing company scope" }
+        "403": { description: "Requiere isAdmin" }
+  # ══════════════════════════════════════════════════════════════════════════
+  # Store CMS — público + admin
+  # ══════════════════════════════════════════════════════════════════════════
+
+  /store/cms/pages/{slug}:
+    parameters:
+      - in: path
+        name: slug
+        required: true
+        schema: { type: string }
+      - $ref: "#/components/parameters/TenantIdHeader"
+    get:
+      tags: [Store CMS]
+      security: []
+      summary: Obtener página CMS publicada por slug (público)
+      description: |
+        Devuelve la página CMS `status=published` del tenant del visitante.
+        El tenant se resuelve por subdomain (`acme.zentto.net`), header
+        `X-Tenant-Id` o cookie `tenant_id`. Si no se puede resolver,
+        responde `400 tenant_required`.
+      responses:
+        "200":
+          description: Página encontrada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  page: { $ref: "#/components/schemas/CmsPage" }
+        "400":
+          description: Tenant no resuelto (`tenant_required`)
+        "404":
+          description: Página no encontrada o no publicada
+
+  /store/press/releases:
+    parameters:
+      - $ref: "#/components/parameters/TenantIdHeader"
+      - in: query
+        name: page
+        schema: { type: integer, minimum: 1, default: 1 }
+      - in: query
+        name: limit
+        schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+    get:
+      tags: [Store CMS]
+      security: []
+      summary: Listar press releases publicados (público, paginado)
+      responses:
+        "200":
+          description: Listado paginado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: "#/components/schemas/PressRelease" }
+                  totalCount: { type: integer }
+                  page:       { type: integer }
+                  limit:      { type: integer }
+        "400":
+          description: Tenant no resuelto
+
+  /store/press/releases/{slug}:
+    parameters:
+      - in: path
+        name: slug
+        required: true
+        schema: { type: string }
+      - $ref: "#/components/parameters/TenantIdHeader"
+    get:
+      tags: [Store CMS]
+      security: []
+      summary: Obtener press release publicado por slug (público)
+      responses:
+        "200":
+          description: Press release encontrado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  item: { $ref: "#/components/schemas/PressRelease" }
+        "400": { description: Tenant no resuelto }
+        "404": { description: No encontrado }
+
+  /store/contact/message:
+    parameters:
+      - $ref: "#/components/parameters/TenantIdHeader"
+    post:
+      tags: [Store CMS]
+      security: []
+      summary: Enviar mensaje de contacto (público)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ContactMessage" }
+      responses:
+        "201":
+          description: Mensaje registrado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:               { type: boolean }
+                  contactMessageId: { type: integer }
+        "400":
+          description: "`tenant_required` | `invalid_body`"
+
+  # ── Admin ────────────────────────────────────────────────────────────────
+
+  /store/admin/cms/pages:
+    get:
+      tags: [Store CMS]
+      summary: Listar páginas CMS (admin, todos los status)
+      parameters:
+        - in: query
+          name: status
+          schema: { type: string, enum: [draft, published, archived] }
+        - in: query
+          name: page
+          schema: { type: integer, minimum: 1, default: 1 }
+        - in: query
+          name: limit
+          schema: { type: integer, minimum: 1, maximum: 200, default: 50 }
+      responses:
+        "200":
+          description: Lista paginada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: "#/components/schemas/CmsPage" }
+                  totalCount: { type: integer }
+                  page:       { type: integer }
+                  limit:      { type: integer }
+    post:
+      tags: [Store CMS]
+      summary: Crear nueva página CMS (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CmsPageUpsert" }
+      responses:
+        "201":
+          description: Creada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:        { type: boolean }
+                  cmsPageId: { type: integer }
+        "400": { description: Body inválido }
+
+  /store/admin/cms/pages/{id}:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema: { type: integer }
+    get:
+      tags: [Store CMS]
+      summary: Obtener página CMS por id (admin, cualquier status)
+      responses:
+        "200":
+          description: Página
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  page: { $ref: "#/components/schemas/CmsPage" }
+        "404": { description: No encontrada }
+    put:
+      tags: [Store CMS]
+      summary: Actualizar página CMS (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CmsPageUpsert" }
+      responses:
+        "200":
+          description: Actualizada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:        { type: boolean }
+                  cmsPageId: { type: integer }
+    delete:
+      tags: [Store CMS]
+      summary: Eliminar página CMS (admin)
+      responses:
+        "200": { description: Eliminada }
+        "404": { description: No encontrada }
+
+  /store/admin/cms/pages/{id}/publish:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema: { type: integer }
+    post:
+      tags: [Store CMS]
+      summary: Publicar página CMS — marca status=published y publishedAt=NOW (admin)
+      responses:
+        "200":
+          description: Publicada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+        "404": { description: No encontrada }
+
+  /store/admin/press/releases:
+    get:
+      tags: [Store CMS]
+      summary: Listar press releases (admin, todos los status)
+      parameters:
+        - in: query
+          name: status
+          schema: { type: string, enum: [draft, published, archived] }
+        - in: query
+          name: page
+          schema: { type: integer, minimum: 1, default: 1 }
+        - in: query
+          name: limit
+          schema: { type: integer, minimum: 1, maximum: 200, default: 50 }
+      responses:
+        "200":
+          description: Lista paginada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: "#/components/schemas/PressRelease" }
+                  totalCount: { type: integer }
+                  page:       { type: integer }
+                  limit:      { type: integer }
+    post:
+      tags: [Store CMS]
+      summary: Crear press release (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PressReleaseUpsert" }
+      responses:
+        "201":
+          description: Creado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:             { type: boolean }
+                  pressReleaseId: { type: integer }
+
+  /store/admin/press/releases/{id}:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema: { type: integer }
+    get:
+      tags: [Store CMS]
+      summary: Obtener press release por id (admin, cualquier status)
+      responses:
+        "200":
+          description: Press release
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  item: { $ref: "#/components/schemas/PressRelease" }
+        "404": { description: No encontrado }
+    put:
+      tags: [Store CMS]
+      summary: Actualizar press release (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PressReleaseUpsert" }
+      responses:
+        "200":
+          description: Actualizado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:             { type: boolean }
+                  pressReleaseId: { type: integer }
+    delete:
+      tags: [Store CMS]
+      summary: Eliminar press release (admin)
+      responses:
+        "200": { description: Eliminado }
+        "404": { description: No encontrado }
+
+  /store/admin/press/releases/{id}/publish:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema: { type: integer }
+    post:
+      tags: [Store CMS]
+      summary: Publicar press release — marca status=published y publishedAt=NOW (admin)
+      responses:
+        "200":
+          description: Publicado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+        "404": { description: No encontrado }
+
+  /store/admin/contact/messages:
+    get:
+      tags: [Store CMS]
+      summary: Listar mensajes de contacto (admin)
+      parameters:
+        - in: query
+          name: status
+          schema: { type: string, enum: [new, read, archived] }
+        - in: query
+          name: page
+          schema: { type: integer, minimum: 1, default: 1 }
+        - in: query
+          name: limit
+          schema: { type: integer, minimum: 1, maximum: 200, default: 50 }
+      responses:
+        "200":
+          description: Lista paginada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        contactMessageId: { type: integer }
+                        name:    { type: string }
+                        email:   { type: string }
+                        phone:   { type: string, nullable: true }
+                        subject: { type: string, nullable: true }
+                        message: { type: string }
+                        source:  { type: string, nullable: true }
+                        status:  { type: string }
+                        createdAt: { type: string, format: date-time }
+                  totalCount: { type: integer }
+                  page:       { type: integer }
+                  limit:      { type: integer }
+  /store/affiliate/commission-rates:
+    get:
+      tags: [Store Affiliates]
+      summary: Tasas de comisión por categoría (público).
+      security: []
+      responses:
+        "200":
+          description: Listado de tasas
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  rows:
+                    type: array
+                    items: { $ref: "#/components/schemas/AffiliateCommissionRate" }
+
+  /store/affiliate/track-click:
+    post:
+      tags: [Store Affiliates]
+      summary: Registrar click de referido (anónimo).
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AffiliateTrackClickRequest" }
+      responses:
+        "200":
+          description: Click registrado
+
+  /store/affiliate/link/{code}:
+    get:
+      tags: [Store Affiliates]
+      summary: Redirige a la tienda fijando la cookie `zentto_ref` por 30 días.
+      security: []
+      parameters:
+        - in: path
+          name: code
+          required: true
+          schema: { type: string, minLength: 3, maxLength: 20 }
+      responses:
+        "302":
+          description: Redirección a `/` con cookie zentto_ref
+
+  /store/affiliate/register:
+    post:
+      tags: [Store Affiliates]
+      summary: Aplicar al programa de afiliados (cliente autenticado).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AffiliateRegisterRequest" }
+      responses:
+        "200":
+          description: Solicitud recibida; status inicial = pending.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Affiliate" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /store/affiliate/dashboard:
+    get:
+      tags: [Store Affiliates]
+      summary: Dashboard del afiliado (métricas + serie mensual).
+      responses:
+        "200":
+          description: Dashboard
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AffiliateDashboard" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { description: No es afiliado }
+
+  /store/affiliate/commissions:
+    get:
+      tags: [Store Affiliates]
+      summary: Listado paginado de comisiones del afiliado logueado.
+      parameters:
+        - { in: query, name: status, schema: { type: string, enum: [pending, approved, paid, reversed] } }
+        - { in: query, name: page,   schema: { type: integer, default: 1 } }
+        - { in: query, name: limit,  schema: { type: integer, default: 20, maximum: 100 } }
+      responses:
+        "200":
+          description: Comisiones del afiliado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  rows:  { type: array, items: { $ref: "#/components/schemas/AffiliateCommission" } }
+                  total: { type: integer }
+                  page:  { type: integer }
+                  limit: { type: integer }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /store/admin/affiliates:
+    get:
+      tags: [Store Affiliates]
+      summary: Admin — listado paginado de afiliados.
+      parameters:
+        - { in: query, name: status, schema: { type: string, enum: [pending, active, suspended, rejected] } }
+        - { in: query, name: page,   schema: { type: integer, default: 1 } }
+        - { in: query, name: limit,  schema: { type: integer, default: 20, maximum: 100 } }
+      responses:
+        "200":
+          description: Afiliados
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  rows:  { type: array, items: { $ref: "#/components/schemas/Affiliate" } }
+                  total: { type: integer }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /store/admin/affiliates/{id}/status:
+    post:
+      tags: [Store Affiliates]
+      summary: Admin — cambiar estado de un afiliado.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer, format: int64 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+                  enum: [active, suspended, pending, rejected]
+      responses:
+        "200": { description: Estado actualizado }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /store/admin/affiliates/{id}/approve:
+    post:
+      tags: [Store Affiliates]
+      summary: Admin — shorthand para aprobar afiliado.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        "200": { description: Afiliado aprobado }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /store/admin/affiliates/{id}/suspend:
+    post:
+      tags: [Store Affiliates]
+      summary: Admin — shorthand para suspender afiliado.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        "200": { description: Afiliado suspendido }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /store/admin/affiliates/commissions:
+    get:
+      tags: [Store Affiliates]
+      summary: Admin — listado global de comisiones para liquidación mensual.
+      parameters:
+        - { in: query, name: status, schema: { type: string, enum: [pending, approved, paid, reversed] } }
+        - { in: query, name: page,   schema: { type: integer, default: 1 } }
+        - { in: query, name: limit,  schema: { type: integer, default: 20, maximum: 500 } }
+      responses:
+        "200":
+          description: Comisiones globales
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  rows:  { type: array, items: { $ref: "#/components/schemas/AffiliateCommission" } }
+                  total: { type: integer }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /store/admin/affiliates/commissions/bulk-status:
+    post:
+      tags: [Store Affiliates]
+      summary: Admin — bulk-approve / bulk-mark-paid de comisiones seleccionadas.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AffiliateBulkStatusRequest" }
+      responses:
+        "200":
+          description: Cantidad de comisiones actualizadas
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StoreBulkOkResponse" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /store/admin/affiliates/payouts/generate:
+    post:
+      tags: [Store Affiliates]
+      summary: Admin — generar lotes de payout del periodo actual.
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                periodStart: { type: string, format: date }
+                periodEnd:   { type: string, format: date }
+      responses:
+        "200":
+          description: Payouts generados
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:             { type: boolean }
+                  message:        { type: string }
+                  payoutsCreated: { type: integer }
+                  totalAmount:    { type: number }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  # =========================================================
+  # Store Marketplace (Merchant — Ola 4)
+  # =========================================================
+  /store/merchant/apply:
+    post:
+      tags: [Store Marketplace]
+      summary: Aplicar como vendedor del marketplace (cliente autenticado).
+      description: |
+        El recurso API es `merchant` para evitar colisión con `master.Seller` del ERP.
+        En la UI pública se muestra "Vendedor" y la ruta es `/vender/aplicar`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/MerchantApplyRequest" }
+      responses:
+        "200":
+          description: Solicitud recibida; status inicial = pending.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:         { type: boolean }
+                  merchantId: { type: integer }
+                  storeSlug:  { type: string }
+                  message:    { type: string }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /store/merchant/dashboard:
+    get:
+      tags: [Store Marketplace]
+      summary: Dashboard del vendedor logueado (métricas).
+      responses:
+        "200":
+          description: Métricas del merchant
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MerchantDashboard" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { description: No es vendedor }
+
+  /store/merchant/products:
+    get:
+      tags: [Store Marketplace]
+      summary: Listar productos del vendedor logueado.
+      parameters:
+        - { in: query, name: status, schema: { type: string, enum: [draft, pending_review, approved, rejected] } }
+        - { in: query, name: page,   schema: { type: integer, default: 1 } }
+        - { in: query, name: limit,  schema: { type: integer, default: 20, maximum: 100 } }
+      responses:
+        "200":
+          description: Productos del merchant
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  rows:  { type: array, items: { $ref: "#/components/schemas/MerchantProduct" } }
+                  total: { type: integer }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    post:
+      tags: [Store Marketplace]
+      summary: Crear o actualizar un producto del vendedor (draft o enviar a revisión).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/MerchantProductSubmitRequest" }
+      responses:
+        "200":
+          description: Producto guardado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:        { type: boolean }
+                  productId: { type: integer }
+                  status:    { type: string, enum: [draft, pending_review] }
+                  message:   { type: string }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /store/admin/merchants:
+    get:
+      tags: [Store Marketplace]
+      summary: Admin — listado paginado de comerciantes.
+      parameters:
+        - { in: query, name: status, schema: { type: string, enum: [pending, approved, suspended, rejected] } }
+        - { in: query, name: page,   schema: { type: integer, default: 1 } }
+        - { in: query, name: limit,  schema: { type: integer, default: 20, maximum: 100 } }
+      responses:
+        "200":
+          description: Comerciantes
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  rows:  { type: array, items: { $ref: "#/components/schemas/Merchant" } }
+                  total: { type: integer }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /store/admin/merchants/{id}/approve:
+    post:
+      tags: [Store Marketplace]
+      summary: Admin — aprobar vendedor.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        "200": { description: Aprobado }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /store/admin/merchants/{id}/reject:
+    post:
+      tags: [Store Marketplace]
+      summary: Admin — rechazar vendedor (con motivo opcional).
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer, format: int64 }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason: { type: string, maxLength: 500 }
+      responses:
+        "200": { description: Rechazado }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /store/admin/merchants/{id}/suspend:
+    post:
+      tags: [Store Marketplace]
+      summary: Admin — suspender vendedor.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer, format: int64 }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason: { type: string, maxLength: 500 }
+      responses:
+        "200": { description: Suspendido }
+        "403": { $ref: "#/components/responses/Forbidden" }
+

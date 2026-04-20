@@ -72,8 +72,7 @@ export default function ProductCompare({ onClear }: Props) {
 
   return (
     <Box>
-      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 2 }}>
-        <Typography variant="h5" fontWeight={700}>Comparar productos ({cols})</Typography>
+      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "flex-end", mb: 2 }}>
         <Button
           variant="text"
           color="error"

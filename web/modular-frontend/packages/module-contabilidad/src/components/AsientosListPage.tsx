@@ -20,7 +20,7 @@ import CloseIcon from "@mui/icons-material/Close";
 import type { ColumnDef } from "@zentto/datagrid-core";
 import { useGridLayoutSync } from "@zentto/shared-api";
 import { useTimezone } from "@zentto/shared-auth";
-import { ContextActionHeader } from "@zentto/shared-ui";
+import { ModulePageShell } from "@zentto/shared-ui";
 import { ReportViewer } from "@zentto/shared-reports";
 import type { ReportLayout, DataSet } from "@zentto/report-core";
 import {
@@ -184,16 +184,20 @@ export default function AsientosListPage() {
   }
 
   return (
-    <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-      <ContextActionHeader
-        title="Asientos contables"
-        secondaryActions={[
-          { label: "Reporte", onClick: () => { setReportData(buildReportData()); setReportOpen(true); }, disabled: !rows.length },
-        ]}
-      />
-
-      <Box sx={{ p: { xs: 2, md: 3 }, flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-        <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 400, width: "100%", elevation: 0, border: '1px solid #E5E7EB', overflow: 'auto' }}>
+    <>
+      <ModulePageShell
+        actions={
+          <Button
+            variant="outlined"
+            onClick={() => { setReportData(buildReportData()); setReportOpen(true); }}
+            disabled={!rows.length}
+          >
+            Reporte
+          </Button>
+        }
+        sx={{ display: "flex", flexDirection: "column", minHeight: 500 }}
+      >
+        <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 500, width: "100%", elevation: 0, border: (t) => `1px solid ${t.palette.divider}`, overflow: 'auto' }}>
           <zentto-grid
             ref={gridRef}
             default-currency="VES"
@@ -213,7 +217,7 @@ export default function AsientosListPage() {
             enable-master-detail
           ></zentto-grid>
         </Paper>
-      </Box>
+      </ModulePageShell>
 
       {/* Detail Dialog */}
       <Dialog open={selectedId != null} onClose={() => setSelectedId(null)} maxWidth="md" fullWidth>
@@ -296,7 +300,7 @@ export default function AsientosListPage() {
           />
         </DialogContent>
       </Dialog>
-    </Box>
+    </>
   );
 }
 

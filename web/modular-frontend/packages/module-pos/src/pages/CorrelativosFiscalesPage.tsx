@@ -77,9 +77,6 @@ export function CorrelativosFiscalesPage() {
 
     return (
         <Box sx={{ p: 3 }}>
-            <Typography variant="h4" gutterBottom fontWeight="bold">
-                Correlativos Fiscales
-            </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                 Configure serial fiscal y correlativo por caja para cuadrar reportes de ventas.
             </Typography>

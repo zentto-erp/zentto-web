@@ -7,7 +7,7 @@ import {
 } from "@mui/material";
 import type { ColumnDef } from "@zentto/datagrid-core";
 import { useGridLayoutSync, useCountries } from "@zentto/shared-api";
-import { ContextActionHeader } from "@zentto/shared-ui";
+import { ModulePageShell } from "@zentto/shared-ui";
 import {
   useDeclaracionesList, useCalcularDeclaracion, usePresentarDeclaracion, type DeclarationFilter,
 } from "../hooks/useFiscalTributaria";
@@ -117,11 +117,14 @@ export default function DeclaracionesPage() {
   }
 
   return (
-    <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-      <ContextActionHeader title="Declaraciones tributarias" primaryAction={{ label: "Calcular declaracion", onClick: () => setOpenCalc(true) }} />
-
-      <Box sx={{ p: { xs: 2, md: 3 }, flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-        <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, width: "100%", elevation: 0, border: "1px solid #E5E7EB" }}>
+    <>
+      <ModulePageShell
+        actions={
+          <Button variant="contained" onClick={() => setOpenCalc(true)}>Calcular declaracion</Button>
+        }
+        sx={{ display: "flex", flexDirection: "column", minHeight: 500 }}
+      >
+        <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 500, width: "100%", elevation: 0, border: (t) => `1px solid ${t.palette.divider}` }}>
           <zentto-grid
             ref={gridRef}
             default-currency="VES"
@@ -139,7 +142,7 @@ export default function DeclaracionesPage() {
             create-label="Nueva Declaracion"
           ></zentto-grid>
         </Paper>
-      </Box>
+      </ModulePageShell>
 
       <Dialog open={openCalc} onClose={() => setOpenCalc(false)} maxWidth="xs" fullWidth>
         <DialogTitle>Calcular declaracion</DialogTitle>
@@ -168,7 +171,7 @@ export default function DeclaracionesPage() {
           </Button>
         </DialogActions>
       </Dialog>
-    </Box>
+    </>
   );
 }
 

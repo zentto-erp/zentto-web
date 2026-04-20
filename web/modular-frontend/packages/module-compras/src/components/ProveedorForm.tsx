@@ -150,10 +150,6 @@ export default function ProveedorForm({ proveedorCodigo }: ProveedorFormProps) {
 
   return (
     <Box sx={{ p: 2 }}>
-      <Typography variant="h5" sx={{ mb: 3, fontWeight: 600 }}>
-        {isEdit ? "Editar Proveedor" : "Nuevo Proveedor"}
-      </Typography>
-
       {submitSuccess && (
         <Alert severity="success" sx={{ mb: 2 }}>
           {isEdit ? "Proveedor actualizado exitosamente" : "Proveedor creado exitosamente"}

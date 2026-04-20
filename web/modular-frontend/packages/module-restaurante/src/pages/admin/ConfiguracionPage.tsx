@@ -184,9 +184,6 @@ export function ConfiguracionPage() {
 
   return (
     <Box sx={{ p: { xs: 2, md: 3 }, maxWidth: 1100 }}>
-      <Typography variant="h5" sx={{ fontWeight: 700, mb: 0.5 }}>
-        Configuración Restaurante
-      </Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
         Configura reglas operativas de salón/cocina y métodos de pago para restaurante.
       </Typography>

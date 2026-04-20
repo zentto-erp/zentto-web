@@ -10,7 +10,7 @@ import type { ColumnDef } from "@zentto/datagrid-core";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { useGridLayoutSync, formatCurrency } from "@zentto/shared-api";
-import { ContextActionHeader, DatePicker } from "@zentto/shared-ui";
+import { ModulePageShell, DatePicker } from "@zentto/shared-ui";
 import dayjs from "dayjs";
 import {
   useEquityMovements, useInsertEquityMovement, useUpdateEquityMovement, useDeleteEquityMovement,
@@ -99,9 +99,11 @@ export default function PatrimonioPage() {
   if (!registered) { return <Box sx={{ display: "flex", justifyContent: "center", mt: 10 }}><CircularProgress /></Box>; }
 
   return (
-    <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-      <ContextActionHeader title="Estado de Cambios en el Patrimonio" primaryAction={{ label: "Nuevo movimiento", onClick: openCreate }} />
-      <Box sx={{ p: { xs: 2, md: 3 }, flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
+    <>
+      <ModulePageShell
+        actions={<Button variant="contained" onClick={openCreate}>Nuevo movimiento</Button>}
+        sx={{ display: "flex", flexDirection: "column", minHeight: 500 }}
+      >
         <Stack direction="row" spacing={2} mb={2} alignItems="center">
           <FormControl sx={{ minWidth: 160 }}><InputLabel>Ano fiscal</InputLabel>
             <Select value={fiscalYear} label="Ano fiscal" onChange={(e: SelectChangeEvent<number>) => setFiscalYear(Number(e.target.value))}>
@@ -113,43 +115,45 @@ export default function PatrimonioPage() {
         <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ mb: 2 }}><Tab label="Movimientos" /><Tab label="Vista matricial" /></Tabs>
 
         {tab === 0 && (
-          <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, width: "100%", elevation: 0, border: "1px solid #E5E7EB" }}>
+          <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, width: "100%", elevation: 0, border: (t) => `1px solid ${t.palette.divider}` }}>
             <zentto-grid ref={gridRef} default-currency="VES" export-filename="patrimonio" height="100%"
               enable-toolbar enable-header-menu enable-header-filters enable-clipboard enable-quick-search enable-context-menu enable-status-bar enable-configurator></zentto-grid>
           </Paper>
         )}
 
         {tab === 1 && (
-          <Paper sx={{ flex: 1, overflow: "auto", border: "1px solid #E5E7EB", elevation: 0 }}>
+          <Paper sx={{ flex: 1, overflow: "auto", border: (t) => `1px solid ${t.palette.divider}`, elevation: 0 }}>
             {reportQuery.isLoading ? <Box sx={{ display: "flex", justifyContent: "center", p: 4 }}><CircularProgress /></Box>
             : reportData.length === 0 ? <Alert severity="info" sx={{ m: 2 }}>No hay datos para el ano fiscal {fiscalYear}.</Alert>
             : (
               <Box sx={{ overflowX: "auto" }}>
-                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.875rem" }}>
+                <Box component="table" sx={{ width: "100%", borderCollapse: "collapse", fontSize: "0.875rem" }}>
                   <thead>
-                    <tr style={{ backgroundColor: "#F9FAFB" }}>
-                      <th style={{ textAlign: "left", padding: "12px 16px", borderBottom: "2px solid #E5E7EB", fontWeight: 600 }}>Cuenta</th>
-                      {MATRIX_COLUMNS.map((col) => (<th key={col} style={{ textAlign: "right", padding: "12px 16px", borderBottom: "2px solid #E5E7EB", fontWeight: 600, whiteSpace: "nowrap" }}>{col}</th>))}
-                    </tr>
+                    <Box component="tr" sx={{ bgcolor: "action.hover" }}>
+                      <Box component="th" sx={{ textAlign: "left", px: 2, py: 1.5, borderBottom: (t) => `2px solid ${t.palette.divider}`, fontWeight: 600 }}>Cuenta</Box>
+                      {MATRIX_COLUMNS.map((col) => (
+                        <Box component="th" key={col} sx={{ textAlign: "right", px: 2, py: 1.5, borderBottom: (t) => `2px solid ${t.palette.divider}`, fontWeight: 600, whiteSpace: "nowrap" }}>{col}</Box>
+                      ))}
+                    </Box>
                   </thead>
                   <tbody>
                     {reportData.map((row: any, idx: number) => (
-                      <tr key={row.AccountCode ?? idx} style={{ backgroundColor: idx % 2 === 0 ? "#FFFFFF" : "#F9FAFB" }}>
-                        <td style={{ padding: "10px 16px", borderBottom: "1px solid #E5E7EB", fontWeight: row._isTotal ? 700 : 400 }}>
+                      <Box component="tr" key={row.AccountCode ?? idx} sx={{ bgcolor: idx % 2 === 0 ? "background.paper" : "action.hover" }}>
+                        <Box component="td" sx={{ px: 2, py: 1.25, borderBottom: (t) => `1px solid ${t.palette.divider}`, fontWeight: row._isTotal ? 700 : 400 }}>
                           {row.AccountCode ? `${row.AccountCode} - ${row.AccountName}` : row.AccountName}
-                        </td>
+                        </Box>
                         {["SaldoInicial","Capital","Reservas","Resultados","Dividendos","AjusteInflacion","Otros","SaldoFinal"].map((f) => (
-                          <td key={f} style={{ textAlign: "right", padding: "10px 16px", borderBottom: "1px solid #E5E7EB", fontWeight: f === "SaldoFinal" ? 600 : 400 }}>{formatCurrency(row[f] ?? 0)}</td>
+                          <Box component="td" key={f} sx={{ textAlign: "right", px: 2, py: 1.25, borderBottom: (t) => `1px solid ${t.palette.divider}`, fontWeight: f === "SaldoFinal" ? 600 : 400 }}>{formatCurrency(row[f] ?? 0)}</Box>
                         ))}
-                      </tr>
+                      </Box>
                     ))}
                   </tbody>
-                </table>
+                </Box>
               </Box>
             )}
           </Paper>
         )}
-      </Box>
+      </ModulePageShell>
 
       <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="sm" fullWidth>
         <DialogTitle>{editingId ? "Editar movimiento" : "Nuevo movimiento de patrimonio"}</DialogTitle>
@@ -182,7 +186,7 @@ export default function PatrimonioPage() {
           <Button variant="contained" color="error" onClick={handleDelete} disabled={deleteMutation.isPending}>Eliminar</Button>
         </DialogActions>
       </Dialog>
-    </Box>
+    </>
   );
 }
 

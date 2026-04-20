@@ -24,7 +24,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import BlockIcon from "@mui/icons-material/Block";
 import LoginIcon from "@mui/icons-material/Login";
 import { formatCurrency, toDateOnly, formatDateTime, useGridLayoutSync } from "@zentto/shared-api";
-import { ContextActionHeader, DashboardKpiCard } from "@zentto/shared-ui";
+import { ModulePageShell, DashboardKpiCard } from "@zentto/shared-ui";
 import { useTimezone } from "@zentto/shared-auth";
 import { useAuditDashboard } from "../hooks/useAuditoria";
 import { brandColors } from "@zentto/shared-ui";
@@ -119,10 +119,8 @@ export default function AuditoriaHome() {
 
 
   return (
-    <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-      <ContextActionHeader title="Auditoría Fiscal" />
-
-      <Box sx={{ p: { xs: 2, md: 3 }, flex: 1, overflow: "auto" }}>
+    <ModulePageShell sx={{ display: "flex", flexDirection: "column" }}>
+      <Box sx={{ flex: 1, overflow: "auto" }}>
         {/* Stats Cards */}
         <Stack direction="row" spacing={2} mb={3} flexWrap="wrap" useFlexGap>
           {stats.map((s) => (
@@ -211,7 +209,7 @@ export default function AuditoriaHome() {
           </Box>
         </Stack>
       </Box>
-    </Box>
+    </ModulePageShell>
   );
 }
 

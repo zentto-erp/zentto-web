@@ -149,8 +149,6 @@ export default function ConciliacionBancariaPage() {
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-      <Typography variant="h5" fontWeight={600}>Conciliaciones</Typography>
-
       <Paper sx={{ p: 0 }}>
         <zentto-grid ref={gridRef} grid-id={LIST_GRID_ID} height="400px" enable-create create-label="Nueva ConciliaciÃ³n" enable-toolbar enable-header-menu enable-header-filters enable-clipboard enable-quick-search enable-context-menu enable-status-bar enable-configurator />
       </Paper>

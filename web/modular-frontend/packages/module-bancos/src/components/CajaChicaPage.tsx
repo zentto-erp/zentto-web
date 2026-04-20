@@ -129,8 +129,6 @@ export default function CajaChicaPage() {
 
   return (
     <Box>
-      <Typography variant="h5" fontWeight={600} mb={2}>Caja Chica</Typography>
-
       <Grid container spacing={2}>
         <Grid size={{ xs: 12, lg: 4 }}>
           <Paper sx={{ p: 2 }}>

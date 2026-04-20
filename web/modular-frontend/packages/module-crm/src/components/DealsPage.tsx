@@ -18,7 +18,7 @@ import DownloadIcon from "@mui/icons-material/Download";
 import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
 import ThumbDownIcon from "@mui/icons-material/ThumbDown";
 import {
-  ContextActionHeader,
+  ModulePageShell,
   DeleteDialog,
   FormDialog,
   RightDetailDrawer,
@@ -180,7 +180,21 @@ export default function DealsPage() {
 
   const columns: ColumnSpec[] = useMemo(
     () => [
-      { field: "DealCode", header: "Código", width: 110 },
+      {
+        field: "DealCode",
+        header: "Código",
+        width: 110,
+        // El backend aún no emite DealCode; derivamos `DEAL-NNN` del DealId
+        // para paridad visual con Leads (LEAD-NNN). Cuando se agregue la
+        // columna al schema (migración goose), este fallback sigue siendo
+        // compatible — si DealCode viene del API, se usa tal cual.
+        renderCell: ((value: unknown, row: unknown) => {
+          if (typeof value === "string" && value.length > 0) return value;
+          const id = (row as { DealId?: number | string })?.DealId;
+          if (id == null) return "—";
+          return `DEAL-${String(id).padStart(3, "0")}`;
+        }) as unknown,
+      } as ColumnSpec,
       { field: "Name", header: "Nombre", flex: 1, minWidth: 180 },
       { field: "ContactName", header: "Contacto", width: 160 },
       { field: "CompanyName", header: "Empresa", width: 160 },
@@ -508,9 +522,7 @@ export default function DealsPage() {
   );
 
   return (
-    <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-      <ContextActionHeader title="Deals" />
-
+    <ModulePageShell sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
       <Box sx={{ flex: 1, minHeight: 0 }}>
         <ZenttoRecordTable
           recordType={RECORD_TYPE}
@@ -781,6 +793,6 @@ export default function DealsPage() {
           />
         </Stack>
       </FormDialog>
-    </Box>
+    </ModulePageShell>
   );
 }

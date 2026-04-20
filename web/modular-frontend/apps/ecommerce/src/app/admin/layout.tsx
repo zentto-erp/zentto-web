@@ -1,31 +1,186 @@
 'use client';
 
+/**
+ * Admin layout — sidebar con acordeones por sección.
+ *
+ * Designer Ola 2 specs:
+ *   - Orden de secciones: Ventas → Catálogo → Contenido → Sistema
+ *   - Badges naranja con count pending (reviews, devoluciones) desde la API.
+ *   - Item activo: bg #37475a + color #ff9900.
+ *   - Persistencia estado acordeón en localStorage (`zentto_admin_sidebar_<section>`).
+ *   - Auto-expand de la sección activa al cargar según `pathname`.
+ */
+
 import {
-    Box, AppBar, Toolbar, Typography, IconButton, Button,
+    Box, AppBar, Toolbar, Typography, IconButton, Button, Chip,
     Drawer, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Divider,
+    Accordion, AccordionSummary, AccordionDetails,
 } from '@mui/material';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import AssignmentReturnIcon from '@mui/icons-material/AssignmentReturn';
 import SpeedIcon from '@mui/icons-material/Speed';
 import StoreIcon from '@mui/icons-material/Store';
+import ArticleIcon from '@mui/icons-material/Article';
+import NewspaperIcon from '@mui/icons-material/Newspaper';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import Inventory2Icon from '@mui/icons-material/Inventory2';
+import CategoryIcon from '@mui/icons-material/Category';
+import LabelIcon from '@mui/icons-material/Label';
+import RateReviewIcon from '@mui/icons-material/RateReview';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import MonetizationOnIcon from '@mui/icons-material/MonetizationOn';
+import StorefrontIcon from '@mui/icons-material/Storefront';
+import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
+import FactCheckIcon from '@mui/icons-material/FactCheck';
 import { usePathname, useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { useAdminReviewsList } from '@zentto/module-ecommerce';
 
-const DRAWER_WIDTH = 220;
+const DRAWER_WIDTH = 240;
 
-const NAV_ITEMS = [
-    { label: 'Dashboard', href: '/admin/dashboard', icon: <DashboardIcon /> },
-    { label: 'Devoluciones', href: '/admin/devoluciones', icon: <AssignmentReturnIcon /> },
-    { label: 'Performance', href: '/admin/perf', icon: <SpeedIcon /> },
+interface NavItem {
+    label: string;
+    href: string;
+    icon: React.ReactNode;
+    /** Si es función, se evalúa cada render con los contadores pending. */
+    badge?: number | null | ((counts: BadgeCounts) => number | null);
+}
+interface NavSection { id: string; label: string; items: NavItem[]; }
+
+interface BadgeCounts {
+    reviewsPending: number;
+    returnsPending: number;
+}
+
+const NAV_SECTIONS: NavSection[] = [
+    {
+        id: 'ventas',
+        label: 'Ventas',
+        items: [
+            { label: 'Dashboard', href: '/admin/dashboard', icon: <DashboardIcon fontSize="small" /> },
+            {
+                label: 'Devoluciones',
+                href: '/admin/devoluciones',
+                icon: <AssignmentReturnIcon fontSize="small" />,
+                badge: (c) => c.returnsPending || null,
+            },
+        ],
+    },
+    {
+        id: 'catalogo',
+        label: 'Catálogo',
+        items: [
+            { label: 'Productos', href: '/admin/productos', icon: <Inventory2Icon fontSize="small" /> },
+            { label: 'Categorías', href: '/admin/categorias', icon: <CategoryIcon fontSize="small" /> },
+            { label: 'Marcas', href: '/admin/marcas', icon: <LabelIcon fontSize="small" /> },
+        ],
+    },
+    {
+        id: 'marketplace',
+        label: 'Marketplace',
+        items: [
+            { label: 'Afiliados',              href: '/admin/afiliados',              icon: <MonetizationOnIcon fontSize="small" /> },
+            { label: 'Comisiones',             href: '/admin/afiliados/comisiones',   icon: <ReceiptLongIcon fontSize="small" /> },
+            { label: 'Vendedores',             href: '/admin/vendedores',             icon: <StorefrontIcon fontSize="small" /> },
+            { label: 'Productos marketplace',  href: '/admin/vendedores/productos',   icon: <FactCheckIcon fontSize="small" /> },
+        ],
+    },
+    {
+        id: 'contenido',
+        label: 'Contenido',
+        items: [
+            {
+                label: 'Reseñas',
+                href: '/admin/reviews',
+                icon: <RateReviewIcon fontSize="small" />,
+                badge: (c) => c.reviewsPending || null,
+            },
+            { label: 'CMS Pages',      href: '/admin/cms',    icon: <ArticleIcon fontSize="small" /> },
+            { label: 'Press Releases', href: '/admin/prensa', icon: <NewspaperIcon fontSize="small" /> },
+        ],
+    },
+    {
+        id: 'sistema',
+        label: 'Sistema',
+        items: [
+            { label: 'Performance', href: '/admin/perf', icon: <SpeedIcon fontSize="small" /> },
+        ],
+    },
 ];
+
+const storageKey = (section: string) => `zentto_admin_sidebar_${section}`;
+
+function readStoredState(sectionId: string): boolean | null {
+    if (typeof window === 'undefined') return null;
+    const v = window.localStorage.getItem(storageKey(sectionId));
+    if (v === 'open') return true;
+    if (v === 'closed') return false;
+    return null;
+}
+
+function OrangeBadge({ count }: { count: number }) {
+    return (
+        <Chip
+            size="small"
+            label={count}
+            sx={{
+                bgcolor: '#ff9900',
+                color: '#0f1111',
+                height: 18,
+                fontSize: 11,
+                fontWeight: 700,
+                ml: 1,
+                '& .MuiChip-label': { px: 0.8 },
+            }}
+        />
+    );
+}
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
     const router = useRouter();
     const pathname = usePathname();
 
+    // ── Count de pendings para los badges ──
+    // Review pending: endpoint real (limit=1 basta, contamos via total).
+    const { data: reviewsPending } = useAdminReviewsList({ status: 'pending', limit: 1 });
+    const counts: BadgeCounts = {
+        reviewsPending: Number(reviewsPending?.total ?? 0),
+        returnsPending: 0, // TODO: cuando exista endpoint de RMA admin, leer aquí.
+    };
+
+    const activeSectionId =
+        NAV_SECTIONS.find((s) => s.items.some((i) => pathname.startsWith(i.href)))?.id ?? 'ventas';
+
+    // Estado por acordeón con hidratación idempotente desde localStorage.
+    const [expandedMap, setExpandedMap] = useState<Record<string, boolean>>({});
+
+    useEffect(() => {
+        const init: Record<string, boolean> = {};
+        for (const s of NAV_SECTIONS) {
+            const stored = readStoredState(s.id);
+            init[s.id] = stored ?? s.id === activeSectionId;
+        }
+        setExpandedMap(init);
+    }, [activeSectionId]);
+
+    const handleExpandChange = (sectionId: string) => (_: unknown, expanded: boolean) => {
+        setExpandedMap((prev) => ({ ...prev, [sectionId]: expanded }));
+        if (typeof window !== 'undefined') {
+            window.localStorage.setItem(storageKey(sectionId), expanded ? 'open' : 'closed');
+        }
+    };
+
     return (
         <Box sx={{ display: 'flex', minHeight: '100vh' }}>
-            <AppBar position="fixed" sx={{ zIndex: 1300, bgcolor: '#131921', width: `calc(100% - ${DRAWER_WIDTH}px)`, ml: `${DRAWER_WIDTH}px` }}>
+            <AppBar
+                position="fixed"
+                sx={{
+                    zIndex: 1300,
+                    bgcolor: '#131921',
+                    width: `calc(100% - ${DRAWER_WIDTH}px)`,
+                    ml: `${DRAWER_WIDTH}px`,
+                }}
+            >
                 <Toolbar sx={{ gap: 1 }}>
                     <StoreIcon sx={{ color: '#ff9900' }} />
                     <Typography variant="h6" fontWeight={700} sx={{ flex: 1 }}>
@@ -48,7 +203,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 sx={{
                     width: DRAWER_WIDTH,
                     flexShrink: 0,
-                    '& .MuiDrawer-paper': { width: DRAWER_WIDTH, boxSizing: 'border-box', bgcolor: '#232f3e', color: '#fff' },
+                    '& .MuiDrawer-paper': {
+                        width: DRAWER_WIDTH,
+                        boxSizing: 'border-box',
+                        bgcolor: '#232f3e',
+                        color: '#fff',
+                    },
                 }}
             >
                 <Toolbar sx={{ bgcolor: '#131921' }}>
@@ -57,30 +217,112 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     </Typography>
                 </Toolbar>
                 <Divider sx={{ bgcolor: '#37475a' }} />
-                <List dense>
-                    {NAV_ITEMS.map((item) => {
-                        const active = pathname === item.href;
+
+                <Box sx={{ overflowY: 'auto' }}>
+                    {NAV_SECTIONS.map((section) => {
+                        const expanded = expandedMap[section.id] ?? section.id === activeSectionId;
                         return (
-                            <ListItem key={item.href} disablePadding>
-                                <ListItemButton
-                                    onClick={() => router.push(item.href)}
-                                    selected={active}
+                            <Accordion
+                                key={section.id}
+                                expanded={expanded}
+                                onChange={handleExpandChange(section.id)}
+                                disableGutters
+                                square
+                                elevation={0}
+                                sx={{
+                                    bgcolor: 'transparent',
+                                    color: '#fff',
+                                    '&:before': { display: 'none' },
+                                    borderBottom: '1px solid #37475a',
+                                }}
+                            >
+                                <AccordionSummary
+                                    expandIcon={
+                                        <ExpandMoreIcon
+                                            sx={{
+                                                color: '#aab7c4',
+                                                transition: 'transform 150ms',
+                                            }}
+                                        />
+                                    }
                                     sx={{
-                                        color: '#fff',
-                                        '&.Mui-selected': { bgcolor: '#37475a', color: '#ff9900' },
+                                        minHeight: 40,
+                                        px: 2,
+                                        '& .MuiAccordionSummary-content': { my: 0.5 },
                                         '&:hover': { bgcolor: '#37475a' },
                                     }}
                                 >
-                                    <ListItemIcon sx={{ color: 'inherit', minWidth: 36 }}>{item.icon}</ListItemIcon>
-                                    <ListItemText primary={item.label} primaryTypographyProps={{ fontSize: 13 }} />
-                                </ListItemButton>
-                            </ListItem>
+                                    <Typography
+                                        variant="caption"
+                                        sx={{
+                                            fontWeight: 700,
+                                            letterSpacing: 0.8,
+                                            textTransform: 'uppercase',
+                                            color: '#cccccc',
+                                            fontSize: 12,
+                                        }}
+                                    >
+                                        {section.label}
+                                    </Typography>
+                                </AccordionSummary>
+                                <AccordionDetails sx={{ p: 0 }}>
+                                    <List dense disablePadding>
+                                        {section.items.map((item) => {
+                                            const active = pathname === item.href || pathname.startsWith(item.href + '/');
+                                            const badgeVal = typeof item.badge === 'function'
+                                                ? item.badge(counts)
+                                                : (item.badge ?? null);
+                                            return (
+                                                <ListItem key={item.href} disablePadding>
+                                                    <ListItemButton
+                                                        onClick={() => router.push(item.href)}
+                                                        selected={active}
+                                                        sx={{
+                                                            pl: 3,
+                                                            color: '#fff',
+                                                            position: 'relative',
+                                                            '&.Mui-selected': {
+                                                                bgcolor: '#37475a',
+                                                                color: '#ff9900',
+                                                                '&::before': {
+                                                                    content: '""',
+                                                                    position: 'absolute',
+                                                                    left: 0,
+                                                                    top: 0,
+                                                                    bottom: 0,
+                                                                    width: 3,
+                                                                    bgcolor: '#ff9900',
+                                                                },
+                                                            },
+                                                            '&:hover': { bgcolor: '#37475a' },
+                                                        }}
+                                                    >
+                                                        <ListItemIcon sx={{ color: 'inherit', minWidth: 32 }}>
+                                                            {item.icon}
+                                                        </ListItemIcon>
+                                                        <ListItemText
+                                                            primary={item.label}
+                                                            primaryTypographyProps={{ fontSize: 13 }}
+                                                        />
+                                                        {badgeVal && badgeVal > 0 ? (
+                                                            <OrangeBadge count={badgeVal} />
+                                                        ) : null}
+                                                    </ListItemButton>
+                                                </ListItem>
+                                            );
+                                        })}
+                                    </List>
+                                </AccordionDetails>
+                            </Accordion>
                         );
                     })}
-                </List>
+                </Box>
             </Drawer>
 
-            <Box component="main" sx={{ flexGrow: 1, p: 3, mt: 8, bgcolor: '#f5f5f5', minHeight: '100vh' }}>
+            <Box
+                component="main"
+                sx={{ flexGrow: 1, p: 3, mt: 8, bgcolor: '#f5f5f5', minHeight: '100vh' }}
+            >
                 {children}
             </Box>
         </Box>

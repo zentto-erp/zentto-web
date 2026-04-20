@@ -105,10 +105,6 @@ export function AmbientesPage() {
 
     return (
         <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', height: '100%' }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
-                <Typography variant="h4" fontWeight="bold">Configurar Salones y Mesas</Typography>
-            </Box>
-
             {loading && !rows.length ? (
                 <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
                     <CircularProgress />

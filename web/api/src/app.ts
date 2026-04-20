@@ -69,6 +69,8 @@ import { settingsRouter } from "./modules/settings/routes.js";
 import { mediaRouter } from "./modules/media/routes.js";
 import { supervisionRouter } from "./modules/supervision/routes.js";
 import { storeRouter } from "./modules/ecommerce/routes.js";
+import { adminProductsRouter } from "./modules/ecommerce/admin-products.routes.js";
+import { cmsRouter } from "./modules/ecommerce/cms.routes.js";
 import { landingRouter } from "./modules/landing/routes.js";
 import { tenantPublicRouter } from "./modules/tenant-public/routes.js";
 import rrhhRouter from "./modules/rrhh/routes.js";
@@ -292,6 +294,13 @@ export async function createApp() {
 
   // Ecommerce storefront — público (sin JWT)
   app.use("/store", storeRouter);
+
+  // Ecommerce CMS (páginas editoriales + prensa + contacto) — montado en /store
+  // para mantener la convención del storefront.
+  app.use("/store", cmsRouter);
+
+  // Ecommerce backoffice — requiere JWT + isAdmin (CRUD catálogo, imágenes, reviews)
+  app.use("/store/admin", adminProductsRouter);
 
   // Shipping portal — público (auth propio del cliente shipping)
   app.use("/shipping", shippingRouter);

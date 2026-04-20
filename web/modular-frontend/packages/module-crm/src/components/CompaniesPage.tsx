@@ -15,7 +15,7 @@ import {
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import DownloadIcon from "@mui/icons-material/Download";
 import {
-  ContextActionHeader,
+  ModulePageShell,
   DeleteDialog,
   FormDialog,
   RightDetailDrawer,
@@ -346,9 +346,7 @@ export default function CompaniesPage() {
   );
 
   return (
-    <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-      <ContextActionHeader title="Empresas" />
-
+    <ModulePageShell sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
       <Box sx={{ flex: 1, minHeight: 0 }}>
         <ZenttoRecordTable
           recordType={RECORD_TYPE}
@@ -522,6 +520,6 @@ export default function CompaniesPage() {
         itemName={`${bulkDeleteIds.length} empresa${bulkDeleteIds.length === 1 ? "" : "s"}`}
         loading={deleteCompany.isPending}
       />
-    </Box>
+    </ModulePageShell>
   );
 }
