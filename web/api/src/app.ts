@@ -316,6 +316,11 @@ export async function createApp() {
   const { statusRouter } = await import("./modules/health/status.routes.js");
   app.use("/v1/status", statusRouter);
 
+  // CMS público (blog + páginas institucionales) — sin JWT, solo lectura, solo published.
+  // Cache CDN vía Cache-Control headers. Ver ADR-CMS-001.
+  const { cmsPublicRouter } = await import("./modules/cms/routes.public.js");
+  app.use("/v1/public/cms", cmsPublicRouter);
+
   // Licencias — /validate es público (BYOC servers); resto protegido por Master-Key, sin JWT
   app.use("/v1/license", licenseRouter);
 
@@ -541,6 +546,11 @@ export async function createApp() {
   // White-label brand config per tenant (F4)
   const { brandRouter } = await import("./modules/brand/routes.js");
   app.use("/v1/brand", brandRouter);
+
+  // CMS administración (edición de posts + páginas) — JWT + rol cms_editor (fallback: companyId=1).
+  // Ver ADR-CMS-001 + modules/cms/routes.admin.ts.
+  const { cmsAdminRouter } = await import("./modules/cms/routes.admin.js");
+  app.use("/v1/cms", cmsAdminRouter);
 
   // Configuraciones Globales (BD, Tasas, Licencias)
   app.use("/v1/config", configRouter);
