@@ -83,6 +83,33 @@ export type { BrandRow, BrandUpsertPayload } from "./hooks/useAdminBrands";
 export { useAdminReviewsList, useModerateReview } from "./hooks/useAdminReviews";
 export type { AdminReviewRow, AdminReviewListParams } from "./hooks/useAdminReviews";
 
+// Affiliate / Marketplace hooks
+export {
+  useCommissionRates, useAffiliateDashboard, useAffiliateCommissions,
+  useRegisterAffiliate, useTrackAffiliateClick,
+} from "./hooks/useAffiliate";
+export type { CommissionRate, AffiliateDashboard, AffiliateCommission } from "./hooks/useAffiliate";
+export {
+  useAdminAffiliates, useAdminAffiliateCommissions,
+  useAdminSetAffiliateStatus, useAdminGenerateAffiliatePayouts,
+} from "./hooks/useAffiliateAdmin";
+export type { AdminAffiliate, AdminAffiliateCommission } from "./hooks/useAffiliateAdmin";
+export {
+  useSellerDashboard, useSellerProducts, useApplySeller, useSubmitSellerProduct,
+} from "./hooks/useSeller";
+export type { SellerDashboard, SellerProduct } from "./hooks/useSeller";
+export {
+  useAdminSellers, useAdminPendingSellerProducts,
+  useAdminSetSellerStatus, useAdminReviewSellerProduct,
+} from "./hooks/useSellerAdmin";
+export type { AdminSeller, AdminSellerProduct } from "./hooks/useSellerAdmin";
+
+// Affiliate utils
+export {
+  getReferralCode, setReferralCode, buildReferralUrl,
+  processReferralFromUrl, ensureSessionId, REFERRAL_COOKIE, SESSION_COOKIE,
+} from "./utils/affiliate";
+
 // Components
 export { default as ProductCard } from "./components/ProductCard";
 export { default as ProductGrid } from "./components/ProductGrid";

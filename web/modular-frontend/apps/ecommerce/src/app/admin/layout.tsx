@@ -28,6 +28,10 @@ import CategoryIcon from '@mui/icons-material/Category';
 import LabelIcon from '@mui/icons-material/Label';
 import RateReviewIcon from '@mui/icons-material/RateReview';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import MonetizationOnIcon from '@mui/icons-material/MonetizationOn';
+import StorefrontIcon from '@mui/icons-material/Storefront';
+import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
+import FactCheckIcon from '@mui/icons-material/FactCheck';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useAdminReviewsList } from '@zentto/module-ecommerce';
@@ -69,6 +73,16 @@ const NAV_SECTIONS: NavSection[] = [
             { label: 'Productos', href: '/admin/productos', icon: <Inventory2Icon fontSize="small" /> },
             { label: 'Categorías', href: '/admin/categorias', icon: <CategoryIcon fontSize="small" /> },
             { label: 'Marcas', href: '/admin/marcas', icon: <LabelIcon fontSize="small" /> },
+        ],
+    },
+    {
+        id: 'marketplace',
+        label: 'Marketplace',
+        items: [
+            { label: 'Afiliados',              href: '/admin/afiliados',              icon: <MonetizationOnIcon fontSize="small" /> },
+            { label: 'Comisiones',             href: '/admin/afiliados/comisiones',   icon: <ReceiptLongIcon fontSize="small" /> },
+            { label: 'Vendedores',             href: '/admin/vendedores',             icon: <StorefrontIcon fontSize="small" /> },
+            { label: 'Productos marketplace',  href: '/admin/vendedores/productos',   icon: <FactCheckIcon fontSize="small" /> },
         ],
     },
     {

@@ -55,8 +55,14 @@ import {
   compareProducts,
   getPerfAudit,
 } from "./service.js";
+import { affiliateRouter } from "./affiliate.routes.js";
+import { sellerRouter } from "./seller.routes.js";
 
 export const storeRouter = Router();
+
+// Sub-routers — programa de afiliados + marketplace de vendedores
+storeRouter.use(affiliateRouter);
+storeRouter.use(sellerRouter);
 
 // ─── Catálogo público ──────────────────────────────────
 
@@ -332,6 +338,8 @@ const checkoutSchema = z.object({
   currencyCode: z.string().length(3).optional(),
   exchangeRate: z.number().positive().max(1_000_000).optional(),
   countryCode: z.string().length(2).optional(),
+  /** Código de referido afiliado (viene de la cookie zentto_ref en el front). */
+  referralCode: z.string().min(3).max(20).optional(),
 });
 
 storeRouter.post("/checkout", async (req, res) => {
@@ -341,6 +349,41 @@ storeRouter.post("/checkout", async (req, res) => {
 
     const result = await checkout(parsed.data);
     if (!result.ok) return res.status(400).json(result);
+
+    // Atribución a afiliado si hay cookie zentto_ref o body.referralCode
+    try {
+      const cookieHeader = req.headers.cookie ?? "";
+      const readCookie = (name: string) => {
+        for (const part of cookieHeader.split(";")) {
+          const trimmed = part.trim();
+          const eq = trimmed.indexOf("=");
+          if (eq < 0) continue;
+          if (trimmed.slice(0, eq) === name) {
+            try { return decodeURIComponent(trimmed.slice(eq + 1)); } catch { return trimmed.slice(eq + 1); }
+          }
+        }
+        return undefined;
+      };
+      const referralCode =
+        (req.body?.referralCode as string | undefined) ||
+        readCookie("zentto_ref") ||
+        undefined;
+      if (referralCode && result.orderNumber) {
+        const sessionId = readCookie("zentto_sid") || undefined;
+        const totalAmt = parsed.data.items.reduce((s, i) => s + i.subtotal + i.taxAmount, 0);
+        const { tryAttributeOrder } = await import("./affiliate.service.js");
+        // fire-and-forget
+        tryAttributeOrder({
+          orderNumber: result.orderNumber,
+          referralCode,
+          sessionId: sessionId ?? null,
+          orderAmount: totalAmt,
+          currency: (parsed.data.currencyCode ?? "USD").toUpperCase(),
+        }).catch(() => { /* ignore */ });
+      }
+    } catch (affErr) {
+      console.warn("[checkout] affiliate attribute error:", affErr);
+    }
 
     // Notify: orden creada (best-effort)
     const email = String(parsed.data.customer.email ?? "").trim().toLowerCase();

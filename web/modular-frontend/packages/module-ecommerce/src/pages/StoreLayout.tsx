@@ -31,6 +31,7 @@ import CompareBar from "../components/CompareBar";
 import MiniCartPopper from "../components/MiniCartPopper";
 import { useStoreSearch } from "../hooks/useStoreSearch";
 import { formatPrice } from "../utils/formatCurrency";
+import { processReferralFromUrl } from "../utils/affiliate";
 
 interface Props {
   children: React.ReactNode;
@@ -62,6 +63,11 @@ export default function StoreLayout({ children, onNavigate }: Props) {
 
   const [hydrated, setHydrated] = useState(false);
   useEffect(() => setHydrated(true), []);
+
+  // Tracking de afiliados: procesa ?ref= de la URL una sola vez al montar
+  useEffect(() => {
+    processReferralFromUrl();
+  }, []);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const isSmall = useMediaQuery(theme.breakpoints.down("sm"));
