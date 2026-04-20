@@ -1,0 +1,56 @@
+name: Publish @zentto/landing-kit
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "web/modular-frontend/packages/landing-kit/**"
+      - ".github/workflows/publish-landing-kit.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    name: Typecheck & publish to npm
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: web/modular-frontend/packages/landing-kit
+    steps:
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.3.0
+        with:
+          fetch-depth: 2
+          persist-credentials: false
+
+      - uses: actions/setup-node@1a4442cacd436585916779262731d5b162bc6ec7 # v4.5.0
+        with:
+          node-version: "20"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Install
+        run: npm install --ignore-scripts
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      # Publica solo si la version del package.json cambió respecto a npm.
+      # zizmor: ignore[use-trusted-publishing] — npm trusted publishing requiere OIDC setup aparte.
+      - name: Publish if new version
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          PKG_VERSION=$(node -p "require('./package.json').version")
+          PUBLISHED=$(npm view @zentto/landing-kit version 2>/dev/null || echo "")
+          echo "Local: $PKG_VERSION | Published: $PUBLISHED"
+          if [ "$PKG_VERSION" = "$PUBLISHED" ]; then
+            echo "Version $PKG_VERSION ya publicada — skip."
+            exit 0
+          fi
+          npm publish --access restricted --ignore-scripts
+          echo "Publicado @zentto/landing-kit@$PKG_VERSION"
