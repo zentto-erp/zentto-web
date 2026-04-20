@@ -7,34 +7,29 @@ import {
   Grid,
   Paper,
   Button,
+  CircularProgress,
+  Stack,
+  Chip,
 } from '@mui/material';
 import NewspaperOutlined from '@mui/icons-material/NewspaperOutlined';
-import DownloadOutlined from '@mui/icons-material/DownloadOutlined';
 import EmailOutlined from '@mui/icons-material/EmailOutlined';
 import CalendarTodayOutlined from '@mui/icons-material/CalendarTodayOutlined';
+import Link from 'next/link';
+import { usePressReleases } from '@zentto/module-ecommerce';
 
-const pressReleases = [
-  {
-    date: '15 Mar 2026',
-    title: 'Zentto lanza su plataforma de comercio electronico integrada con ERP',
-    excerpt:
-      'La nueva solucion permite a las PYMEs latinoamericanas gestionar su tienda en linea, inventarios y contabilidad desde una unica plataforma, eliminando la necesidad de multiples herramientas desconectadas.',
-  },
-  {
-    date: '28 Feb 2026',
-    title: 'Zentto supera las 1,000 empresas activas en 14 paises',
-    excerpt:
-      'El ERP de origen latinoamericano alcanza un hito significativo con presencia en Venezuela, Colombia, Mexico, Espana, Chile, Peru, Argentina, Ecuador, Panama, Republica Dominicana, Costa Rica, Uruguay, Bolivia y Paraguay.',
-  },
-  {
-    date: '10 Ene 2026',
-    title: 'Zentto migra su infraestructura a PostgreSQL para mayor escalabilidad',
-    excerpt:
-      'La compania anuncia soporte dual de base de datos (SQL Server y PostgreSQL), ofreciendo a los clientes mayor flexibilidad y reduciendo costos de licenciamiento para pequenas empresas.',
-  },
-];
+function formatDate(iso: string | null): string {
+  if (!iso) return '';
+  try {
+    const d = new Date(iso);
+    return d.toLocaleDateString('es', { day: '2-digit', month: 'short', year: 'numeric' });
+  } catch {
+    return '';
+  }
+}
 
 export default function PrensaPage() {
+  const { data, isLoading, error } = usePressReleases(1, 20);
+
   return (
     <Box sx={{ bgcolor: '#eaeded', minHeight: '100vh' }}>
       {/* Hero */}
@@ -52,12 +47,12 @@ export default function PrensaPage() {
             Prensa
           </Typography>
           <Typography variant="h6" sx={{ color: '#ccc', maxWidth: 550, mx: 'auto' }}>
-            Zentto en los medios
+            Comunicados oficiales, noticias y contacto para medios.
           </Typography>
         </Container>
       </Box>
 
-      {/* Comunicados de prensa */}
+      {/* Comunicados */}
       <Container maxWidth="lg" sx={{ py: { xs: 4, md: 8 } }}>
         <Typography
           variant="h4"
@@ -68,9 +63,28 @@ export default function PrensaPage() {
         >
           Comunicados de prensa
         </Typography>
+
+        {isLoading && (
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
+            <CircularProgress />
+          </Box>
+        )}
+
+        {error && (
+          <Typography variant="body1" color="text.secondary" textAlign="center">
+            No se pudieron cargar los comunicados.
+          </Typography>
+        )}
+
+        {!isLoading && !error && (data?.items?.length ?? 0) === 0 && (
+          <Typography variant="body1" color="text.secondary" textAlign="center">
+            No hay comunicados publicados todavía.
+          </Typography>
+        )}
+
         <Grid container spacing={3}>
-          {pressReleases.map((pr) => (
-            <Grid item xs={12} md={4} key={pr.title}>
+          {(data?.items ?? []).map((pr) => (
+            <Grid item xs={12} md={4} key={pr.pressReleaseId}>
               <Paper
                 elevation={1}
                 sx={{
@@ -86,16 +100,27 @@ export default function PrensaPage() {
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
                   <CalendarTodayOutlined sx={{ fontSize: 18, color: '#ff9900' }} />
                   <Typography variant="caption" sx={{ color: '#888', fontWeight: 600 }}>
-                    {pr.date}
+                    {formatDate(pr.publishedAt)}
                   </Typography>
                 </Box>
                 <Typography variant="h6" fontWeight={600} sx={{ color: '#131921', mb: 1.5 }}>
                   {pr.title}
                 </Typography>
-                <Typography variant="body2" sx={{ color: '#555', lineHeight: 1.7, flex: 1 }}>
-                  {pr.excerpt}
-                </Typography>
+                {pr.excerpt && (
+                  <Typography variant="body2" sx={{ color: '#555', lineHeight: 1.7, flex: 1 }}>
+                    {pr.excerpt}
+                  </Typography>
+                )}
+                {pr.tags && pr.tags.length > 0 && (
+                  <Stack direction="row" spacing={1} sx={{ mt: 2, flexWrap: 'wrap', gap: 1 }}>
+                    {pr.tags.slice(0, 3).map((t) => (
+                      <Chip key={t} label={t} size="small" variant="outlined" />
+                    ))}
+                  </Stack>
+                )}
                 <Button
+                  component={Link}
+                  href={`/prensa/${pr.slug}`}
                   sx={{
                     mt: 2,
                     color: '#ff9900',
@@ -106,7 +131,7 @@ export default function PrensaPage() {
                     '&:hover': { bgcolor: 'transparent', textDecoration: 'underline' },
                   }}
                 >
-                  Leer mas
+                  Leer más
                 </Button>
               </Paper>
             </Grid>
@@ -114,49 +139,19 @@ export default function PrensaPage() {
         </Grid>
       </Container>
 
-      {/* Kit de prensa */}
-      <Box sx={{ bgcolor: '#fff', py: { xs: 4, md: 8 } }}>
-        <Container maxWidth="sm" sx={{ textAlign: 'center' }}>
-          <DownloadOutlined sx={{ fontSize: 56, color: '#ff9900', mb: 2 }} />
-          <Typography variant="h4" fontWeight={700} gutterBottom sx={{ color: '#131921' }}>
-            Kit de prensa
-          </Typography>
-          <Typography variant="body1" sx={{ color: '#555', mb: 3 }}>
-            Descarga nuestro kit de prensa con logotipos, guia de marca, fotografias del equipo
-            y datos clave de la empresa.
-          </Typography>
-          <Button
-            variant="contained"
-            disabled
-            startIcon={<DownloadOutlined />}
-            sx={{
-              bgcolor: '#ff9900',
-              color: '#131921',
-              fontWeight: 700,
-              textTransform: 'none',
-              px: 4,
-              py: 1.5,
-              '&.Mui-disabled': {
-                bgcolor: '#ccc',
-                color: '#888',
-              },
-            }}
-          >
-            Descargar kit de prensa (proximamente)
-          </Button>
-        </Container>
-      </Box>
-
       {/* Contacto de prensa */}
       <Box sx={{ py: { xs: 4, md: 8 } }}>
         <Container maxWidth="sm" sx={{ textAlign: 'center' }}>
-          <Paper elevation={0} sx={{ p: 4, borderRadius: 3, bgcolor: '#232f3e', color: '#fff' }}>
+          <Paper
+            elevation={0}
+            sx={{ p: 4, borderRadius: 3, bgcolor: '#232f3e', color: '#fff' }}
+          >
             <EmailOutlined sx={{ fontSize: 48, color: '#ff9900', mb: 2 }} />
             <Typography variant="h5" fontWeight={600} gutterBottom>
               Contacto de prensa
             </Typography>
             <Typography variant="body1" sx={{ color: '#ccc', mb: 3 }}>
-              Para consultas de medios, entrevistas o informacion adicional, contactanos en:
+              Para consultas de medios, entrevistas o información adicional, contáctanos:
             </Typography>
             <Button
               variant="contained"

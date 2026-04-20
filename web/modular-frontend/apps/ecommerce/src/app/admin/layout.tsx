@@ -20,6 +20,8 @@ import DashboardIcon from '@mui/icons-material/Dashboard';
 import AssignmentReturnIcon from '@mui/icons-material/AssignmentReturn';
 import SpeedIcon from '@mui/icons-material/Speed';
 import StoreIcon from '@mui/icons-material/Store';
+import ArticleIcon from '@mui/icons-material/Article';
+import NewspaperIcon from '@mui/icons-material/Newspaper';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import Inventory2Icon from '@mui/icons-material/Inventory2';
 import CategoryIcon from '@mui/icons-material/Category';
@@ -79,6 +81,8 @@ const NAV_SECTIONS: NavSection[] = [
                 icon: <RateReviewIcon fontSize="small" />,
                 badge: (c) => c.reviewsPending || null,
             },
+            { label: 'CMS Pages',      href: '/admin/cms',    icon: <ArticleIcon fontSize="small" /> },
+            { label: 'Press Releases', href: '/admin/prensa', icon: <NewspaperIcon fontSize="small" /> },
         ],
     },
     {
