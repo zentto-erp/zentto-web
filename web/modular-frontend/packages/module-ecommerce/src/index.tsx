@@ -34,6 +34,19 @@ export type { SearchHit, SearchResponse, RecommendedProduct, CompareProduct } fr
 export { useCompareStore } from "./store/useCompareStore";
 export { usePerfAudit, useCacheStats, useInvalidateCache } from "./hooks/usePerfAndCache";
 export type { PerfMeasurement, PerfReport, CacheStats } from "./hooks/usePerfAndCache";
+export {
+  useCmsPage, useSubmitContactMessage,
+  useAdminCmsPages, useAdminCmsPage, useUpsertCmsPage, useDeleteCmsPage, usePublishCmsPage,
+} from "./hooks/useCmsPage";
+export type { CmsPageApi, CmsPageSummaryApi, CmsPageUpsertInput } from "./hooks/useCmsPage";
+export {
+  usePressReleases, usePressRelease,
+  useAdminPressReleases, useAdminPressRelease, useUpsertPressRelease,
+  useDeletePressRelease, usePublishPressRelease,
+} from "./hooks/usePressReleases";
+export type {
+  PressReleaseSummary, PressReleaseFull, PressReleaseUpsertInput,
+} from "./hooks/usePressReleases";
 
 // Admin backoffice — productos, imágenes, highlights, specs, categorías, marcas, reviews
 export {
@@ -104,6 +117,16 @@ export {
   useEcommerceGridId,
   useEcommerceGridRegistration,
 } from "./components/zenttoGridPersistence";
+
+// Ola 3 — Store CMS (páginas editoriales + prensa + contacto)
+export { default as StudioPageRenderer, renderMarkdown } from "./components/StudioPageRenderer";
+export type { LandingConfig, LandingSection } from "./components/StudioPageRenderer";
+export { ContactForm } from "./components/ContactForm";
+export { default as CmsPageView } from "./components/CmsPageView";
+export { default as AdminCmsPagesList } from "./components/AdminCmsPagesList";
+export { default as AdminCmsPageEditor } from "./components/AdminCmsPageEditor";
+export { default as AdminPressReleasesList } from "./components/AdminPressReleasesList";
+export { default as AdminPressReleaseEditor } from "./components/AdminPressReleaseEditor";
 
 // Pages
 export { default as StoreLayout } from "./pages/StoreLayout";

@@ -956,6 +956,132 @@ components:
         storageProvider: { type: string, enum: [hetzner-s3, local] }
         mimeType:        { type: string }
         fileSizeBytes:   { type: integer }
+# ─── Store CMS ──────────────────────────────────────────────────────────
+    LandingConfig:
+      type: object
+      description: |
+        Configuración JSONB libre del layout visual de una página CMS.
+        Contiene arreglo de bloques tipados (Hero, FAQ, Stats, Team, Timeline,
+        Jobs, ReturnSteps, richtext, etc.) que el `StudioPageRenderer`
+        renderiza en orden.
+      properties:
+        sections:
+          type: array
+          description: Bloques del layout en orden de render.
+          items:
+            type: object
+            required: [type]
+            properties:
+              type:
+                type: string
+                description: Tipo de bloque (hero, faq, stats, team, timeline, jobs, return-steps, richtext, ...)
+                example: hero
+              id:
+                type: string
+                description: Id estable del bloque (para reordenar/editar).
+              data:
+                type: object
+                description: Payload propio del bloque. Estructura depende de `type`.
+                additionalProperties: true
+        theme:
+          type: object
+          description: Overrides de tema (colores, tipografía) opcionales.
+          additionalProperties: true
+      additionalProperties: true
+
+    CmsPage:
+      type: object
+      required: [cmsPageId, slug, title, status]
+      properties:
+        cmsPageId: { type: integer, example: 42 }
+        slug:      { type: string, example: "acerca" }
+        title:     { type: string, example: "Acerca de Zentto" }
+        subtitle:  { type: string, nullable: true }
+        templateKey:
+          type: string
+          nullable: true
+          description: Template visual a usar (ej. `about`, `contact`, `faq`, `jobs`).
+        config:
+          $ref: "#/components/schemas/LandingConfig"
+        seo:
+          type: object
+          additionalProperties: true
+          description: Metadatos SEO (title, description, og:image, canonical).
+        status:
+          type: string
+          enum: [draft, published, archived]
+        publishedAt: { type: string, format: date-time, nullable: true }
+        updatedAt:   { type: string, format: date-time }
+        createdAt:   { type: string, format: date-time }
+
+    CmsPageUpsert:
+      type: object
+      required: [slug, title]
+      properties:
+        slug:        { type: string, maxLength: 120 }
+        title:       { type: string, maxLength: 200 }
+        subtitle:    { type: string, maxLength: 300, nullable: true }
+        templateKey: { type: string, maxLength: 80, nullable: true }
+        config:
+          $ref: "#/components/schemas/LandingConfig"
+        seo:
+          type: object
+          additionalProperties: true
+        status:
+          type: string
+          enum: [draft, published, archived]
+          default: draft
+
+    PressRelease:
+      type: object
+      required: [pressReleaseId, slug, title, status]
+      properties:
+        pressReleaseId: { type: integer }
+        slug:           { type: string, example: "zentto-raises-seed-round-2026" }
+        title:          { type: string }
+        excerpt:        { type: string, nullable: true }
+        body:           { type: string, nullable: true, description: "Contenido Markdown/HTML del press release." }
+        coverImageUrl:  { type: string, nullable: true }
+        tags:
+          type: array
+          items: { type: string }
+        status:
+          type: string
+          enum: [draft, published, archived]
+        publishedAt: { type: string, format: date-time, nullable: true }
+        updatedAt:   { type: string, format: date-time }
+        createdAt:   { type: string, format: date-time }
+
+    PressReleaseUpsert:
+      type: object
+      required: [slug, title]
+      properties:
+        slug:          { type: string, maxLength: 160 }
+        title:         { type: string, maxLength: 240 }
+        excerpt:       { type: string, maxLength: 600, nullable: true }
+        body:          { type: string, nullable: true }
+        coverImageUrl: { type: string, maxLength: 500, nullable: true }
+        tags:
+          type: array
+          items: { type: string }
+        status:
+          type: string
+          enum: [draft, published, archived]
+          default: draft
+
+    ContactMessage:
+      type: object
+      required: [name, email, message]
+      properties:
+        name:    { type: string, minLength: 1, maxLength: 160 }
+        email:   { type: string, format: email }
+        phone:   { type: string, maxLength: 40, nullable: true }
+        subject: { type: string, maxLength: 240, nullable: true }
+        message: { type: string, minLength: 1 }
+        source:
+          type: string
+          maxLength: 60
+          description: Identificador de la fuente (p.ej. `contact`, `footer-form`). Default `contact`.
   parameters:
     IdParam:
       in: path
@@ -11150,3 +11276,379 @@ paths:
         "400": { description: "missing_file | tipo_de_archivo_no_permitido" }
         "401": { description: "Missing company scope" }
         "403": { description: "Requiere isAdmin" }
+  # ══════════════════════════════════════════════════════════════════════════
+  # Store CMS — público + admin
+  # ══════════════════════════════════════════════════════════════════════════
+
+  /store/cms/pages/{slug}:
+    parameters:
+      - in: path
+        name: slug
+        required: true
+        schema: { type: string }
+      - $ref: "#/components/parameters/TenantIdHeader"
+    get:
+      tags: [Store CMS]
+      security: []
+      summary: Obtener página CMS publicada por slug (público)
+      description: |
+        Devuelve la página CMS `status=published` del tenant del visitante.
+        El tenant se resuelve por subdomain (`acme.zentto.net`), header
+        `X-Tenant-Id` o cookie `tenant_id`. Si no se puede resolver,
+        responde `400 tenant_required`.
+      responses:
+        "200":
+          description: Página encontrada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  page: { $ref: "#/components/schemas/CmsPage" }
+        "400":
+          description: Tenant no resuelto (`tenant_required`)
+        "404":
+          description: Página no encontrada o no publicada
+
+  /store/press/releases:
+    parameters:
+      - $ref: "#/components/parameters/TenantIdHeader"
+      - in: query
+        name: page
+        schema: { type: integer, minimum: 1, default: 1 }
+      - in: query
+        name: limit
+        schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+    get:
+      tags: [Store CMS]
+      security: []
+      summary: Listar press releases publicados (público, paginado)
+      responses:
+        "200":
+          description: Listado paginado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: "#/components/schemas/PressRelease" }
+                  totalCount: { type: integer }
+                  page:       { type: integer }
+                  limit:      { type: integer }
+        "400":
+          description: Tenant no resuelto
+
+  /store/press/releases/{slug}:
+    parameters:
+      - in: path
+        name: slug
+        required: true
+        schema: { type: string }
+      - $ref: "#/components/parameters/TenantIdHeader"
+    get:
+      tags: [Store CMS]
+      security: []
+      summary: Obtener press release publicado por slug (público)
+      responses:
+        "200":
+          description: Press release encontrado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  item: { $ref: "#/components/schemas/PressRelease" }
+        "400": { description: Tenant no resuelto }
+        "404": { description: No encontrado }
+
+  /store/contact/message:
+    parameters:
+      - $ref: "#/components/parameters/TenantIdHeader"
+    post:
+      tags: [Store CMS]
+      security: []
+      summary: Enviar mensaje de contacto (público)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ContactMessage" }
+      responses:
+        "201":
+          description: Mensaje registrado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:               { type: boolean }
+                  contactMessageId: { type: integer }
+        "400":
+          description: "`tenant_required` | `invalid_body`"
+
+  # ── Admin ────────────────────────────────────────────────────────────────
+
+  /store/admin/cms/pages:
+    get:
+      tags: [Store CMS]
+      summary: Listar páginas CMS (admin, todos los status)
+      parameters:
+        - in: query
+          name: status
+          schema: { type: string, enum: [draft, published, archived] }
+        - in: query
+          name: page
+          schema: { type: integer, minimum: 1, default: 1 }
+        - in: query
+          name: limit
+          schema: { type: integer, minimum: 1, maximum: 200, default: 50 }
+      responses:
+        "200":
+          description: Lista paginada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: "#/components/schemas/CmsPage" }
+                  totalCount: { type: integer }
+                  page:       { type: integer }
+                  limit:      { type: integer }
+    post:
+      tags: [Store CMS]
+      summary: Crear nueva página CMS (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CmsPageUpsert" }
+      responses:
+        "201":
+          description: Creada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:        { type: boolean }
+                  cmsPageId: { type: integer }
+        "400": { description: Body inválido }
+
+  /store/admin/cms/pages/{id}:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema: { type: integer }
+    get:
+      tags: [Store CMS]
+      summary: Obtener página CMS por id (admin, cualquier status)
+      responses:
+        "200":
+          description: Página
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  page: { $ref: "#/components/schemas/CmsPage" }
+        "404": { description: No encontrada }
+    put:
+      tags: [Store CMS]
+      summary: Actualizar página CMS (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CmsPageUpsert" }
+      responses:
+        "200":
+          description: Actualizada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:        { type: boolean }
+                  cmsPageId: { type: integer }
+    delete:
+      tags: [Store CMS]
+      summary: Eliminar página CMS (admin)
+      responses:
+        "200": { description: Eliminada }
+        "404": { description: No encontrada }
+
+  /store/admin/cms/pages/{id}/publish:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema: { type: integer }
+    post:
+      tags: [Store CMS]
+      summary: Publicar página CMS — marca status=published y publishedAt=NOW (admin)
+      responses:
+        "200":
+          description: Publicada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+        "404": { description: No encontrada }
+
+  /store/admin/press/releases:
+    get:
+      tags: [Store CMS]
+      summary: Listar press releases (admin, todos los status)
+      parameters:
+        - in: query
+          name: status
+          schema: { type: string, enum: [draft, published, archived] }
+        - in: query
+          name: page
+          schema: { type: integer, minimum: 1, default: 1 }
+        - in: query
+          name: limit
+          schema: { type: integer, minimum: 1, maximum: 200, default: 50 }
+      responses:
+        "200":
+          description: Lista paginada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: "#/components/schemas/PressRelease" }
+                  totalCount: { type: integer }
+                  page:       { type: integer }
+                  limit:      { type: integer }
+    post:
+      tags: [Store CMS]
+      summary: Crear press release (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PressReleaseUpsert" }
+      responses:
+        "201":
+          description: Creado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:             { type: boolean }
+                  pressReleaseId: { type: integer }
+
+  /store/admin/press/releases/{id}:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema: { type: integer }
+    get:
+      tags: [Store CMS]
+      summary: Obtener press release por id (admin, cualquier status)
+      responses:
+        "200":
+          description: Press release
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  item: { $ref: "#/components/schemas/PressRelease" }
+        "404": { description: No encontrado }
+    put:
+      tags: [Store CMS]
+      summary: Actualizar press release (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PressReleaseUpsert" }
+      responses:
+        "200":
+          description: Actualizado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:             { type: boolean }
+                  pressReleaseId: { type: integer }
+    delete:
+      tags: [Store CMS]
+      summary: Eliminar press release (admin)
+      responses:
+        "200": { description: Eliminado }
+        "404": { description: No encontrado }
+
+  /store/admin/press/releases/{id}/publish:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema: { type: integer }
+    post:
+      tags: [Store CMS]
+      summary: Publicar press release — marca status=published y publishedAt=NOW (admin)
+      responses:
+        "200":
+          description: Publicado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+        "404": { description: No encontrado }
+
+  /store/admin/contact/messages:
+    get:
+      tags: [Store CMS]
+      summary: Listar mensajes de contacto (admin)
+      parameters:
+        - in: query
+          name: status
+          schema: { type: string, enum: [new, read, archived] }
+        - in: query
+          name: page
+          schema: { type: integer, minimum: 1, default: 1 }
+        - in: query
+          name: limit
+          schema: { type: integer, minimum: 1, maximum: 200, default: 50 }
+      responses:
+        "200":
+          description: Lista paginada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        contactMessageId: { type: integer }
+                        name:    { type: string }
+                        email:   { type: string }
+                        phone:   { type: string, nullable: true }
+                        subject: { type: string, nullable: true }
+                        message: { type: string }
+                        source:  { type: string, nullable: true }
+                        status:  { type: string }
+                        createdAt: { type: string, format: date-time }
+                  totalCount: { type: integer }
+                  page:       { type: integer }
+                  limit:      { type: integer }
