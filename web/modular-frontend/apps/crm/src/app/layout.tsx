@@ -13,7 +13,7 @@ import {
     ToastProvider,
     LocalizationProviderWrapper,
     BrandedThemeProvider,
-    OdooLayout,
+    ZenttoLayout,
     type CommandSection
 } from '@zentto/shared-ui';
 import '@zentto/shared-ui/globals.css';
@@ -39,9 +39,9 @@ function AppShell({
             {!showContent ? (
                 <LoadingFallback />
             ) : (
-                <OdooLayout navigationFields={navigation}>
+                <ZenttoLayout navigationFields={navigation}>
                     <Suspense fallback={<LoadingFallback />}>{children}</Suspense>
-                </OdooLayout>
+                </ZenttoLayout>
             )}
         </AppBarWrapper>
     );

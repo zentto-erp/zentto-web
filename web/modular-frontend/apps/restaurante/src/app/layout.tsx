@@ -11,7 +11,7 @@ import {
     LoadingFallback,
     ToastProvider,
     LocalizationProviderWrapper,
-    OdooLayout,
+    ZenttoLayout,
     BrandedThemeProvider,
     useIsDesktop
 } from '@zentto/shared-ui';
@@ -54,9 +54,9 @@ function AppContent({ children }: { children: React.ReactNode }) {
                 <LoadingFallback />
             ) : (
                 <ToastProvider>
-                    <OdooLayout navigationFields={navigation}>
+                    <ZenttoLayout navigationFields={navigation}>
                         <Suspense fallback={<LoadingFallback />}>{children}</Suspense>
-                    </OdooLayout>
+                    </ZenttoLayout>
                 </ToastProvider>
             )}
         </AppBarWrapper>

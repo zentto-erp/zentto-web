@@ -36,7 +36,7 @@ import useMediaQuery from '@mui/material/useMediaQuery';
 import { brandColors } from '../theme';
 import { useBranding } from '../hooks/useBranding';
 
-export default function OdooLayout({
+export default function ZenttoLayout({
     children,
     navigationFields,
     rightPanel,
