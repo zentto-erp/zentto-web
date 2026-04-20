@@ -85,16 +85,17 @@ export default function OdooLayout({
         }
     }, [isMobile, hideSidebar]);
 
-    // Auto close sidebar on mobile when navigating
     const handleToggleMenu = (key: string) => {
         setOpenMenus((prev) => ({ ...prev, [key]: !prev[key] }));
     };
 
-    const handleLinkClick = () => {
+    // Cierra el sidebar en mobile tras completar la navegacion (no en el click,
+    // para no interrumpir la transition de Next.js Link con un setState sincrono).
+    React.useEffect(() => {
         if (isMobile) {
             setSidebarOpen(false);
         }
-    };
+    }, [pathname, isMobile]);
     // Parse navigation into Sidebar
     const renderSidebarItems = () => {
         if (!navigationFields || navigationFields.length === 0) return null;
@@ -140,7 +141,7 @@ export default function OdooLayout({
                         <Box
                             {...(hasChildren
                                 ? { onClick: () => handleToggleMenu(idx) }
-                                : { component: Link, href: `/${item.segment}`, onClick: handleLinkClick, prefetch: false })}
+                                : { component: Link, href: `/${item.segment}`, prefetch: false })}
                             sx={{
                                 position: 'relative',
                                 display: 'flex', alignItems: 'center',
