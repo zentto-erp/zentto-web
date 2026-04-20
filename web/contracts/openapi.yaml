@@ -614,6 +614,50 @@ components:
           type: integer
           format: int64
           nullable: true
+    CrmSearchResult:
+      type: object
+      required: [type, id, title]
+      properties:
+        type:
+          type: string
+          enum: [lead, contact, company, deal]
+        id:
+          oneOf:
+            - type: integer
+            - type: string
+        title:
+          type: string
+          description: Nombre principal (contact name, company name, deal name)
+        subtitle:
+          type: string
+          description: Info secundaria (email, phone, monto formateado, etc.)
+        meta:
+          type: object
+          additionalProperties: true
+          description: Campos extra utiles para el render del CommandPalette
+    CrmSearchResponse:
+      type: object
+      required: [results, total, byEntity]
+      properties:
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/CrmSearchResult"
+        total:
+          type: integer
+          description: Numero total de resultados (suma de todas las entidades)
+        byEntity:
+          type: object
+          description: Conteo de resultados por entidad consultada
+          properties:
+            lead:    { type: integer }
+            contact: { type: integer }
+            company: { type: integer }
+            deal:    { type: integer }
+        warnings:
+          type: array
+          items: { type: string }
+          description: Flags informativos (ej. `lead_search_not_implemented`)
   parameters:
     IdParam:
       in: path
@@ -9579,6 +9623,48 @@ paths:
 
   #  CRM — Companies / Contacts / Deals (ADR-CRM-001)
   # ═══════════════════════════════════════════════════════════════════════════
+  /v1/crm/search:
+    get:
+      tags: [CRM]
+      summary: Busqueda cross-entity CRM (CommandPalette)
+      description: >
+        Busqueda unificada a traves de contactos, empresas y deals.
+        Reusa los SPs usp_crm_Contact_Search / usp_crm_Company_Search /
+        usp_crm_Deal_Search. Tenant se resuelve via JWT (getActiveScope).
+      parameters:
+        - in: query
+          name: q
+          required: true
+          schema: { type: string, minLength: 2, maxLength: 200 }
+          description: Termino de busqueda (minimo 2 caracteres)
+        - in: query
+          name: entities
+          required: false
+          schema:
+            type: string
+            default: "contact,company,deal"
+          description: >
+            CSV de entidades a consultar. Valores permitidos:
+            `lead`, `contact`, `company`, `deal`. Default: `contact,company,deal`.
+            La entidad `lead` no esta implementada aun; si se incluye se devuelve
+            en `warnings` (ver response).
+        - in: query
+          name: limit
+          required: false
+          schema: { type: integer, minimum: 1, maximum: 50, default: 10 }
+          description: Resultados maximos por entidad
+      responses:
+        "200":
+          description: Resultados combinados
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CrmSearchResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
   /v1/crm/companies:
     get:
       tags: [CRM]
