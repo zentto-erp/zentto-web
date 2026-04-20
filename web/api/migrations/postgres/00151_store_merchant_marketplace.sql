@@ -1,27 +1,32 @@
 -- +goose Up
--- Marketplace de vendedores (onboarding + productos + payouts).
+-- Marketplace de comerciantes externos (merchants) — onboarding + productos + payouts.
+--
+-- NOTA: se usa "Merchant" en lugar de "Seller" para evitar colisión con
+-- master.Seller, que ya existe en el baseline del ERP como vendedor comercial
+-- (ver web/api/sqlweb-pg/baseline/005_functions.sql:19078+). En la UI pública
+-- se mantiene el término "vendedor" / ruta `/vender` por UX en español.
 --
 -- Tablas:
---   store.Seller          — cuenta de vendedor
---   store.SellerProduct   — propuesta de producto del vendedor
---   store.SellerPayout    — lotes de pago al vendedor
+--   store.Merchant          — cuenta de comerciante externo (marketplace)
+--   store.MerchantProduct   — propuesta de producto del comerciante
+--   store.MerchantPayout    — lotes de pago al comerciante
 --
--- Extiende ar.SalesDocumentLine con "SellerId" para tracking de ventas por seller.
+-- Extiende ar.SalesDocumentLine con "MerchantId" para attribution de ventas por comerciante.
 --
 -- Funciones:
---   usp_store_seller_apply
---   usp_store_seller_admin_list
---   usp_store_seller_admin_get_detail
---   usp_store_seller_admin_set_status
---   usp_store_seller_dashboard
---   usp_store_seller_product_submit
---   usp_store_seller_products_list
---   usp_store_seller_admin_products_list
---   usp_store_seller_admin_product_review
+--   usp_store_merchant_apply
+--   usp_store_merchant_admin_list
+--   usp_store_merchant_admin_get_detail
+--   usp_store_merchant_admin_set_status
+--   usp_store_merchant_dashboard
+--   usp_store_merchant_product_submit
+--   usp_store_merchant_products_list
+--   usp_store_merchant_admin_products_list
+--   usp_store_merchant_admin_product_review
 
 -- ─── Tablas ──────────────────────────────────────────────
 -- +goose StatementBegin
-CREATE TABLE IF NOT EXISTS store."Seller" (
+CREATE TABLE IF NOT EXISTS store."Merchant" (
   "Id"              bigserial PRIMARY KEY,
   "CompanyId"       integer NOT NULL DEFAULT 1,
   "CustomerId"      integer,
@@ -43,14 +48,14 @@ CREATE TABLE IF NOT EXISTS store."Seller" (
   "ApprovedAt"      timestamp,
   "ApprovedBy"      varchar(60)
 );
-CREATE INDEX IF NOT EXISTS "IX_store_Seller_Status"   ON store."Seller" ("CompanyId","Status");
-CREATE INDEX IF NOT EXISTS "IX_store_Seller_Customer" ON store."Seller" ("CompanyId","CustomerId");
+CREATE INDEX IF NOT EXISTS "IX_store_Merchant_Status"   ON store."Merchant" ("CompanyId","Status");
+CREATE INDEX IF NOT EXISTS "IX_store_Merchant_Customer" ON store."Merchant" ("CompanyId","CustomerId");
 -- +goose StatementEnd
 
 -- +goose StatementBegin
-CREATE TABLE IF NOT EXISTS store."SellerProduct" (
+CREATE TABLE IF NOT EXISTS store."MerchantProduct" (
   "Id"             bigserial PRIMARY KEY,
-  "SellerId"       bigint NOT NULL REFERENCES store."Seller"("Id") ON DELETE CASCADE,
+  "MerchantId"     bigint NOT NULL REFERENCES store."Merchant"("Id") ON DELETE CASCADE,
   "CompanyId"      integer NOT NULL DEFAULT 1,
   "ProductCode"    varchar(64) NOT NULL,
   "Name"           varchar(250) NOT NULL,
@@ -67,14 +72,14 @@ CREATE TABLE IF NOT EXISTS store."SellerProduct" (
   "ReviewedAt"     timestamp,
   "ReviewedBy"     varchar(60)
 );
-CREATE INDEX IF NOT EXISTS "IX_store_SellerProduct_Seller" ON store."SellerProduct" ("SellerId","Status");
-CREATE INDEX IF NOT EXISTS "IX_store_SellerProduct_Status" ON store."SellerProduct" ("CompanyId","Status","CreatedAt" DESC);
+CREATE INDEX IF NOT EXISTS "IX_store_MerchantProduct_Merchant" ON store."MerchantProduct" ("MerchantId","Status");
+CREATE INDEX IF NOT EXISTS "IX_store_MerchantProduct_Status"   ON store."MerchantProduct" ("CompanyId","Status","CreatedAt" DESC);
 -- +goose StatementEnd
 
 -- +goose StatementBegin
-CREATE TABLE IF NOT EXISTS store."SellerPayout" (
+CREATE TABLE IF NOT EXISTS store."MerchantPayout" (
   "Id"              bigserial PRIMARY KEY,
-  "SellerId"        bigint NOT NULL REFERENCES store."Seller"("Id"),
+  "MerchantId"      bigint NOT NULL REFERENCES store."Merchant"("Id"),
   "CompanyId"       integer NOT NULL DEFAULT 1,
   "PeriodStart"     date NOT NULL,
   "PeriodEnd"       date NOT NULL,
@@ -88,20 +93,20 @@ CREATE TABLE IF NOT EXISTS store."SellerPayout" (
   "TransactionRef"  varchar(100),
   "CreatedAt"       timestamp DEFAULT (now() AT TIME ZONE 'UTC') NOT NULL
 );
-CREATE INDEX IF NOT EXISTS "IX_store_SellerPayout_Seller" ON store."SellerPayout" ("SellerId","Status","PeriodEnd" DESC);
+CREATE INDEX IF NOT EXISTS "IX_store_MerchantPayout_Merchant" ON store."MerchantPayout" ("MerchantId","Status","PeriodEnd" DESC);
 -- +goose StatementEnd
 
--- ─── Extender ar.SalesDocumentLine con SellerId ──────────
+-- ─── Extender ar.SalesDocumentLine con MerchantId ────────
 -- +goose StatementBegin
 ALTER TABLE ar."SalesDocumentLine"
-  ADD COLUMN IF NOT EXISTS "SellerId" bigint;
-CREATE INDEX IF NOT EXISTS "IX_ar_SalesDocumentLine_Seller"
-  ON ar."SalesDocumentLine" ("SellerId") WHERE "SellerId" IS NOT NULL;
+  ADD COLUMN IF NOT EXISTS "MerchantId" bigint;
+CREATE INDEX IF NOT EXISTS "IX_ar_SalesDocumentLine_Merchant"
+  ON ar."SalesDocumentLine" ("MerchantId") WHERE "MerchantId" IS NOT NULL;
 -- +goose StatementEnd
 
--- ─── usp_store_seller_apply ──────────────────────────────
+-- ─── usp_store_merchant_apply ────────────────────────────
 -- +goose StatementBegin
-CREATE OR REPLACE FUNCTION public.usp_store_seller_apply(
+CREATE OR REPLACE FUNCTION public.usp_store_merchant_apply(
   p_company_id     integer,
   p_customer_id    integer,
   p_legal_name     varchar,
@@ -114,7 +119,7 @@ CREATE OR REPLACE FUNCTION public.usp_store_seller_apply(
   p_payout_method  varchar,
   p_payout_details jsonb
 )
-RETURNS TABLE("ok" boolean, "mensaje" text, "sellerId" bigint, "storeSlug" varchar)
+RETURNS TABLE("ok" boolean, "mensaje" text, "merchantId" bigint, "storeSlug" varchar)
 LANGUAGE plpgsql AS $$
 DECLARE
   v_id       bigint;
@@ -130,7 +135,7 @@ BEGIN
     RETURN;
   END IF;
 
-  SELECT "Id" INTO v_id FROM store."Seller"
+  SELECT "Id" INTO v_id FROM store."Merchant"
     WHERE "CompanyId" = p_company_id AND "CustomerId" = p_customer_id;
   IF v_id IS NOT NULL THEN
     RETURN QUERY SELECT true, 'Ya tienes una solicitud de vendedor'::text, v_id, NULL::varchar;
@@ -140,16 +145,16 @@ BEGIN
   -- Generar slug único a partir del legal_name
   v_slug := LOWER(REGEXP_REPLACE(COALESCE(p_store_slug, p_legal_name), '[^a-zA-Z0-9]+', '-', 'g'));
   v_slug := TRIM(BOTH '-' FROM v_slug);
-  IF length(v_slug) < 3 THEN v_slug := 'seller-' || p_customer_id::text; END IF;
+  IF length(v_slug) < 3 THEN v_slug := 'merchant-' || p_customer_id::text; END IF;
 
   -- Garantizar unicidad
   LOOP
-    SELECT COUNT(*) INTO v_existing FROM store."Seller" WHERE "StoreSlug" = v_slug;
+    SELECT COUNT(*) INTO v_existing FROM store."Merchant" WHERE "StoreSlug" = v_slug;
     EXIT WHEN v_existing = 0;
     v_slug := v_slug || '-' || FLOOR(random()*10000)::int::text;
   END LOOP;
 
-  INSERT INTO store."Seller" (
+  INSERT INTO store."Merchant" (
     "CompanyId","CustomerId","LegalName","TaxId","StoreSlug",
     "Description","LogoUrl","ContactEmail","ContactPhone",
     "PayoutMethod","PayoutDetails"
@@ -166,9 +171,9 @@ END;
 $$;
 -- +goose StatementEnd
 
--- ─── usp_store_seller_admin_list ─────────────────────────
+-- ─── usp_store_merchant_admin_list ───────────────────────
 -- +goose StatementBegin
-CREATE OR REPLACE FUNCTION public.usp_store_seller_admin_list(
+CREATE OR REPLACE FUNCTION public.usp_store_merchant_admin_list(
   p_company_id integer,
   p_status     varchar,
   p_page       integer,
@@ -198,11 +203,11 @@ BEGIN
   SELECT
     s."Id", s."LegalName", s."StoreSlug", s."ContactEmail", s."TaxId",
     s."Status", s."CommissionRate",
-    COALESCE((SELECT COUNT(*) FROM store."SellerProduct" sp WHERE sp."SellerId" = s."Id"), 0),
-    COALESCE((SELECT COUNT(*) FROM store."SellerProduct" sp WHERE sp."SellerId" = s."Id" AND sp."Status" = 'approved'), 0),
+    COALESCE((SELECT COUNT(*) FROM store."MerchantProduct" sp WHERE sp."MerchantId" = s."Id"), 0),
+    COALESCE((SELECT COUNT(*) FROM store."MerchantProduct" sp WHERE sp."MerchantId" = s."Id" AND sp."Status" = 'approved'), 0),
     s."CreatedAt", s."ApprovedAt",
     COUNT(*) OVER()::bigint
-  FROM store."Seller" s
+  FROM store."Merchant" s
   WHERE s."CompanyId" = p_company_id
     AND (p_status IS NULL OR s."Status" = p_status)
   ORDER BY s."CreatedAt" DESC
@@ -211,11 +216,11 @@ END;
 $$;
 -- +goose StatementEnd
 
--- ─── usp_store_seller_admin_get_detail ───────────────────
+-- ─── usp_store_merchant_admin_get_detail ─────────────────
 -- +goose StatementBegin
-CREATE OR REPLACE FUNCTION public.usp_store_seller_admin_get_detail(
+CREATE OR REPLACE FUNCTION public.usp_store_merchant_admin_get_detail(
   p_company_id integer,
-  p_seller_id  bigint
+  p_merchant_id bigint
 )
 RETURNS TABLE(
   "id"            bigint,
@@ -243,18 +248,18 @@ BEGIN
     s."ContactEmail", s."ContactPhone", s."LogoUrl", s."BannerUrl",
     s."Status", s."CommissionRate", s."PayoutMethod", s."RejectionReason",
     s."CreatedAt", s."ApprovedAt", s."ApprovedBy"
-  FROM store."Seller" s
-  WHERE s."CompanyId" = p_company_id AND s."Id" = p_seller_id
+  FROM store."Merchant" s
+  WHERE s."CompanyId" = p_company_id AND s."Id" = p_merchant_id
   LIMIT 1;
 END;
 $$;
 -- +goose StatementEnd
 
--- ─── usp_store_seller_admin_set_status ───────────────────
+-- ─── usp_store_merchant_admin_set_status ─────────────────
 -- +goose StatementBegin
-CREATE OR REPLACE FUNCTION public.usp_store_seller_admin_set_status(
+CREATE OR REPLACE FUNCTION public.usp_store_merchant_admin_set_status(
   p_company_id integer,
-  p_seller_id  bigint,
+  p_merchant_id bigint,
   p_status     varchar,
   p_actor      varchar,
   p_reason     varchar
@@ -267,12 +272,12 @@ BEGIN
     RETURN;
   END IF;
 
-  UPDATE store."Seller"
+  UPDATE store."Merchant"
      SET "Status"         = p_status,
          "ApprovedAt"     = CASE WHEN p_status = 'approved' THEN (now() AT TIME ZONE 'UTC') ELSE "ApprovedAt" END,
          "ApprovedBy"     = CASE WHEN p_status = 'approved' THEN p_actor ELSE "ApprovedBy" END,
          "RejectionReason" = CASE WHEN p_status IN ('rejected','suspended') THEN p_reason ELSE "RejectionReason" END
-   WHERE "Id" = p_seller_id AND "CompanyId" = p_company_id;
+   WHERE "Id" = p_merchant_id AND "CompanyId" = p_company_id;
 
   IF NOT FOUND THEN
     RETURN QUERY SELECT false, 'Vendedor no encontrado'::text;
@@ -283,14 +288,14 @@ END;
 $$;
 -- +goose StatementEnd
 
--- ─── usp_store_seller_dashboard ──────────────────────────
+-- ─── usp_store_merchant_dashboard ────────────────────────
 -- +goose StatementBegin
-CREATE OR REPLACE FUNCTION public.usp_store_seller_dashboard(
+CREATE OR REPLACE FUNCTION public.usp_store_merchant_dashboard(
   p_company_id  integer,
   p_customer_id integer
 )
 RETURNS TABLE(
-  "sellerId"        bigint,
+  "merchantId"      bigint,
   "legalName"       varchar,
   "storeSlug"       varchar,
   "status"          varchar,
@@ -307,7 +312,7 @@ DECLARE
   v_id bigint;
 BEGIN
   SELECT "Id" INTO v_id
-    FROM store."Seller"
+    FROM store."Merchant"
    WHERE "CompanyId" = p_company_id AND "CustomerId" = p_customer_id
    LIMIT 1;
   IF v_id IS NULL THEN RETURN; END IF;
@@ -315,25 +320,25 @@ BEGIN
   RETURN QUERY
   SELECT
     v_id,
-    (SELECT "LegalName"      FROM store."Seller" WHERE "Id" = v_id)::varchar,
-    (SELECT "StoreSlug"      FROM store."Seller" WHERE "Id" = v_id)::varchar,
-    (SELECT "Status"         FROM store."Seller" WHERE "Id" = v_id)::varchar,
-    (SELECT "CommissionRate" FROM store."Seller" WHERE "Id" = v_id),
-    (SELECT COUNT(*) FROM store."SellerProduct" WHERE "SellerId" = v_id)::bigint,
-    (SELECT COUNT(*) FROM store."SellerProduct" WHERE "SellerId" = v_id AND "Status" = 'approved')::bigint,
-    (SELECT COUNT(*) FROM store."SellerProduct" WHERE "SellerId" = v_id AND "Status" = 'pending_review')::bigint,
+    (SELECT "LegalName"      FROM store."Merchant" WHERE "Id" = v_id)::varchar,
+    (SELECT "StoreSlug"      FROM store."Merchant" WHERE "Id" = v_id)::varchar,
+    (SELECT "Status"         FROM store."Merchant" WHERE "Id" = v_id)::varchar,
+    (SELECT "CommissionRate" FROM store."Merchant" WHERE "Id" = v_id),
+    (SELECT COUNT(*) FROM store."MerchantProduct" WHERE "MerchantId" = v_id)::bigint,
+    (SELECT COUNT(*) FROM store."MerchantProduct" WHERE "MerchantId" = v_id AND "Status" = 'approved')::bigint,
+    (SELECT COUNT(*) FROM store."MerchantProduct" WHERE "MerchantId" = v_id AND "Status" = 'pending_review')::bigint,
     (SELECT COUNT(DISTINCT l."DocumentNumber")
        FROM ar."SalesDocumentLine" l
-      WHERE l."SellerId" = v_id)::bigint,
-    COALESCE((SELECT SUM(l."TotalAmount") FROM ar."SalesDocumentLine" l WHERE l."SellerId" = v_id), 0)::numeric,
-    COALESCE((SELECT SUM("NetAmount") FROM store."SellerPayout" WHERE "SellerId" = v_id AND "Status" = 'paid'), 0)::numeric;
+      WHERE l."MerchantId" = v_id)::bigint,
+    COALESCE((SELECT SUM(l."TotalAmount") FROM ar."SalesDocumentLine" l WHERE l."MerchantId" = v_id), 0)::numeric,
+    COALESCE((SELECT SUM("NetAmount") FROM store."MerchantPayout" WHERE "MerchantId" = v_id AND "Status" = 'paid'), 0)::numeric;
 END;
 $$;
 -- +goose StatementEnd
 
--- ─── usp_store_seller_product_submit ─────────────────────
+-- ─── usp_store_merchant_product_submit ───────────────────
 -- +goose StatementBegin
-CREATE OR REPLACE FUNCTION public.usp_store_seller_product_submit(
+CREATE OR REPLACE FUNCTION public.usp_store_merchant_product_submit(
   p_company_id  integer,
   p_customer_id integer,
   p_product_id  bigint,
@@ -349,15 +354,15 @@ CREATE OR REPLACE FUNCTION public.usp_store_seller_product_submit(
 RETURNS TABLE("ok" boolean, "mensaje" text, "productId" bigint, "status" varchar)
 LANGUAGE plpgsql AS $$
 DECLARE
-  v_seller_id bigint;
+  v_merchant_id bigint;
   v_pid       bigint;
   v_status    varchar(20);
 BEGIN
-  SELECT "Id" INTO v_seller_id
-    FROM store."Seller"
+  SELECT "Id" INTO v_merchant_id
+    FROM store."Merchant"
    WHERE "CompanyId" = p_company_id AND "CustomerId" = p_customer_id
      AND "Status" = 'approved';
-  IF v_seller_id IS NULL THEN
+  IF v_merchant_id IS NULL THEN
     RETURN QUERY SELECT false, 'Vendedor no aprobado'::text, NULL::bigint, NULL::varchar;
     RETURN;
   END IF;
@@ -365,7 +370,7 @@ BEGIN
   v_status := CASE WHEN p_submit THEN 'pending_review' ELSE 'draft' END;
 
   IF p_product_id IS NOT NULL THEN
-    UPDATE store."SellerProduct"
+    UPDATE store."MerchantProduct"
        SET "Name"       = p_name,
            "Description" = p_description,
            "Price"      = p_price,
@@ -374,20 +379,20 @@ BEGIN
            "ImageUrl"   = p_image_url,
            "Status"     = v_status,
            "UpdatedAt"  = (now() AT TIME ZONE 'UTC')
-     WHERE "Id" = p_product_id AND "SellerId" = v_seller_id
+     WHERE "Id" = p_product_id AND "MerchantId" = v_merchant_id
     RETURNING "Id" INTO v_pid;
     IF v_pid IS NULL THEN
       RETURN QUERY SELECT false, 'Producto no encontrado'::text, NULL::bigint, NULL::varchar;
       RETURN;
     END IF;
   ELSE
-    INSERT INTO store."SellerProduct" (
-      "SellerId","CompanyId","ProductCode","Name","Description",
+    INSERT INTO store."MerchantProduct" (
+      "MerchantId","CompanyId","ProductCode","Name","Description",
       "Price","Stock","Category","ImageUrl","Status"
     )
     VALUES (
-      v_seller_id, p_company_id,
-      COALESCE(p_code, 'SP-' || FLOOR(random()*1000000)::int),
+      v_merchant_id, p_company_id,
+      COALESCE(p_code, 'MP-' || FLOOR(random()*1000000)::int),
       p_name, p_description, p_price, p_stock, p_category, p_image_url, v_status
     )
     RETURNING "Id" INTO v_pid;
@@ -400,9 +405,9 @@ END;
 $$;
 -- +goose StatementEnd
 
--- ─── usp_store_seller_products_list ──────────────────────
+-- ─── usp_store_merchant_products_list ────────────────────
 -- +goose StatementBegin
-CREATE OR REPLACE FUNCTION public.usp_store_seller_products_list(
+CREATE OR REPLACE FUNCTION public.usp_store_merchant_products_list(
   p_company_id  integer,
   p_customer_id integer,
   p_status      varchar,
@@ -425,15 +430,15 @@ RETURNS TABLE(
 )
 LANGUAGE plpgsql STABLE AS $$
 DECLARE
-  v_seller_id bigint;
+  v_merchant_id bigint;
   v_page   integer := GREATEST(COALESCE(p_page,1), 1);
   v_limit  integer := LEAST(GREATEST(COALESCE(p_limit,20),1), 100);
   v_offset integer := (v_page - 1) * v_limit;
 BEGIN
-  SELECT "Id" INTO v_seller_id
-    FROM store."Seller"
+  SELECT "Id" INTO v_merchant_id
+    FROM store."Merchant"
    WHERE "CompanyId" = p_company_id AND "CustomerId" = p_customer_id;
-  IF v_seller_id IS NULL THEN RETURN; END IF;
+  IF v_merchant_id IS NULL THEN RETURN; END IF;
 
   RETURN QUERY
   SELECT
@@ -441,8 +446,8 @@ BEGIN
     sp."ImageUrl", sp."Status", sp."ReviewNotes",
     sp."CreatedAt", sp."UpdatedAt",
     COUNT(*) OVER()::bigint
-  FROM store."SellerProduct" sp
-  WHERE sp."SellerId" = v_seller_id
+  FROM store."MerchantProduct" sp
+  WHERE sp."MerchantId" = v_merchant_id
     AND (p_status IS NULL OR sp."Status" = p_status)
   ORDER BY sp."UpdatedAt" DESC
   OFFSET v_offset LIMIT v_limit;
@@ -450,9 +455,9 @@ END;
 $$;
 -- +goose StatementEnd
 
--- ─── usp_store_seller_admin_products_list ────────────────
+-- ─── usp_store_merchant_admin_products_list ──────────────
 -- +goose StatementBegin
-CREATE OR REPLACE FUNCTION public.usp_store_seller_admin_products_list(
+CREATE OR REPLACE FUNCTION public.usp_store_merchant_admin_products_list(
   p_company_id integer,
   p_status     varchar,
   p_page       integer,
@@ -460,8 +465,8 @@ CREATE OR REPLACE FUNCTION public.usp_store_seller_admin_products_list(
 )
 RETURNS TABLE(
   "id"           bigint,
-  "sellerId"     bigint,
-  "sellerName"   varchar,
+  "merchantId"   bigint,
+  "merchantName" varchar,
   "productCode"  varchar,
   "name"         varchar,
   "price"        numeric,
@@ -481,12 +486,12 @@ DECLARE
 BEGIN
   RETURN QUERY
   SELECT
-    sp."Id", sp."SellerId", s."LegalName",
+    sp."Id", sp."MerchantId", s."LegalName",
     sp."ProductCode", sp."Name", sp."Price", sp."Stock", sp."Category",
     sp."ImageUrl", sp."Status", sp."ReviewNotes", sp."CreatedAt",
     COUNT(*) OVER()::bigint
-  FROM store."SellerProduct" sp
-  JOIN store."Seller" s ON s."Id" = sp."SellerId"
+  FROM store."MerchantProduct" sp
+  JOIN store."Merchant" s ON s."Id" = sp."MerchantId"
   WHERE sp."CompanyId" = p_company_id
     AND (p_status IS NULL OR sp."Status" = p_status)
   ORDER BY sp."CreatedAt" DESC
@@ -495,9 +500,9 @@ END;
 $$;
 -- +goose StatementEnd
 
--- ─── usp_store_seller_admin_product_review ───────────────
+-- ─── usp_store_merchant_admin_product_review ─────────────
 -- +goose StatementBegin
-CREATE OR REPLACE FUNCTION public.usp_store_seller_admin_product_review(
+CREATE OR REPLACE FUNCTION public.usp_store_merchant_admin_product_review(
   p_company_id integer,
   p_product_id bigint,
   p_status     varchar,
@@ -512,7 +517,7 @@ BEGIN
     RETURN;
   END IF;
 
-  UPDATE store."SellerProduct"
+  UPDATE store."MerchantProduct"
      SET "Status"      = p_status,
          "ReviewNotes" = p_notes,
          "ReviewedAt"  = (now() AT TIME ZONE 'UTC'),
@@ -529,19 +534,36 @@ END;
 $$;
 -- +goose StatementEnd
 
+-- ─── Seeds: 2 merchants ejemplo para QA / demo ───────────
+-- +goose StatementBegin
+INSERT INTO store."Merchant" (
+  "CompanyId","CustomerId","LegalName","TaxId","StoreSlug",
+  "Description","ContactEmail","ContactPhone","Status","CommissionRate",
+  "PayoutMethod","ApprovedAt","ApprovedBy"
+)
+VALUES
+  (1, NULL, 'TechHub SRL', 'J-12345678-9', 'techhub',
+   'Distribuidor de accesorios tech premium', 'hola@techhub.example', '+58-212-5550101',
+   'approved', 12.00, 'transferencia', (now() AT TIME ZONE 'UTC'), 'system'),
+  (1, NULL, 'Moda Andina CA', 'J-87654321-0', 'moda-andina',
+   'Ropa artesanal latinoamericana', 'ventas@modaandina.example', '+58-212-5550202',
+   'pending', 15.00, 'paypal', NULL, NULL)
+ON CONFLICT ("StoreSlug") DO NOTHING;
+-- +goose StatementEnd
+
 -- +goose Down
 -- +goose StatementBegin
-DROP FUNCTION IF EXISTS public.usp_store_seller_admin_product_review(integer,bigint,varchar,text,varchar);
-DROP FUNCTION IF EXISTS public.usp_store_seller_admin_products_list(integer,varchar,integer,integer);
-DROP FUNCTION IF EXISTS public.usp_store_seller_products_list(integer,integer,varchar,integer,integer);
-DROP FUNCTION IF EXISTS public.usp_store_seller_product_submit(integer,integer,bigint,varchar,varchar,text,numeric,numeric,varchar,varchar,boolean);
-DROP FUNCTION IF EXISTS public.usp_store_seller_dashboard(integer,integer);
-DROP FUNCTION IF EXISTS public.usp_store_seller_admin_set_status(integer,bigint,varchar,varchar,varchar);
-DROP FUNCTION IF EXISTS public.usp_store_seller_admin_get_detail(integer,bigint);
-DROP FUNCTION IF EXISTS public.usp_store_seller_admin_list(integer,varchar,integer,integer);
-DROP FUNCTION IF EXISTS public.usp_store_seller_apply(integer,integer,varchar,varchar,varchar,text,varchar,varchar,varchar,varchar,jsonb);
-ALTER TABLE ar."SalesDocumentLine" DROP COLUMN IF EXISTS "SellerId";
-DROP TABLE IF EXISTS store."SellerPayout";
-DROP TABLE IF EXISTS store."SellerProduct";
-DROP TABLE IF EXISTS store."Seller";
+DROP FUNCTION IF EXISTS public.usp_store_merchant_admin_product_review(integer,bigint,varchar,text,varchar);
+DROP FUNCTION IF EXISTS public.usp_store_merchant_admin_products_list(integer,varchar,integer,integer);
+DROP FUNCTION IF EXISTS public.usp_store_merchant_products_list(integer,integer,varchar,integer,integer);
+DROP FUNCTION IF EXISTS public.usp_store_merchant_product_submit(integer,integer,bigint,varchar,varchar,text,numeric,numeric,varchar,varchar,boolean);
+DROP FUNCTION IF EXISTS public.usp_store_merchant_dashboard(integer,integer);
+DROP FUNCTION IF EXISTS public.usp_store_merchant_admin_set_status(integer,bigint,varchar,varchar,varchar);
+DROP FUNCTION IF EXISTS public.usp_store_merchant_admin_get_detail(integer,bigint);
+DROP FUNCTION IF EXISTS public.usp_store_merchant_admin_list(integer,varchar,integer,integer);
+DROP FUNCTION IF EXISTS public.usp_store_merchant_apply(integer,integer,varchar,varchar,varchar,text,varchar,varchar,varchar,varchar,jsonb);
+ALTER TABLE ar."SalesDocumentLine" DROP COLUMN IF EXISTS "MerchantId";
+DROP TABLE IF EXISTS store."MerchantPayout";
+DROP TABLE IF EXISTS store."MerchantProduct";
+DROP TABLE IF EXISTS store."Merchant";
 -- +goose StatementEnd

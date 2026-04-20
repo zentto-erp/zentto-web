@@ -1,9 +1,12 @@
 -- ============================================================
--- Patch 07: store schema — Affiliates + Marketplace (sellers)
+-- Patch 07: store schema — Affiliates + Marketplace (merchants)
 -- SQL Server 2012+ compatible
 -- Equivalente a migraciones PG:
---   00147_store_affiliate_program.sql
---   00148_store_seller_marketplace.sql
+--   00149_store_affiliate_program.sql
+--   00150_store_merchant_marketplace.sql
+--
+-- NOTA: el marketplace usa "Merchant" (comerciante externo) para evitar
+-- colisión con master.Seller (vendedor comercial del ERP).
 -- ============================================================
 USE zentto_dev;
 GO
@@ -120,85 +123,90 @@ IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_store_AffPayout_Aff' A
 GO
 
 -- =============================================================================
--- MARKETPLACE (sellers)
+-- MARKETPLACE (merchants) — comerciantes externos del marketplace
+-- Se usa "Merchant" en lugar de "Seller" para evitar colisión con
+-- master.Seller (vendedor comercial del ERP en baseline 005_functions.sql).
 -- =============================================================================
 
-IF OBJECT_ID('store.Seller', 'U') IS NULL
-CREATE TABLE store.Seller (
-    Id              BIGINT IDENTITY(1,1) CONSTRAINT PK_store_Seller PRIMARY KEY,
-    CompanyId       INT NOT NULL CONSTRAINT DF_Seller_CompanyId DEFAULT(1),
+IF OBJECT_ID('store.Merchant', 'U') IS NULL
+CREATE TABLE store.Merchant (
+    Id              BIGINT IDENTITY(1,1) CONSTRAINT PK_store_Merchant PRIMARY KEY,
+    CompanyId       INT NOT NULL CONSTRAINT DF_Merchant_CompanyId DEFAULT(1),
     CustomerId      INT NULL,
     LegalName       NVARCHAR(200) NOT NULL,
     TaxId           NVARCHAR(40) NULL,
-    StoreSlug       NVARCHAR(80) NOT NULL CONSTRAINT UQ_Seller_Slug UNIQUE,
+    StoreSlug       NVARCHAR(80) NOT NULL CONSTRAINT UQ_Merchant_Slug UNIQUE,
     Description     NVARCHAR(MAX) NULL,
     LogoUrl         NVARCHAR(500) NULL,
     BannerUrl       NVARCHAR(500) NULL,
     ContactEmail    NVARCHAR(200) NULL,
     ContactPhone    NVARCHAR(40) NULL,
-    Status          NVARCHAR(20) NOT NULL CONSTRAINT DF_Seller_Status DEFAULT('pending'),
-    CommissionRate  DECIMAL(5,2) NOT NULL CONSTRAINT DF_Seller_CommRate DEFAULT(15.00),
+    Status          NVARCHAR(20) NOT NULL CONSTRAINT DF_Merchant_Status DEFAULT('pending'),
+    CommissionRate  DECIMAL(5,2) NOT NULL CONSTRAINT DF_Merchant_CommRate DEFAULT(15.00),
     PayoutMethod    NVARCHAR(30) NULL,
     PayoutDetails   NVARCHAR(MAX) NULL,
     RejectionReason NVARCHAR(500) NULL,
-    CreatedAt       DATETIME NOT NULL CONSTRAINT DF_Seller_CreatedAt DEFAULT(GETUTCDATE()),
+    CreatedAt       DATETIME NOT NULL CONSTRAINT DF_Merchant_CreatedAt DEFAULT(GETUTCDATE()),
     ApprovedAt      DATETIME NULL,
     ApprovedBy      NVARCHAR(60) NULL,
-    CONSTRAINT CHK_Seller_Status CHECK (Status IN ('pending','approved','suspended','rejected'))
+    CONSTRAINT CHK_Merchant_Status CHECK (Status IN ('pending','approved','suspended','rejected'))
 );
 GO
-IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_store_Seller_Status' AND object_id = OBJECT_ID('store.Seller'))
-    CREATE INDEX IX_store_Seller_Status ON store.Seller (CompanyId, Status);
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_store_Merchant_Status' AND object_id = OBJECT_ID('store.Merchant'))
+    CREATE INDEX IX_store_Merchant_Status ON store.Merchant (CompanyId, Status);
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_store_Merchant_Customer' AND object_id = OBJECT_ID('store.Merchant'))
+    CREATE INDEX IX_store_Merchant_Customer ON store.Merchant (CompanyId, CustomerId);
 GO
 
-IF OBJECT_ID('store.SellerProduct', 'U') IS NULL
-CREATE TABLE store.SellerProduct (
-    Id             BIGINT IDENTITY(1,1) CONSTRAINT PK_store_SellerProduct PRIMARY KEY,
-    SellerId       BIGINT NOT NULL CONSTRAINT FK_SellerProduct_Seller REFERENCES store.Seller(Id),
-    CompanyId      INT NOT NULL CONSTRAINT DF_SellerProduct_CompanyId DEFAULT(1),
+IF OBJECT_ID('store.MerchantProduct', 'U') IS NULL
+CREATE TABLE store.MerchantProduct (
+    Id             BIGINT IDENTITY(1,1) CONSTRAINT PK_store_MerchantProduct PRIMARY KEY,
+    MerchantId     BIGINT NOT NULL CONSTRAINT FK_MerchantProduct_Merchant REFERENCES store.Merchant(Id),
+    CompanyId      INT NOT NULL CONSTRAINT DF_MerchantProduct_CompanyId DEFAULT(1),
     ProductCode    NVARCHAR(64) NOT NULL,
     Name           NVARCHAR(250) NOT NULL,
     Description    NVARCHAR(MAX) NULL,
-    Price          DECIMAL(18,4) NOT NULL CONSTRAINT DF_SellerProduct_Price DEFAULT(0),
-    Stock          DECIMAL(18,4) NOT NULL CONSTRAINT DF_SellerProduct_Stock DEFAULT(0),
+    Price          DECIMAL(18,4) NOT NULL CONSTRAINT DF_MerchantProduct_Price DEFAULT(0),
+    Stock          DECIMAL(18,4) NOT NULL CONSTRAINT DF_MerchantProduct_Stock DEFAULT(0),
     Category       NVARCHAR(80) NULL,
     ImageUrl       NVARCHAR(500) NULL,
-    Status         NVARCHAR(20) NOT NULL CONSTRAINT DF_SellerProduct_Status DEFAULT('draft'),
+    Status         NVARCHAR(20) NOT NULL CONSTRAINT DF_MerchantProduct_Status DEFAULT('draft'),
     ReviewNotes    NVARCHAR(MAX) NULL,
-    CreatedAt      DATETIME NOT NULL CONSTRAINT DF_SellerProduct_CreatedAt DEFAULT(GETUTCDATE()),
-    UpdatedAt      DATETIME NOT NULL CONSTRAINT DF_SellerProduct_UpdatedAt DEFAULT(GETUTCDATE()),
+    CreatedAt      DATETIME NOT NULL CONSTRAINT DF_MerchantProduct_CreatedAt DEFAULT(GETUTCDATE()),
+    UpdatedAt      DATETIME NOT NULL CONSTRAINT DF_MerchantProduct_UpdatedAt DEFAULT(GETUTCDATE()),
     ReviewedAt     DATETIME NULL,
     ReviewedBy     NVARCHAR(60) NULL,
-    CONSTRAINT CHK_SellerProduct_Status CHECK (Status IN ('draft','pending_review','approved','rejected'))
+    CONSTRAINT CHK_MerchantProduct_Status CHECK (Status IN ('draft','pending_review','approved','rejected'))
 );
 GO
-IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_store_SellerProduct_Seller' AND object_id = OBJECT_ID('store.SellerProduct'))
-    CREATE INDEX IX_store_SellerProduct_Seller ON store.SellerProduct (SellerId, Status);
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_store_MerchantProduct_Merchant' AND object_id = OBJECT_ID('store.MerchantProduct'))
+    CREATE INDEX IX_store_MerchantProduct_Merchant ON store.MerchantProduct (MerchantId, Status);
 GO
 
-IF OBJECT_ID('store.SellerPayout', 'U') IS NULL
-CREATE TABLE store.SellerPayout (
-    Id                BIGINT IDENTITY(1,1) CONSTRAINT PK_store_SellerPayout PRIMARY KEY,
-    SellerId          BIGINT NOT NULL CONSTRAINT FK_SellerPayout_Seller REFERENCES store.Seller(Id),
-    CompanyId         INT NOT NULL CONSTRAINT DF_SellerPayout_CompanyId DEFAULT(1),
+IF OBJECT_ID('store.MerchantPayout', 'U') IS NULL
+CREATE TABLE store.MerchantPayout (
+    Id                BIGINT IDENTITY(1,1) CONSTRAINT PK_store_MerchantPayout PRIMARY KEY,
+    MerchantId        BIGINT NOT NULL CONSTRAINT FK_MerchantPayout_Merchant REFERENCES store.Merchant(Id),
+    CompanyId         INT NOT NULL CONSTRAINT DF_MerchantPayout_CompanyId DEFAULT(1),
     PeriodStart       DATE NOT NULL,
     PeriodEnd         DATE NOT NULL,
-    GrossAmount       DECIMAL(14,2) NOT NULL CONSTRAINT DF_SellerPayout_Gross DEFAULT(0),
-    CommissionAmount  DECIMAL(14,2) NOT NULL CONSTRAINT DF_SellerPayout_Comm DEFAULT(0),
-    NetAmount         DECIMAL(14,2) NOT NULL CONSTRAINT DF_SellerPayout_Net DEFAULT(0),
-    CurrencyCode      CHAR(3) NOT NULL CONSTRAINT DF_SellerPayout_Currency DEFAULT('USD'),
-    Status            NVARCHAR(20) NOT NULL CONSTRAINT DF_SellerPayout_Status DEFAULT('pending'),
+    GrossAmount       DECIMAL(14,2) NOT NULL CONSTRAINT DF_MerchantPayout_Gross DEFAULT(0),
+    CommissionAmount  DECIMAL(14,2) NOT NULL CONSTRAINT DF_MerchantPayout_Comm DEFAULT(0),
+    NetAmount         DECIMAL(14,2) NOT NULL CONSTRAINT DF_MerchantPayout_Net DEFAULT(0),
+    CurrencyCode      CHAR(3) NOT NULL CONSTRAINT DF_MerchantPayout_Currency DEFAULT('USD'),
+    Status            NVARCHAR(20) NOT NULL CONSTRAINT DF_MerchantPayout_Status DEFAULT('pending'),
     PaidAt            DATETIME NULL,
     TransactionRef    NVARCHAR(100) NULL,
-    CreatedAt         DATETIME NOT NULL CONSTRAINT DF_SellerPayout_CreatedAt DEFAULT(GETUTCDATE()),
-    CONSTRAINT CHK_SellerPayout_Status CHECK (Status IN ('pending','processing','paid','failed'))
+    CreatedAt         DATETIME NOT NULL CONSTRAINT DF_MerchantPayout_CreatedAt DEFAULT(GETUTCDATE()),
+    CONSTRAINT CHK_MerchantPayout_Status CHECK (Status IN ('pending','processing','paid','failed'))
 );
 GO
 
--- Extender ar.SalesDocumentLine con SellerId
-IF COL_LENGTH('ar.SalesDocumentLine', 'SellerId') IS NULL
-    ALTER TABLE ar.SalesDocumentLine ADD SellerId BIGINT NULL;
+-- Extender ar.SalesDocumentLine con MerchantId (marketplace attribution)
+IF COL_LENGTH('ar.SalesDocumentLine', 'MerchantId') IS NULL
+    ALTER TABLE ar.SalesDocumentLine ADD MerchantId BIGINT NULL;
 GO
-IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_ar_SalesDocLine_Seller' AND object_id = OBJECT_ID('ar.SalesDocumentLine'))
-    CREATE INDEX IX_ar_SalesDocLine_Seller ON ar.SalesDocumentLine (SellerId) WHERE SellerId IS NOT NULL;
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_ar_SalesDocLine_Merchant' AND object_id = OBJECT_ID('ar.SalesDocumentLine'))
+    CREATE INDEX IX_ar_SalesDocLine_Merchant ON ar.SalesDocumentLine (MerchantId) WHERE MerchantId IS NOT NULL;
 GO

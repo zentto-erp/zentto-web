@@ -112,3 +112,19 @@ export function useAdminGenerateAffiliatePayouts() {
     },
   });
 }
+
+/** Bulk-approve / bulk-mark-paid comisiones (Ola 4 — liquidación mensual). */
+export function useAdminBulkSetCommissionStatus() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ ids, status }: { ids: number[]; status: "approved" | "paid" | "reversed" }) =>
+      adminFetch("/store/admin/affiliates/commissions/bulk-status", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids, status }),
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin-affiliate-commissions"] });
+    },
+  });
+}

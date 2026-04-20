@@ -307,6 +307,46 @@ export async function adminGeneratePayouts(args: {
   };
 }
 
+// ─── Admin — bulk status de comisiones (Ola 4) ─────────
+
+/**
+ * Bulk-approve / bulk-mark-paid de comisiones (liquidación mensual).
+ * Acepta estados: approved, paid, reversed.
+ */
+export async function adminBulkSetCommissionStatus(args: {
+  ids: number[];
+  status: "approved" | "paid" | "reversed";
+  actor: string;
+}) {
+  if (!Array.isArray(args.ids) || args.ids.length === 0) {
+    return { ok: false, message: "Sin comisiones seleccionadas", updated: 0 };
+  }
+  const ids = args.ids.filter((n) => Number.isInteger(n) && n > 0);
+  if (ids.length === 0) {
+    return { ok: false, message: "IDs inválidos", updated: 0 };
+  }
+
+  const { output } = await callSpOut(
+    "usp_Store_Affiliate_Admin_CommissionsBulkStatus",
+    {
+      CompanyId: scope().companyId,
+      Ids: ids.join(","), // SP parsea CSV (compat SQL 2012, sin TVP)
+      Status: args.status,
+      Actor: args.actor,
+    },
+    {
+      Resultado: sql.Int,
+      Mensaje: sql.NVarChar(500),
+      Updated: sql.Int,
+    }
+  );
+  return {
+    ok: (output.Resultado as number) === 1,
+    message: output.Mensaje as string,
+    updated: Number(output.Updated ?? 0),
+  };
+}
+
 // ─── Utilidad compartida para checkout ─────────────────
 
 /**

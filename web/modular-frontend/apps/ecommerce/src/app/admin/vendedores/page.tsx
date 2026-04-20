@@ -6,7 +6,7 @@ import {
   Button, Alert, TextField, Stack,
 } from '@mui/material';
 import { ZenttoRecordTable, type ColumnSpec } from '@zentto/shared-ui';
-import { useAdminSellers, useAdminSetSellerStatus } from '@zentto/module-ecommerce';
+import { useAdminMerchants, useAdminSetMerchantStatus } from '@zentto/module-ecommerce';
 
 const STATUS_TABS = ['all', 'pending', 'approved', 'suspended', 'rejected'];
 const STATUS_LABEL: Record<string, string> = {
@@ -29,8 +29,8 @@ const columns: ColumnSpec[] = [
 export default function AdminVendedoresPage() {
   const [tab, setTab] = useState(0);
   const status = STATUS_TABS[tab] === 'all' ? undefined : STATUS_TABS[tab];
-  const { data, isLoading, refetch } = useAdminSellers({ status, page: 1, limit: 100 });
-  const setStatus = useAdminSetSellerStatus();
+  const { data, isLoading, refetch } = useAdminMerchants({ status, page: 1, limit: 100 });
+  const setStatus = useAdminSetMerchantStatus();
 
   const [selected, setSelected] = useState<number | null>(null);
   const [reason, setReason] = useState('');
@@ -73,7 +73,7 @@ export default function AdminVendedoresPage() {
       <Card sx={{ borderRadius: 2 }}>
         <Box sx={{ p: 1 }}>
           <ZenttoRecordTable
-            recordType="admin-sellers"
+            recordType="admin-merchants"
             rows={rows}
             columns={columns}
             loading={isLoading}

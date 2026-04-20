@@ -32,6 +32,7 @@ import {
   adminSetAffiliateStatus,
   adminListCommissions,
   adminGeneratePayouts,
+  adminBulkSetCommissionStatus,
 } from "./affiliate.service.js";
 
 export const affiliateRouter = Router();
@@ -291,6 +292,30 @@ affiliateRouter.post("/admin/affiliates/payouts/generate", requireJwt, async (re
       periodStart: parsed.data.periodStart ?? null,
       periodEnd: parsed.data.periodEnd ?? null,
     });
+    res.json(result);
+  } catch (err: any) {
+    res.status(500).json({ error: "server_error", message: err.message });
+  }
+});
+
+// ─── Bulk status comisiones (Ola 4: liquidación mensual) ──
+const bulkCommissionsSchema = z.object({
+  ids: z.array(z.number().int().positive()).min(1).max(500),
+  status: z.enum(["approved", "paid", "reversed"]),
+});
+
+affiliateRouter.post("/admin/affiliates/commissions/bulk-status", requireJwt, async (req, res) => {
+  try {
+    const user = (req as AuthenticatedRequest).user;
+    if (!user?.isAdmin) return res.status(403).json({ error: "forbidden" });
+    const parsed = bulkCommissionsSchema.safeParse(req.body ?? {});
+    if (!parsed.success) return res.status(400).json({ error: "invalid_body", details: parsed.error.flatten() });
+    const result = await adminBulkSetCommissionStatus({
+      ids: parsed.data.ids,
+      status: parsed.data.status,
+      actor: user.name || String(user.sub),
+    });
+    if (!result.ok) return res.status(400).json(result);
     res.json(result);
   } catch (err: any) {
     res.status(500).json({ error: "server_error", message: err.message });

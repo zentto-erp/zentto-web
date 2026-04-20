@@ -1,19 +1,22 @@
 /**
- * seller.routes.ts — Endpoints REST del marketplace de vendedores.
+ * merchant.routes.ts — Endpoints REST del marketplace de comerciantes (merchants).
+ *
+ * NOTA: el recurso técnico es "merchant" (para evitar colisión con master.Seller
+ * del ERP). La UI pública en español sigue diciendo "vendedor" y usa `/vender`.
  *
  * Authenticated cliente:
- *   POST   /store/seller/apply              → aplica al marketplace
- *   GET    /store/seller/dashboard          → métricas del vendedor
- *   GET    /store/seller/products           → lista productos propios
- *   POST   /store/seller/products           → crear / enviar a revisión
+ *   POST   /store/merchant/apply              → aplica al marketplace
+ *   GET    /store/merchant/dashboard          → métricas del merchant
+ *   GET    /store/merchant/products           → lista productos propios
+ *   POST   /store/merchant/products           → crear / enviar a revisión
  *
  * Admin:
- *   GET    /store/admin/sellers
- *   POST   /store/admin/sellers/:id/approve
- *   POST   /store/admin/sellers/:id/reject
- *   POST   /store/admin/sellers/:id/suspend
- *   GET    /store/admin/seller-products/pending
- *   POST   /store/admin/seller-products/:id/review
+ *   GET    /store/admin/merchants
+ *   POST   /store/admin/merchants/:id/approve
+ *   POST   /store/admin/merchants/:id/reject
+ *   POST   /store/admin/merchants/:id/suspend
+ *   GET    /store/admin/merchant-products/pending
+ *   POST   /store/admin/merchant-products/:id/review
  */
 
 import { Router } from "express";
@@ -21,17 +24,17 @@ import { z } from "zod";
 import { requireJwt, type AuthenticatedRequest } from "../../middleware/auth.js";
 import { verifyCustomerToken } from "./service.js";
 import {
-  applySeller,
-  getSellerDashboard,
-  submitSellerProduct,
-  listSellerProducts,
-  adminListSellers,
-  adminSetSellerStatus,
+  applyMerchant,
+  getMerchantDashboard,
+  submitMerchantProduct,
+  listMerchantProducts,
+  adminListMerchants,
+  adminSetMerchantStatus,
   adminListPendingProducts,
   adminReviewProduct,
-} from "./seller.service.js";
+} from "./merchant.service.js";
 
-export const sellerRouter = Router();
+export const merchantRouter = Router();
 
 // ─── Authenticated cliente ─────────────────────────────
 
@@ -47,7 +50,7 @@ const applySchema = z.object({
   payoutDetails: z.record(z.unknown()).optional(),
 });
 
-sellerRouter.post("/seller/apply", async (req, res) => {
+merchantRouter.post("/merchant/apply", async (req, res) => {
   try {
     const user = await verifyCustomerToken(req.headers.authorization);
     if (!user) return res.status(401).json({ error: "not_authenticated" });
@@ -57,7 +60,7 @@ sellerRouter.post("/seller/apply", async (req, res) => {
     const parsed = applySchema.safeParse(req.body);
     if (!parsed.success) return res.status(400).json({ error: "invalid_body", details: parsed.error.flatten() });
 
-    const result = await applySeller({
+    const result = await applyMerchant({
       customerId,
       legalName: parsed.data.legalName,
       taxId: parsed.data.taxId,
@@ -76,15 +79,15 @@ sellerRouter.post("/seller/apply", async (req, res) => {
   }
 });
 
-sellerRouter.get("/seller/dashboard", async (req, res) => {
+merchantRouter.get("/merchant/dashboard", async (req, res) => {
   try {
     const user = await verifyCustomerToken(req.headers.authorization);
     if (!user) return res.status(401).json({ error: "not_authenticated" });
     const customerId = Number(user.sub);
     if (!Number.isFinite(customerId)) return res.status(400).json({ error: "invalid_customer" });
 
-    const data = await getSellerDashboard(customerId);
-    if (!data) return res.status(404).json({ error: "not_a_seller" });
+    const data = await getMerchantDashboard(customerId);
+    if (!data) return res.status(404).json({ error: "not_a_merchant" });
     res.json(data);
   } catch (err: any) {
     res.status(500).json({ error: "server_error", message: err.message });
@@ -103,7 +106,7 @@ const submitProductSchema = z.object({
   submit: z.boolean().optional(),
 });
 
-sellerRouter.post("/seller/products", async (req, res) => {
+merchantRouter.post("/merchant/products", async (req, res) => {
   try {
     const user = await verifyCustomerToken(req.headers.authorization);
     if (!user) return res.status(401).json({ error: "not_authenticated" });
@@ -113,7 +116,7 @@ sellerRouter.post("/seller/products", async (req, res) => {
     const parsed = submitProductSchema.safeParse(req.body);
     if (!parsed.success) return res.status(400).json({ error: "invalid_body", details: parsed.error.flatten() });
 
-    const result = await submitSellerProduct({
+    const result = await submitMerchantProduct({
       customerId,
       productId: parsed.data.productId,
       code: parsed.data.code,
@@ -132,7 +135,7 @@ sellerRouter.post("/seller/products", async (req, res) => {
   }
 });
 
-sellerRouter.get("/seller/products", async (req, res) => {
+merchantRouter.get("/merchant/products", async (req, res) => {
   try {
     const user = await verifyCustomerToken(req.headers.authorization);
     if (!user) return res.status(401).json({ error: "not_authenticated" });
@@ -143,7 +146,7 @@ sellerRouter.get("/seller/products", async (req, res) => {
     const page = req.query.page ? Number(req.query.page) : 1;
     const limit = req.query.limit ? Number(req.query.limit) : 20;
 
-    const data = await listSellerProducts({ customerId, status, page, limit });
+    const data = await listMerchantProducts({ customerId, status, page, limit });
     res.json(data);
   } catch (err: any) {
     res.status(500).json({ error: "server_error", message: err.message });
@@ -152,34 +155,34 @@ sellerRouter.get("/seller/products", async (req, res) => {
 
 // ─── Admin ─────────────────────────────────────────────
 
-sellerRouter.get("/admin/sellers", requireJwt, async (req, res) => {
+merchantRouter.get("/admin/merchants", requireJwt, async (req, res) => {
   try {
     const user = (req as AuthenticatedRequest).user;
     if (!user?.isAdmin) return res.status(403).json({ error: "forbidden" });
     const status = (req.query.status as string | undefined) || undefined;
     const page = req.query.page ? Number(req.query.page) : 1;
     const limit = req.query.limit ? Number(req.query.limit) : 20;
-    const data = await adminListSellers({ status, page, limit });
+    const data = await adminListMerchants({ status, page, limit });
     res.json(data);
   } catch (err: any) {
     res.status(500).json({ error: "server_error", message: err.message });
   }
 });
 
-const adminSellerStatusSchema = z.object({
+const adminMerchantStatusSchema = z.object({
   reason: z.string().max(500).optional(),
 });
 
-function makeSellerStatusHandler(status: "approved" | "rejected" | "suspended") {
+function makeMerchantStatusHandler(status: "approved" | "rejected" | "suspended") {
   return async (req: any, res: any) => {
     try {
       const user = (req as AuthenticatedRequest).user;
       if (!user?.isAdmin) return res.status(403).json({ error: "forbidden" });
-      const parsed = adminSellerStatusSchema.safeParse(req.body ?? {});
+      const parsed = adminMerchantStatusSchema.safeParse(req.body ?? {});
       if (!parsed.success) return res.status(400).json({ error: "invalid_body" });
-      const sellerId = Number(req.params.id);
-      const result = await adminSetSellerStatus({
-        sellerId,
+      const merchantId = Number(req.params.id);
+      const result = await adminSetMerchantStatus({
+        merchantId,
         status,
         actor: user.name || String(user.sub),
         reason: parsed.data.reason ?? null,
@@ -192,11 +195,11 @@ function makeSellerStatusHandler(status: "approved" | "rejected" | "suspended") 
   };
 }
 
-sellerRouter.post("/admin/sellers/:id/approve", requireJwt, makeSellerStatusHandler("approved"));
-sellerRouter.post("/admin/sellers/:id/reject",  requireJwt, makeSellerStatusHandler("rejected"));
-sellerRouter.post("/admin/sellers/:id/suspend", requireJwt, makeSellerStatusHandler("suspended"));
+merchantRouter.post("/admin/merchants/:id/approve", requireJwt, makeMerchantStatusHandler("approved"));
+merchantRouter.post("/admin/merchants/:id/reject",  requireJwt, makeMerchantStatusHandler("rejected"));
+merchantRouter.post("/admin/merchants/:id/suspend", requireJwt, makeMerchantStatusHandler("suspended"));
 
-sellerRouter.get("/admin/seller-products/pending", requireJwt, async (req, res) => {
+merchantRouter.get("/admin/merchant-products/pending", requireJwt, async (req, res) => {
   try {
     const user = (req as AuthenticatedRequest).user;
     if (!user?.isAdmin) return res.status(403).json({ error: "forbidden" });
@@ -215,7 +218,7 @@ const reviewProductSchema = z.object({
   notes: z.string().max(2000).optional(),
 });
 
-sellerRouter.post("/admin/seller-products/:id/review", requireJwt, async (req, res) => {
+merchantRouter.post("/admin/merchant-products/:id/review", requireJwt, async (req, res) => {
   try {
     const user = (req as AuthenticatedRequest).user;
     if (!user?.isAdmin) return res.status(403).json({ error: "forbidden" });

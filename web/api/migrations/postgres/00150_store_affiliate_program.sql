@@ -607,8 +607,63 @@ END;
 $$;
 -- +goose StatementEnd
 
+-- ─── usp_store_affiliate_admin_commissions_bulk_status ───
+-- Bulk-approve / bulk-mark-paid para panel de liquidación mensual.
+-- +goose StatementBegin
+CREATE OR REPLACE FUNCTION public.usp_store_affiliate_admin_commissions_bulk_status(
+  p_company_id integer,
+  p_ids        bigint[],
+  p_status     varchar,
+  p_actor      varchar
+)
+RETURNS TABLE("ok" boolean, "mensaje" text, "updated" integer)
+LANGUAGE plpgsql AS $$
+DECLARE
+  v_count integer := 0;
+BEGIN
+  IF p_status NOT IN ('approved','paid','reversed') THEN
+    RETURN QUERY SELECT false, 'Status inválido (solo approved/paid/reversed)'::text, 0;
+    RETURN;
+  END IF;
+  IF p_ids IS NULL OR array_length(p_ids, 1) IS NULL THEN
+    RETURN QUERY SELECT false, 'Sin comisiones seleccionadas'::text, 0;
+    RETURN;
+  END IF;
+
+  UPDATE store."AffiliateCommission"
+     SET "Status"     = p_status,
+         "ApprovedAt" = CASE WHEN p_status = 'approved' AND "ApprovedAt" IS NULL
+                             THEN (now() AT TIME ZONE 'UTC') ELSE "ApprovedAt" END,
+         "PaidAt"     = CASE WHEN p_status = 'paid' AND "PaidAt" IS NULL
+                             THEN (now() AT TIME ZONE 'UTC') ELSE "PaidAt" END
+   WHERE "CompanyId" = p_company_id
+     AND "Id" = ANY(p_ids);
+
+  GET DIAGNOSTICS v_count = ROW_COUNT;
+  RETURN QUERY SELECT true, format('%s comisión(es) actualizada(s) a %s por %s', v_count, p_status, p_actor)::text, v_count;
+END;
+$$;
+-- +goose StatementEnd
+
+-- ─── Seeds: 3 afiliados ejemplo para QA / demo ───────────
+-- +goose StatementBegin
+INSERT INTO store."Affiliate" (
+  "CompanyId","CustomerId","ReferralCode","Status","PayoutMethod",
+  "LegalName","ContactEmail","TaxId","ApprovedAt","ApprovedBy"
+)
+VALUES
+  (1, NULL, 'DEMO001', 'active',    'paypal',
+   'Ana Creadora',    'ana.demo@example.com',    'V-18555111', (now() AT TIME ZONE 'UTC'), 'system'),
+  (1, NULL, 'DEMO002', 'pending',   'transferencia',
+   'Carlos Influencer','carlos.demo@example.com', 'V-17888222', NULL, NULL),
+  (1, NULL, 'DEMO003', 'suspended', 'usdt',
+   'Marta Review',    'marta.demo@example.com',  'V-16444333', (now() AT TIME ZONE 'UTC') - INTERVAL '90 days', 'system')
+ON CONFLICT ("ReferralCode") DO NOTHING;
+-- +goose StatementEnd
+
 -- +goose Down
 -- +goose StatementBegin
+DROP FUNCTION IF EXISTS public.usp_store_affiliate_admin_commissions_bulk_status(integer,bigint[],varchar,varchar);
 DROP FUNCTION IF EXISTS public.usp_store_affiliate_payout_generate(integer,date,date);
 DROP FUNCTION IF EXISTS public.usp_store_affiliate_admin_commissions_list(integer,varchar,integer,integer);
 DROP FUNCTION IF EXISTS public.usp_store_affiliate_admin_set_status(integer,bigint,varchar,varchar);

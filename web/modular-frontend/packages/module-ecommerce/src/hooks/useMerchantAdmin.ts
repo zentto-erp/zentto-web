@@ -24,7 +24,7 @@ async function adminFetch(path: string, init: RequestInit = {}) {
   return data;
 }
 
-export interface AdminSeller {
+export interface AdminMerchant {
   id: number;
   legalName: string;
   storeSlug: string;
@@ -38,10 +38,10 @@ export interface AdminSeller {
   approvedAt: string | null;
 }
 
-export interface AdminSellerProduct {
+export interface AdminMerchantProduct {
   id: number;
-  sellerId: number;
-  sellerName: string;
+  merchantId: number;
+  merchantName: string;
   productCode: string;
   name: string;
   price: number;
@@ -53,54 +53,54 @@ export interface AdminSellerProduct {
   createdAt: string;
 }
 
-export function useAdminSellers(params: { status?: string; page?: number; limit?: number } = {}) {
-  return useQuery<{ rows: AdminSeller[]; total: number; page: number; limit: number }>({
-    queryKey: ["admin-sellers", params],
+export function useAdminMerchants(params: { status?: string; page?: number; limit?: number } = {}) {
+  return useQuery<{ rows: AdminMerchant[]; total: number; page: number; limit: number }>({
+    queryKey: ["admin-merchants", params],
     queryFn: () => {
       const qs = new URLSearchParams();
       if (params.status) qs.set("status", params.status);
       if (params.page) qs.set("page", String(params.page));
       if (params.limit) qs.set("limit", String(params.limit));
-      return adminFetch(`/store/admin/sellers${qs.toString() ? "?" + qs : ""}`);
+      return adminFetch(`/store/admin/merchants${qs.toString() ? "?" + qs : ""}`);
     },
   });
 }
 
-export function useAdminPendingSellerProducts(params: { status?: string; page?: number; limit?: number } = {}) {
-  return useQuery<{ rows: AdminSellerProduct[]; total: number; page: number; limit: number }>({
-    queryKey: ["admin-seller-products", params],
+export function useAdminPendingMerchantProducts(params: { status?: string; page?: number; limit?: number } = {}) {
+  return useQuery<{ rows: AdminMerchantProduct[]; total: number; page: number; limit: number }>({
+    queryKey: ["admin-merchant-products", params],
     queryFn: () => {
       const qs = new URLSearchParams();
       if (params.status) qs.set("status", params.status);
       if (params.page) qs.set("page", String(params.page));
       if (params.limit) qs.set("limit", String(params.limit));
-      return adminFetch(`/store/admin/seller-products/pending${qs.toString() ? "?" + qs : ""}`);
+      return adminFetch(`/store/admin/merchant-products/pending${qs.toString() ? "?" + qs : ""}`);
     },
   });
 }
 
-export function useAdminSetSellerStatus() {
+export function useAdminSetMerchantStatus() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ id, status, reason }: { id: number; status: "approved" | "rejected" | "suspended"; reason?: string }) =>
-      adminFetch(`/store/admin/sellers/${id}/${status === "approved" ? "approve" : status === "rejected" ? "reject" : "suspend"}`, {
+      adminFetch(`/store/admin/merchants/${id}/${status === "approved" ? "approve" : status === "rejected" ? "reject" : "suspend"}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(reason ? { reason } : {}),
       }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-sellers"] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-merchants"] }),
   });
 }
 
-export function useAdminReviewSellerProduct() {
+export function useAdminReviewMerchantProduct() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ id, status, notes }: { id: number; status: "approved" | "rejected"; notes?: string }) =>
-      adminFetch(`/store/admin/seller-products/${id}/review`, {
+      adminFetch(`/store/admin/merchant-products/${id}/review`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status, notes }),
       }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-seller-products"] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-merchant-products"] }),
   });
 }

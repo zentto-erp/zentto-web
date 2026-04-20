@@ -56,13 +56,13 @@ import {
   getPerfAudit,
 } from "./service.js";
 import { affiliateRouter } from "./affiliate.routes.js";
-import { sellerRouter } from "./seller.routes.js";
+import { merchantRouter } from "./merchant.routes.js";
 
 export const storeRouter = Router();
 
-// Sub-routers — programa de afiliados + marketplace de vendedores
+// Sub-routers — programa de afiliados + marketplace de comerciantes (merchants)
 storeRouter.use(affiliateRouter);
-storeRouter.use(sellerRouter);
+storeRouter.use(merchantRouter);
 
 // ─── Catálogo público ──────────────────────────────────
 

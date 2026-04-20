@@ -1,9 +1,9 @@
--- usp_store_seller_products_list — SQL Server 2012+
-IF OBJECT_ID('dbo.usp_store_seller_products_list', 'P') IS NOT NULL
-    DROP PROCEDURE dbo.usp_store_seller_products_list;
+-- usp_store_merchant_products_list — SQL Server 2012+
+IF OBJECT_ID('dbo.usp_store_merchant_products_list', 'P') IS NOT NULL
+    DROP PROCEDURE dbo.usp_store_merchant_products_list;
 GO
 
-CREATE PROCEDURE dbo.usp_store_seller_products_list
+CREATE PROCEDURE dbo.usp_store_merchant_products_list
     @CompanyId   INT,
     @CustomerId  INT,
     @Status      NVARCHAR(20) = NULL,
@@ -17,10 +17,10 @@ BEGIN
     IF @Limit < 1 SET @Limit = 20;
     IF @Limit > 100 SET @Limit = 100;
 
-    DECLARE @SellerId BIGINT = (
-        SELECT TOP 1 Id FROM store.Seller WHERE CompanyId = @CompanyId AND CustomerId = @CustomerId
+    DECLARE @MerchantId BIGINT = (
+        SELECT TOP 1 Id FROM store.Merchant WHERE CompanyId = @CompanyId AND CustomerId = @CustomerId
     );
-    IF @SellerId IS NULL
+    IF @MerchantId IS NULL
     BEGIN
         SET @TotalCount = 0;
         SELECT CAST(NULL AS BIGINT) AS id WHERE 1 = 0;
@@ -28,15 +28,15 @@ BEGIN
     END;
 
     SELECT @TotalCount = COUNT(*)
-      FROM store.SellerProduct
-     WHERE SellerId = @SellerId AND (@Status IS NULL OR Status = @Status);
+      FROM store.MerchantProduct
+     WHERE MerchantId = @MerchantId AND (@Status IS NULL OR Status = @Status);
 
     ;WITH ordered AS (
       SELECT Id, ProductCode, Name, Price, Stock, Category, ImageUrl, Status, ReviewNotes,
              CreatedAt, UpdatedAt,
              ROW_NUMBER() OVER (ORDER BY UpdatedAt DESC) AS rn
-        FROM store.SellerProduct
-       WHERE SellerId = @SellerId AND (@Status IS NULL OR Status = @Status)
+        FROM store.MerchantProduct
+       WHERE MerchantId = @MerchantId AND (@Status IS NULL OR Status = @Status)
     )
     SELECT Id AS id, ProductCode AS productCode, Name AS name, Price AS price, Stock AS stock,
            Category AS category, ImageUrl AS imageUrl, Status AS status, ReviewNotes AS reviewNotes,

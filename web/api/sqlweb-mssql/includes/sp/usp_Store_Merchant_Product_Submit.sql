@@ -1,9 +1,9 @@
--- usp_store_seller_product_submit — SQL Server 2012+
-IF OBJECT_ID('dbo.usp_store_seller_product_submit', 'P') IS NOT NULL
-    DROP PROCEDURE dbo.usp_store_seller_product_submit;
+-- usp_store_merchant_product_submit — SQL Server 2012+
+IF OBJECT_ID('dbo.usp_store_merchant_product_submit', 'P') IS NOT NULL
+    DROP PROCEDURE dbo.usp_store_merchant_product_submit;
 GO
 
-CREATE PROCEDURE dbo.usp_store_seller_product_submit
+CREATE PROCEDURE dbo.usp_store_merchant_product_submit
     @CompanyId   INT,
     @CustomerId  INT,
     @ProductId   BIGINT = NULL,
@@ -26,11 +26,11 @@ BEGIN
     SET @OutProductId = NULL;
     SET @OutStatus = NULL;
 
-    DECLARE @SellerId BIGINT = (
-        SELECT TOP 1 Id FROM store.Seller
+    DECLARE @MerchantId BIGINT = (
+        SELECT TOP 1 Id FROM store.Merchant
          WHERE CompanyId = @CompanyId AND CustomerId = @CustomerId AND Status = 'approved'
     );
-    IF @SellerId IS NULL
+    IF @MerchantId IS NULL
     BEGIN
         SET @Mensaje = N'Vendedor no aprobado'; RETURN;
     END;
@@ -39,11 +39,11 @@ BEGIN
 
     IF @ProductId IS NOT NULL
     BEGIN
-        UPDATE store.SellerProduct
+        UPDATE store.MerchantProduct
            SET Name = @Name, Description = @Description, Price = @Price, Stock = @Stock,
                Category = @Category, ImageUrl = @ImageUrl,
                Status = @Status, UpdatedAt = GETUTCDATE()
-         WHERE Id = @ProductId AND SellerId = @SellerId;
+         WHERE Id = @ProductId AND MerchantId = @MerchantId;
         IF @@ROWCOUNT = 0
         BEGIN
             SET @Mensaje = N'Producto no encontrado'; RETURN;
@@ -52,11 +52,11 @@ BEGIN
     END
     ELSE
     BEGIN
-        INSERT INTO store.SellerProduct
-            (SellerId, CompanyId, ProductCode, Name, Description, Price, Stock, Category, ImageUrl, Status)
+        INSERT INTO store.MerchantProduct
+            (MerchantId, CompanyId, ProductCode, Name, Description, Price, Stock, Category, ImageUrl, Status)
         VALUES
-            (@SellerId, @CompanyId,
-             ISNULL(@Code, CONCAT('SP-', ABS(CHECKSUM(NEWID())) % 1000000)),
+            (@MerchantId, @CompanyId,
+             ISNULL(@Code, CONCAT('MP-', ABS(CHECKSUM(NEWID())) % 1000000)),
              @Name, @Description, @Price, @Stock, @Category, @ImageUrl, @Status);
         SET @OutProductId = SCOPE_IDENTITY();
     END;

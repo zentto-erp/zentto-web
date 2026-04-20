@@ -25,8 +25,8 @@ async function call(path: string, init?: RequestInit) {
 
 // ─── Tipos ────────────────────────────────────────────
 
-export interface SellerDashboard {
-  sellerId: number;
+export interface MerchantDashboard {
+  merchantId: number;
   legalName: string;
   storeSlug: string;
   status: "pending" | "approved" | "suspended" | "rejected";
@@ -39,7 +39,7 @@ export interface SellerDashboard {
   payoutsPaidUsd: number;
 }
 
-export interface SellerProduct {
+export interface MerchantProduct {
   id: number;
   productCode: string;
   name: string;
@@ -55,34 +55,34 @@ export interface SellerProduct {
 
 // ─── Queries ──────────────────────────────────────────
 
-export function useSellerDashboard() {
+export function useMerchantDashboard() {
   const token = useCartStore((s) => s.customerToken);
-  return useQuery<SellerDashboard>({
-    queryKey: ["seller-dashboard"],
+  return useQuery<MerchantDashboard>({
+    queryKey: ["merchant-dashboard"],
     enabled: !!token,
-    queryFn: () => call("/store/seller/dashboard"),
+    queryFn: () => call("/store/merchant/dashboard"),
     staleTime: 30_000,
   });
 }
 
-export function useSellerProducts(params: { status?: string; page?: number; limit?: number } = {}) {
+export function useMerchantProducts(params: { status?: string; page?: number; limit?: number } = {}) {
   const token = useCartStore((s) => s.customerToken);
-  return useQuery<{ rows: SellerProduct[]; total: number; page: number; limit: number }>({
-    queryKey: ["seller-products", params],
+  return useQuery<{ rows: MerchantProduct[]; total: number; page: number; limit: number }>({
+    queryKey: ["merchant-products", params],
     enabled: !!token,
     queryFn: () => {
       const qs = new URLSearchParams();
       if (params.status) qs.set("status", params.status);
       if (params.page) qs.set("page", String(params.page));
       if (params.limit) qs.set("limit", String(params.limit));
-      return call(`/store/seller/products${qs.toString() ? "?" + qs : ""}`);
+      return call(`/store/merchant/products${qs.toString() ? "?" + qs : ""}`);
     },
   });
 }
 
 // ─── Mutations ────────────────────────────────────────
 
-export function useApplySeller() {
+export function useApplyMerchant() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (args: {
@@ -96,16 +96,16 @@ export function useApplySeller() {
       payoutMethod?: string;
       payoutDetails?: Record<string, unknown>;
     }) =>
-      call("/store/seller/apply", {
+      call("/store/merchant/apply", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(args),
       }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["seller-dashboard"] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["merchant-dashboard"] }),
   });
 }
 
-export function useSubmitSellerProduct() {
+export function useSubmitMerchantProduct() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (args: {
@@ -119,14 +119,14 @@ export function useSubmitSellerProduct() {
       imageUrl?: string;
       submit?: boolean;
     }) =>
-      call("/store/seller/products", {
+      call("/store/merchant/products", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(args),
       }),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["seller-products"] });
-      qc.invalidateQueries({ queryKey: ["seller-dashboard"] });
+      qc.invalidateQueries({ queryKey: ["merchant-products"] });
+      qc.invalidateQueries({ queryKey: ["merchant-dashboard"] });
     },
   });
 }

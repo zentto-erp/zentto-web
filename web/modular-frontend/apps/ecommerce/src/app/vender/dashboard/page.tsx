@@ -10,7 +10,7 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { useRouter } from 'next/navigation';
 import { ZenttoRecordTable, type ColumnSpec } from '@zentto/shared-ui';
 import {
-  useSellerDashboard, useSellerProducts, useSubmitSellerProduct, useCartStore,
+  useMerchantDashboard, useMerchantProducts, useSubmitMerchantProduct, useCartStore,
 } from '@zentto/module-ecommerce';
 
 const productColumns: ColumnSpec[] = [
@@ -31,9 +31,9 @@ const STATUS_LABEL: Record<string, string> = {
 export default function VendedorDashboardPage() {
   const router = useRouter();
   const customerToken = useCartStore((s) => s.customerToken);
-  const { data: seller, isLoading } = useSellerDashboard();
-  const { data: products } = useSellerProducts({ page: 1, limit: 50 });
-  const submitProduct = useSubmitSellerProduct();
+  const { data: merchant, isLoading } = useMerchantDashboard();
+  const { data: products } = useMerchantProducts({ page: 1, limit: 50 });
+  const submitProduct = useSubmitMerchantProduct();
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [name, setName] = useState('');
@@ -67,7 +67,7 @@ export default function VendedorDashboardPage() {
     );
   }
 
-  if (!seller) {
+  if (!merchant) {
     return (
       <Container maxWidth="md" sx={{ py: 6 }}>
         <Alert severity="info">
@@ -102,9 +102,9 @@ export default function VendedorDashboardPage() {
   };
 
   const statusChipColor: 'default' | 'success' | 'warning' | 'error' =
-    seller.status === 'approved' ? 'success' :
-    seller.status === 'pending'  ? 'warning' :
-    seller.status === 'suspended' || seller.status === 'rejected' ? 'error' : 'default';
+    merchant.status === 'approved' ? 'success' :
+    merchant.status === 'pending'  ? 'warning' :
+    merchant.status === 'suspended' || merchant.status === 'rejected' ? 'error' : 'default';
 
   return (
     <Box sx={{ bgcolor: '#eaeded', minHeight: '100vh', py: { xs: 3, md: 6 } }}>
@@ -113,21 +113,21 @@ export default function VendedorDashboardPage() {
           <Box>
             <Typography variant="h4" sx={{ fontWeight: 700, color: '#131921' }}>Mi tienda</Typography>
             <Typography variant="body2" sx={{ color: '#555' }}>
-              {seller.legalName} — <b>/{seller.storeSlug}</b>
+              {merchant.legalName} — <b>/{merchant.storeSlug}</b>
             </Typography>
           </Box>
-          <Chip label={seller.status} color={statusChipColor} sx={{ textTransform: 'capitalize' }} />
+          <Chip label={merchant.status} color={statusChipColor} sx={{ textTransform: 'capitalize' }} />
         </Box>
 
         {/* Métricas */}
         <Grid container spacing={2} sx={{ mb: 3 }}>
           {[
-            { label: 'Productos totales', value: seller.productsTotal },
-            { label: 'Aprobados', value: seller.productsApproved },
-            { label: 'En revisión', value: seller.productsPending },
-            { label: 'Órdenes', value: seller.ordersTotal },
-            { label: 'Ventas brutas', value: `USD ${Number(seller.grossSalesUsd).toFixed(2)}` },
-            { label: 'Cobrado', value: `USD ${Number(seller.payoutsPaidUsd).toFixed(2)}` },
+            { label: 'Productos totales', value: merchant.productsTotal },
+            { label: 'Aprobados', value: merchant.productsApproved },
+            { label: 'En revisión', value: merchant.productsPending },
+            { label: 'Órdenes', value: merchant.ordersTotal },
+            { label: 'Ventas brutas', value: `USD ${Number(merchant.grossSalesUsd).toFixed(2)}` },
+            { label: 'Cobrado', value: `USD ${Number(merchant.payoutsPaidUsd).toFixed(2)}` },
           ].map((m) => (
             <Grid item xs={6} md={2} key={m.label}>
               <Card sx={{ borderRadius: 3 }}>
@@ -149,14 +149,14 @@ export default function VendedorDashboardPage() {
             <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
               <Button
                 variant="contained"
-                disabled={seller.status !== 'approved'}
+                disabled={merchant.status !== 'approved'}
                 onClick={() => setDialogOpen(true)}
                 sx={{ bgcolor: '#ff9900', color: '#131921', fontWeight: 700, '&:hover': { bgcolor: '#e68a00' } }}
               >
                 Proponer producto
               </Button>
             </Box>
-            {seller.status !== 'approved' && (
+            {merchant.status !== 'approved' && (
               <Alert severity="info" sx={{ mb: 2 }}>
                 Podrás publicar productos cuando tu tienda sea aprobada.
               </Alert>
@@ -164,7 +164,7 @@ export default function VendedorDashboardPage() {
             <Card sx={{ borderRadius: 2 }}>
               <Box sx={{ p: 1 }}>
                 <ZenttoRecordTable
-                  recordType="seller-products"
+                  recordType="merchant-products"
                   rows={rows}
                   columns={productColumns}
                   height="auto"
@@ -184,8 +184,8 @@ export default function VendedorDashboardPage() {
           </AccordionSummary>
           <AccordionDetails>
             <Typography variant="body2" color="text.secondary">
-              Has generado <b>{seller.ordersTotal}</b> órden(es) por un total bruto de{' '}
-              <b>USD {Number(seller.grossSalesUsd).toFixed(2)}</b>.
+              Has generado <b>{merchant.ordersTotal}</b> órden(es) por un total bruto de{' '}
+              <b>USD {Number(merchant.grossSalesUsd).toFixed(2)}</b>.
             </Typography>
           </AccordionDetails>
         </Accordion>
@@ -196,8 +196,8 @@ export default function VendedorDashboardPage() {
           </AccordionSummary>
           <AccordionDetails>
             <Typography variant="body2" color="text.secondary">
-              Total pagado: <b>USD {Number(seller.payoutsPaidUsd).toFixed(2)}</b>. Los payouts
-              se generan mensualmente con comisión del {Number(seller.commissionRate).toFixed(0)}%.
+              Total pagado: <b>USD {Number(merchant.payoutsPaidUsd).toFixed(2)}</b>. Los payouts
+              se generan mensualmente con comisión del {Number(merchant.commissionRate).toFixed(0)}%.
             </Typography>
           </AccordionDetails>
         </Accordion>

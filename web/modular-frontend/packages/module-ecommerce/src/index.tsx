@@ -92,17 +92,18 @@ export type { CommissionRate, AffiliateDashboard, AffiliateCommission } from "./
 export {
   useAdminAffiliates, useAdminAffiliateCommissions,
   useAdminSetAffiliateStatus, useAdminGenerateAffiliatePayouts,
+  useAdminBulkSetCommissionStatus,
 } from "./hooks/useAffiliateAdmin";
 export type { AdminAffiliate, AdminAffiliateCommission } from "./hooks/useAffiliateAdmin";
 export {
-  useSellerDashboard, useSellerProducts, useApplySeller, useSubmitSellerProduct,
-} from "./hooks/useSeller";
-export type { SellerDashboard, SellerProduct } from "./hooks/useSeller";
+  useMerchantDashboard, useMerchantProducts, useApplyMerchant, useSubmitMerchantProduct,
+} from "./hooks/useMerchant";
+export type { MerchantDashboard, MerchantProduct } from "./hooks/useMerchant";
 export {
-  useAdminSellers, useAdminPendingSellerProducts,
-  useAdminSetSellerStatus, useAdminReviewSellerProduct,
-} from "./hooks/useSellerAdmin";
-export type { AdminSeller, AdminSellerProduct } from "./hooks/useSellerAdmin";
+  useAdminMerchants, useAdminPendingMerchantProducts,
+  useAdminSetMerchantStatus, useAdminReviewMerchantProduct,
+} from "./hooks/useMerchantAdmin";
+export type { AdminMerchant, AdminMerchantProduct } from "./hooks/useMerchantAdmin";
 
 // Affiliate utils
 export {

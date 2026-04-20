@@ -8,7 +8,7 @@ import {
   VerifiedUserOutlined, SupportAgentOutlined,
 } from '@mui/icons-material';
 import { useRouter } from 'next/navigation';
-import { useCartStore, useSellerDashboard } from '@zentto/module-ecommerce';
+import { useCartStore, useMerchantDashboard } from '@zentto/module-ecommerce';
 
 const steps = [
   {
@@ -41,14 +41,14 @@ const requirements = [
 export default function VendePage() {
   const router = useRouter();
   const customerToken = useCartStore((s) => s.customerToken);
-  const { data: seller } = useSellerDashboard();
+  const { data: merchant } = useMerchantDashboard();
 
   const handleCta = () => {
     if (!customerToken) {
       router.push('/login?next=/vender/aplicar');
       return;
     }
-    if (seller?.sellerId) router.push('/vender/dashboard');
+    if (merchant?.merchantId) router.push('/vender/dashboard');
     else router.push('/vender/aplicar');
   };
 
@@ -80,7 +80,7 @@ export default function VendePage() {
               '&:hover': { bgcolor: '#e68a00' },
             }}
           >
-            {seller?.sellerId ? 'Ir a mi tienda' : 'Comenzar a vender'}
+            {merchant?.merchantId ? 'Ir a mi tienda' : 'Comenzar a vender'}
           </Button>
         </Container>
       </Box>
@@ -163,7 +163,7 @@ export default function VendePage() {
               '&:hover': { bgcolor: '#e68a00' },
             }}
           >
-            {seller?.sellerId ? 'Ir a mi tienda' : customerToken ? 'Aplicar ahora' : 'Registrarme y aplicar'}
+            {merchant?.merchantId ? 'Ir a mi tienda' : customerToken ? 'Aplicar ahora' : 'Registrarme y aplicar'}
           </Button>
         </Container>
       </Box>

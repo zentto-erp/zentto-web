@@ -1,9 +1,9 @@
--- usp_store_seller_admin_product_review — SQL Server 2012+
-IF OBJECT_ID('dbo.usp_store_seller_admin_product_review', 'P') IS NOT NULL
-    DROP PROCEDURE dbo.usp_store_seller_admin_product_review;
+-- usp_store_merchant_admin_product_review — SQL Server 2012+
+IF OBJECT_ID('dbo.usp_store_merchant_admin_product_review', 'P') IS NOT NULL
+    DROP PROCEDURE dbo.usp_store_merchant_admin_product_review;
 GO
 
-CREATE PROCEDURE dbo.usp_store_seller_admin_product_review
+CREATE PROCEDURE dbo.usp_store_merchant_admin_product_review
     @CompanyId  INT,
     @ProductId  BIGINT,
     @Status     NVARCHAR(20),
@@ -20,7 +20,7 @@ BEGIN
         SET @Mensaje = N'Status inválido'; RETURN;
     END;
 
-    UPDATE store.SellerProduct
+    UPDATE store.MerchantProduct
        SET Status      = @Status,
            ReviewNotes = @Notes,
            ReviewedAt  = GETUTCDATE(),

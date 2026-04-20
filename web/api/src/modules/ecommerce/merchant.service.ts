@@ -1,8 +1,12 @@
 /**
- * seller.service.ts — Marketplace de vendedores Zentto Store.
+ * merchant.service.ts — Marketplace de comerciantes externos (merchants) de Zentto Store.
  *
- * Onboarding → aplicación → aprobación admin → dashboard vendedor
- *   ↳ vendedor propone productos (draft/pending_review)
+ * NOTA: en el dominio interno usamos "Merchant" para evitar colisión con
+ * master.Seller (vendedor comercial del ERP). En la UI pública se muestra
+ * "Vendedor" / ruta `/vender` por UX en español.
+ *
+ * Onboarding → aplicación → aprobación admin → dashboard merchant
+ *   ↳ merchant propone productos (draft/pending_review)
  *   ↳ admin aprueba/rechaza productos
  *   ↳ al final se generan payouts periódicos (futuro)
  */
@@ -17,7 +21,7 @@ function scope() {
 
 // ─── Apply ─────────────────────────────────────────────
 
-export async function applySeller(args: {
+export async function applyMerchant(args: {
   customerId: number;
   legalName: string;
   taxId?: string | null;
@@ -30,7 +34,7 @@ export async function applySeller(args: {
   payoutDetails?: Record<string, unknown> | null;
 }) {
   const { output } = await callSpOut(
-    "usp_Store_Seller_Apply",
+    "usp_Store_Merchant_Apply",
     {
       CompanyId: scope().companyId,
       CustomerId: args.customerId,
@@ -47,7 +51,7 @@ export async function applySeller(args: {
     {
       Resultado: sql.Int,
       Mensaje: sql.NVarChar(500),
-      SellerId: sql.BigInt,
+      MerchantId: sql.BigInt,
       StoreSlugOut: sql.NVarChar(80),
     }
   );
@@ -56,7 +60,7 @@ export async function applySeller(args: {
   }
   return {
     ok: true,
-    sellerId: Number(output.SellerId),
+    merchantId: Number(output.MerchantId),
     storeSlug: output.StoreSlugOut as string | null,
     message: output.Mensaje as string,
   };
@@ -64,17 +68,17 @@ export async function applySeller(args: {
 
 // ─── Dashboard ─────────────────────────────────────────
 
-export async function getSellerDashboard(customerId: number) {
-  const rows = await callSp<any>("usp_Store_Seller_Dashboard", {
+export async function getMerchantDashboard(customerId: number) {
+  const rows = await callSp<any>("usp_Store_Merchant_Dashboard", {
     CompanyId: scope().companyId,
     CustomerId: customerId,
   });
   return rows[0] ?? null;
 }
 
-// ─── Products — seller ─────────────────────────────────
+// ─── Products — merchant ───────────────────────────────
 
-export async function submitSellerProduct(args: {
+export async function submitMerchantProduct(args: {
   customerId: number;
   productId?: number | null;
   code?: string | null;
@@ -87,7 +91,7 @@ export async function submitSellerProduct(args: {
   submit?: boolean;
 }) {
   const { output } = await callSpOut(
-    "usp_Store_Seller_Product_Submit",
+    "usp_Store_Merchant_Product_Submit",
     {
       CompanyId: scope().companyId,
       CustomerId: args.customerId,
@@ -119,7 +123,7 @@ export async function submitSellerProduct(args: {
   };
 }
 
-export async function listSellerProducts(args: {
+export async function listMerchantProducts(args: {
   customerId: number;
   status?: string | null;
   page?: number;
@@ -128,7 +132,7 @@ export async function listSellerProducts(args: {
   const page = Math.max(args.page ?? 1, 1);
   const limit = Math.min(Math.max(args.limit ?? 20, 1), 100);
   const { rows, output } = await callSpOut<any>(
-    "usp_Store_Seller_Products_List",
+    "usp_Store_Merchant_Products_List",
     {
       CompanyId: scope().companyId,
       CustomerId: args.customerId,
@@ -143,7 +147,7 @@ export async function listSellerProducts(args: {
 
 // ─── Admin ─────────────────────────────────────────────
 
-export async function adminListSellers(args: {
+export async function adminListMerchants(args: {
   status?: string | null;
   page?: number;
   limit?: number;
@@ -151,7 +155,7 @@ export async function adminListSellers(args: {
   const page = Math.max(args.page ?? 1, 1);
   const limit = Math.min(Math.max(args.limit ?? 20, 1), 100);
   const { rows, output } = await callSpOut<any>(
-    "usp_Store_Seller_Admin_List",
+    "usp_Store_Merchant_Admin_List",
     {
       CompanyId: scope().companyId,
       Status: args.status ?? null,
@@ -163,17 +167,17 @@ export async function adminListSellers(args: {
   return { page, limit, total: (output.TotalCount as number) ?? 0, rows };
 }
 
-export async function adminSetSellerStatus(args: {
-  sellerId: number;
+export async function adminSetMerchantStatus(args: {
+  merchantId: number;
   status: "approved" | "rejected" | "suspended" | "pending";
   actor: string;
   reason?: string | null;
 }) {
   const { output } = await callSpOut(
-    "usp_Store_Seller_Admin_SetStatus",
+    "usp_Store_Merchant_Admin_SetStatus",
     {
       CompanyId: scope().companyId,
-      SellerId: args.sellerId,
+      MerchantId: args.merchantId,
       Status: args.status,
       Actor: args.actor,
       Reason: args.reason ?? null,
@@ -194,7 +198,7 @@ export async function adminListPendingProducts(args: {
   const page = Math.max(args.page ?? 1, 1);
   const limit = Math.min(Math.max(args.limit ?? 20, 1), 100);
   const { rows, output } = await callSpOut<any>(
-    "usp_Store_Seller_Admin_Products_List",
+    "usp_Store_Merchant_Admin_Products_List",
     {
       CompanyId: scope().companyId,
       Status: args.status ?? null,
@@ -213,7 +217,7 @@ export async function adminReviewProduct(args: {
   actor: string;
 }) {
   const { output } = await callSpOut(
-    "usp_Store_Seller_Admin_Product_Review",
+    "usp_Store_Merchant_Admin_Product_Review",
     {
       CompanyId: scope().companyId,
       ProductId: args.productId,
