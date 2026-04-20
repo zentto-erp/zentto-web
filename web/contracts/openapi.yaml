@@ -1082,6 +1082,205 @@ components:
           type: string
           maxLength: 60
           description: Identificador de la fuente (p.ej. `contact`, `footer-form`). Default `contact`.
+    Affiliate:
+      type: object
+      description: Afiliado del programa de referidos de Zentto Store.
+      properties:
+        id:            { type: integer, format: int64 }
+        customerId:    { type: integer, nullable: true }
+        referralCode:  { type: string, example: "ABC123" }
+        status:
+          type: string
+          enum: [pending, active, suspended, rejected]
+        legalName:     { type: string, nullable: true }
+        contactEmail:  { type: string, format: email, nullable: true }
+        taxId:         { type: string, nullable: true }
+        payoutMethod:  { type: string, nullable: true, example: "paypal" }
+        createdAt:     { type: string, format: date-time }
+        approvedAt:    { type: string, format: date-time, nullable: true }
+        pendingAmount: { type: number, format: double }
+        paidAmount:    { type: number, format: double }
+    AffiliateRegisterRequest:
+      type: object
+      required: [legalName]
+      properties:
+        legalName:      { type: string, minLength: 2, maxLength: 200 }
+        taxId:          { type: string, maxLength: 40 }
+        contactEmail:   { type: string, format: email }
+        payoutMethod:   { type: string, enum: [paypal, stripe, transferencia, usdt] }
+        payoutDetails:
+          type: object
+          additionalProperties: true
+          description: "Detalles del método de pago (IBAN/cuenta/email PayPal). Sensible — se almacena cifrado."
+    AffiliateCommissionRate:
+      type: object
+      description: Tasa de comisión por categoría de producto.
+      properties:
+        category:  { type: string, example: "Electrónica" }
+        rate:      { type: number, example: 3.00 }
+        isDefault: { type: boolean }
+    AffiliateCommission:
+      type: object
+      description: Comisión generada por una orden atribuida.
+      properties:
+        id:               { type: integer, format: int64 }
+        affiliateId:      { type: integer, format: int64 }
+        orderNumber:      { type: string }
+        rate:             { type: number }
+        category:         { type: string, nullable: true }
+        commissionAmount: { type: number }
+        currencyCode:     { type: string, example: "USD" }
+        status:
+          type: string
+          enum: [pending, approved, paid, reversed]
+        createdAt:        { type: string, format: date-time }
+        paidAt:           { type: string, format: date-time, nullable: true }
+    AffiliatePayout:
+      type: object
+      description: Lote de pago a afiliado (periódico).
+      properties:
+        id:           { type: integer, format: int64 }
+        affiliateId:  { type: integer, format: int64 }
+        periodStart:  { type: string, format: date }
+        periodEnd:    { type: string, format: date }
+        totalAmount:  { type: number }
+        currencyCode: { type: string }
+        status:
+          type: string
+          enum: [pending, processing, paid, failed]
+        paidAt:         { type: string, format: date-time, nullable: true }
+        transactionRef: { type: string, nullable: true }
+    AffiliateDashboard:
+      type: object
+      description: Métricas y serie mensual del afiliado logueado.
+      properties:
+        affiliateId:     { type: integer }
+        referralCode:    { type: string }
+        status:          { type: string, enum: [pending, active, suspended, rejected] }
+        legalName:       { type: string, nullable: true }
+        clicksTotal:     { type: integer }
+        conversions:     { type: integer }
+        pendingAmount:   { type: number }
+        approvedAmount:  { type: number }
+        paidAmount:      { type: number }
+        totalEarned:     { type: number }
+        currencyCode:    { type: string }
+        monthly:
+          type: array
+          items:
+            type: object
+            properties:
+              mon:    { type: string, example: "2026-04" }
+              amount: { type: number }
+    AffiliateTrackClickRequest:
+      type: object
+      required: [referralCode]
+      properties:
+        referralCode: { type: string, minLength: 3, maxLength: 20 }
+        sessionId:    { type: string, nullable: true }
+        referer:      { type: string, nullable: true }
+    AffiliateBulkStatusRequest:
+      type: object
+      required: [ids, status]
+      properties:
+        ids:
+          type: array
+          items: { type: integer, format: int64 }
+          minItems: 1
+          maxItems: 500
+        status:
+          type: string
+          enum: [approved, paid, reversed]
+
+    # ─── Store Marketplace — Merchant (Ola 4) ─────────────
+    # NOTA: En UI pública se muestra "Vendedor" y la ruta es /vender.
+    # El recurso API se llama "merchant" para evitar colisión con master.Seller del ERP.
+    Merchant:
+      type: object
+      description: Comerciante externo del marketplace (llamado "Vendedor" en UI pública).
+      properties:
+        id:              { type: integer, format: int64 }
+        customerId:      { type: integer, nullable: true }
+        legalName:       { type: string }
+        taxId:           { type: string, nullable: true }
+        storeSlug:       { type: string }
+        description:     { type: string, nullable: true }
+        logoUrl:         { type: string, format: uri, nullable: true }
+        bannerUrl:       { type: string, format: uri, nullable: true }
+        contactEmail:    { type: string, format: email, nullable: true }
+        contactPhone:    { type: string, nullable: true }
+        status:
+          type: string
+          enum: [pending, approved, suspended, rejected]
+        commissionRate:  { type: number, example: 15.00 }
+        payoutMethod:    { type: string, nullable: true }
+        rejectionReason: { type: string, nullable: true }
+        createdAt:       { type: string, format: date-time }
+        approvedAt:      { type: string, format: date-time, nullable: true }
+    MerchantApplyRequest:
+      type: object
+      required: [legalName]
+      properties:
+        legalName:     { type: string, minLength: 2, maxLength: 200 }
+        taxId:         { type: string, maxLength: 40 }
+        storeSlug:     { type: string, maxLength: 80 }
+        description:   { type: string, maxLength: 5000 }
+        logoUrl:       { type: string, format: uri, maxLength: 500 }
+        contactEmail:  { type: string, format: email }
+        contactPhone:  { type: string, maxLength: 40 }
+        payoutMethod:  { type: string, maxLength: 30 }
+        payoutDetails:
+          type: object
+          additionalProperties: true
+    MerchantProduct:
+      type: object
+      description: Producto propuesto por un comerciante. Debe aprobarse antes de salir a catálogo.
+      properties:
+        id:           { type: integer, format: int64 }
+        merchantId:   { type: integer, format: int64 }
+        merchantName: { type: string }
+        productCode:  { type: string }
+        name:         { type: string }
+        description:  { type: string, nullable: true }
+        price:        { type: number }
+        stock:        { type: number }
+        category:     { type: string, nullable: true }
+        imageUrl:     { type: string, format: uri, nullable: true }
+        status:
+          type: string
+          enum: [draft, pending_review, approved, rejected]
+        reviewNotes:  { type: string, nullable: true }
+        createdAt:    { type: string, format: date-time }
+        updatedAt:    { type: string, format: date-time }
+    MerchantProductSubmitRequest:
+      type: object
+      required: [name, price, stock]
+      properties:
+        productId:   { type: integer, format: int64, description: "Si presente, actualiza el producto existente." }
+        code:        { type: string, maxLength: 64 }
+        name:        { type: string, minLength: 2, maxLength: 250 }
+        description: { type: string, maxLength: 5000 }
+        price:       { type: number, minimum: 0 }
+        stock:       { type: number, minimum: 0 }
+        category:    { type: string, maxLength: 80 }
+        imageUrl:    { type: string, format: uri, maxLength: 500 }
+        submit:      { type: boolean, description: "true = enviar a revisión admin; false = guardar como draft." }
+    MerchantDashboard:
+      type: object
+      description: Métricas agregadas del comerciante logueado.
+      properties:
+        merchantId:       { type: integer }
+        legalName:        { type: string }
+        storeSlug:        { type: string }
+        status:           { type: string, enum: [pending, approved, suspended, rejected] }
+        commissionRate:   { type: number }
+        productsTotal:    { type: integer }
+        productsApproved: { type: integer }
+        productsPending:  { type: integer }
+        ordersTotal:      { type: integer }
+        grossSalesUsd:    { type: number }
+        payoutsPaidUsd:   { type: number }
+  parameters:
   parameters:
     IdParam:
       in: path
@@ -11652,3 +11851,393 @@ paths:
                   totalCount: { type: integer }
                   page:       { type: integer }
                   limit:      { type: integer }
+  /store/affiliate/commission-rates:
+    get:
+      tags: [Store Affiliates]
+      summary: Tasas de comisión por categoría (público).
+      security: []
+      responses:
+        "200":
+          description: Listado de tasas
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  rows:
+                    type: array
+                    items: { $ref: "#/components/schemas/AffiliateCommissionRate" }
+
+  /store/affiliate/track-click:
+    post:
+      tags: [Store Affiliates]
+      summary: Registrar click de referido (anónimo).
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AffiliateTrackClickRequest" }
+      responses:
+        "200":
+          description: Click registrado
+
+  /store/affiliate/link/{code}:
+    get:
+      tags: [Store Affiliates]
+      summary: Redirige a la tienda fijando la cookie `zentto_ref` por 30 días.
+      security: []
+      parameters:
+        - in: path
+          name: code
+          required: true
+          schema: { type: string, minLength: 3, maxLength: 20 }
+      responses:
+        "302":
+          description: Redirección a `/` con cookie zentto_ref
+
+  /store/affiliate/register:
+    post:
+      tags: [Store Affiliates]
+      summary: Aplicar al programa de afiliados (cliente autenticado).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AffiliateRegisterRequest" }
+      responses:
+        "200":
+          description: Solicitud recibida; status inicial = pending.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Affiliate" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /store/affiliate/dashboard:
+    get:
+      tags: [Store Affiliates]
+      summary: Dashboard del afiliado (métricas + serie mensual).
+      responses:
+        "200":
+          description: Dashboard
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AffiliateDashboard" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { description: No es afiliado }
+
+  /store/affiliate/commissions:
+    get:
+      tags: [Store Affiliates]
+      summary: Listado paginado de comisiones del afiliado logueado.
+      parameters:
+        - { in: query, name: status, schema: { type: string, enum: [pending, approved, paid, reversed] } }
+        - { in: query, name: page,   schema: { type: integer, default: 1 } }
+        - { in: query, name: limit,  schema: { type: integer, default: 20, maximum: 100 } }
+      responses:
+        "200":
+          description: Comisiones del afiliado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  rows:  { type: array, items: { $ref: "#/components/schemas/AffiliateCommission" } }
+                  total: { type: integer }
+                  page:  { type: integer }
+                  limit: { type: integer }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /store/admin/affiliates:
+    get:
+      tags: [Store Affiliates]
+      summary: Admin — listado paginado de afiliados.
+      parameters:
+        - { in: query, name: status, schema: { type: string, enum: [pending, active, suspended, rejected] } }
+        - { in: query, name: page,   schema: { type: integer, default: 1 } }
+        - { in: query, name: limit,  schema: { type: integer, default: 20, maximum: 100 } }
+      responses:
+        "200":
+          description: Afiliados
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  rows:  { type: array, items: { $ref: "#/components/schemas/Affiliate" } }
+                  total: { type: integer }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /store/admin/affiliates/{id}/status:
+    post:
+      tags: [Store Affiliates]
+      summary: Admin — cambiar estado de un afiliado.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer, format: int64 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+                  enum: [active, suspended, pending, rejected]
+      responses:
+        "200": { description: Estado actualizado }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /store/admin/affiliates/{id}/approve:
+    post:
+      tags: [Store Affiliates]
+      summary: Admin — shorthand para aprobar afiliado.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        "200": { description: Afiliado aprobado }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /store/admin/affiliates/{id}/suspend:
+    post:
+      tags: [Store Affiliates]
+      summary: Admin — shorthand para suspender afiliado.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        "200": { description: Afiliado suspendido }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /store/admin/affiliates/commissions:
+    get:
+      tags: [Store Affiliates]
+      summary: Admin — listado global de comisiones para liquidación mensual.
+      parameters:
+        - { in: query, name: status, schema: { type: string, enum: [pending, approved, paid, reversed] } }
+        - { in: query, name: page,   schema: { type: integer, default: 1 } }
+        - { in: query, name: limit,  schema: { type: integer, default: 20, maximum: 500 } }
+      responses:
+        "200":
+          description: Comisiones globales
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  rows:  { type: array, items: { $ref: "#/components/schemas/AffiliateCommission" } }
+                  total: { type: integer }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /store/admin/affiliates/commissions/bulk-status:
+    post:
+      tags: [Store Affiliates]
+      summary: Admin — bulk-approve / bulk-mark-paid de comisiones seleccionadas.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AffiliateBulkStatusRequest" }
+      responses:
+        "200":
+          description: Cantidad de comisiones actualizadas
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StoreBulkOkResponse" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /store/admin/affiliates/payouts/generate:
+    post:
+      tags: [Store Affiliates]
+      summary: Admin — generar lotes de payout del periodo actual.
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                periodStart: { type: string, format: date }
+                periodEnd:   { type: string, format: date }
+      responses:
+        "200":
+          description: Payouts generados
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:             { type: boolean }
+                  message:        { type: string }
+                  payoutsCreated: { type: integer }
+                  totalAmount:    { type: number }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  # =========================================================
+  # Store Marketplace (Merchant — Ola 4)
+  # =========================================================
+  /store/merchant/apply:
+    post:
+      tags: [Store Marketplace]
+      summary: Aplicar como vendedor del marketplace (cliente autenticado).
+      description: |
+        El recurso API es `merchant` para evitar colisión con `master.Seller` del ERP.
+        En la UI pública se muestra "Vendedor" y la ruta es `/vender/aplicar`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/MerchantApplyRequest" }
+      responses:
+        "200":
+          description: Solicitud recibida; status inicial = pending.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:         { type: boolean }
+                  merchantId: { type: integer }
+                  storeSlug:  { type: string }
+                  message:    { type: string }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /store/merchant/dashboard:
+    get:
+      tags: [Store Marketplace]
+      summary: Dashboard del vendedor logueado (métricas).
+      responses:
+        "200":
+          description: Métricas del merchant
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MerchantDashboard" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { description: No es vendedor }
+
+  /store/merchant/products:
+    get:
+      tags: [Store Marketplace]
+      summary: Listar productos del vendedor logueado.
+      parameters:
+        - { in: query, name: status, schema: { type: string, enum: [draft, pending_review, approved, rejected] } }
+        - { in: query, name: page,   schema: { type: integer, default: 1 } }
+        - { in: query, name: limit,  schema: { type: integer, default: 20, maximum: 100 } }
+      responses:
+        "200":
+          description: Productos del merchant
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  rows:  { type: array, items: { $ref: "#/components/schemas/MerchantProduct" } }
+                  total: { type: integer }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    post:
+      tags: [Store Marketplace]
+      summary: Crear o actualizar un producto del vendedor (draft o enviar a revisión).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/MerchantProductSubmitRequest" }
+      responses:
+        "200":
+          description: Producto guardado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:        { type: boolean }
+                  productId: { type: integer }
+                  status:    { type: string, enum: [draft, pending_review] }
+                  message:   { type: string }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /store/admin/merchants:
+    get:
+      tags: [Store Marketplace]
+      summary: Admin — listado paginado de comerciantes.
+      parameters:
+        - { in: query, name: status, schema: { type: string, enum: [pending, approved, suspended, rejected] } }
+        - { in: query, name: page,   schema: { type: integer, default: 1 } }
+        - { in: query, name: limit,  schema: { type: integer, default: 20, maximum: 100 } }
+      responses:
+        "200":
+          description: Comerciantes
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  rows:  { type: array, items: { $ref: "#/components/schemas/Merchant" } }
+                  total: { type: integer }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /store/admin/merchants/{id}/approve:
+    post:
+      tags: [Store Marketplace]
+      summary: Admin — aprobar vendedor.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        "200": { description: Aprobado }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /store/admin/merchants/{id}/reject:
+    post:
+      tags: [Store Marketplace]
+      summary: Admin — rechazar vendedor (con motivo opcional).
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer, format: int64 }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason: { type: string, maxLength: 500 }
+      responses:
+        "200": { description: Rechazado }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /store/admin/merchants/{id}/suspend:
+    post:
+      tags: [Store Marketplace]
+      summary: Admin — suspender vendedor.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer, format: int64 }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason: { type: string, maxLength: 500 }
+      responses:
+        "200": { description: Suspendido }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
