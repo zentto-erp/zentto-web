@@ -1,6 +1,10 @@
 import { callSp } from "../../db/query.js";
 import type { PostUpsertInput, PageUpsertInput } from "./schema.js";
 
+// callSp(key) → toSnakeParam(key) que automáticamente prepends "p_".
+// Por eso las keys aquí son PascalCase / camelCase sin prefijo — el helper
+// las convierte a p_snake_case. Pasar "p_company_id" produce "p_p_company_id".
+
 // ─── Post types ──────────────────────────────────────────────────────────────
 export interface PostListItem {
   PostId: number;
@@ -62,12 +66,12 @@ export async function listPosts(opts: {
   offset: number;
 }): Promise<{ rows: PostListItem[]; total: number }> {
   const rows = (await callSp("usp_cms_post_list", {
-    p_vertical: opts.vertical ?? null,
-    p_category: opts.category ?? null,
-    p_locale: opts.locale,
-    p_status: opts.status ?? "published",
-    p_limit: opts.limit,
-    p_offset: opts.offset,
+    Vertical: opts.vertical ?? null,
+    Category: opts.category ?? null,
+    Locale: opts.locale,
+    Status: opts.status ?? "published",
+    Limit: opts.limit,
+    Offset: opts.offset,
   })) as PostListItem[];
 
   const total = rows[0]?.TotalCount ? Number(rows[0].TotalCount) : 0;
@@ -76,42 +80,43 @@ export async function listPosts(opts: {
 
 export async function getPost(slug: string, locale: string): Promise<PostDetail | null> {
   const rows = (await callSp("usp_cms_post_get", {
-    p_slug: slug,
-    p_locale: locale,
+    Slug: slug,
+    Locale: locale,
   })) as PostDetail[];
   return rows[0] ?? null;
 }
 
 export async function upsertPost(input: PostUpsertInput): Promise<{ ok: boolean; mensaje: string; post_id: number }> {
   const rows = (await callSp("usp_cms_post_upsert", {
-    p_post_id: input.postId ?? null,
-    p_company_id: 1,
-    p_slug: input.slug,
-    p_vertical: input.vertical,
-    p_category: input.category,
-    p_locale: input.locale,
-    p_title: input.title,
-    p_excerpt: input.excerpt,
-    p_body: input.body,
-    p_cover_url: input.coverUrl,
-    p_author_name: input.authorName,
-    p_author_slug: input.authorSlug,
-    p_author_avatar: input.authorAvatar,
-    p_tags: input.tags,
-    p_reading_min: input.readingMin,
-    p_seo_title: input.seoTitle,
-    p_seo_description: input.seoDescription,
-    p_seo_image_url: input.seoImageUrl,
-  })) as Array<{ ok: boolean; mensaje: string; post_id: number }>;
+    PostId: input.postId ?? null,
+    CompanyId: 1,
+    Slug: input.slug,
+    Vertical: input.vertical,
+    Category: input.category,
+    Locale: input.locale,
+    Title: input.title,
+    Excerpt: input.excerpt,
+    Body: input.body,
+    CoverUrl: input.coverUrl,
+    AuthorName: input.authorName,
+    AuthorSlug: input.authorSlug,
+    AuthorAvatar: input.authorAvatar,
+    Tags: input.tags,
+    ReadingMin: input.readingMin,
+    SeoTitle: input.seoTitle,
+    SeoDescription: input.seoDescription,
+    SeoImageUrl: input.seoImageUrl,
+  })) as Array<{ ok: boolean; mensaje: string; PostId: number }>;
 
-  const r = rows[0] ?? { ok: false, mensaje: "no_result", post_id: 0 };
-  return { ok: Boolean(r.ok), mensaje: String(r.mensaje), post_id: Number(r.post_id) };
+  // normalizePgRow convierte "post_id" (snake lowercase) → "PostId" (PascalCase)
+  const r = rows[0] ?? { ok: false, mensaje: "no_result", PostId: 0 };
+  return { ok: Boolean(r.ok), mensaje: String(r.mensaje), post_id: Number(r.PostId) };
 }
 
 export async function publishPost(postId: number, publish: boolean): Promise<{ ok: boolean; mensaje: string }> {
   const rows = (await callSp("usp_cms_post_publish", {
-    p_post_id: postId,
-    p_publish: publish,
+    PostId: postId,
+    Publish: publish,
   })) as Array<{ ok: boolean; mensaje: string }>;
   const r = rows[0] ?? { ok: false, mensaje: "no_result" };
   return { ok: Boolean(r.ok), mensaje: String(r.mensaje) };
@@ -119,7 +124,7 @@ export async function publishPost(postId: number, publish: boolean): Promise<{ o
 
 export async function deletePost(postId: number): Promise<{ ok: boolean; mensaje: string }> {
   const rows = (await callSp("usp_cms_post_delete", {
-    p_post_id: postId,
+    PostId: postId,
   })) as Array<{ ok: boolean; mensaje: string }>;
   const r = rows[0] ?? { ok: false, mensaje: "no_result" };
   return { ok: Boolean(r.ok), mensaje: String(r.mensaje) };
@@ -132,9 +137,9 @@ export async function listPages(opts: {
   status?: string;
 }): Promise<PageListItem[]> {
   return (await callSp("usp_cms_page_list", {
-    p_vertical: opts.vertical ?? null,
-    p_locale: opts.locale,
-    p_status: opts.status ?? "published",
+    Vertical: opts.vertical ?? null,
+    Locale: opts.locale,
+    Status: opts.status ?? "published",
   })) as PageListItem[];
 }
 
@@ -144,35 +149,36 @@ export async function getPage(
   locale: string,
 ): Promise<PageDetail | null> {
   const rows = (await callSp("usp_cms_page_get", {
-    p_slug: slug,
-    p_vertical: vertical,
-    p_locale: locale,
+    Slug: slug,
+    Vertical: vertical,
+    Locale: locale,
   })) as PageDetail[];
   return rows[0] ?? null;
 }
 
 export async function upsertPage(input: PageUpsertInput): Promise<{ ok: boolean; mensaje: string; page_id: number }> {
   const rows = (await callSp("usp_cms_page_upsert", {
-    p_page_id: input.pageId ?? null,
-    p_company_id: 1,
-    p_slug: input.slug,
-    p_vertical: input.vertical,
-    p_locale: input.locale,
-    p_title: input.title,
-    p_body: input.body,
-    p_meta: JSON.stringify(input.meta ?? {}),
-    p_seo_title: input.seoTitle,
-    p_seo_description: input.seoDescription,
-  })) as Array<{ ok: boolean; mensaje: string; page_id: number }>;
+    PageId: input.pageId ?? null,
+    CompanyId: 1,
+    Slug: input.slug,
+    Vertical: input.vertical,
+    Locale: input.locale,
+    Title: input.title,
+    Body: input.body,
+    Meta: JSON.stringify(input.meta ?? {}),
+    SeoTitle: input.seoTitle,
+    SeoDescription: input.seoDescription,
+  })) as Array<{ ok: boolean; mensaje: string; PageId: number }>;
 
-  const r = rows[0] ?? { ok: false, mensaje: "no_result", page_id: 0 };
-  return { ok: Boolean(r.ok), mensaje: String(r.mensaje), page_id: Number(r.page_id) };
+  // normalizePgRow convierte "page_id" (snake lowercase) → "PageId" (PascalCase)
+  const r = rows[0] ?? { ok: false, mensaje: "no_result", PageId: 0 };
+  return { ok: Boolean(r.ok), mensaje: String(r.mensaje), page_id: Number(r.PageId) };
 }
 
 export async function publishPage(pageId: number, publish: boolean): Promise<{ ok: boolean; mensaje: string }> {
   const rows = (await callSp("usp_cms_page_publish", {
-    p_page_id: pageId,
-    p_publish: publish,
+    PageId: pageId,
+    Publish: publish,
   })) as Array<{ ok: boolean; mensaje: string }>;
   const r = rows[0] ?? { ok: false, mensaje: "no_result" };
   return { ok: Boolean(r.ok), mensaje: String(r.mensaje) };
@@ -180,7 +186,7 @@ export async function publishPage(pageId: number, publish: boolean): Promise<{ o
 
 export async function deletePage(pageId: number): Promise<{ ok: boolean; mensaje: string }> {
   const rows = (await callSp("usp_cms_page_delete", {
-    p_page_id: pageId,
+    PageId: pageId,
   })) as Array<{ ok: boolean; mensaje: string }>;
   const r = rows[0] ?? { ok: false, mensaje: "no_result" };
   return { ok: Boolean(r.ok), mensaje: String(r.mensaje) };
