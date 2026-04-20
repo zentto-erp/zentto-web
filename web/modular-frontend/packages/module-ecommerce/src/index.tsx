@@ -35,6 +35,41 @@ export { useCompareStore } from "./store/useCompareStore";
 export { usePerfAudit, useCacheStats, useInvalidateCache } from "./hooks/usePerfAndCache";
 export type { PerfMeasurement, PerfReport, CacheStats } from "./hooks/usePerfAndCache";
 
+// Admin backoffice — productos, imágenes, highlights, specs, categorías, marcas, reviews
+export {
+  useAdminProducts,
+  useAdminProductDetail,
+  useUpsertAdminProduct,
+  useDeleteAdminProduct,
+  usePublishToggleAdminProduct,
+} from "./hooks/useAdminProducts";
+export type {
+  AdminProductRow,
+  AdminProductDetail,
+  AdminProductUpsertPayload,
+  AdminProductListParams,
+} from "./hooks/useAdminProducts";
+export { useUploadProductImage, useSetProductImages } from "./hooks/useAdminImages";
+export type { ProductImageInput, ProductImageUploadResult } from "./hooks/useAdminImages";
+export { useSetProductHighlights } from "./hooks/useAdminHighlights";
+export type { HighlightInput } from "./hooks/useAdminHighlights";
+export { useSetProductSpecs } from "./hooks/useAdminSpecs";
+export type { SpecInput } from "./hooks/useAdminSpecs";
+export {
+  useAdminCategories,
+  useUpsertCategory,
+  useDeleteCategory,
+} from "./hooks/useAdminCategories";
+export type { CategoryRow, CategoryUpsertPayload } from "./hooks/useAdminCategories";
+export {
+  useAdminBrands,
+  useUpsertBrand,
+  useDeleteBrand,
+} from "./hooks/useAdminBrands";
+export type { BrandRow, BrandUpsertPayload } from "./hooks/useAdminBrands";
+export { useAdminReviewsList, useModerateReview } from "./hooks/useAdminReviews";
+export type { AdminReviewRow, AdminReviewListParams } from "./hooks/useAdminReviews";
+
 // Components
 export { default as ProductCard } from "./components/ProductCard";
 export { default as ProductGrid } from "./components/ProductGrid";
@@ -61,6 +96,14 @@ export { default as ProductRecommendations } from "./components/ProductRecommend
 export { default as ProductCompare } from "./components/ProductCompare";
 export { default as CompareBar } from "./components/CompareBar";
 export { default as PerfAndCachePanel } from "./components/PerfAndCachePanel";
+export { default as AdminProductForm } from "./components/AdminProductForm";
+
+// Grid persistence helpers (para que las apps no tengan que importar subpaths)
+export {
+  buildEcommerceGridId,
+  useEcommerceGridId,
+  useEcommerceGridRegistration,
+} from "./components/zenttoGridPersistence";
 
 // Pages
 export { default as StoreLayout } from "./pages/StoreLayout";
