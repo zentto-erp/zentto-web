@@ -2,7 +2,6 @@
 
 import * as React from 'react';
 import { Suspense, useEffect, useState } from 'react';
-import { AppRouterCacheProvider } from '@mui/material-nextjs/v15-appRouter';
 import CssBaseline from '@mui/material/CssBaseline';
 import InitColorSchemeScript from '@mui/material/InitColorSchemeScript';
 import { SessionProvider, useSession } from 'next-auth/react';
@@ -14,7 +13,7 @@ import {
     ToastProvider,
     LocalizationProviderWrapper,
     BrandedThemeProvider,
-    OdooLayout,
+    ZenttoLayout,
     type CommandSection
 } from '@zentto/shared-ui';
 import '@zentto/shared-ui/globals.css';
@@ -40,9 +39,9 @@ function AppShell({
             {!showContent ? (
                 <LoadingFallback />
             ) : (
-                <OdooLayout navigationFields={navigation}>
+                <ZenttoLayout navigationFields={navigation}>
                     <Suspense fallback={<LoadingFallback />}>{children}</Suspense>
-                </OdooLayout>
+                </ZenttoLayout>
             )}
         </AppBarWrapper>
     );
@@ -90,14 +89,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <SessionProvider basePath="/crm/api/auth">
                     <QueryProvider>
                         <AuthProvider>
-                            <AppRouterCacheProvider>
-                                <BrandedThemeProvider defaultMode="system">
-                                    <CssBaseline />
-                                    <LocalizationProviderWrapper>
-                                        <AppContent>{children}</AppContent>
-                                    </LocalizationProviderWrapper>
-                                </BrandedThemeProvider>
-                            </AppRouterCacheProvider>
+                            <BrandedThemeProvider defaultMode="system">
+                                <CssBaseline />
+                                <LocalizationProviderWrapper>
+                                    <AppContent>{children}</AppContent>
+                                </LocalizationProviderWrapper>
+                            </BrandedThemeProvider>
                         </AuthProvider>
                     </QueryProvider>
                 </SessionProvider>

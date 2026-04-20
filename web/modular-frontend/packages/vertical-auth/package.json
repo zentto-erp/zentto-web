@@ -1,7 +1,6 @@
 {
   "name": "@zentto/vertical-auth",
   "version": "1.0.0",
-  "private": true,
   "description": "Multi-tenant auth primitives para apps verticales Zentto (hotel, medical, education, tickets)",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

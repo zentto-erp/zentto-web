@@ -12,7 +12,7 @@ import { getHelpForPath } from '../lib/help-map';
 /**
  * Botón de ayuda contextual.
  * Muestra documentación relevante según la página actual.
- * Se integra en el AppBar del OdooLayout.
+ * Se integra en el AppBar del ZenttoLayout.
  */
 export default function HelpButton() {
   const pathname = usePathname();

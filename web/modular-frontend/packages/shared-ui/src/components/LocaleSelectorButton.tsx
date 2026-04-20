@@ -13,7 +13,7 @@ import { I18nContext, SUPPORTED_LOCALES } from '@zentto/shared-i18n';
 import type { Locale } from '@zentto/shared-i18n';
 
 /**
- * MUI-styled locale selector for the OdooLayout toolbar.
+ * MUI-styled locale selector for the ZenttoLayout toolbar.
  * Shows a globe icon that opens a dropdown with ES/EN/PT options.
  * Renders nothing if I18nProvider is not present (graceful degradation).
  */

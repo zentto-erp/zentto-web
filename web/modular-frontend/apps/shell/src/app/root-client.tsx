@@ -2,7 +2,6 @@
 
 import * as React from 'react';
 import { Suspense, useEffect, useState } from 'react';
-import { AppRouterCacheProvider } from '@mui/material-nextjs/v15-appRouter';
 import { SessionProvider } from 'next-auth/react';
 import { AuthProvider, useAuth } from '@zentto/shared-auth';
 import { QueryProvider } from '@zentto/shared-api';
@@ -96,19 +95,17 @@ export default function RootClient({ children }: { children: React.ReactNode }) 
     <SessionProvider>
       <QueryProvider>
         <AuthProvider>
-          <AppRouterCacheProvider>
-            <BrandedThemeProvider defaultMode="system">
-              <CssBaseline />
-              <I18nProvider defaultLocale="es">
-                <LocalizationProviderWrapper>
-                  <TenantGuard>
-                    <AppContent>{children}</AppContent>
-                  </TenantGuard>
-                  <SupportChatWidget />
-                </LocalizationProviderWrapper>
-              </I18nProvider>
-            </BrandedThemeProvider>
-          </AppRouterCacheProvider>
+          <BrandedThemeProvider defaultMode="system">
+            <CssBaseline />
+            <I18nProvider defaultLocale="es">
+              <LocalizationProviderWrapper>
+                <TenantGuard>
+                  <AppContent>{children}</AppContent>
+                </TenantGuard>
+                <SupportChatWidget />
+              </LocalizationProviderWrapper>
+            </I18nProvider>
+          </BrandedThemeProvider>
         </AuthProvider>
       </QueryProvider>
     </SessionProvider>

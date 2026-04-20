@@ -2,7 +2,6 @@
 
 import * as React from 'react';
 import { Suspense, useEffect, useState } from 'react';
-import { AppRouterCacheProvider } from '@mui/material-nextjs/v15-appRouter';
 import CssBaseline from '@mui/material/CssBaseline';
 import { SessionProvider } from 'next-auth/react';
 import { AuthProvider, useAuth } from '@zentto/shared-auth';
@@ -12,7 +11,7 @@ import {
     LoadingFallback,
     ToastProvider,
     LocalizationProviderWrapper,
-    OdooLayout,
+    ZenttoLayout,
     BrandedThemeProvider,
     useIsDesktop
 } from '@zentto/shared-ui';
@@ -55,9 +54,9 @@ function AppContent({ children }: { children: React.ReactNode }) {
                 <LoadingFallback />
             ) : (
                 <ToastProvider>
-                    <OdooLayout navigationFields={navigation}>
+                    <ZenttoLayout navigationFields={navigation}>
                         <Suspense fallback={<LoadingFallback />}>{children}</Suspense>
-                    </OdooLayout>
+                    </ZenttoLayout>
                 </ToastProvider>
             )}
         </AppBarWrapper>
@@ -75,14 +74,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <SessionProvider basePath="/restaurante/api/auth">
                     <QueryProvider>
                         <AuthProvider>
-                            <AppRouterCacheProvider>
+                            
                                 <BrandedThemeProvider defaultMode="system">
                                     <CssBaseline />
                                     <LocalizationProviderWrapper>
                                         <AppContent>{children}</AppContent>
                                     </LocalizationProviderWrapper>
                                 </BrandedThemeProvider>
-                            </AppRouterCacheProvider>
+                            
                         </AuthProvider>
                     </QueryProvider>
                 </SessionProvider>

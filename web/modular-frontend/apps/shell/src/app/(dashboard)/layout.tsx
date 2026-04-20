@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter, usePathname } from 'next/navigation';
-import { OdooLayout } from '@zentto/shared-ui';
+import { ZenttoLayout } from '@zentto/shared-ui';
 import { useAuth } from '@zentto/shared-auth';
 import { buildNavigation } from '../../lib/navigation';
 
@@ -35,9 +35,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <OdooLayout navigationFields={navigationContainer}>
+    <ZenttoLayout navigationFields={navigationContainer}>
       {children}
-    </OdooLayout>
+    </ZenttoLayout>
   );
 }
 

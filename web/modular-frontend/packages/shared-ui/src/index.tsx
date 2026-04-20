@@ -66,7 +66,7 @@ export { default as ThemeToggle, EyeIcon, EyeOffIcon } from './components/ThemeT
 export { default as CustomStepper } from './components/CustomStepper';
 export type { CustomStepperProps, StepDef } from './components/CustomStepper';
 export { default as ContextActionHeader } from './components/ContextActionHeader';
-export { default as OdooLayout } from './components/OdooLayout';
+export { default as ZenttoLayout } from './components/ZenttoLayout';
 export { default as RightDetailDrawer } from './components/RightDetailDrawer';
 export type {
   RightDetailDrawerProps,

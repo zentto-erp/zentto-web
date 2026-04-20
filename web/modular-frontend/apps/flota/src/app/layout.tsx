@@ -2,7 +2,6 @@
 
 import * as React from 'react';
 import { Suspense, useEffect, useState } from 'react';
-import { AppRouterCacheProvider } from '@mui/material-nextjs/v15-appRouter';
 import CssBaseline from '@mui/material/CssBaseline';
 import InitColorSchemeScript from '@mui/material/InitColorSchemeScript';
 import { SessionProvider, useSession } from 'next-auth/react';
@@ -14,7 +13,7 @@ import {
     ToastProvider,
     LocalizationProviderWrapper,
     BrandedThemeProvider,
-    OdooLayout
+    ZenttoLayout
 } from '@zentto/shared-ui';
 import '@zentto/shared-ui/globals.css';
 
@@ -46,9 +45,9 @@ function AppContent({ children }: { children: React.ReactNode }) {
                 <LoadingFallback />
             ) : (
                 <ToastProvider>
-                    <OdooLayout navigationFields={navigation}>
+                    <ZenttoLayout navigationFields={navigation}>
                         <Suspense fallback={<LoadingFallback />}>{children}</Suspense>
-                    </OdooLayout>
+                    </ZenttoLayout>
                 </ToastProvider>
             )}
         </AppBarWrapper>
@@ -66,14 +65,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <SessionProvider basePath="/flota/api/auth">
                     <QueryProvider>
                         <AuthProvider>
-                            <AppRouterCacheProvider>
+                            
                                 <BrandedThemeProvider defaultMode="system">
                                     <CssBaseline />
                                     <LocalizationProviderWrapper>
                                         <AppContent>{children}</AppContent>
                                     </LocalizationProviderWrapper>
                                 </BrandedThemeProvider>
-                            </AppRouterCacheProvider>
+                            
                         </AuthProvider>
                     </QueryProvider>
                 </SessionProvider>

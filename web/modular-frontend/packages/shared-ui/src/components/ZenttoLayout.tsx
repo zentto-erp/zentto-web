@@ -12,7 +12,7 @@ import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
 import Collapse from '@mui/material/Collapse';
 import IconButton from '@mui/material/IconButton';
-import { useRouter, usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@zentto/shared-auth';
 import { useTheme } from '@mui/material/styles';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
@@ -36,7 +36,7 @@ import useMediaQuery from '@mui/material/useMediaQuery';
 import { brandColors } from '../theme';
 import { useBranding } from '../hooks/useBranding';
 
-export default function OdooLayout({
+export default function ZenttoLayout({
     children,
     navigationFields,
     rightPanel,
@@ -59,8 +59,8 @@ export default function OdooLayout({
      */
     onRightPanelClose?: () => void
 }) {
-    const router = useRouter();
     const pathname = usePathname();
+    const router = useRouter();
     const theme = useTheme();
     const { dynamicBrandColors: bc } = useBranding();
 
@@ -85,17 +85,16 @@ export default function OdooLayout({
         }
     }, [isMobile, hideSidebar]);
 
-    // Auto close sidebar on mobile when navigating
     const handleToggleMenu = (key: string) => {
         setOpenMenus((prev) => ({ ...prev, [key]: !prev[key] }));
     };
 
-    const handleNavigate = (path: string) => {
-        router.push(`/${path}`);
+    // Cierra sidebar en mobile cuando cambia la ruta (evita setState concurrente en click).
+    React.useEffect(() => {
         if (isMobile) {
             setSidebarOpen(false);
         }
-    };
+    }, [pathname, isMobile]);
     // Parse navigation into Sidebar
     const renderSidebarItems = () => {
         if (!navigationFields || navigationFields.length === 0) return null;
@@ -139,7 +138,7 @@ export default function OdooLayout({
                         />
                         {/* Contenido — ícono fijo + texto */}
                         <Box
-                            onClick={() => hasChildren ? handleToggleMenu(idx) : handleNavigate(item.segment)}
+                            onClick={() => hasChildren ? handleToggleMenu(idx) : router.push(`/${item.segment}`)}
                             sx={{
                                 position: 'relative',
                                 display: 'flex', alignItems: 'center',
