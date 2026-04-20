@@ -33,6 +33,7 @@ import {
   getStorefrontCountry,
   listAdminOrders,
   setOrderStatus,
+  cancelOrder,
   getServerCart,
   upsertServerCartItem,
   removeServerCartItem,
@@ -1072,6 +1073,25 @@ storeRouter.post("/admin/orders/:orderNumber/status", requireJwt, async (req, re
       }
     }
 
+    res.json(result);
+  } catch (err: any) {
+    res.status(500).json({ error: "server_error", message: err.message });
+  }
+});
+
+storeRouter.post("/admin/orders/:orderNumber/cancel", requireJwt, async (req, res) => {
+  try {
+    const user = (req as AuthenticatedRequest).user;
+    if (!user?.isAdmin) return res.status(403).json({ error: "forbidden" });
+
+    const reason = typeof req.body?.reason === "string" ? req.body.reason.slice(0, 200) : null;
+    const result = await cancelOrder({
+      orderNumber: req.params.orderNumber,
+      userId: null,
+      reason,
+    });
+
+    if (!result.ok) return res.status(400).json(result);
     res.json(result);
   } catch (err: any) {
     res.status(500).json({ error: "server_error", message: err.message });
