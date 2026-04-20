@@ -522,6 +522,12 @@ function useCellPortals() {
     scheduledRef.current = true;
     queueMicrotask(() => {
       scheduledRef.current = false;
+      // GC: descartar portals cuyo container ya no esté en el DOM.
+      // El grid reemplaza las celdas cuando re-renderiza; los spans viejos
+      // quedan huérfanos y pueden liberarse sin impacto visual.
+      portalsRef.current = portalsRef.current.filter(
+        (p) => p.container.isConnected,
+      );
       forceRender((v) => v + 1);
     });
   }, []);
@@ -536,14 +542,7 @@ function useCellPortals() {
     [scheduleRender],
   );
 
-  // Cada vez que cambian rows/columns el consumer puede resetear para
-  // liberar refs a celdas viejas (los containers salieron del DOM del grid).
-  const reset = useCallback(() => {
-    portalsRef.current = [];
-    scheduleRender();
-  }, [scheduleRender]);
-
-  return { register, reset, portals: portalsRef.current };
+  return { register, portals: portalsRef.current };
 }
 
 function adaptColumnsForReactCells(
@@ -666,13 +665,6 @@ export function ZenttoRecordTable<T extends Record<string, unknown> = Record<str
     if (!el) return;
     (el as unknown as { columns: unknown }).columns = adaptedColumns;
   }, [adaptedColumns]);
-
-  // Si cambian rows o columns, los containers previos ya no son válidos.
-  useEffect(() => {
-    cellPortals.reset();
-    // `reset` es estable (useCallback). Deps intencionales: rows, columns.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rows, columns]);
 
   useEffect(() => {
     const el = gridRef.current;
