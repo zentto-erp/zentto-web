@@ -74,6 +74,9 @@ export type { LandingHeaderProps } from "./components/LandingHeader";
 export { LandingFooter } from "./components/LandingFooter";
 export type { LandingFooterProps } from "./components/LandingFooter";
 
+export { BlogTeaser } from "./components/BlogTeaser";
+export type { BlogTeaserProps, BlogTeaserPost } from "./components/BlogTeaser";
+
 // Metadata helpers (también disponible en @zentto/landing-kit/metadata)
 export {
   buildLandingMetadata,
