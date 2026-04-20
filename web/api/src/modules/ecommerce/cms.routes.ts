@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
 import { requireJwt } from "../../middleware/auth.js";
+import { resolveTenantFromRequest } from "../_shared/scope.js";
 import {
   listCmsPages,
   getCmsPageBySlug,
@@ -20,10 +21,25 @@ import {
 
 export const cmsRouter = Router();
 
+/**
+ * Helper: resuelve tenant para endpoints públicos o responde 400.
+ * Orden: subdomain → X-Tenant-Id → cookie tenant_id. NUNCA fallback a 1.
+ */
+function requireTenant(req: any, res: any): number | null {
+  const companyId = resolveTenantFromRequest(req);
+  if (!companyId) {
+    res.status(400).json({ error: "tenant_required" });
+    return null;
+  }
+  return companyId;
+}
+
 // ─── Público: páginas CMS ──────────────────────────────
 cmsRouter.get("/cms/pages/:slug", async (req, res) => {
   try {
-    const page = await getCmsPageBySlug(String(req.params.slug));
+    const companyId = requireTenant(req, res);
+    if (!companyId) return;
+    const page = await getCmsPageBySlug(companyId, String(req.params.slug));
     if (!page) return res.status(404).json({ error: "not_found" });
     res.json({ page });
   } catch (err: any) {
@@ -34,9 +50,11 @@ cmsRouter.get("/cms/pages/:slug", async (req, res) => {
 // ─── Público: press releases ───────────────────────────
 cmsRouter.get("/press/releases", async (req, res) => {
   try {
+    const companyId = requireTenant(req, res);
+    if (!companyId) return;
     const page = req.query.page ? Number(req.query.page) : 1;
     const limit = req.query.limit ? Number(req.query.limit) : 20;
-    const out = await listPressReleases({ status: "published", page, limit });
+    const out = await listPressReleases({ companyId, status: "published", page, limit });
     res.json(out);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -45,7 +63,9 @@ cmsRouter.get("/press/releases", async (req, res) => {
 
 cmsRouter.get("/press/releases/:slug", async (req, res) => {
   try {
-    const item = await getPressReleaseBySlug(String(req.params.slug));
+    const companyId = requireTenant(req, res);
+    if (!companyId) return;
+    const item = await getPressReleaseBySlug(companyId, String(req.params.slug));
     if (!item) return res.status(404).json({ error: "not_found" });
     res.json({ item });
   } catch (err: any) {
@@ -65,11 +85,13 @@ const contactSchema = z.object({
 
 cmsRouter.post("/contact/message", async (req, res) => {
   try {
+    const companyId = requireTenant(req, res);
+    if (!companyId) return;
     const parsed = contactSchema.safeParse(req.body);
     if (!parsed.success) {
       return res.status(400).json({ error: "invalid_body", details: parsed.error.flatten() });
     }
-    const out = await createContactMessage(parsed.data);
+    const out = await createContactMessage({ companyId, ...parsed.data });
     if (!out.ok) return res.status(400).json({ error: out.mensaje });
     res.status(201).json({ ok: true, contactMessageId: out.contactMessageId });
   } catch (err: any) {

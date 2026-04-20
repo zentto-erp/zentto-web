@@ -1,7 +1,7 @@
 -- ============================================================
 -- Patch 07: store schema — CMS Pages + Press Releases + Contact
 -- SQL Server 2012+ compatible
--- Equivalente de migración 00147_store_cms_pages_and_press.sql (PG)
+-- Equivalente de migración 00148_store_cms_pages_and_press.sql (PG)
 -- ============================================================
 USE zentto_dev;
 GO

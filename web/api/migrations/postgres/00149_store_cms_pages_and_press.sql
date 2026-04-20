@@ -671,10 +671,17 @@ VALUES
       {"type":"stats","items":[
         {"value":"1,000+","label":"Empresas activas"},
         {"value":"14","label":"Países"},
-        {"value":"20+","label":"Módulos"},
-        {"value":"2003","label":"Año fundación"}
+        {"value":"20+","label":"Módulos integrados"},
+        {"value":"20+","label":"Años de experiencia"}
       ]},
       {"type":"content","markdown":"## Nuestra misión\n\nDemocratizar el acceso a software empresarial de calidad para las pequeñas y medianas empresas del mundo hispanohablante. Creemos que una PYME en Caracas, CDMX o Madrid merece las mismas herramientas que una multinacional — sin el precio ni la complejidad.\n\n## Qué hacemos\n\nZentto es una suite ERP completa: contabilidad, inventario, CRM, punto de venta, ecommerce, facturación electrónica, nómina, logística, manufactura y más — todo integrado en una sola plataforma. Compatible con SQL Server y PostgreSQL, desplegable en cloud o on-premise.\n\n## Por qué nos eligen\n\n- **Soporte bilingüe en español** con equipo que entiende la realidad regulatoria de tu país.\n- **Facturación electrónica certificada** en Venezuela, México, Colombia, España y más.\n- **Sin costos ocultos** — un único precio mensual por empresa, sin límites de usuarios."},
+      {"type":"timeline","title":"Nuestra historia","events":[
+        {"year":"2003","title":"Nace DatqBox ERP (VB6)","description":"Primer ERP local desarrollado en Venezuela para PYMEs con contabilidad, inventario y facturación."},
+        {"year":"2014","title":"Expansión a 5 países","description":"Presencia en México, Colombia, Perú y Ecuador con partners locales."},
+        {"year":"2023","title":"Migración a la nube","description":"Comienza el rediseño completo como plataforma cloud-first multi-tenant."},
+        {"year":"2024","title":"Nace Zentto","description":"Relanzamiento oficial bajo nueva marca con arquitectura moderna, multi-motor SQL Server + PostgreSQL y 20+ módulos integrados."},
+        {"year":"2026","title":"1,000+ empresas, 14 países","description":"Hito de mil empresas activas. Lanzamiento de Zentto Store, Zentto POS y Fiscal Agent."}
+      ]},
       {"type":"cta","title":"¿Listo para modernizar tu PYME?","subtitle":"Hablemos de cómo Zentto puede ayudarte.","ctaLabel":"Contáctanos","ctaHref":"/contacto"}
     ]}',
    '{"title":"Acerca de Zentto — ERP latinoamericano para PYMEs","description":"Conoce la historia, misión y equipo detrás de Zentto, el ERP integrado que ya usan más de 1,000 empresas en 14 países."}',
@@ -685,7 +692,13 @@ VALUES
    'content',
    '{"sections":[
       {"type":"hero","title":"Únete a Zentto","subtitle":"Buscamos personas que quieran impactar a miles de PYMEs en toda Latinoamérica.","ctaLabel":"Enviar mi CV","ctaHref":"mailto:talento@zentto.net"},
-      {"type":"content","markdown":"## Por qué Zentto\n\n- **Remoto primero**: trabajamos distribuidos desde Venezuela, México, Colombia, España y Argentina.\n- **Impacto real**: tu código corre todos los días en 1,000+ empresas.\n- **Stack moderno**: TypeScript, Next.js, PostgreSQL, Docker, GitHub Actions.\n- **Equipo senior**: aprendes de gente con 15+ años en ERPs y fiscalización LatAm.\n\n## Posiciones abiertas\n\n- **Senior Full-stack Developer** (Node + React) — remoto\n- **SRE / DevOps Engineer** (Docker, Kubernetes, Postgres) — remoto\n- **Especialista en Facturación Electrónica** (SII Chile, SAT México, DIAN Colombia) — remoto\n- **Customer Success Manager** (español nativo) — remoto\n\nNo ves tu rol aquí pero crees que encajas — escríbenos igual."},
+      {"type":"content","markdown":"## Por qué Zentto\n\n- **Remoto primero**: trabajamos distribuidos desde Venezuela, México, Colombia, España y Argentina.\n- **Impacto real**: tu código corre todos los días en 1,000+ empresas.\n- **Stack moderno**: TypeScript, Next.js, PostgreSQL, Docker, GitHub Actions.\n- **Equipo senior**: aprendes de gente con 15+ años en ERPs y fiscalización LatAm."},
+      {"type":"jobs","title":"Posiciones abiertas","jobs":[
+        {"title":"Senior Full-stack Developer (Node + React)","location":"Remoto LatAm/ES","type":"Full-time","href":"mailto:talento@zentto.net?subject=Fullstack%20Senior"},
+        {"title":"SRE / DevOps Engineer","location":"Remoto LatAm/ES","type":"Full-time","href":"mailto:talento@zentto.net?subject=SRE%20DevOps"},
+        {"title":"Especialista Facturación Electrónica (SAT / DIAN / SII)","location":"Remoto LatAm","type":"Full-time","href":"mailto:talento@zentto.net?subject=Fiscal%20Especialista"},
+        {"title":"Customer Success Manager (español nativo)","location":"Remoto LatAm","type":"Full-time","href":"mailto:talento@zentto.net?subject=CSM"}
+      ],"emptyLabel":"No ves tu rol aquí pero crees que encajas — escríbenos a talento@zentto.net."},
       {"type":"contact","title":"Postúlate ahora","email":"talento@zentto.net"}
     ]}',
    '{"title":"Trabaja en Zentto — ERP remoto LatAm","description":"Posiciones abiertas: fullstack, DevOps, facturación electrónica. 100% remoto."}',
@@ -711,8 +724,15 @@ VALUES
    'Cómo funciona el proceso de devolución en Zentto Store',
    'content',
    '{"sections":[
-      {"type":"hero","title":"Política de devoluciones","subtitle":"Plazo, condiciones y cómo iniciar una devolución."},
-      {"type":"content","markdown":"## Plazo de devolución\n\nDispones de **30 días naturales** desde la entrega del producto para solicitar una devolución, siempre que el artículo esté en estado original, sin uso y con su embalaje completo.\n\n## Productos no elegibles\n\n- Productos digitales o licencias de software ya activadas.\n- Productos personalizados o fabricados a medida.\n- Productos perecederos o consumibles abiertos.\n\n## Cómo iniciar una devolución\n\n1. Accede a **Mis pedidos** desde tu cuenta.\n2. Selecciona el pedido y pulsa **Solicitar devolución**.\n3. Indica el motivo y adjunta fotos si aplica.\n4. Recibirás un correo con la etiqueta de envío prepagada.\n5. Empaca el producto y entrégalo al courier.\n\n## Reembolso\n\nUna vez recibido el producto en nuestro almacén, procesamos el reembolso en **3-5 días hábiles** al mismo método de pago original."},
+      {"type":"hero","title":"Política de devoluciones","subtitle":"Plazo de 30 días, condiciones y cómo iniciar tu devolución."},
+      {"type":"content","markdown":"## Plazo de devolución\n\nDispones de **30 días naturales** desde la entrega del producto para solicitar una devolución, siempre que el artículo esté en estado original, sin uso y con su embalaje completo.\n\n## Productos no elegibles\n\n- Productos digitales o licencias de software ya activadas.\n- Productos personalizados o fabricados a medida.\n- Productos perecederos o consumibles abiertos."},
+      {"type":"return-steps","title":"Cómo iniciar una devolución","steps":[
+        {"step":1,"title":"Accede a Mis pedidos","description":"Desde tu cuenta, abre Mis pedidos y localiza el pedido a devolver."},
+        {"step":2,"title":"Pulsa Solicitar devolución","description":"Selecciona los productos, indica el motivo y adjunta fotos si aplica."},
+        {"step":3,"title":"Recibe la etiqueta prepagada","description":"Te llegará por email la etiqueta de envío + instrucciones del courier."},
+        {"step":4,"title":"Empaca y entrega al courier","description":"Usa el embalaje original cuando sea posible y entrega al courier asignado."},
+        {"step":5,"title":"Reembolso en 3-5 días hábiles","description":"Tras recibir el producto en almacén, procesamos el reembolso al método de pago original."}
+      ]},
       {"type":"faq","items":[
         {"question":"¿Quién paga el envío de devolución?","answer":"Zentto asume el costo cuando la devolución es por defecto de fábrica o error de envío. En otros casos el cliente cubre el envío."},
         {"question":"¿Puedo cambiar por otro producto en vez de reembolso?","answer":"Sí. Al solicitar la devolución puedes elegir entre reembolso o crédito en Zentto Store por el mismo valor."},

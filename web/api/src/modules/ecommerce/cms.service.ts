@@ -1,10 +1,23 @@
 import { callSp, callSpOut, sql } from "../../db/query.js";
 import { getActiveScope } from "../_shared/scope.js";
 
-function scope() {
+/**
+ * Resuelve el `companyId` para operaciones ADMIN (con JWT).
+ * Si no hay scope activo, lanza error — un endpoint admin nunca debe
+ * caer silenciosamente al tenant 1.
+ */
+function adminScope(): { companyId: number } {
   const s = getActiveScope();
-  return { companyId: s?.companyId ?? 1 };
+  if (!s?.companyId) {
+    throw new Error("admin_scope_required");
+  }
+  return { companyId: s.companyId };
 }
+
+/**
+ * Para endpoints **públicos** el caller debe pasar explícitamente el
+ * `companyId` resuelto mediante `resolveTenantFromRequest(req)`.
+ */
 
 // ─── Tipos ─────────────────────────────────────────────
 
@@ -120,7 +133,7 @@ export async function listCmsPages(params: {
   limit?: number;
 }) {
   const rows = await callSp<any>("usp_Store_CmsPage_List", {
-    CompanyId: scope().companyId,
+    CompanyId: adminScope().companyId,
     Status: params.status ?? null,
     Page: params.page ?? 1,
     Limit: params.limit ?? 50,
@@ -134,9 +147,13 @@ export async function listCmsPages(params: {
   };
 }
 
-export async function getCmsPageBySlug(slug: string): Promise<CmsPageFull | null> {
+/**
+ * Endpoint público: resolución de slug para visitante anónimo.
+ * El `companyId` lo inyecta la ruta vía `resolveTenantFromRequest(req)`.
+ */
+export async function getCmsPageBySlug(companyId: number, slug: string): Promise<CmsPageFull | null> {
   const rows = await callSp<any>("usp_Store_CmsPage_GetBySlug", {
-    CompanyId: scope().companyId,
+    CompanyId: companyId,
     Slug: slug,
   });
   if (!rows.length) return null;
@@ -145,7 +162,7 @@ export async function getCmsPageBySlug(slug: string): Promise<CmsPageFull | null
 
 export async function getCmsPageByIdAdmin(cmsPageId: number): Promise<CmsPageFull | null> {
   const rows = await callSp<any>("usp_Store_CmsPage_GetByIdAdmin", {
-    CompanyId: scope().companyId,
+    CompanyId: adminScope().companyId,
     CmsPageId: cmsPageId,
   });
   if (!rows.length) return null;
@@ -169,7 +186,7 @@ export async function upsertCmsPage(input: {
     ? input.seo
     : JSON.stringify(input.seo ?? {});
   const { output } = await callSpOut<any>("usp_Store_CmsPage_Upsert", {
-    CompanyId: scope().companyId,
+    CompanyId: adminScope().companyId,
     CmsPageId: input.cmsPageId ?? null,
     Slug: input.slug,
     Title: input.title,
@@ -192,7 +209,7 @@ export async function upsertCmsPage(input: {
 
 export async function deleteCmsPage(cmsPageId: number) {
   const { output } = await callSpOut<any>("usp_Store_CmsPage_Delete", {
-    CompanyId: scope().companyId,
+    CompanyId: adminScope().companyId,
     CmsPageId: cmsPageId,
   }, {
     Resultado: sql.Int,
@@ -206,7 +223,7 @@ export async function deleteCmsPage(cmsPageId: number) {
 
 export async function publishCmsPage(cmsPageId: number) {
   const { output } = await callSpOut<any>("usp_Store_CmsPage_Publish", {
-    CompanyId: scope().companyId,
+    CompanyId: adminScope().companyId,
     CmsPageId: cmsPageId,
   }, {
     Resultado: sql.Int,
@@ -220,13 +237,20 @@ export async function publishCmsPage(cmsPageId: number) {
 
 // ─── PressRelease ──────────────────────────────────────
 
+/**
+ * listPressReleases tiene dos modos:
+ *   - Admin (con scope JWT): no pasar `companyId`, usa adminScope().
+ *   - Público (visitante anónimo): pasar `companyId` explícito resuelto por ruta.
+ */
 export async function listPressReleases(params: {
+  companyId?: number;
   status?: string;
   page?: number;
   limit?: number;
 }) {
+  const companyId = params.companyId ?? adminScope().companyId;
   const rows = await callSp<any>("usp_Store_PressRelease_List", {
-    CompanyId: scope().companyId,
+    CompanyId: companyId,
     Status: params.status ?? null,
     Page: params.page ?? 1,
     Limit: params.limit ?? 20,
@@ -240,9 +264,9 @@ export async function listPressReleases(params: {
   };
 }
 
-export async function getPressReleaseBySlug(slug: string): Promise<PressReleaseFull | null> {
+export async function getPressReleaseBySlug(companyId: number, slug: string): Promise<PressReleaseFull | null> {
   const rows = await callSp<any>("usp_Store_PressRelease_GetBySlug", {
-    CompanyId: scope().companyId,
+    CompanyId: companyId,
     Slug: slug,
   });
   if (!rows.length) return null;
@@ -251,7 +275,7 @@ export async function getPressReleaseBySlug(slug: string): Promise<PressReleaseF
 
 export async function getPressReleaseByIdAdmin(pressReleaseId: number): Promise<PressReleaseFull | null> {
   const rows = await callSp<any>("usp_Store_PressRelease_GetByIdAdmin", {
-    CompanyId: scope().companyId,
+    CompanyId: adminScope().companyId,
     PressReleaseId: pressReleaseId,
   });
   if (!rows.length) return null;
@@ -278,7 +302,7 @@ export async function upsertPressRelease(input: {
   // Pasamos según motor: el driver pg respeta arrays, mssql espera string.
   const tagsParam = Array.isArray(tags) ? tags : [];
   const { output } = await callSpOut<any>("usp_Store_PressRelease_Upsert", {
-    CompanyId: scope().companyId,
+    CompanyId: adminScope().companyId,
     PressReleaseId: input.pressReleaseId ?? null,
     Slug: input.slug,
     Title: input.title,
@@ -301,7 +325,7 @@ export async function upsertPressRelease(input: {
 
 export async function deletePressRelease(pressReleaseId: number) {
   const { output } = await callSpOut<any>("usp_Store_PressRelease_Delete", {
-    CompanyId: scope().companyId,
+    CompanyId: adminScope().companyId,
     PressReleaseId: pressReleaseId,
   }, {
     Resultado: sql.Int,
@@ -315,7 +339,7 @@ export async function deletePressRelease(pressReleaseId: number) {
 
 export async function publishPressRelease(pressReleaseId: number) {
   const { output } = await callSpOut<any>("usp_Store_PressRelease_Publish", {
-    CompanyId: scope().companyId,
+    CompanyId: adminScope().companyId,
     PressReleaseId: pressReleaseId,
   }, {
     Resultado: sql.Int,
@@ -330,6 +354,7 @@ export async function publishPressRelease(pressReleaseId: number) {
 // ─── ContactMessage ────────────────────────────────────
 
 export async function createContactMessage(input: {
+  companyId: number;
   name: string;
   email: string;
   phone?: string | null;
@@ -338,7 +363,7 @@ export async function createContactMessage(input: {
   source?: string;
 }) {
   const { output } = await callSpOut<any>("usp_Store_ContactMessage_Create", {
-    CompanyId: scope().companyId,
+    CompanyId: input.companyId,
     Name: input.name,
     Email: input.email,
     Phone: input.phone ?? null,
@@ -363,7 +388,7 @@ export async function listContactMessages(params: {
   limit?: number;
 }) {
   const rows = await callSp<any>("usp_Store_ContactMessage_List", {
-    CompanyId: scope().companyId,
+    CompanyId: adminScope().companyId,
     Status: params.status ?? null,
     Page: params.page ?? 1,
     Limit: params.limit ?? 50,

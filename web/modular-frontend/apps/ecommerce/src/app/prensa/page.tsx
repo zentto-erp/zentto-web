@@ -10,12 +10,17 @@ import {
   CircularProgress,
   Stack,
   Chip,
+  Pagination,
 } from '@mui/material';
+import { useState } from 'react';
 import NewspaperOutlined from '@mui/icons-material/NewspaperOutlined';
 import EmailOutlined from '@mui/icons-material/EmailOutlined';
 import CalendarTodayOutlined from '@mui/icons-material/CalendarTodayOutlined';
+import ArrowForwardOutlined from '@mui/icons-material/ArrowForwardOutlined';
 import Link from 'next/link';
 import { usePressReleases } from '@zentto/module-ecommerce';
+
+const PAGE_SIZE = 12;
 
 function formatDate(iso: string | null): string {
   if (!iso) return '';
@@ -28,7 +33,14 @@ function formatDate(iso: string | null): string {
 }
 
 export default function PrensaPage() {
-  const { data, isLoading, error } = usePressReleases(1, 20);
+  const [page, setPage] = useState(1);
+  const { data, isLoading, error } = usePressReleases(page, PAGE_SIZE);
+  const items = data?.items ?? [];
+  const totalCount = data?.totalCount ?? 0;
+  const pageCount = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+  // Post destacado en la primera página: el más reciente (primer item).
+  const featured = page === 1 ? items[0] : undefined;
+  const rest = page === 1 ? items.slice(1) : items;
 
   return (
     <Box sx={{ bgcolor: '#eaeded', minHeight: '100vh' }}>
@@ -76,14 +88,82 @@ export default function PrensaPage() {
           </Typography>
         )}
 
-        {!isLoading && !error && (data?.items?.length ?? 0) === 0 && (
+        {!isLoading && !error && items.length === 0 && (
           <Typography variant="body1" color="text.secondary" textAlign="center">
             No hay comunicados publicados todavía.
           </Typography>
         )}
 
+        {/* Post destacado (solo en página 1) */}
+        {featured && (
+          <Paper
+            elevation={1}
+            sx={{
+              mb: 4,
+              borderRadius: 3,
+              overflow: 'hidden',
+              display: 'grid',
+              gridTemplateColumns: { xs: '1fr', md: '45% 55%' },
+              transition: 'all 0.2s',
+              '&:hover': { transform: 'translateY(-2px)', boxShadow: 6 },
+            }}
+          >
+            <Box
+              sx={{
+                bgcolor: '#131921',
+                minHeight: { xs: 220, md: 340 },
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundImage: featured.coverImageUrl ? `url(${featured.coverImageUrl})` : undefined,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+              }}
+            >
+              {!featured.coverImageUrl && (
+                <NewspaperOutlined sx={{ fontSize: 80, color: '#ff9900' }} />
+              )}
+            </Box>
+            <Box sx={{ p: { xs: 3, md: 5 }, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+              <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1.5 }}>
+                <Chip label="Destacado" size="small" sx={{ bgcolor: '#ff9900', color: '#131921', fontWeight: 700 }} />
+                <CalendarTodayOutlined sx={{ fontSize: 16, color: '#ff9900' }} />
+                <Typography variant="caption" sx={{ color: '#888', fontWeight: 600 }}>
+                  {formatDate(featured.publishedAt)}
+                </Typography>
+              </Stack>
+              <Typography variant="h4" fontWeight={700} sx={{ color: '#131921', mb: 2, lineHeight: 1.2 }}>
+                {featured.title}
+              </Typography>
+              {featured.excerpt && (
+                <Typography variant="body1" sx={{ color: '#555', lineHeight: 1.7, mb: 3 }}>
+                  {featured.excerpt}
+                </Typography>
+              )}
+              <Button
+                component={Link}
+                href={`/prensa/${featured.slug}`}
+                endIcon={<ArrowForwardOutlined />}
+                variant="contained"
+                sx={{
+                  alignSelf: 'flex-start',
+                  bgcolor: '#ff9900',
+                  color: '#131921',
+                  fontWeight: 700,
+                  textTransform: 'none',
+                  px: 3,
+                  py: 1.25,
+                  '&:hover': { bgcolor: '#e88a00' },
+                }}
+              >
+                Leer nota completa
+              </Button>
+            </Box>
+          </Paper>
+        )}
+
         <Grid container spacing={3}>
-          {(data?.items ?? []).map((pr) => (
+          {rest.map((pr) => (
             <Grid item xs={12} md={4} key={pr.pressReleaseId}>
               <Paper
                 elevation={1}
@@ -103,11 +183,33 @@ export default function PrensaPage() {
                     {formatDate(pr.publishedAt)}
                   </Typography>
                 </Box>
-                <Typography variant="h6" fontWeight={600} sx={{ color: '#131921', mb: 1.5 }}>
+                <Typography
+                  variant="h6"
+                  fontWeight={600}
+                  sx={{
+                    color: '#131921',
+                    mb: 1.5,
+                    display: '-webkit-box',
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: 'vertical',
+                    overflow: 'hidden',
+                  }}
+                >
                   {pr.title}
                 </Typography>
                 {pr.excerpt && (
-                  <Typography variant="body2" sx={{ color: '#555', lineHeight: 1.7, flex: 1 }}>
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      color: '#555',
+                      lineHeight: 1.7,
+                      flex: 1,
+                      display: '-webkit-box',
+                      WebkitLineClamp: 3,
+                      WebkitBoxOrient: 'vertical',
+                      overflow: 'hidden',
+                    }}
+                  >
                     {pr.excerpt}
                   </Typography>
                 )}
@@ -137,6 +239,21 @@ export default function PrensaPage() {
             </Grid>
           ))}
         </Grid>
+
+        {pageCount > 1 && (
+          <Stack direction="row" justifyContent="center" sx={{ mt: 5 }}>
+            <Pagination
+              count={pageCount}
+              page={page}
+              onChange={(_, v) => {
+                setPage(v);
+                if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              color="primary"
+              shape="rounded"
+            />
+          </Stack>
+        )}
       </Container>
 
       {/* Contacto de prensa */}

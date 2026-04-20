@@ -1,19 +1,30 @@
 'use client';
 
-import { use } from 'react';
+import { use, useState } from 'react';
 import {
   Box,
+  Breadcrumbs,
   Container,
   Typography,
   Button,
   CircularProgress,
   Chip,
+  Grid,
+  IconButton,
+  Paper,
   Stack,
+  Tooltip,
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import CalendarTodayOutlined from '@mui/icons-material/CalendarTodayOutlined';
+import NavigateNextOutlined from '@mui/icons-material/NavigateNextOutlined';
+import LinkedInIcon from '@mui/icons-material/LinkedIn';
+import XIcon from '@mui/icons-material/X';
+import WhatsAppIcon from '@mui/icons-material/WhatsApp';
+import ContentCopyOutlined from '@mui/icons-material/ContentCopyOutlined';
+import CheckOutlined from '@mui/icons-material/CheckOutlined';
 import Link from 'next/link';
-import { usePressRelease, renderMarkdown } from '@zentto/module-ecommerce';
+import { usePressRelease, usePressReleases, renderMarkdown } from '@zentto/module-ecommerce';
 
 function formatDate(iso: string | null): string {
   if (!iso) return '';
@@ -32,6 +43,23 @@ export default function PressReleaseDetailPage({
 }) {
   const { slug } = use(params);
   const { data, isLoading, error } = usePressRelease(slug);
+  // Relacionados: primeros 3 de la primera página, excluyendo el actual.
+  const { data: listData } = usePressReleases(1, 4);
+  const related = (listData?.items ?? []).filter((p) => p.slug !== slug).slice(0, 3);
+
+  const [copied, setCopied] = useState(false);
+  const shareUrl =
+    typeof window !== 'undefined' ? window.location.href : `https://zentto.net/prensa/${slug}`;
+  const shareTitle = data?.item?.title || 'Press release Zentto';
+  const copyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      /* noop */
+    }
+  };
 
   if (isLoading) {
     return (
@@ -67,14 +95,22 @@ export default function PressReleaseDetailPage({
         }}
       >
         <Container maxWidth="md">
-          <Button
-            component={Link}
-            href="/prensa"
-            startIcon={<ArrowBackIcon />}
-            sx={{ color: '#ff9900', textTransform: 'none', mb: 2 }}
+          {/* Breadcrumb */}
+          <Breadcrumbs
+            separator={<NavigateNextOutlined sx={{ color: '#888', fontSize: 18 }} />}
+            aria-label="breadcrumb"
+            sx={{ mb: 2, '& .MuiBreadcrumbs-ol': { color: '#ccc' } }}
           >
-            Volver a prensa
-          </Button>
+            <Link href="/" style={{ color: '#ccc', textDecoration: 'none' }}>
+              Inicio
+            </Link>
+            <Link href="/prensa" style={{ color: '#ff9900', textDecoration: 'none' }}>
+              Prensa
+            </Link>
+            <Typography variant="body2" sx={{ color: '#fff', fontWeight: 600 }}>
+              {pr.title.length > 60 ? `${pr.title.slice(0, 57)}…` : pr.title}
+            </Typography>
+          </Breadcrumbs>
           <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 2, color: '#ccc' }}>
             <CalendarTodayOutlined sx={{ fontSize: 18 }} />
             <Typography variant="body2">{formatDate(pr.publishedAt)}</Typography>
@@ -112,8 +148,118 @@ export default function PressReleaseDetailPage({
               (Sin contenido)
             </Typography>
           )}
+
+          {/* Share buttons */}
+          <Box sx={{ mt: 5, pt: 3, borderTop: '1px solid #e0e0e0' }}>
+            <Typography variant="subtitle2" fontWeight={700} sx={{ color: '#131921', mb: 1.5 }}>
+              Compartir
+            </Typography>
+            <Stack direction="row" spacing={1}>
+              <Tooltip title="Compartir en LinkedIn">
+                <IconButton
+                  component="a"
+                  href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  sx={{ bgcolor: '#0A66C2', color: '#fff', '&:hover': { bgcolor: '#084f99' } }}
+                >
+                  <LinkedInIcon />
+                </IconButton>
+              </Tooltip>
+              <Tooltip title="Compartir en X">
+                <IconButton
+                  component="a"
+                  href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareTitle)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  sx={{ bgcolor: '#000', color: '#fff', '&:hover': { bgcolor: '#222' } }}
+                >
+                  <XIcon />
+                </IconButton>
+              </Tooltip>
+              <Tooltip title="Compartir por WhatsApp">
+                <IconButton
+                  component="a"
+                  href={`https://api.whatsapp.com/send?text=${encodeURIComponent(`${shareTitle} ${shareUrl}`)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  sx={{ bgcolor: '#25D366', color: '#fff', '&:hover': { bgcolor: '#1dab52' } }}
+                >
+                  <WhatsAppIcon />
+                </IconButton>
+              </Tooltip>
+              <Tooltip title={copied ? 'Link copiado' : 'Copiar link'}>
+                <IconButton onClick={copyLink} sx={{ bgcolor: '#eaeded', '&:hover': { bgcolor: '#d0d4d4' } }}>
+                  {copied ? <CheckOutlined sx={{ color: '#4caf50' }} /> : <ContentCopyOutlined />}
+                </IconButton>
+              </Tooltip>
+            </Stack>
+          </Box>
+
+          <Box sx={{ mt: 4 }}>
+            <Button
+              component={Link}
+              href="/prensa"
+              startIcon={<ArrowBackIcon />}
+              sx={{ color: '#ff9900', textTransform: 'none', fontWeight: 600 }}
+            >
+              Volver a prensa
+            </Button>
+          </Box>
         </Container>
       </Box>
+
+      {/* Relacionados */}
+      {related.length > 0 && (
+        <Box sx={{ bgcolor: '#eaeded', py: { xs: 4, md: 6 } }}>
+          <Container maxWidth="md">
+            <Typography variant="h5" fontWeight={700} sx={{ color: '#131921', mb: 3 }}>
+              Más noticias
+            </Typography>
+            <Grid container spacing={2}>
+              {related.map((r) => (
+                <Grid item xs={12} sm={6} md={4} key={r.pressReleaseId}>
+                  <Paper
+                    component={Link}
+                    href={`/prensa/${r.slug}`}
+                    elevation={0}
+                    sx={{
+                      display: 'block',
+                      p: 2.5,
+                      borderRadius: 2,
+                      height: '100%',
+                      textDecoration: 'none',
+                      border: '1px solid #e0e0e0',
+                      transition: 'all 150ms',
+                      '&:hover': { borderColor: '#ff9900', transform: 'translateY(-2px)' },
+                    }}
+                  >
+                    <Typography
+                      variant="caption"
+                      sx={{ color: '#ff9900', fontWeight: 700, display: 'block', mb: 1 }}
+                    >
+                      {formatDate(r.publishedAt)}
+                    </Typography>
+                    <Typography
+                      variant="subtitle1"
+                      fontWeight={700}
+                      sx={{
+                        color: '#131921',
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical',
+                        overflow: 'hidden',
+                      }}
+                    >
+                      {r.title}
+                    </Typography>
+                  </Paper>
+                </Grid>
+              ))}
+            </Grid>
+          </Container>
+        </Box>
+      )}
     </Box>
   );
 }

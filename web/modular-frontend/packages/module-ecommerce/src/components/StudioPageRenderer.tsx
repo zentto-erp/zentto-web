@@ -18,6 +18,13 @@ import HandshakeOutlined from "@mui/icons-material/HandshakeOutlined";
 import EmailOutlined from "@mui/icons-material/EmailOutlined";
 import CheckCircleOutline from "@mui/icons-material/CheckCircleOutline";
 import QuestionAnswerOutlined from "@mui/icons-material/QuestionAnswerOutlined";
+import GroupOutlined from "@mui/icons-material/GroupOutlined";
+import TimelineOutlined from "@mui/icons-material/TimelineOutlined";
+import WorkOutline from "@mui/icons-material/WorkOutline";
+import PlaceOutlined from "@mui/icons-material/PlaceOutlined";
+import AssignmentReturnOutlined from "@mui/icons-material/AssignmentReturnOutlined";
+import Avatar from "@mui/material/Avatar";
+import Chip from "@mui/material/Chip";
 
 /**
  * LandingConfig — schema JSON compatible con @zentto/studio-core.
@@ -32,7 +39,11 @@ export type LandingSection =
   | FaqSection
   | CtaSection
   | ContactSection
-  | StatsSection;
+  | StatsSection
+  | TeamSection
+  | TimelineSection
+  | JobsSection
+  | ReturnStepsSection;
 
 interface HeroSection {
   type: "hero";
@@ -75,6 +86,31 @@ interface ContactSection {
 interface StatsSection {
   type: "stats";
   items: Array<{ value: string; label: string }>;
+}
+
+interface TeamSection {
+  type: "team";
+  title?: string;
+  members: Array<{ name: string; role?: string; photo?: string; bio?: string }>;
+}
+
+interface TimelineSection {
+  type: "timeline";
+  title?: string;
+  events: Array<{ year: string; title: string; description?: string }>;
+}
+
+interface JobsSection {
+  type: "jobs";
+  title?: string;
+  jobs: Array<{ title: string; location?: string; type?: string; href?: string }>;
+  emptyLabel?: string;
+}
+
+interface ReturnStepsSection {
+  type: "return-steps";
+  title?: string;
+  steps: Array<{ step: number | string; title: string; description?: string }>;
 }
 
 export interface LandingConfig {
@@ -380,6 +416,230 @@ function ContactBlock({ section }: { section: ContactSection }) {
   );
 }
 
+function TeamBlock({ section }: { section: TeamSection }) {
+  return (
+    <Box sx={{ bgcolor: "#fff", py: { xs: 4, md: 6 } }}>
+      <Container maxWidth="lg">
+        {section.title && (
+          <Typography variant="h4" fontWeight={700} sx={{ color: "#131921", mb: 3, textAlign: "center" }}>
+            {section.title}
+          </Typography>
+        )}
+        <Grid container spacing={3}>
+          {section.members.map((m, i) => (
+            <Grid item xs={12} sm={6} md={4} key={i}>
+              <Paper elevation={1} sx={{ p: 3, borderRadius: 3, textAlign: "center", height: "100%" }}>
+                {m.photo ? (
+                  <Avatar src={m.photo} alt={m.name} sx={{ width: 96, height: 96, mx: "auto", mb: 2 }} />
+                ) : (
+                  <Avatar sx={{ width: 96, height: 96, mx: "auto", mb: 2, bgcolor: "#ff9900" }}>
+                    <GroupOutlined sx={{ color: "#131921" }} />
+                  </Avatar>
+                )}
+                <Typography variant="h6" fontWeight={700} sx={{ color: "#131921" }}>
+                  {m.name}
+                </Typography>
+                {m.role && (
+                  <Typography variant="body2" sx={{ color: "#ff9900", fontWeight: 600, mb: 1 }}>
+                    {m.role}
+                  </Typography>
+                )}
+                {m.bio && (
+                  <Typography variant="body2" sx={{ color: "#555", lineHeight: 1.7 }}>
+                    {m.bio}
+                  </Typography>
+                )}
+              </Paper>
+            </Grid>
+          ))}
+        </Grid>
+      </Container>
+    </Box>
+  );
+}
+
+function TimelineBlock({ section }: { section: TimelineSection }) {
+  return (
+    <Box sx={{ bgcolor: "#eaeded", py: { xs: 4, md: 6 } }}>
+      <Container maxWidth="md">
+        {section.title && (
+          <Typography variant="h4" fontWeight={700} sx={{ color: "#131921", mb: 4, textAlign: "center" }}>
+            {section.title}
+          </Typography>
+        )}
+        <Stack spacing={0}>
+          {section.events.map((e, i) => (
+            <Box key={i} sx={{ display: "flex", gap: 3, position: "relative" }}>
+              <Box
+                sx={{
+                  minWidth: 80,
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                }}
+              >
+                <Box
+                  sx={{
+                    bgcolor: "#ff9900",
+                    color: "#131921",
+                    fontWeight: 700,
+                    borderRadius: "50%",
+                    width: 48,
+                    height: 48,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: 14,
+                    boxShadow: "0 0 0 4px #eaeded",
+                    zIndex: 1,
+                  }}
+                >
+                  {e.year}
+                </Box>
+                {i < section.events.length - 1 && (
+                  <Box sx={{ width: 2, flex: 1, bgcolor: "#d0d0d0", my: 0.5 }} />
+                )}
+              </Box>
+              <Box sx={{ flex: 1, pb: i < section.events.length - 1 ? 4 : 0 }}>
+                <Typography variant="h6" fontWeight={700} sx={{ color: "#131921" }}>
+                  {e.title}
+                </Typography>
+                {e.description && (
+                  <Typography variant="body2" sx={{ color: "#555", lineHeight: 1.7, mt: 0.5 }}>
+                    {e.description}
+                  </Typography>
+                )}
+              </Box>
+            </Box>
+          ))}
+        </Stack>
+      </Container>
+    </Box>
+  );
+}
+
+function JobsBlock({ section }: { section: JobsSection }) {
+  return (
+    <Box sx={{ bgcolor: "#fff", py: { xs: 4, md: 6 } }}>
+      <Container maxWidth="md">
+        {section.title && (
+          <Typography variant="h4" fontWeight={700} sx={{ color: "#131921", mb: 3, textAlign: "center" }}>
+            {section.title}
+          </Typography>
+        )}
+        {section.jobs.length === 0 ? (
+          <Paper elevation={0} sx={{ p: 4, textAlign: "center", border: "1px dashed #d0d0d0", borderRadius: 2 }}>
+            <WorkOutline sx={{ fontSize: 40, color: "#ff9900", mb: 1 }} />
+            <Typography variant="body1" sx={{ color: "#555" }}>
+              {section.emptyLabel || "Por ahora no tenemos vacantes abiertas, pero siempre buscamos talento."}
+            </Typography>
+          </Paper>
+        ) : (
+          <Stack spacing={2}>
+            {section.jobs.map((j, i) => (
+              <Paper
+                key={i}
+                component={j.href ? "a" : "div"}
+                href={j.href}
+                elevation={0}
+                sx={{
+                  p: 3,
+                  borderRadius: 2,
+                  border: "1px solid #e0e0e0",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: 2,
+                  textDecoration: "none",
+                  transition: "all 150ms",
+                  "&:hover": j.href ? { borderColor: "#ff9900", transform: "translateY(-2px)" } : {},
+                }}
+              >
+                <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                  <WorkOutline sx={{ color: "#ff9900" }} />
+                  <Box>
+                    <Typography variant="subtitle1" fontWeight={700} sx={{ color: "#131921" }}>
+                      {j.title}
+                    </Typography>
+                    <Box sx={{ display: "flex", gap: 1, mt: 0.5, flexWrap: "wrap" }}>
+                      {j.location && (
+                        <Chip
+                          size="small"
+                          icon={<PlaceOutlined sx={{ fontSize: 14 }} />}
+                          label={j.location}
+                          sx={{ bgcolor: "#eaeded" }}
+                        />
+                      )}
+                      {j.type && (
+                        <Chip size="small" label={j.type} sx={{ bgcolor: "#fff3e0", color: "#131921" }} />
+                      )}
+                    </Box>
+                  </Box>
+                </Box>
+                {j.href && (
+                  <Typography variant="body2" sx={{ color: "#ff9900", fontWeight: 600 }}>
+                    Aplicar →
+                  </Typography>
+                )}
+              </Paper>
+            ))}
+          </Stack>
+        )}
+      </Container>
+    </Box>
+  );
+}
+
+function ReturnStepsBlock({ section }: { section: ReturnStepsSection }) {
+  return (
+    <Box sx={{ bgcolor: "#eaeded", py: { xs: 4, md: 6 } }}>
+      <Container maxWidth="md">
+        {section.title && (
+          <Typography variant="h4" fontWeight={700} sx={{ color: "#131921", mb: 3, textAlign: "center" }}>
+            {section.title}
+          </Typography>
+        )}
+        <Stack spacing={2}>
+          {section.steps.map((s, i) => (
+            <Paper
+              key={i}
+              elevation={0}
+              sx={{ p: 3, borderRadius: 2, border: "1px solid #e0e0e0", display: "flex", gap: 2, alignItems: "flex-start" }}
+            >
+              <Box
+                sx={{
+                  minWidth: 48,
+                  height: 48,
+                  borderRadius: "50%",
+                  bgcolor: "#ff9900",
+                  color: "#131921",
+                  fontWeight: 800,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                {typeof s.step === "number" ? s.step : String(s.step)}
+              </Box>
+              <Box sx={{ flex: 1 }}>
+                <Typography variant="subtitle1" fontWeight={700} sx={{ color: "#131921" }}>
+                  {s.title}
+                </Typography>
+                {s.description && (
+                  <Typography variant="body2" sx={{ color: "#555", lineHeight: 1.7, mt: 0.5 }}>
+                    {s.description}
+                  </Typography>
+                )}
+              </Box>
+              <AssignmentReturnOutlined sx={{ color: "#ff9900", display: { xs: "none", sm: "block" } }} />
+            </Paper>
+          ))}
+        </Stack>
+      </Container>
+    </Box>
+  );
+}
+
 // ─── Renderer principal ────────────────────────────────
 
 export interface StudioPageRendererProps {
@@ -414,6 +674,14 @@ export default function StudioPageRenderer({ config }: StudioPageRendererProps) 
             return <ContactBlock key={i} section={section as ContactSection} />;
           case "stats":
             return <StatsBlock key={i} section={section as StatsSection} />;
+          case "team":
+            return <TeamBlock key={i} section={section as TeamSection} />;
+          case "timeline":
+            return <TimelineBlock key={i} section={section as TimelineSection} />;
+          case "jobs":
+            return <JobsBlock key={i} section={section as JobsSection} />;
+          case "return-steps":
+            return <ReturnStepsBlock key={i} section={section as ReturnStepsSection} />;
           default:
             return null;
         }
