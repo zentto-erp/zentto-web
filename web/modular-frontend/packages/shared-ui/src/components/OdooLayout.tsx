@@ -12,7 +12,8 @@ import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
 import Collapse from '@mui/material/Collapse';
 import IconButton from '@mui/material/IconButton';
-import { useRouter, usePathname } from 'next/navigation';
+import { usePathname } from 'next/navigation';
+import Link from 'next/link';
 import { useAuth } from '@zentto/shared-auth';
 import { useTheme } from '@mui/material/styles';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
@@ -59,7 +60,6 @@ export default function OdooLayout({
      */
     onRightPanelClose?: () => void
 }) {
-    const router = useRouter();
     const pathname = usePathname();
     const theme = useTheme();
     const { dynamicBrandColors: bc } = useBranding();
@@ -90,8 +90,7 @@ export default function OdooLayout({
         setOpenMenus((prev) => ({ ...prev, [key]: !prev[key] }));
     };
 
-    const handleNavigate = (path: string) => {
-        router.push(`/${path}`);
+    const handleLinkClick = () => {
         if (isMobile) {
             setSidebarOpen(false);
         }
@@ -139,7 +138,9 @@ export default function OdooLayout({
                         />
                         {/* Contenido — ícono fijo + texto */}
                         <Box
-                            onClick={() => hasChildren ? handleToggleMenu(idx) : handleNavigate(item.segment)}
+                            {...(hasChildren
+                                ? { onClick: () => handleToggleMenu(idx) }
+                                : { component: Link, href: `/${item.segment}`, onClick: handleLinkClick, prefetch: false })}
                             sx={{
                                 position: 'relative',
                                 display: 'flex', alignItems: 'center',
@@ -147,6 +148,7 @@ export default function OdooLayout({
                                 cursor: 'pointer',
                                 color: isRouteActive ? 'text.primary' : 'text.secondary',
                                 borderRadius: 1.5,
+                                textDecoration: 'none',
                                 '&:hover': {
                                     bgcolor: isRouteActive && !hasChildren ? (t) => t.palette.mode === 'dark' ? 'rgba(255,181,71,0.25)' : 'rgba(255,181,71,0.15)' : 'action.hover',
                                 }
