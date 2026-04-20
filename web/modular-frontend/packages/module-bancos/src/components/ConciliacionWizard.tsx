@@ -247,7 +247,6 @@ export default function ConciliacionWizard() {
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
-      <Stack direction="row" alignItems="center" spacing={2}><Typography variant="h5" fontWeight={600}>Nueva Conciliación</Typography></Stack>
       {error && <Alert severity="error" onClose={() => setError(null)}>{error}</Alert>}
       <Paper sx={{ p: 3 }}><CustomStepper activeStep={activeStep} steps={STEPS} onStepClick={(step) => { if (step < activeStep) setActiveStep(step); }} /></Paper>
       {renderStep()}

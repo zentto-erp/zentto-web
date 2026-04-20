@@ -470,10 +470,6 @@ export function ComprasPage() {
 
     return (
         <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', height: '100%' }}>
-            <Typography variant="h4" fontWeight="bold" sx={{ mb: 2 }}>
-                Compras Restaurante
-            </Typography>
-
             <Paper sx={{ p: 2, mb: 2, display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr 1fr' }, gap: 2 }}>
                 <TextField
                     label="Estado"

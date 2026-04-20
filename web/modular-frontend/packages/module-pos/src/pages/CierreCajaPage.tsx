@@ -64,9 +64,6 @@ export function CierreCajaPage() {
 
     return (
         <Box sx={{ p: 3 }}>
-            <Typography variant="h4" gutterBottom fontWeight="bold">
-                Cierre de Caja
-            </Typography>
             <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
                 Realice el arqueo de efectivo y cuadre con los montos del sistema.
             </Typography>

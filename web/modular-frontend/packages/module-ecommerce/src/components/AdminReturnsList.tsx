@@ -139,11 +139,6 @@ export default function AdminReturnsList() {
 
   return (
     <Box>
-      <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
-        <AssignmentReturnIcon color="primary" />
-        <Typography variant="h5" fontWeight={700}>Devoluciones (RMA)</Typography>
-      </Box>
-
       <Tabs value={tab} onChange={(_, v) => setTab(v)} variant="scrollable" sx={{ mb: 2 }}>
         <Tab label="Todas" />
         <Tab label="Solicitadas" />

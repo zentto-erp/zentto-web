@@ -117,10 +117,6 @@ export default function PagoTxForm() {
 
   return (
     <Box sx={{ p: 2 }}>
-      <Typography variant="h5" sx={{ mb: 2, fontWeight: 600 }}>
-        Pago CxP (Transaccional)
-      </Typography>
-
       <Paper sx={{ p: 2, mb: 2 }}>
         <FormGrid spacing={2}>
           <FormField xs={12} sm={3}>

@@ -137,12 +137,6 @@ export default function CheckoutForm({ onSuccess, onBack }: Props) {
 
   return (
     <form onSubmit={handleSubmit}>
-      <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 3 }}>
-        <LockIcon sx={{ color: "#ff9900" }} />
-        <Typography variant="h5" fontWeight="bold" sx={{ color: "#0f1111" }}>
-          Finalizar compra
-        </Typography>
-      </Box>
 
       <Grid container spacing={3}>
         <Grid size={{ xs: 12, md: 7 }}>

@@ -98,9 +98,6 @@ export default function ReportesPage() {
 
   return (
     <Box>
-      <Typography variant="h5" sx={{ mb: 3, fontWeight: 700, color: "text.primary" }}>
-        Reportes de Flota
-      </Typography>
 
       {/* Filtros */}
       <Card sx={{ mb: 3, borderRadius: 2 }}>
