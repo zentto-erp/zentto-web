@@ -12,7 +12,7 @@ import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
 import Collapse from '@mui/material/Collapse';
 import IconButton from '@mui/material/IconButton';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@zentto/shared-auth';
 import { useTheme } from '@mui/material/styles';
@@ -61,8 +61,35 @@ export default function OdooLayout({
     onRightPanelClose?: () => void
 }) {
     const pathname = usePathname();
+    const router = useRouter();
     const theme = useTheme();
     const { dynamicBrandColors: bc } = useBranding();
+
+    // Handler de navegacion con fallback a hard-nav. En Next 16 + MUI
+    // AppRouterCacheProvider (v15-appRouter) hay casos en los que router.push
+    // del Link no completa la transicion (click normal no navega, pero click
+    // derecho + nueva tab si). Se intenta primero router.push; si tras un
+    // frame la URL no cambio, se hace window.location.assign como fallback.
+    const handleMenuClick = (e: React.MouseEvent, segment: string) => {
+        if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
+        e.preventDefault();
+        const anchor = e.currentTarget as HTMLAnchorElement;
+        const fullHref = anchor.href;
+        const nextPath = `/${segment}`;
+        try {
+            router.push(nextPath);
+        } catch {
+            window.location.assign(fullHref);
+            return;
+        }
+        // Fallback: si en 250ms la URL no cambio, navegacion dura.
+        const before = window.location.pathname;
+        window.setTimeout(() => {
+            if (window.location.pathname === before) {
+                window.location.assign(fullHref);
+            }
+        }, 250);
+    };
 
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
     const hideSidebar = !navigationFields || navigationFields.length === 0;
@@ -141,7 +168,12 @@ export default function OdooLayout({
                         <Box
                             {...(hasChildren
                                 ? { onClick: () => handleToggleMenu(idx) }
-                                : { component: Link, href: `/${item.segment}`, prefetch: false })}
+                                : {
+                                      component: Link,
+                                      href: `/${item.segment}`,
+                                      prefetch: false,
+                                      onClick: (e: React.MouseEvent) => handleMenuClick(e, item.segment),
+                                  })}
                             sx={{
                                 position: 'relative',
                                 display: 'flex', alignItems: 'center',
