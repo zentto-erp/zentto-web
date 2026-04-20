@@ -2,7 +2,6 @@
 
 import * as React from 'react';
 import { Suspense } from 'react';
-import { AppRouterCacheProvider } from '@mui/material-nextjs/v15-appRouter';
 import CssBaseline from '@mui/material/CssBaseline';
 import InitColorSchemeScript from '@mui/material/InitColorSchemeScript';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -44,12 +43,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </head>
             <body>
                 <QueryClientProvider client={queryClient}>
-                    <AppRouterCacheProvider>
+                    
                         <BrandedThemeProvider defaultMode="system">
                             <CssBaseline />
                             <AppContent>{children}</AppContent>
                         </BrandedThemeProvider>
-                    </AppRouterCacheProvider>
+                    
                 </QueryClientProvider>
             </body>
         </html>
