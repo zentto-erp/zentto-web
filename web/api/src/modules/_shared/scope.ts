@@ -1,4 +1,8 @@
 import type { Request } from "express";
+<<<<<<< HEAD
+import { env } from "../../config/env.js";
+=======
+>>>>>>> origin/main
 import { getRequestScope } from "../../context/request-context.js";
 
 export type ActiveScope = {
@@ -41,11 +45,24 @@ export function getActiveScope(): ActiveScope | null {
  *   2. Middleware de subdomain (req._tenantCompanyId) — p.ej. acme.zentto.net.
  *   3. Header `X-Tenant-Id` (entero positivo).
  *   4. Cookie `tenant_id`.
+<<<<<<< HEAD
+ *   5. Env fallback `STORE_DEFAULT_COMPANY_ID` — tenant demo público para
+ *      cuando se accede vía `apidev.zentto.net` / `api.zentto.net` sin
+ *      subdominio tenant-specific. Solo se activa si la var está declarada.
+ *
+ * Devuelve `null` si no puede resolverlo ni hay env fallback. Los callers
+ * deben responder 400 `{ error: "tenant_required" }` en ese caso.
+ *
+ * Ver `docs/integration/ecommerce-2026-04-review.md` (bloqueador
+ * multi-tenant) y `docs/deploy/env-vars-ola2.md`
+ * (`STORE_DEFAULT_COMPANY_ID`).
+=======
  *
  * Devuelve `null` si no puede resolverlo. Los callers deben responder 400
  * `{ error: "tenant_required" }` en ese caso; NUNCA hacer fallback a 1.
  *
  * Ver `docs/integration/ecommerce-2026-04-review.md` — bloqueador multi-tenant.
+>>>>>>> origin/main
  */
 export function resolveTenantFromRequest(req: Request): number | null {
   // 1. Scope activo (si el request trae JWT)
@@ -73,5 +90,13 @@ export function resolveTenantFromRequest(req: Request): number | null {
     if (Number.isFinite(n) && n > 0) return n;
   }
 
+<<<<<<< HEAD
+  // 5. Env fallback (solo si está declarada explícitamente — sin default hardcoded)
+  if (typeof env.storeDefaultCompanyId === "number" && env.storeDefaultCompanyId > 0) {
+    return env.storeDefaultCompanyId;
+  }
+
+=======
+>>>>>>> origin/main
   return null;
 }

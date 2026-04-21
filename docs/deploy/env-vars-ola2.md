@@ -69,3 +69,49 @@ cd web/api && npm start
   (opcional — si no, el endpoint directo de Hetzner funciona).
 - Migración de imágenes existentes en disk (`web/api/storage/media/`)
   al bucket: scripts a cargo de ops, fuera de esta PR.
+<<<<<<< HEAD
+
+## 6. Storefront público — `STORE_DEFAULT_COMPANY_ID` (hotfix 2026-04-20)
+
+`resolveTenantFromRequest()` en
+`web/api/src/modules/_shared/scope.ts` se introdujo en la Ola 5C para
+cerrar el bloqueador multi-tenant. Endpoints públicos del storefront
+(CMS, press, affiliate rates, `/store/storefront/*`) rechazan ahora con
+400 `tenant_required` si no se resuelve tenant vía subdomain / header /
+cookie.
+
+En `apidev.zentto.net` / `api.zentto.net` (sin subdominio tenant-specific
+delante) esto rompe la landing pública — el storefront demo necesita
+caer al tenant 1. Se añade una **5ª resolución opcional env-driven**:
+
+| Nombre                      | Tipo     | Obligatorio                   | Valor esperado |
+| --------------------------- | -------- | :---------------------------: | -------------- |
+| `STORE_DEFAULT_COMPANY_ID`  | env / GH |  dev/prod (storefront demo)   | `1`            |
+
+### Comportamiento
+
+- Si la var está declarada y es un entero positivo, se usa como último
+  fallback cuando no hay JWT scope, subdomain, header `X-Tenant-Id` ni
+  cookie `tenant_id`.
+- Si no está declarada, el comportamiento estricto original se mantiene:
+  `resolveTenantFromRequest()` retorna `null` y los handlers responden
+  400 `tenant_required`.
+- **Endpoints admin (requireJwt)** siguen usando `adminScope()` — el
+  fallback env NO aplica a rutas `/store/admin/*`.
+
+### Deploy
+
+- Local dev: añadir `STORE_DEFAULT_COMPANY_ID=1` al `.env` de la API.
+- GitHub Actions: sembrar como **variable** (no secret — es ID público
+  del tenant demo) o como secret según ops.
+- Producción actual (`api.zentto.net` sirviendo el demo): requiere
+  `STORE_DEFAULT_COMPANY_ID=1`.
+
+### Código consumidor
+
+- `web/api/src/config/env.ts` — expone `env.storeDefaultCompanyId`
+  (number | undefined; parseado desde `STORE_DEFAULT_COMPANY_ID`).
+- `web/api/src/modules/_shared/scope.ts::resolveTenantFromRequest` —
+  5º paso de resolución.
+=======
+>>>>>>> origin/main
