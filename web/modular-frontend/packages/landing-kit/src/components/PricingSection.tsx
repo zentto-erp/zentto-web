@@ -12,6 +12,7 @@ import type { LandingTokens } from "../tokens";
 import type { PricingPlan } from "../types";
 import { SectionShell } from "./SectionShell";
 import { CTAButton } from "./CTAButton";
+// CTAButton ya importa next/link internamente — LinkComponent es no-op en v1.3.1+
 
 export interface PricingSectionProps {
   tokens: LandingTokens;
@@ -21,7 +22,7 @@ export interface PricingSectionProps {
   description?: string;
   plans: PricingPlan[];
   footerLink?: { label: string; href: string };
-  /** Componente Link (Next.js) si las apps lo necesitan. */
+  /** @deprecated No-op en v1.3.1+. CTAButton usa next/link directamente. */
   LinkComponent?: React.ElementType;
 }
 
@@ -33,7 +34,8 @@ export function PricingSection({
   description = "Empieza gratis y escala cuando crezcas. Cancela cuando quieras.",
   plans,
   footerLink,
-  LinkComponent,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  LinkComponent: _LC,
 }: PricingSectionProps) {
   return (
     <SectionShell
@@ -60,7 +62,7 @@ export function PricingSection({
             key={plan.name}
             sx={{ order: { xs: plan.highlight ? -1 : idx, md: idx } }}
           >
-            <PricingCard tokens={tokens} plan={plan} LinkComponent={LinkComponent} />
+            <PricingCard tokens={tokens} plan={plan} />
           </Box>
         ))}
       </Box>
@@ -96,11 +98,9 @@ export function PricingSection({
 function PricingCard({
   tokens,
   plan,
-  LinkComponent,
 }: {
   tokens: LandingTokens;
   plan: PricingPlan;
-  LinkComponent?: React.ElementType;
 }) {
   const isHighlight = !!plan.highlight;
 
@@ -228,7 +228,6 @@ function PricingCard({
         href={plan.href}
         variant={isHighlight ? "primary" : "secondary"}
         external={plan.external}
-        LinkComponent={LinkComponent}
         fullWidth
       >
         {plan.cta}

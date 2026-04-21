@@ -5,6 +5,7 @@
  */
 
 import * as React from "react";
+import NextLink from "next/link";
 import BoxComp from "@mui/material/Box";
 // Cast de Box a any para permitir `component` polimórfico con `href`.
 // MUI sin TS augmentation de Next.js Link da overload errors aquí.
@@ -22,7 +23,7 @@ export interface LandingFooterProps {
   brandTagline: string;
   columns: FooterColumn[];
   social?: SocialLink[];
-  /** Link component (Next.js Link). */
+  /** @deprecated No-op en v1.3.1+. LandingFooter usa next/link directamente. */
   LinkComponent?: React.ElementType;
   /** Ruta legal (terms/privacy) mostrada en el bottom bar. */
   legalLinks?: Array<{ label: string; href: string }>;
@@ -37,14 +38,15 @@ export function LandingFooter({
   brandTagline,
   columns,
   social = [],
-  LinkComponent,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  LinkComponent: _LC,
   legalLinks = [
     { label: "Términos", href: "/terminos" },
     { label: "Privacidad", href: "/privacidad" },
   ],
   statusLink = { label: "Estado del servicio", href: "https://status.zentto.net" },
 }: LandingFooterProps) {
-  const LinkEl = (LinkComponent ?? "a") as React.ElementType;
+  const LinkEl = NextLink as React.ElementType;
   const year = new Date().getFullYear();
 
   return (
