@@ -89,7 +89,7 @@ export function SectionShell({
                 <Typography
                   component="span"
                   sx={{
-                    color: tokens.color.brandLight,
+                    color: (tokens.color as Record<string, string>).eyebrowColor ?? tokens.color.brandLight,
                     fontSize: tokens.type.eyebrow,
                     fontWeight: 700,
                     letterSpacing: tokens.tracking.eyebrow,

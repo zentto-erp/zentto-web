@@ -110,8 +110,6 @@ export default function ConceptosRetencionPage() {
 
   return (
     <Box>
-      <Typography variant="h6" sx={{ mb: 2 }}>Conceptos de Retencion</Typography>
-
       <zentto-grid
         ref={gridRef}
         default-currency="VES"

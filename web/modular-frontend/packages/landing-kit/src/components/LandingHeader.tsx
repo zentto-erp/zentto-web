@@ -21,6 +21,7 @@ import Typography from "@mui/material/Typography";
 import Divider from "@mui/material/Divider";
 import MenuIcon from "@mui/icons-material/Menu";
 import CloseIcon from "@mui/icons-material/Close";
+import NextLink from "next/link";
 import type { LandingTokens } from "../tokens";
 import type { NavLink } from "../types";
 import { CTAButton } from "./CTAButton";
@@ -37,7 +38,7 @@ export interface LandingHeaderProps {
   loginHref?: string;
   /** Ruta home para el logo. */
   homeHref?: string;
-  /** Link component (Next.js Link). Si no se pasa, usa anchor nativo. */
+  /** @deprecated No-op en v1.3.1+. LandingHeader usa next/link directamente. */
   LinkComponent?: React.ElementType;
   /** Callback para scroll a anchor cuando los nav links empiezan con "#". */
   onAnchorClick?: (hash: string) => void;
@@ -54,7 +55,8 @@ export function LandingHeader({
   primaryCtaLabel = "Solicitar demo",
   loginHref = "/login",
   homeHref = "/",
-  LinkComponent,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  LinkComponent: _LC,
   onAnchorClick,
   currentPath,
 }: LandingHeaderProps) {
@@ -68,7 +70,7 @@ export function LandingHeader({
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  const LinkEl = (LinkComponent ?? "a") as React.ElementType;
+  const LinkEl = NextLink as React.ElementType;
 
   function handleNavClick(href: string) {
     setOpen(false);
@@ -223,7 +225,6 @@ export function LandingHeader({
           <CTAButton
             tokens={tokens}
             href={primaryCtaHref}
-            LinkComponent={LinkComponent}
             variant="primary"
             size="md"
           >
@@ -329,7 +330,6 @@ export function LandingHeader({
           <CTAButton
             tokens={tokens}
             href={primaryCtaHref}
-            LinkComponent={LinkComponent}
             variant="primary"
             fullWidth
           >

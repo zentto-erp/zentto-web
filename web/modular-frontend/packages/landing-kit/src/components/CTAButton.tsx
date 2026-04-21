@@ -12,6 +12,7 @@
 "use client";
 
 import * as React from "react";
+import NextLink from "next/link";
 import Button from "@mui/material/Button";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import type { LandingTokens } from "../tokens";
@@ -26,7 +27,7 @@ export interface CTAButtonProps {
   showArrow?: boolean;
   external?: boolean;
   ariaLabel?: string;
-  /** Componente de enlace (ej. Next.js `Link`). Default: "a" nativo. */
+  /** @deprecated No-op en v1.3.1+. CTAButton usa next/link directamente. */
   LinkComponent?: React.ElementType;
 }
 
@@ -46,7 +47,8 @@ export function CTAButton({
   showArrow = false,
   external = false,
   ariaLabel,
-  LinkComponent,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  LinkComponent: _LC,
 }: CTAButtonProps) {
   const sz = SIZES[size];
 
@@ -128,8 +130,7 @@ export function CTAButton({
     );
   }
 
-  // Permite inyectar Link de Next.js sin que el kit lo importe directo
-  const LinkEl = (LinkComponent ?? "a") as React.ElementType;
+  const LinkEl = NextLink as React.ElementType;
 
   return (
     <Button component={LinkEl} href={href} aria-label={ariaLabel} sx={sx}>

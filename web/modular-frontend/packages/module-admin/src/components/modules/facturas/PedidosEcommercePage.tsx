@@ -164,10 +164,7 @@ export default function PedidosEcommercePage() {
   return (
     <Box sx={{ p: 2 }}>
       {/* Header */}
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
-        <Typography variant="h5" fontWeight={600}>
-          Pedidos Ecommerce
-        </Typography>
+      <Box sx={{ display: "flex", justifyContent: "flex-end", alignItems: "center", mb: 3 }}>
         <ToggleButtonGroup
           value={filtro}
           exclusive

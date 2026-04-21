@@ -297,10 +297,6 @@ export default function CompraForm({ numeroCompra }: CompraFormProps) {
 
   return (
     <Box>
-      <Typography variant="h5" sx={{ mb: 2, fontWeight: 600 }}>
-        {isEdit ? "Compra" : "Nueva Compra Maestro-Detalle"}
-      </Typography>
-
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
       {okMsg && <Alert severity="success" sx={{ mb: 2 }}>{okMsg}</Alert>}
 

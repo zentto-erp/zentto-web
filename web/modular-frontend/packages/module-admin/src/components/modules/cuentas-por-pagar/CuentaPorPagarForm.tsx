@@ -134,10 +134,6 @@ export default function CuentaPorPagarForm({ id }: CuentaPorPagarFormProps) {
 
   return (
     <Box sx={{ p: 2 }}>
-      <Typography variant="h5" sx={{ mb: 3, fontWeight: 600 }}>
-        {isEdit ? "Editar Cuenta por Pagar" : "Nueva Cuenta por Pagar"}
-      </Typography>
-
       {submitSuccess && (
         <Alert severity="success" sx={{ mb: 2 }}>
           {isEdit ? "Cuenta actualizada exitosamente" : "Cuenta creada exitosamente"}

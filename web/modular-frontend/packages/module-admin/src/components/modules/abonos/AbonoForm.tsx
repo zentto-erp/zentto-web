@@ -128,10 +128,6 @@ export default function AbonoForm({ numeroAbono }: AbonoFormProps) {
 
   return (
     <Box sx={{ p: 2 }}>
-      <Typography variant="h5" sx={{ mb: 3, fontWeight: 600 }}>
-        {isEdit ? "Editar Abono" : "Nuevo Abono"}
-      </Typography>
-
       {submitSuccess && (
         <Alert severity="success" sx={{ mb: 2 }}>
           {isEdit ? "Abono actualizado exitosamente" : "Abono creado exitosamente"}

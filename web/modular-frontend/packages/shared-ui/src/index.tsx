@@ -145,3 +145,6 @@ export { default as LocaleSelectorButton } from './components/LocaleSelectorButt
 export { default as HelpButton } from './components/HelpButton';
 export { HELP_MAP, getHelpForPath } from './lib/help-map';
 export type { HelpEntry } from './lib/help-map';
+
+// Chat Widget — global, todos los apps del ecosistema
+export { default as ZenttoChatWidget } from './components/ZenttoChatWidget';

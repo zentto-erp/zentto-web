@@ -8,7 +8,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrandedThemeProvider } from '@zentto/shared-ui';
 import '@zentto/shared-ui/globals.css';
 import { StoreLayout } from '@zentto/module-ecommerce';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { CircularProgress, Box } from '@mui/material';
 
 const queryClient = new QueryClient({
@@ -25,7 +25,13 @@ function LoadingFallback() {
 
 function AppContent({ children }: { children: React.ReactNode }) {
     const router = useRouter();
+    const pathname = usePathname();
     const handleNavigate = (path: string) => router.push(path);
+
+    // Las rutas /admin/* tienen su propio layout — no envolver con StoreLayout.
+    if (pathname?.startsWith('/admin')) {
+        return <Suspense fallback={<LoadingFallback />}>{children}</Suspense>;
+    }
 
     return (
         <StoreLayout onNavigate={handleNavigate}>

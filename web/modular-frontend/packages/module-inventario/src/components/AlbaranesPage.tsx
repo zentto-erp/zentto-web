@@ -96,8 +96,7 @@ export default function AlbaranesPage() {
 
   return (
     <Box sx={{ p: 2 }}>
-      <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
-        <Typography variant="h5" fontWeight={600}>Albaranes</Typography>
+      <Stack direction="row" justifyContent="flex-end" alignItems="center" mb={2}>
         <Button variant="contained" startIcon={<AddIcon />} onClick={() => setOpenNew(true)}>
           Nuevo albarán
         </Button>

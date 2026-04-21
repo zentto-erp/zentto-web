@@ -141,10 +141,6 @@ export default function FacturasTable() {
 
   return (
     <Box sx={{ p: 2, display: "flex", flexDirection: "column", height: "100%" }}>
-      <Typography variant="h5" fontWeight={600} sx={{ mb: 2 }}>
-        Facturas
-      </Typography>
-
       {/* zentto-grid con master-detail */}
       <Box sx={{ flex: 1, minHeight: 400 }}>
         {registered && (

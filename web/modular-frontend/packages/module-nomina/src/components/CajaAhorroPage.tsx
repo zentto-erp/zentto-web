@@ -141,8 +141,7 @@ export default function CajaAhorroPage() {
 
   return (
     <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-      <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
-        <Typography variant="h6">Caja de Ahorro</Typography>
+      <Stack direction="row" justifyContent="flex-end" alignItems="center" mb={2}>
         <Stack direction="row" spacing={1}>
           {tab === 0 && (
             <Button variant="contained" startIcon={<AddIcon />} onClick={() => setEnrollOpen(true)}>

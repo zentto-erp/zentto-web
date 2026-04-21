@@ -69,7 +69,6 @@ export default function CobrosOnlineDashboard() {
     <Box sx={{ p: 3 }}>
       <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 3 }}>
         <Box>
-          <Typography variant="h5" fontWeight={700}>Cobros Online</Typography>
           <Typography variant="body2" color="text.secondary">
             Todas las transacciones de tus apps (tickets, hotel, ecommerce, etc.) en un solo lugar — sin entrar a Paddle/Stripe.
           </Typography>
