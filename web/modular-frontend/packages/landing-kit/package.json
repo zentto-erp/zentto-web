@@ -1,7 +1,7 @@
 {
   "name": "@zentto/landing-kit",
-  "version": "1.3.3",
-  "description": "Zentto Landing Kit — componentes enterprise B2B SaaS portables (Hero, TrustBar, FeatureGrid, PricingSection, ...). Base compartida para landings verticales (tickets, hotel, medical, restaurante, education, inmobiliario, rental).",
+  "version": "2.0.0-beta.1",
+  "description": "Zentto Landing Kit — componentes enterprise B2B SaaS portables (Hero, TrustBar, FeatureGrid, PricingSection, ...) + runtime renderer de schemas JSON (v2.0) + infraestructura de blog. Base compartida para landings verticales (tickets, hotel, medical, restaurante, education, inmobiliario, rental).",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {
@@ -16,17 +16,28 @@
     "./metadata": {
       "types": "./dist/metadata.d.ts",
       "default": "./dist/metadata.js"
+    },
+    "./renderer": {
+      "types": "./dist/renderer/index.d.ts",
+      "default": "./dist/renderer/index.js"
+    },
+    "./blog": {
+      "types": "./dist/blog/index.d.ts",
+      "default": "./dist/blog/index.js"
     }
   },
   "files": [
     "dist",
-    "README.md"
+    "scripts",
+    "README.md",
+    "DESIGN.md"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
+    "build": "tsc -p tsconfig.build.json && node scripts/copy-assets.cjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
+    "smoke": "node scripts/smoke-test.cjs",
     "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
-    "prepublishOnly": "npm run clean && npm run build"
+    "prepublishOnly": "npm run clean && npm run build && npm run smoke"
   },
   "keywords": [
     "zentto",
@@ -36,7 +47,9 @@
     "b2b",
     "saas",
     "mui",
-    "next"
+    "next",
+    "renderer",
+    "cms"
   ],
   "author": "Zentto ERP",
   "license": "MIT",
@@ -55,7 +68,16 @@
     "@mui/material": ">=5",
     "next": ">=14",
     "react": ">=18",
-    "react-dom": ">=18"
+    "react-dom": ">=18",
+    "zod": ">=3.22",
+    "react-markdown": ">=9",
+    "remark-gfm": ">=4",
+    "rehype-sanitize": ">=6"
+  },
+  "peerDependenciesMeta": {
+    "react-markdown": { "optional": true },
+    "remark-gfm": { "optional": true },
+    "rehype-sanitize": { "optional": true }
   },
   "devDependencies": {
     "@mui/icons-material": "^5.15.0",
@@ -64,7 +86,8 @@
     "@types/react": "^18",
     "next": "^14",
     "react": "^18",
-    "typescript": "^5"
+    "typescript": "^5",
+    "zod": "^3.23.0"
   },
   "engines": {
     "node": ">=20"
