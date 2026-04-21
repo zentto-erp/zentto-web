@@ -69,6 +69,7 @@ cd web/api && npm start
   (opcional — si no, el endpoint directo de Hetzner funciona).
 - Migración de imágenes existentes en disk (`web/api/storage/media/`)
   al bucket: scripts a cargo de ops, fuera de esta PR.
+<<<<<<< HEAD
 
 ## 6. Storefront público — `STORE_DEFAULT_COMPANY_ID` (hotfix 2026-04-20)
 
@@ -112,3 +113,5 @@ caer al tenant 1. Se añade una **5ª resolución opcional env-driven**:
   (number | undefined; parseado desde `STORE_DEFAULT_COMPANY_ID`).
 - `web/api/src/modules/_shared/scope.ts::resolveTenantFromRequest` —
   5º paso de resolución.
+=======
+>>>>>>> origin/main

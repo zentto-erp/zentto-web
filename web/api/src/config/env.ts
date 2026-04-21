@@ -60,6 +60,7 @@ export const env = {
     region: process.env.HETZNER_S3_PRODUCT_IMAGES_REGION || "nbg1",
     publicUrl: process.env.HETZNER_S3_PRODUCT_IMAGES_PUBLIC_URL || "",
   },
+<<<<<<< HEAD
   /**
    * CompanyId default para endpoints **públicos** del storefront cuando el
    * request no trae subdomain tenant-specific, header `X-Tenant-Id` ni cookie
@@ -80,4 +81,6 @@ export const env = {
     const n = Number(raw);
     return Number.isFinite(n) && n > 0 ? n : undefined;
   })() as number | undefined,
+=======
+>>>>>>> origin/main
 };
