@@ -17,6 +17,7 @@ export interface CTAFinalProps {
   subtitle?: string;
   primaryCta: { label: string; href: string; external?: boolean };
   secondaryCta?: { label: string; href: string; external?: boolean };
+  /** @deprecated No-op en v1.3.1+. CTAButton usa next/link directamente. */
   LinkComponent?: React.ElementType;
 }
 
@@ -26,7 +27,8 @@ export function CTAFinal({
   subtitle,
   primaryCta,
   secondaryCta,
-  LinkComponent,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  LinkComponent: _LC,
 }: CTAFinalProps) {
   return (
     <Box
@@ -107,7 +109,6 @@ export function CTAFinal({
               tokens={tokens}
               href={primaryCta.href}
               external={primaryCta.external}
-              LinkComponent={LinkComponent}
               variant="primary"
               size="lg"
             >
@@ -118,8 +119,7 @@ export function CTAFinal({
                 tokens={tokens}
                 href={secondaryCta.href}
                 external={secondaryCta.external}
-                LinkComponent={LinkComponent}
-                variant="secondary"
+                  variant="secondary"
                 size="lg"
               >
                 {secondaryCta.label}
