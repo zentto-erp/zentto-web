@@ -83,7 +83,13 @@ export async function registerAffiliate(args: {
 // ─── Dashboard ─────────────────────────────────────────
 
 export async function getAffiliateDashboard(customerId: number): Promise<AffiliateDashboard | null> {
-  const rows = await callSp<any>("usp_Store_Affiliate_GetDashboard", {
+  // Nota: snake_case intencional en el nombre del SP.
+  // PostgreSQL auto-lowercase identificadores sin comillas: para que el caller
+  // matchee con la función real (definida en migración 00150 con snake_case
+  // tipo `get_dashboard`, `track_click`, etc.), pasamos el nombre ya en
+  // snake_case. En SQL Server los SPs equivalentes viven en `sqlweb/` con
+  // nombres también en snake_case.
+  const rows = await callSp<any>("usp_Store_Affiliate_Get_Dashboard", {
     CompanyId: scope().companyId,
     CustomerId: customerId,
   });
@@ -128,7 +134,7 @@ export async function trackAffiliateClick(args: {
   referer?: string | null;
 }) {
   const { output } = await callSpOut(
-    "usp_Store_Affiliate_TrackClick",
+    "usp_Store_Affiliate_Track_Click",
     {
       ReferralCode: args.referralCode,
       SessionId: args.sessionId ?? null,
@@ -154,7 +160,7 @@ export async function attributeOrderCommission(args: {
   currency?: string | null;
 }) {
   const { output } = await callSpOut(
-    "usp_Store_Affiliate_AttributeOrder",
+    "usp_Store_Affiliate_Attribute_Order",
     {
       CompanyId: scope().companyId,
       OrderNumber: args.orderNumber,
@@ -188,7 +194,7 @@ export async function listMyCommissions(args: {
   const limit = Math.min(Math.max(args.limit ?? 20, 1), 100);
 
   const { rows, output } = await callSpOut<any>(
-    "usp_Store_Affiliate_CommissionsList",
+    "usp_Store_Affiliate_Commissions_List",
     {
       CompanyId: scope().companyId,
       CustomerId: args.customerId,
@@ -204,7 +210,7 @@ export async function listMyCommissions(args: {
 // ─── Commission rates (público) ────────────────────────
 
 export async function listCommissionRates(): Promise<CommissionRate[]> {
-  const rows = await callSp<any>("usp_Store_Affiliate_CommissionRatesList", {});
+  const rows = await callSp<any>("usp_Store_Affiliate_Commission_Rates_List", {});
   return rows.map((r: any) => ({
     category: String(r.category),
     rate: Number(r.rate),
@@ -242,7 +248,7 @@ export async function adminSetAffiliateStatus(args: {
   actor: string;
 }) {
   const { output } = await callSpOut(
-    "usp_Store_Affiliate_Admin_SetStatus",
+    "usp_Store_Affiliate_Admin_Set_Status",
     {
       CompanyId: scope().companyId,
       AffiliateId: args.affiliateId,
@@ -267,7 +273,7 @@ export async function adminListCommissions(args: {
   const page = Math.max(args.page ?? 1, 1);
   const limit = Math.min(Math.max(args.limit ?? 20, 1), 100);
   const { rows, output } = await callSpOut<any>(
-    "usp_Store_Affiliate_Admin_CommissionsList",
+    "usp_Store_Affiliate_Admin_Commissions_List",
     {
       CompanyId: scope().companyId,
       Status: args.status ?? null,
@@ -286,7 +292,7 @@ export async function adminGeneratePayouts(args: {
   periodEnd?: string | null;
 }) {
   const { output } = await callSpOut(
-    "usp_Store_Affiliate_PayoutGenerate",
+    "usp_Store_Affiliate_Payout_Generate",
     {
       CompanyId: scope().companyId,
       PeriodStart: args.periodStart ?? null,
@@ -327,10 +333,14 @@ export async function adminBulkSetCommissionStatus(args: {
   }
 
   const { output } = await callSpOut(
-    "usp_Store_Affiliate_Admin_CommissionsBulkStatus",
+    "usp_Store_Affiliate_Admin_Commissions_Bulk_Status",
     {
       CompanyId: scope().companyId,
-      Ids: ids.join(","), // SP parsea CSV (compat SQL 2012, sin TVP)
+      // En PG la función espera bigint[] nativo; el driver node-pg acepta
+      // array JS y lo convierte al tipo adecuado. En SQL Server (fallback)
+      // se pasaría CSV — pero el deploy actual es PostgreSQL, y pasar CSV
+      // aquí revienta ("operator does not exist: bigint = bigint[]").
+      Ids: ids,
       Status: args.status,
       Actor: args.actor,
     },
