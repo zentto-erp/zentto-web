@@ -38,22 +38,32 @@ jobs:
           cat > Dockerfile.panel << 'DEOF'
           FROM node:22-alpine AS builder
           WORKDIR /app
-          COPY web/modular-frontend/apps/panel/package.json ./
-          RUN npm install && npm install react@19.0.0 react-dom@19.0.0
-          COPY web/modular-frontend/apps/panel/ ./
+
+          ARG NPM_TOKEN
+          ENV NPM_TOKEN=$NPM_TOKEN
+
           ARG NEXT_PUBLIC_SITES_API=https://sitesdev.zentto.net
           ARG NEXT_PUBLIC_AUTH_API=https://authdev.zentto.net
           ENV NEXT_PUBLIC_SITES_API=$NEXT_PUBLIC_SITES_API
           ENV NEXT_PUBLIC_AUTH_API=$NEXT_PUBLIC_AUTH_API
+
+          # Copy full monorepo for workspace resolution (@zentto/* packages)
+          COPY web/modular-frontend/ .
+
+          # Install deps via workspace and remove token
+          RUN npm ci && rm -f .npmrc
+
+          # Build panel from workspace member directory
+          WORKDIR /app/apps/panel
           RUN npx next build
 
           FROM node:22-alpine
           WORKDIR /app
           ENV NODE_ENV=production PORT=3018 HOSTNAME=0.0.0.0
-          COPY --from=builder /app/.next ./.next
+          COPY --from=builder /app/apps/panel/.next ./.next
           COPY --from=builder /app/node_modules ./node_modules
-          COPY --from=builder /app/package.json ./
-          COPY --from=builder /app/public ./public 2>/dev/null || true
+          COPY --from=builder /app/apps/panel/package.json ./
+          COPY --from=builder /app/apps/panel/public ./public 2>/dev/null || true
           EXPOSE 3018
           CMD ["npx", "next", "start", "-p", "3018"]
           DEOF
@@ -64,6 +74,10 @@ jobs:
           file: Dockerfile.panel
           push: true
           tags: ${{ env.IMAGE }}
+          build-args: |
+            NPM_TOKEN=${{ secrets.NPM_TOKEN }}
+            NEXT_PUBLIC_SITES_API=https://sitesdev.zentto.net
+            NEXT_PUBLIC_AUTH_API=https://authdev.zentto.net
 
   deploy:
     name: Deploy Panel (DEV)
