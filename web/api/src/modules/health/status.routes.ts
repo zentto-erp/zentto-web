@@ -21,6 +21,23 @@ interface TenantDimension {
   tenantStatus?: string;
   plan?: string;
   isActive?: boolean;
+  /** Metricas operativas adicionales (solo si ?detailed=true y resolvio OK). */
+  health?: TenantHealthSnapshot;
+}
+
+interface TenantHealthSnapshot {
+  subscriptionStatus: string | null;
+  subscriptionSource: string | null;
+  trialEndsAt: string | null;
+  currentPeriodEnd: string | null;
+  monthlyRecurringRevenue: number;
+  activeUserCount: number;
+  lastUserActivityAt: string | null;
+  leadsLast24h: number;
+  leadsConverted: number;
+  tenantDbProvisioned: boolean;
+  tenantDbName: string | null;
+  snapshotAt: string;
 }
 
 /**
@@ -34,11 +51,13 @@ interface TenantDimension {
  *     la dimension `tenant` al response con el estado de ese tenant
  *     (TenantStatus, Plan, IsActive). Si el tenant no existe o esta
  *     inactivo, el overall global se marca como 'degraded'.
+ *   - detailed: si ?detailed=true y tenant resuelve, agrega `tenant.health`
+ *     con metricas operativas (suscripcion, usuarios, leads, BD por-tenant)
+ *     via usp_Sys_HealthCheck_Tenant. Usado por dashboard ops (Lote 4.A).
  *
  * Referencia: gap G-08 del audit del Lote 1 multinicho
- * (docs/lanzamiento/AUDIT_INTEGRACION.md). Esta es la iteracion v1 — el
- * dashboard operativo en apps/panel y los tags de observability por-tenant
- * quedan para lote posterior (Fase 2).
+ * (docs/lanzamiento/AUDIT_INTEGRACION.md). v1 (Lote 2.E) agrego dimension
+ * tenant; v2 (Lote 4.A, este) agrega detalle operativo.
  */
 statusRouter.get("/", async (req, res) => {
   const services: ServiceStatus[] = [];
@@ -114,6 +133,7 @@ statusRouter.get("/", async (req, res) => {
   let tenantDim: TenantDimension | undefined;
   const tenantParam =
     typeof req.query.tenant === "string" ? req.query.tenant.trim().toLowerCase() : "";
+  const detailed = req.query.detailed === "true" || req.query.detailed === "1";
   if (tenantParam) {
     try {
       const tenant = await resolveTenantBySubdomain(tenantParam);
@@ -135,6 +155,60 @@ statusRouter.get("/", async (req, res) => {
           tenant.TenantStatus === "suspended" ||
           tenant.TenantStatus === "pending";
         if (tenantDegraded && overall === "operational") overall = "degraded";
+
+        // Enriquecer con snapshot operativo si el caller lo pidio (v2).
+        if (detailed) {
+          try {
+            const healthRows = await callSp<{
+              SubscriptionStatus: string | null;
+              SubscriptionSource: string | null;
+              TrialEndsAt: Date | null;
+              CurrentPeriodEnd: Date | null;
+              MonthlyRecurringRevenue: number | string | null;
+              ActiveUserCount: number;
+              LastUserActivityAt: Date | null;
+              LeadsLast24h: number;
+              LeadsConverted: number;
+              TenantDbProvisioned: boolean | null;
+              TenantDbName: string | null;
+              SnapshotAt: Date;
+            }>("usp_Sys_HealthCheck_Tenant", { Subdomain: tenantParam });
+            const h = healthRows[0];
+            if (h) {
+              tenantDim.health = {
+                subscriptionStatus: h.SubscriptionStatus,
+                subscriptionSource: h.SubscriptionSource,
+                trialEndsAt: h.TrialEndsAt ? new Date(h.TrialEndsAt).toISOString() : null,
+                currentPeriodEnd: h.CurrentPeriodEnd ? new Date(h.CurrentPeriodEnd).toISOString() : null,
+                monthlyRecurringRevenue: Number(h.MonthlyRecurringRevenue ?? 0),
+                activeUserCount: Number(h.ActiveUserCount ?? 0),
+                lastUserActivityAt: h.LastUserActivityAt ? new Date(h.LastUserActivityAt).toISOString() : null,
+                leadsLast24h: Number(h.LeadsLast24h ?? 0),
+                leadsConverted: Number(h.LeadsConverted ?? 0),
+                tenantDbProvisioned: Boolean(h.TenantDbProvisioned),
+                tenantDbName: h.TenantDbName,
+                snapshotAt: new Date(h.SnapshotAt).toISOString(),
+              };
+              // Suscripcion vencida/cancelada baja overall.
+              if (
+                h.SubscriptionStatus === "cancelled" ||
+                h.SubscriptionStatus === "expired" ||
+                h.SubscriptionStatus === "past_due"
+              ) {
+                if (overall === "operational") overall = "degraded";
+              }
+            }
+          } catch (hErr) {
+            // Detailed query fallo: no rompemos el endpoint base — solo
+            // marcamos el servicio como degradado para el caller sepa.
+            services.push({
+              name: "tenant_health_detail",
+              status: "degraded",
+              detail: hErr instanceof Error ? hErr.message : "health_detail_failed",
+            });
+            if (overall === "operational") overall = "degraded";
+          }
+        }
       }
     } catch (err) {
       tenantDim = {
