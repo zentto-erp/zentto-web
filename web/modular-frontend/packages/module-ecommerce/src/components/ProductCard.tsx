@@ -5,6 +5,7 @@ import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import LocalShippingIcon from "@mui/icons-material/LocalShipping";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import FavoriteIcon from "@mui/icons-material/Favorite";
+import StorefrontIcon from "@mui/icons-material/Storefront";
 import { useCartStore } from "../store/useCartStore";
 import { useFavoritesStore } from "../store/useFavoritesStore";
 import { useCompareStore } from "../store/useCompareStore";
@@ -12,6 +13,13 @@ import ReviewStars from "./ReviewStars";
 import { formatPrice } from "../utils/formatCurrency";
 import CompareArrowsIcon from "@mui/icons-material/CompareArrows";
 import Tooltip from "@mui/material/Tooltip";
+
+export interface ProductMerchantSummary {
+  id: number;
+  slug: string;
+  name: string;
+  rating?: number | null;
+}
 
 interface Props {
   code: string;
@@ -26,11 +34,13 @@ interface Props {
   imageUrl?: string | null;
   avgRating?: number;
   reviewCount?: number;
+  /** Marketplace — se muestra badge "Vendido por {name}" si viene populado. */
+  merchant?: ProductMerchantSummary | null;
   onViewDetail?: (code: string) => void;
 }
 
 export default function ProductCard({
-  code, name, fullDescription, category, brand, price, originalPrice, stock, taxRate, imageUrl, avgRating, reviewCount, onViewDetail,
+  code, name, fullDescription, category, brand, price, originalPrice, stock, taxRate, imageUrl, avgRating, reviewCount, merchant, onViewDetail,
 }: Props) {
   const addItem = useCartStore((s) => s.addItem);
   const currency = useCartStore((s) => s.currency);
@@ -204,6 +214,20 @@ export default function ProductCard({
             </Typography>
           )}
         </Box>
+
+        {/* Marketplace — badge "Vendido por {merchant.name}" */}
+        {merchant?.name && (
+          <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mt: 0.4 }}>
+            <StorefrontIcon sx={{ fontSize: 13, color: "#565959" }} />
+            <Typography
+              variant="caption"
+              sx={{ color: "#565959", fontSize: 11 }}
+              title={`Producto ofrecido por ${merchant.name}`}
+            >
+              Vendido por <span style={{ color: "#007185" }}>{merchant.name}</span>
+            </Typography>
+          </Box>
+        )}
 
         {/* Shipping */}
         {price >= 25 && (

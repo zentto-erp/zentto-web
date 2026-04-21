@@ -6,7 +6,11 @@ import {
   Button, Alert, TextField, Stack,
 } from '@mui/material';
 import { ZenttoRecordTable, type ColumnSpec } from '@zentto/shared-ui';
-import { useAdminMerchants, useAdminSetMerchantStatus } from '@zentto/module-ecommerce';
+import {
+  useAdminMerchants,
+  useAdminSetMerchantStatus,
+  useAdminGenerateMerchantPayouts,
+} from '@zentto/module-ecommerce';
 
 const STATUS_TABS = ['all', 'pending', 'approved', 'suspended', 'rejected'];
 const STATUS_LABEL: Record<string, string> = {
@@ -31,10 +35,13 @@ export default function AdminVendedoresPage() {
   const status = STATUS_TABS[tab] === 'all' ? undefined : STATUS_TABS[tab];
   const { data, isLoading, refetch } = useAdminMerchants({ status, page: 1, limit: 100 });
   const setStatus = useAdminSetMerchantStatus();
+  const genPayouts = useAdminGenerateMerchantPayouts();
 
   const [selected, setSelected] = useState<number | null>(null);
   const [reason, setReason] = useState('');
   const [err, setErr] = useState('');
+  const [payoutMsg, setPayoutMsg] = useState<string>('');
+  const [payoutErr, setPayoutErr] = useState<string>('');
 
   const rows = useMemo(() => (data?.rows ?? []).map((s) => ({
     id: s.id,
@@ -62,9 +69,38 @@ export default function AdminVendedoresPage() {
     }
   };
 
+  const generatePayouts = async () => {
+    setPayoutMsg('');
+    setPayoutErr('');
+    try {
+      const r = await genPayouts.mutateAsync(undefined);
+      if (r.ok) {
+        setPayoutMsg(
+          `${r.payoutsCreated} payout(s) generado(s) por un total de ${r.totalAmount.toFixed(2)} USD.`,
+        );
+      } else {
+        setPayoutErr(r.message || 'No se generaron payouts');
+      }
+    } catch (e) {
+      setPayoutErr(e instanceof Error ? e.message : String(e));
+    }
+  };
+
   return (
     <Box>
-      <Typography variant="h5" fontWeight={700} sx={{ mb: 2 }}>Vendedores del marketplace</Typography>
+      <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 2 }}>
+        <Typography variant="h5" fontWeight={700} sx={{ flex: 1 }}>Vendedores del marketplace</Typography>
+        <Button
+          variant="outlined"
+          onClick={generatePayouts}
+          disabled={genPayouts.isPending}
+        >
+          {genPayouts.isPending ? 'Generando…' : 'Generar payouts mensuales'}
+        </Button>
+      </Stack>
+
+      {payoutMsg && <Alert severity="success" sx={{ mb: 2 }} onClose={() => setPayoutMsg('')}>{payoutMsg}</Alert>}
+      {payoutErr && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setPayoutErr('')}>{payoutErr}</Alert>}
 
       <Tabs value={tab} onChange={(_, v) => setTab(v)} variant="scrollable" sx={{ mb: 2 }}>
         <Tab label="Todos" /><Tab label="Pendientes" /><Tab label="Aprobados" /><Tab label="Suspendidos" /><Tab label="Rechazados" />

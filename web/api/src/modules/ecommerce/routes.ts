@@ -11,6 +11,7 @@ import {
 import {
   listProducts,
   getProductByCodeFull,
+  getPublicMerchantBySlug,
   listCategories,
   listBrands,
   registerCustomer,
@@ -77,6 +78,9 @@ const productListSchema = z.object({
   sortBy: z.string().optional(),
   page: z.string().optional(),
   limit: z.string().optional(),
+  // Marketplace — filtrar por merchant slug, o excluir merchants con includeMerchant=0
+  merchant: z.string().optional(),
+  includeMerchant: z.string().optional(),
 });
 
 // Cache TTLs (segundos). Productos cambian poco; catalogos casi nada.
@@ -104,6 +108,8 @@ storeRouter.get(
       sortBy: parsed.data.sortBy,
       page: parsed.data.page ? Number(parsed.data.page) : undefined,
       limit: parsed.data.limit ? Number(parsed.data.limit) : undefined,
+      merchantSlug: parsed.data.merchant,
+      includeMerchant: parsed.data.includeMerchant === "0" ? false : true,
     });
   })
 );
@@ -114,6 +120,20 @@ storeRouter.get(
     const product = await getProductByCodeFull(req.params.code);
     if (!product) throw Object.assign(new Error("not_found"), { status: 404 });
     return product;
+  })
+);
+
+// Perfil público del merchant (marketplace) — Ola 4 migración 00158
+storeRouter.get(
+  "/merchants/:slug",
+  cached("merchants:public", TTL_PRODUCT_DETAIL, async (req) => {
+    const slug = String(req.params.slug || "").trim().toLowerCase();
+    if (!slug || !/^[a-z0-9-]{2,80}$/.test(slug)) {
+      throw Object.assign(new Error("invalid_slug"), { status: 400 });
+    }
+    const merchant = await getPublicMerchantBySlug(slug);
+    if (!merchant) throw Object.assign(new Error("not_found"), { status: 404 });
+    return merchant;
   })
 );
 
@@ -350,39 +370,70 @@ storeRouter.post("/checkout", async (req, res) => {
     const result = await checkout(parsed.data);
     if (!result.ok) return res.status(400).json(result);
 
-    // Atribución a afiliado si hay cookie zentto_ref o body.referralCode
+    // ─── Marketplace wiring post-checkout ─────────────────
+    // Orden sincrono:
+    //   1. populate_merchants → rellena MerchantId en las líneas
+    //   2. attribute_affiliate → registra AffiliateCommission y devuelve amount
+    //   3. merchant_commission_generate → crea MerchantCommission por línea,
+    //      aplicando AffiliateDeduction = min(per-line, commission) y
+    //      NetZenttoRevenue = CommissionAmount - AffiliateDeduction.
+    //
+    // Cada paso es idempotente y tolerante a errores (no bloquea la respuesta
+    // del checkout). El pago ya quedó creado; esto solo rellena las métricas
+    // del marketplace y genera las filas que luego se pagan al merchant.
     try {
-      const cookieHeader = req.headers.cookie ?? "";
-      const readCookie = (name: string) => {
-        for (const part of cookieHeader.split(";")) {
-          const trimmed = part.trim();
-          const eq = trimmed.indexOf("=");
-          if (eq < 0) continue;
-          if (trimmed.slice(0, eq) === name) {
-            try { return decodeURIComponent(trimmed.slice(eq + 1)); } catch { return trimmed.slice(eq + 1); }
+      if (result.orderNumber) {
+        const { populateOrderMerchants, generateMerchantCommissions } =
+          await import("./merchant.service.js");
+
+        // 1. Rellena MerchantId en líneas (idempotente)
+        await populateOrderMerchants(result.orderNumber);
+
+        // 2. Atribución afiliado (síncrono para obtener commissionAmount)
+        const cookieHeader = req.headers.cookie ?? "";
+        const readCookie = (name: string) => {
+          for (const part of cookieHeader.split(";")) {
+            const trimmed = part.trim();
+            const eq = trimmed.indexOf("=");
+            if (eq < 0) continue;
+            if (trimmed.slice(0, eq) === name) {
+              try { return decodeURIComponent(trimmed.slice(eq + 1)); } catch { return trimmed.slice(eq + 1); }
+            }
+          }
+          return undefined;
+        };
+        const referralCode =
+          (req.body?.referralCode as string | undefined) ||
+          readCookie("zentto_ref") ||
+          undefined;
+
+        let affiliateCommissionAmount = 0;
+        if (referralCode) {
+          const sessionId = readCookie("zentto_sid") || undefined;
+          const totalAmt = parsed.data.items.reduce((s, i) => s + i.subtotal + i.taxAmount, 0);
+          try {
+            const { attributeOrderCommission } = await import("./affiliate.service.js");
+            const aff = await attributeOrderCommission({
+              orderNumber: result.orderNumber,
+              referralCode,
+              sessionId: sessionId ?? null,
+              orderAmount: totalAmt,
+              currency: (parsed.data.currencyCode ?? "USD").toUpperCase(),
+            });
+            if (aff.ok) affiliateCommissionAmount = aff.commissionAmount;
+          } catch (affErr) {
+            console.warn("[checkout] affiliate attribute error:", affErr);
           }
         }
-        return undefined;
-      };
-      const referralCode =
-        (req.body?.referralCode as string | undefined) ||
-        readCookie("zentto_ref") ||
-        undefined;
-      if (referralCode && result.orderNumber) {
-        const sessionId = readCookie("zentto_sid") || undefined;
-        const totalAmt = parsed.data.items.reduce((s, i) => s + i.subtotal + i.taxAmount, 0);
-        const { tryAttributeOrder } = await import("./affiliate.service.js");
-        // fire-and-forget
-        tryAttributeOrder({
+
+        // 3. Generar merchant commissions descontando el afiliado (fix negocio)
+        await generateMerchantCommissions({
           orderNumber: result.orderNumber,
-          referralCode,
-          sessionId: sessionId ?? null,
-          orderAmount: totalAmt,
-          currency: (parsed.data.currencyCode ?? "USD").toUpperCase(),
-        }).catch(() => { /* ignore */ });
+          affiliateCommissionAmount,
+        });
       }
-    } catch (affErr) {
-      console.warn("[checkout] affiliate attribute error:", affErr);
+    } catch (mpErr) {
+      console.warn("[checkout] marketplace post-process error:", mpErr);
     }
 
     // Notify: orden creada (best-effort)

@@ -104,3 +104,27 @@ export function useAdminReviewMerchantProduct() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-merchant-products"] }),
   });
 }
+
+/**
+ * Genera payouts mensuales de merchants agrupando commissions approved.
+ * Análogo a useAdminGenerateAffiliatePayouts.
+ */
+export function useAdminGenerateMerchantPayouts() {
+  const qc = useQueryClient();
+  return useMutation<
+    { ok: boolean; message: string; payoutsCreated: number; totalAmount: number },
+    Error,
+    { periodStart?: string; periodEnd?: string } | undefined
+  >({
+    mutationFn: (args) =>
+      adminFetch("/store/admin/merchants/payouts/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          periodStart: args?.periodStart,
+          periodEnd: args?.periodEnd,
+        }),
+      }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-merchants"] }),
+  });
+}

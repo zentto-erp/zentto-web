@@ -38,6 +38,9 @@ export default function ProductosPage() {
     const [page, setPage] = useState(1);
     const [drawerOpen, setDrawerOpen] = useState(false);
 
+    // Filtro por merchant (marketplace) — proviene del query string ?merchant=slug
+    const merchantSlug = searchParams.get('merchant') ?? undefined;
+
     const [filters, setFilters] = useState<SidebarFilters>({
         category: searchParams.get('category') ?? undefined,
         brand: undefined,
@@ -74,6 +77,7 @@ export default function ProductosPage() {
         sortBy,
         page,
         limit: 24,
+        merchant: merchantSlug,
     });
 
     const { data: categories = [], isLoading: loadingCats } = useCategoryList();
@@ -163,6 +167,23 @@ export default function ProductosPage() {
                     }
                 >
                     Resultados de búsqueda para: <strong>{search}</strong>
+                </Alert>
+            )}
+
+            {merchantSlug && (
+                <Alert
+                    severity="info"
+                    sx={{ mb: 2 }}
+                    action={
+                        <Chip
+                            label="Ver todo el catálogo"
+                            size="small"
+                            onClick={() => { router.push('/productos'); }}
+                            sx={{ cursor: 'pointer' }}
+                        />
+                    }
+                >
+                    Mostrando solo productos del vendedor: <strong>{merchantSlug}</strong>
                 </Alert>
             )}
 

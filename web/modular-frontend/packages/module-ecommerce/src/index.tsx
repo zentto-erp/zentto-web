@@ -13,8 +13,8 @@ export type { RecentlyViewedItem } from "./store/useRecentlyViewedStore";
 export { useSearchHistoryStore } from "./store/useSearchHistoryStore";
 
 // Hooks
-export { useProductList, useProductDetail, useCategoryList, useBrandList, useProductReviews, useCreateReview } from "./hooks/useStoreProducts";
-export type { ProductFilters } from "./hooks/useStoreProducts";
+export { useProductList, useProductDetail, useCategoryList, useBrandList, useProductReviews, useCreateReview, usePublicMerchant } from "./hooks/useStoreProducts";
+export type { ProductFilters, PublicMerchant } from "./hooks/useStoreProducts";
 export { useCustomerRegister, useCustomerLogin, useCustomerProfile, useCustomerLogout } from "./hooks/useStoreAuth";
 export { useCheckout, useOrderByToken, useMyOrders } from "./hooks/useStoreOrders";
 export { useStorefrontCountries, useStorefrontCurrencies, useCountryConfig, useResolveCountry } from "./hooks/useStorefront";
@@ -102,6 +102,7 @@ export type { MerchantDashboard, MerchantProduct } from "./hooks/useMerchant";
 export {
   useAdminMerchants, useAdminPendingMerchantProducts,
   useAdminSetMerchantStatus, useAdminReviewMerchantProduct,
+  useAdminGenerateMerchantPayouts,
 } from "./hooks/useMerchantAdmin";
 export type { AdminMerchant, AdminMerchantProduct } from "./hooks/useMerchantAdmin";
 

@@ -27,6 +27,10 @@ export interface ProductFilters {
   sortBy?: string;
   page?: number;
   limit?: number;
+  /** Marketplace — filtrar por merchant slug (vendedor externo aprobado). */
+  merchant?: string;
+  /** Marketplace — si false, oculta productos del marketplace (solo catálogo Zentto). */
+  includeMerchant?: boolean;
 }
 
 export function useProductList(filters?: ProductFilters) {
@@ -44,9 +48,34 @@ export function useProductList(filters?: ProductFilters) {
       if (filters?.sortBy) p.append("sortBy", filters.sortBy);
       if (filters?.page) p.append("page", String(filters.page));
       if (filters?.limit) p.append("limit", String(filters.limit));
+      if (filters?.merchant) p.append("merchant", filters.merchant);
+      if (filters?.includeMerchant === false) p.append("includeMerchant", "0");
       const qs = p.toString();
       return storeGet(`/store/products${qs ? `?${qs}` : ""}`);
     },
+  });
+}
+
+// ─── Merchant público (marketplace) ──────────────────
+export interface PublicMerchant {
+  merchantId: number;
+  storeSlug: string;
+  legalName: string;
+  description: string | null;
+  logoUrl: string | null;
+  bannerUrl: string | null;
+  contactEmail: string | null;
+  productsApproved: number;
+  avgRating: number;
+  reviewCount: number;
+  createdAt: string;
+}
+
+export function usePublicMerchant(slug?: string) {
+  return useQuery<PublicMerchant>({
+    queryKey: [QK, "merchant", slug],
+    enabled: !!slug,
+    queryFn: () => storeGet(`/store/merchants/${encodeURIComponent(slug!)}`),
   });
 }
 
