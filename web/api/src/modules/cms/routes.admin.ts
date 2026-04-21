@@ -25,11 +25,8 @@ function requireCmsEditor(req: AuthenticatedRequest, res: Response, next: () => 
     res.status(401).json({ ok: false, error: "unauthenticated" });
     return;
   }
-  // Fallback temporal: solo ZENTTO corporate (companyId=1) puede editar el CMS central.
-  if (companyId !== 1) {
-    res.status(403).json({ ok: false, error: "cms_editor_required" });
-    return;
-  }
+  // Cada empresa accede solo a su propio contenido (companyId del JWT).
+  // TODO(auth): cuando zentto-auth emita el rol cms_editor, verificarlo aquí además.
   next();
 }
 
@@ -38,6 +35,7 @@ cmsAdminRouter.use(requireCmsEditor as any);
 // ─── Posts ───────────────────────────────────────────────────────────────────
 cmsAdminRouter.get("/posts", async (req, res) => {
   try {
+    const companyId = (req as AuthenticatedRequest).scope!.companyId;
     const vertical = typeof req.query.vertical === "string" ? req.query.vertical : undefined;
     const category = typeof req.query.category === "string" ? req.query.category : undefined;
     const locale = typeof req.query.locale === "string" ? req.query.locale : "es";
@@ -45,7 +43,7 @@ cmsAdminRouter.get("/posts", async (req, res) => {
     const limit = Math.min(Math.max(Number(req.query.limit) || 20, 1), 100);
     const offset = Math.max(Number(req.query.offset) || 0, 0);
 
-    const { rows, total } = await listPosts({ vertical, category, locale, status, limit, offset });
+    const { rows, total } = await listPosts({ companyId, vertical, category, locale, status, limit, offset });
     res.json({ ok: true, data: rows.map(({ TotalCount: _t, ...r }) => r), total, limit, offset });
   } catch (err: any) {
     res.status(500).json({ ok: false, error: err.message });
@@ -54,8 +52,9 @@ cmsAdminRouter.get("/posts", async (req, res) => {
 
 cmsAdminRouter.get("/posts/:slug", async (req, res) => {
   try {
+    const companyId = (req as AuthenticatedRequest).scope!.companyId;
     const locale = typeof req.query.locale === "string" ? req.query.locale : "es";
-    const post = await getPost(req.params.slug, locale);
+    const post = await getPost(req.params.slug, locale, companyId);
     if (!post) {
       res.status(404).json({ ok: false, error: "post_not_found" });
       return;
@@ -67,13 +66,14 @@ cmsAdminRouter.get("/posts/:slug", async (req, res) => {
 });
 
 cmsAdminRouter.post("/posts", async (req, res) => {
+  const companyId = (req as AuthenticatedRequest).scope!.companyId;
   const parsed = postUpsertSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ ok: false, error: "invalid_body", details: parsed.error.format() });
     return;
   }
   try {
-    const result = await upsertPost(parsed.data);
+    const result = await upsertPost(parsed.data, companyId);
     res.status(result.ok ? 201 : 400).json(result);
   } catch (err: any) {
     res.status(500).json({ ok: false, error: err.message });
@@ -81,6 +81,7 @@ cmsAdminRouter.post("/posts", async (req, res) => {
 });
 
 cmsAdminRouter.put("/posts/:id", async (req, res) => {
+  const companyId = (req as AuthenticatedRequest).scope!.companyId;
   const postId = Number(req.params.id);
   if (!Number.isFinite(postId) || postId <= 0) {
     res.status(400).json({ ok: false, error: "invalid_id" });
@@ -92,7 +93,7 @@ cmsAdminRouter.put("/posts/:id", async (req, res) => {
     return;
   }
   try {
-    const result = await upsertPost(parsed.data);
+    const result = await upsertPost(parsed.data, companyId);
     res.status(result.ok ? 200 : 400).json(result);
   } catch (err: any) {
     res.status(500).json({ ok: false, error: err.message });
@@ -100,13 +101,14 @@ cmsAdminRouter.put("/posts/:id", async (req, res) => {
 });
 
 cmsAdminRouter.post("/posts/:id/publish", async (req, res) => {
+  const companyId = (req as AuthenticatedRequest).scope!.companyId;
   const postId = Number(req.params.id);
   if (!Number.isFinite(postId) || postId <= 0) {
     res.status(400).json({ ok: false, error: "invalid_id" });
     return;
   }
   try {
-    const result = await publishPost(postId, true);
+    const result = await publishPost(postId, true, companyId);
     res.status(result.ok ? 200 : 404).json(result);
   } catch (err: any) {
     res.status(500).json({ ok: false, error: err.message });
@@ -114,13 +116,14 @@ cmsAdminRouter.post("/posts/:id/publish", async (req, res) => {
 });
 
 cmsAdminRouter.post("/posts/:id/unpublish", async (req, res) => {
+  const companyId = (req as AuthenticatedRequest).scope!.companyId;
   const postId = Number(req.params.id);
   if (!Number.isFinite(postId) || postId <= 0) {
     res.status(400).json({ ok: false, error: "invalid_id" });
     return;
   }
   try {
-    const result = await publishPost(postId, false);
+    const result = await publishPost(postId, false, companyId);
     res.status(result.ok ? 200 : 404).json(result);
   } catch (err: any) {
     res.status(500).json({ ok: false, error: err.message });
@@ -128,13 +131,14 @@ cmsAdminRouter.post("/posts/:id/unpublish", async (req, res) => {
 });
 
 cmsAdminRouter.delete("/posts/:id", async (req, res) => {
+  const companyId = (req as AuthenticatedRequest).scope!.companyId;
   const postId = Number(req.params.id);
   if (!Number.isFinite(postId) || postId <= 0) {
     res.status(400).json({ ok: false, error: "invalid_id" });
     return;
   }
   try {
-    const result = await deletePost(postId);
+    const result = await deletePost(postId, companyId);
     res.status(result.ok ? 200 : 404).json(result);
   } catch (err: any) {
     res.status(500).json({ ok: false, error: err.message });
@@ -144,10 +148,11 @@ cmsAdminRouter.delete("/posts/:id", async (req, res) => {
 // ─── Pages ───────────────────────────────────────────────────────────────────
 cmsAdminRouter.get("/pages", async (req, res) => {
   try {
+    const companyId = (req as AuthenticatedRequest).scope!.companyId;
     const vertical = typeof req.query.vertical === "string" ? req.query.vertical : undefined;
     const locale = typeof req.query.locale === "string" ? req.query.locale : "es";
     const status = typeof req.query.status === "string" ? req.query.status : undefined;
-    const rows = await listPages({ vertical, locale, status });
+    const rows = await listPages({ companyId, vertical, locale, status });
     res.json({ ok: true, data: rows });
   } catch (err: any) {
     res.status(500).json({ ok: false, error: err.message });
@@ -156,9 +161,10 @@ cmsAdminRouter.get("/pages", async (req, res) => {
 
 cmsAdminRouter.get("/pages/:slug", async (req, res) => {
   try {
+    const companyId = (req as AuthenticatedRequest).scope!.companyId;
     const vertical = typeof req.query.vertical === "string" ? req.query.vertical : "corporate";
     const locale = typeof req.query.locale === "string" ? req.query.locale : "es";
-    const page = await getPage(req.params.slug, vertical, locale);
+    const page = await getPage(req.params.slug, vertical, locale, companyId);
     if (!page) {
       res.status(404).json({ ok: false, error: "page_not_found" });
       return;
@@ -170,13 +176,14 @@ cmsAdminRouter.get("/pages/:slug", async (req, res) => {
 });
 
 cmsAdminRouter.post("/pages", async (req, res) => {
+  const companyId = (req as AuthenticatedRequest).scope!.companyId;
   const parsed = pageUpsertSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ ok: false, error: "invalid_body", details: parsed.error.format() });
     return;
   }
   try {
-    const result = await upsertPage(parsed.data);
+    const result = await upsertPage(parsed.data, companyId);
     res.status(result.ok ? 201 : 400).json(result);
   } catch (err: any) {
     res.status(500).json({ ok: false, error: err.message });
@@ -184,6 +191,7 @@ cmsAdminRouter.post("/pages", async (req, res) => {
 });
 
 cmsAdminRouter.put("/pages/:id", async (req, res) => {
+  const companyId = (req as AuthenticatedRequest).scope!.companyId;
   const pageId = Number(req.params.id);
   if (!Number.isFinite(pageId) || pageId <= 0) {
     res.status(400).json({ ok: false, error: "invalid_id" });
@@ -195,7 +203,7 @@ cmsAdminRouter.put("/pages/:id", async (req, res) => {
     return;
   }
   try {
-    const result = await upsertPage(parsed.data);
+    const result = await upsertPage(parsed.data, companyId);
     res.status(result.ok ? 200 : 400).json(result);
   } catch (err: any) {
     res.status(500).json({ ok: false, error: err.message });
@@ -203,13 +211,14 @@ cmsAdminRouter.put("/pages/:id", async (req, res) => {
 });
 
 cmsAdminRouter.post("/pages/:id/publish", async (req, res) => {
+  const companyId = (req as AuthenticatedRequest).scope!.companyId;
   const pageId = Number(req.params.id);
   if (!Number.isFinite(pageId) || pageId <= 0) {
     res.status(400).json({ ok: false, error: "invalid_id" });
     return;
   }
   try {
-    const result = await publishPage(pageId, true);
+    const result = await publishPage(pageId, true, companyId);
     res.status(result.ok ? 200 : 404).json(result);
   } catch (err: any) {
     res.status(500).json({ ok: false, error: err.message });
@@ -217,13 +226,14 @@ cmsAdminRouter.post("/pages/:id/publish", async (req, res) => {
 });
 
 cmsAdminRouter.delete("/pages/:id", async (req, res) => {
+  const companyId = (req as AuthenticatedRequest).scope!.companyId;
   const pageId = Number(req.params.id);
   if (!Number.isFinite(pageId) || pageId <= 0) {
     res.status(400).json({ ok: false, error: "invalid_id" });
     return;
   }
   try {
-    const result = await deletePage(pageId);
+    const result = await deletePage(pageId, companyId);
     res.status(result.ok ? 200 : 404).json(result);
   } catch (err: any) {
     res.status(500).json({ ok: false, error: err.message });
