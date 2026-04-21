@@ -13,7 +13,7 @@ permissions:
 
 jobs:
   publish:
-    name: Typecheck & publish to npm
+    name: Build & publish to npm
     runs-on: ubuntu-22.04
     permissions:
       contents: read
@@ -36,8 +36,10 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-      - name: Typecheck
-        run: npm run typecheck
+      - name: Typecheck + build
+        run: |
+          npm run typecheck
+          npm run build
 
       # Publica solo si la version del package.json cambió respecto a npm.
       # zizmor: ignore[use-trusted-publishing] — npm trusted publishing requiere OIDC setup aparte.
