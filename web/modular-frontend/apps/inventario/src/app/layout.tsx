@@ -13,7 +13,8 @@ import {
     ToastProvider,
     LocalizationProviderWrapper,
     BrandedThemeProvider,
-    ZenttoLayout
+    ZenttoLayout,
+    ZenttoChatWidget
 } from '@zentto/shared-ui';
 import '@zentto/shared-ui/globals.css';
 
@@ -70,6 +71,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                                     <CssBaseline />
                                     <LocalizationProviderWrapper>
                                         <AppContent>{children}</AppContent>
+                                        <ZenttoChatWidget />
                                     </LocalizationProviderWrapper>
                                 </BrandedThemeProvider>
                             

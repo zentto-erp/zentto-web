@@ -4,6 +4,7 @@
 import '@zentto/shared-ui/web-components';
 
 import React, { useState, useMemo } from "react";
+import { ZenttoChatWidget } from '@zentto/shared-ui';
 import {
   AppBar,
   Box,
@@ -165,6 +166,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <Box sx={{ flex: 1, overflow: "auto", p: { xs: 1, sm: 2 } }}>
                 {children}
               </Box>
+              <ZenttoChatWidget />
             </Box>
           </ThemeProvider>
         </QueryClientProvider>

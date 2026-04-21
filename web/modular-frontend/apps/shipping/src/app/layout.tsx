@@ -5,7 +5,7 @@ import { Suspense } from 'react';
 import CssBaseline from '@mui/material/CssBaseline';
 import InitColorSchemeScript from '@mui/material/InitColorSchemeScript';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { BrandedThemeProvider } from '@zentto/shared-ui';
+import { BrandedThemeProvider, ZenttoChatWidget } from '@zentto/shared-ui';
 import '@zentto/shared-ui/globals.css';
 import { ShippingLayout } from '@zentto/module-shipping';
 import { useRouter } from 'next/navigation';
@@ -47,6 +47,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                         <BrandedThemeProvider defaultMode="system">
                             <CssBaseline />
                             <AppContent>{children}</AppContent>
+                            <ZenttoChatWidget />
                         </BrandedThemeProvider>
                     
                 </QueryClientProvider>
