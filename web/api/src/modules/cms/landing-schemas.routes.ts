@@ -442,7 +442,7 @@ cmsLandingAdminRouter.put("/landings/:id", async (req: AuthenticatedRequest, res
   }
 
   try {
-    const rows = await callSp<Record<string, any>>("usp_Cms_LandingSchema_UpsertDraft", {
+    const rows = await callSp<Record<string, any>>("usp_cms_landingschema_upsert_draft", {
       LandingSchemaId: id,
       CompanyId: companyId,
       Vertical: body.vertical ?? null,
@@ -507,7 +507,7 @@ cmsLandingAdminRouter.post(
     }
 
     try {
-      const rows = await callSp<Record<string, any>>("usp_Cms_LandingSchema_Publish", {
+      const rows = await callSp<Record<string, any>>("usp_cms_landingschema_publish", {
         LandingSchemaId: id,
         CompanyId: companyId,
         UserId: userId,
@@ -620,7 +620,7 @@ cmsLandingAdminRouter.post(
     const token = clear ? null : randomUUID();
     try {
       const rows = await callSp<Record<string, any>>(
-        "usp_Cms_LandingSchema_SetPreviewToken",
+        "usp_cms_landingschema_set_preview_token",
         { LandingSchemaId: id, CompanyId: companyId, Token: token },
       );
 
