@@ -86,4 +86,38 @@ export const env = {
    */
   storeAffiliatePayoutEnabled:
     String(process.env.STORE_AFFILIATE_PAYOUT_ENABLED || "false").toLowerCase() === "true",
+  /**
+   * Landing Schemas CMS — revalidate webhook (opt-in).
+   *
+   * Al publicar un landing en `/v1/cms/landings/:id/publish`, la API hace fire-and-forget
+   * POST al endpoint de revalidate del frontend vertical correspondiente para invalidar
+   * el cache Next.js. Default OFF para dev/test.
+   *
+   * LANDING_REVALIDATE_ENABLED: 'true' activa el disparo.
+   * LANDING_REVALIDATE_SECRET:  shared secret enviado como header `x-revalidate-token`.
+   * LANDING_REVALIDATE_URLS:    JSON string `{"hotel": "https://hotel.zentto.net/api/revalidate", ...}`
+   *                             con endpoint por vertical. Claves no mapeadas se ignoran.
+   */
+  landingRevalidate: {
+    enabled:
+      String(process.env.LANDING_REVALIDATE_ENABLED || "false").toLowerCase() === "true",
+    secret: (process.env.LANDING_REVALIDATE_SECRET ?? "") as string,
+    urls: ((): Record<string, string> => {
+      const raw = process.env.LANDING_REVALIDATE_URLS;
+      if (!raw) return {};
+      try {
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+          const out: Record<string, string> = {};
+          for (const [k, v] of Object.entries(parsed)) {
+            if (typeof v === "string" && v) out[k] = v;
+          }
+          return out;
+        }
+        return {};
+      } catch {
+        return {};
+      }
+    })(),
+  },
 };
