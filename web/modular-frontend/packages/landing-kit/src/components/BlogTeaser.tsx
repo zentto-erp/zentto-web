@@ -1,44 +1,32 @@
 /**
- * BlogTeaser — sección "Últimos del blog" para landings B2B.
+ * BlogTeaser — sección blog para landings. Server Component async con ISR 5 min.
  *
- * Consume el API público del CMS Zentto (ADR-CMS-001):
- *   GET /v1/public/cms/posts?vertical=<vertical>&limit=3
- *
- * Server Component async. Usa Next.js fetch con revalidate para ISR (cache 5 min).
- * Empty state si no hay posts publicados; error state silencioso (no rompe la landing).
+ * Para páginas Client Component, usa BlogTeaserClient.
  *
  * Uso:
- *   <BlogTeaser tokens={tokens} vertical="hotel" />
- *   <BlogTeaser tokens={tokens} vertical="medical" apiUrl="https://api.zentto.net" limit={3} />
+ *   <BlogTeaser vertical="hotel" theme="dark" />
+ *   <BlogTeaser vertical="medical" theme="light" companyId={42} blogBaseHref="/blog" />
  */
 
 import * as React from "react";
 import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
-import Typography from "@mui/material/Typography";
-import type { LandingTokens } from "../tokens";
+import type { LandingTokens, LandingVertical } from "../tokens";
+import { buildLandingTokens } from "../tokens";
 import { SectionShell } from "./SectionShell";
 import { CTAButton } from "./CTAButton";
+import { BlogPostCard, type BlogTeaserPost } from "./BlogPostCard";
 
-export interface BlogTeaserPost {
-  PostId: number;
-  Slug: string;
-  Vertical: string;
-  Category: string;
-  Title: string;
-  Excerpt: string;
-  CoverUrl: string;
-  AuthorName: string;
-  ReadingMin: number;
-  PublishedAt: string | null;
-}
+export type { BlogTeaserPost } from "./BlogPostCard";
 
 export interface BlogTeaserProps {
-  tokens: LandingTokens;
+  /** Tokens de la vertical. Si se omite, se construyen desde vertical + theme. */
+  tokens?: LandingTokens;
   /** Vertical para filtrar posts. Default: 'corporate' */
   vertical?: string;
-  /** CompanyId del tenant. Default: 1 (Zentto corporate). Cada despliegue
-   *  de cliente pasa su propio companyId para ver su contenido. */
+  /** "light" para storefront B2C, "dark" para landing B2B. Default: "dark" */
+  theme?: "light" | "dark";
+  /** CompanyId del tenant. Default: 1 (Zentto corporate). */
   companyId?: number;
   /** URL base del API. Default: https://api.zentto.net */
   apiUrl?: string;
@@ -46,16 +34,20 @@ export interface BlogTeaserProps {
   limit?: number;
   /** Idioma. Default: 'es' */
   locale?: string;
-  /** URL del blog completo (CTA final). Default: https://zentto.net/blog?producto={vertical} */
+  /** URL del blog completo (CTA). Por defecto varía según theme. */
   ctaHref?: string;
+  /** Base URL para links internos de posts. Default: https://zentto.net/blog */
+  blogBaseHref?: string;
   /** Eyebrow de la sección. Default: 'Blog' */
   eyebrow?: string;
-  /** Título de la sección. Default: 'Ideas del ecosistema' */
+  /** Título de la sección. Por defecto varía según theme. */
   title?: string;
   /** Descripción opcional bajo el título. */
   description?: string;
   /** ID del elemento section para anclas. Default: 'blog' */
   id?: string;
+  /** Texto del CTA. Por defecto varía según theme. */
+  ctaLabel?: string;
 }
 
 interface ListResponse {
@@ -71,7 +63,7 @@ async function fetchPosts(
   limit: number,
   companyId: number,
 ): Promise<BlogTeaserPost[]> {
-  const base = apiUrl.replace(/\/$/, "");
+  const base = apiUrl.endsWith("/") ? apiUrl.slice(0, -1) : apiUrl;
   const qs = new URLSearchParams({
     vertical,
     locale,
@@ -79,8 +71,6 @@ async function fetchPosts(
     companyId: String(companyId),
   }).toString();
   try {
-    // Next.js 14+ fetch extiende RequestInit con `next.revalidate`. En entornos
-    // que no sean Next (SSR genérico, Node raw), el campo se ignora silencioso.
     const res = await fetch(`${base}/v1/public/cms/posts?${qs}`, {
       headers: { Accept: "application/json" },
       // @ts-expect-error Next.js extended RequestInit
@@ -94,201 +84,70 @@ async function fetchPosts(
   }
 }
 
-function formatDate(iso: string | null, locale = "es"): string {
-  if (!iso) return "";
-  try {
-    return new Date(iso).toLocaleDateString(locale, {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-  } catch {
-    return "";
-  }
-}
-
 export async function BlogTeaser({
-  tokens,
+  tokens: tokensProp,
   vertical = "corporate",
+  theme = "dark",
   companyId = 1,
   apiUrl = "https://api.zentto.net",
   limit = 3,
   locale = "es",
   ctaHref,
+  blogBaseHref = "https://zentto.net/blog",
   eyebrow = "Blog",
-  title = "Ideas del ecosistema",
+  title,
   description,
   id = "blog",
+  ctaLabel,
 }: BlogTeaserProps) {
   const posts = await fetchPosts(apiUrl, vertical, locale, limit, companyId);
-  const hrefAll = ctaHref ?? `https://zentto.net/blog?producto=${vertical}`;
+  if (posts.length === 0) return null;
 
-  // Empty state: no renderiza la sección. Mantiene la landing limpia hasta que
-  // haya contenido real. Volver a render cuando se publique el primer post
-  // requiere rebuild de la app (ISR 5 min mitiga).
-  if (posts.length === 0) {
-    return null;
-  }
+  const tokens =
+    tokensProp ?? buildLandingTokens(vertical as LandingVertical, theme);
+  const defaultTitle =
+    theme === "light" ? "Noticias y consejos" : "Ideas del ecosistema";
+  const defaultCtaLabel =
+    theme === "light" ? "Ver todos en el blog" : "Ver todos los posts";
+  const hrefAll =
+    ctaHref ??
+    (theme === "light"
+      ? blogBaseHref
+      : `https://zentto.net/blog?producto=${vertical}`);
 
   return (
     <SectionShell
       tokens={tokens}
       id={id}
       eyebrow={eyebrow}
-      title={title}
+      title={title ?? defaultTitle}
       description={description}
       align="left"
     >
       <Box
         sx={{
           display: "grid",
-          gridTemplateColumns: {
-            xs: "1fr",
-            sm: "1fr 1fr",
-            md: "repeat(3, 1fr)",
-          },
+          gridTemplateColumns: { xs: "1fr", md: "repeat(3, 1fr)" },
           gap: `${tokens.spacing.gridGap}px`,
           mb: 5,
         }}
       >
         {posts.map((post) => (
-          <PostCard key={post.PostId} tokens={tokens} post={post} locale={locale} />
+          <BlogPostCard
+            key={post.PostId}
+            tokens={tokens}
+            post={post}
+            locale={locale}
+            blogBaseHref={blogBaseHref}
+          />
         ))}
       </Box>
 
       <Stack direction="row" justifyContent={{ xs: "center", md: "flex-start" }}>
         <CTAButton tokens={tokens} variant="ghost" href={hrefAll} showArrow>
-          Ver todos los posts
+          {ctaLabel ?? defaultCtaLabel}
         </CTAButton>
       </Stack>
     </SectionShell>
-  );
-}
-
-interface PostCardProps {
-  tokens: LandingTokens;
-  post: BlogTeaserPost;
-  locale: string;
-}
-
-function PostCard({ tokens, post, locale }: PostCardProps) {
-  const href = `https://zentto.net/blog/${post.Slug}`;
-  const categoryLabel = post.Category
-    ? post.Category.charAt(0).toUpperCase() + post.Category.slice(1)
-    : "";
-
-  return (
-    <Box
-      component="a"
-      href={href}
-      sx={{
-        display: "flex",
-        flexDirection: "column",
-        textDecoration: "none",
-        color: "inherit",
-        p: 3,
-        borderRadius: `${tokens.radius.lg}px`,
-        border: `1px solid ${tokens.color.border}`,
-        background: tokens.color.bgSurface,
-        transition: tokens.motion.ui,
-        height: "100%",
-        "&:hover": {
-          borderColor: tokens.color.borderStrong,
-          transform: "translateY(-2px)",
-          boxShadow: tokens.shadow.cardHover,
-        },
-        "&:focus-visible": {
-          outline: `2px solid ${tokens.color.brand}`,
-          outlineOffset: 2,
-        },
-      }}
-    >
-      {post.CoverUrl && (
-        <Box
-          component="img"
-          src={post.CoverUrl}
-          alt=""
-          loading="lazy"
-          sx={{
-            width: "100%",
-            aspectRatio: "16/9",
-            objectFit: "cover",
-            borderRadius: `${tokens.radius.md}px`,
-            mb: 2.5,
-            display: "block",
-          }}
-        />
-      )}
-
-      {categoryLabel && (
-        <Typography
-          sx={{
-            fontSize: "0.75rem",
-            fontWeight: 600,
-            color: tokens.color.brand,
-            textTransform: "uppercase",
-            letterSpacing: "0.06em",
-            mb: 1,
-          }}
-        >
-          {categoryLabel}
-        </Typography>
-      )}
-
-      <Typography
-        component="h3"
-        sx={{
-          fontSize: "1.125rem",
-          fontWeight: 700,
-          color: tokens.color.textPrimary,
-          lineHeight: 1.3,
-          mb: 1.5,
-          display: "-webkit-box",
-          WebkitLineClamp: 2,
-          WebkitBoxOrient: "vertical",
-          overflow: "hidden",
-        }}
-      >
-        {post.Title}
-      </Typography>
-
-      {post.Excerpt && (
-        <Typography
-          sx={{
-            fontSize: "0.9375rem",
-            color: tokens.color.textSecondary,
-            lineHeight: 1.6,
-            mb: 2.5,
-            display: "-webkit-box",
-            WebkitLineClamp: 3,
-            WebkitBoxOrient: "vertical",
-            overflow: "hidden",
-            flex: 1,
-          }}
-        >
-          {post.Excerpt}
-        </Typography>
-      )}
-
-      <Stack
-        direction="row"
-        justifyContent="space-between"
-        alignItems="center"
-        sx={{
-          mt: "auto",
-          pt: 2,
-          borderTop: `1px solid ${tokens.color.border}`,
-          fontSize: "0.75rem",
-          color: tokens.color.textMuted,
-        }}
-      >
-        <Typography sx={{ fontSize: "inherit", color: "inherit" }}>
-          {formatDate(post.PublishedAt, locale)}
-        </Typography>
-        <Typography sx={{ fontSize: "inherit", color: "inherit" }}>
-          {post.ReadingMin} min
-        </Typography>
-      </Stack>
-    </Box>
   );
 }
