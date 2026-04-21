@@ -93,8 +93,6 @@ export default function UnidadTributariaPage() {
 
   return (
     <Box>
-      <Typography variant="h6" sx={{ mb: 2 }}>Unidad Tributaria</Typography>
-
       <zentto-grid
         ref={gridRef}
         export-filename="unidad-tributaria"

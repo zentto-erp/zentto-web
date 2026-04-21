@@ -93,8 +93,7 @@ export default function ConteoFisicoPage() {
 
   return (
     <Box sx={{ p: 2 }}>
-      <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
-        <Typography variant="h5" fontWeight={600}>Conteo Físico</Typography>
+      <Stack direction="row" justifyContent="flex-end" alignItems="center" mb={2}>
         <Button variant="contained" startIcon={<AddIcon />} onClick={() => setOpenNew(true)}>
           Nueva hoja de conteo
         </Button>

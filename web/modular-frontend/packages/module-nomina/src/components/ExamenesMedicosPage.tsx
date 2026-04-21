@@ -89,10 +89,11 @@ export default function ExamenesMedicosPage() {
 
   return (
     <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-      <Stack direction="row" spacing={2} alignItems="center" mb={2}>
-        <Typography variant="h6">Exámenes Médicos</Typography>
-        {pendingCount > 0 && <Chip label={`${pendingCount} vencido${pendingCount > 1 ? "s" : ""}`} color="warning" size="small" />}
-      </Stack>
+      {pendingCount > 0 && (
+        <Stack direction="row" spacing={2} alignItems="center" mb={2}>
+          <Chip label={`${pendingCount} vencido${pendingCount > 1 ? "s" : ""}`} color="warning" size="small" />
+        </Stack>
+      )}
 
       <Box sx={{ flex: 1, minHeight: 0 }}>
         <zentto-grid ref={gridRef} height="calc(100vh - 200px)" enable-toolbar enable-header-menu enable-header-filters enable-clipboard enable-quick-search enable-context-menu enable-status-bar enable-configurator enable-grouping enable-pivot enable-create create-label="Nuevo Examen" />

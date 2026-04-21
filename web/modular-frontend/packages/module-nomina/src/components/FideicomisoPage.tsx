@@ -98,8 +98,7 @@ export default function FideicomisoPage() {
 
   return (
     <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-      <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
-        <Typography variant="h6">Fideicomiso</Typography>
+      <Stack direction="row" justifyContent="flex-end" alignItems="center" mb={2}>
         <Button variant="contained" startIcon={<CalculateIcon />} onClick={() => setCalcOpen(true)}>
           Calcular Trimestre
         </Button>

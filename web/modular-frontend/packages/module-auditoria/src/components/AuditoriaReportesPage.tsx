@@ -182,7 +182,7 @@ export default function AuditoriaReportesPage() {
         ) : isLoading ? (
           <Box display="flex" justifyContent="center" py={4}><CircularProgress /></Box>
         ) : (
-          <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, border: "1px solid #E5E7EB" }}>
+          <Paper sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, border: (t) => `1px solid ${t.palette.divider}` }}>
             {tab === 0 && (
               <zentto-grid
         ref={gridRef}

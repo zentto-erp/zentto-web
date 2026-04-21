@@ -68,10 +68,7 @@ export default function ProveedoresTable() {
   return (
     <Box sx={{ p: 2 }}>
       {/* Header */}
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
-        <Typography variant="h5" sx={{ fontWeight: 600 }}>
-          Gestión de Proveedores
-        </Typography>
+      <Box sx={{ display: "flex", justifyContent: "flex-end", alignItems: "center", mb: 3 }}>
         <Button
           variant="contained"
           startIcon={<AddIcon />}

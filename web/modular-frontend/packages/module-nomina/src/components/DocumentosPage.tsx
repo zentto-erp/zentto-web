@@ -76,9 +76,7 @@ export default function DocumentosPage({ onEditTemplate }: { onEditTemplate?: (c
     <Box>
       {/* Filters + New button */}
       <Stack direction="row" spacing={2} mb={3} alignItems="center" flexWrap="wrap">
-        <Typography variant="h6" fontWeight={700} sx={{ flexGrow: 1 }}>
-          Plantillas de Documentos Legales
-        </Typography>
+        <Box sx={{ flexGrow: 1 }} />
         <FormControl sx={{ minWidth: 150 }}>
           <InputLabel>País</InputLabel>
           <Select value={filterCountry} label="País" onChange={e => setFilterCountry(e.target.value)}>

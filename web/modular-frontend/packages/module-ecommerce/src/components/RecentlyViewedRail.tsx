@@ -28,7 +28,7 @@ export default function RecentlyViewedRail({ title = "Vistos recientemente", lim
   return (
     <Box sx={{ my: 4 }}>
       <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1.5, px: { xs: 1, md: 0 } }}>
-        <Typography variant="h6" fontWeight={700} sx={{ color: "#0f1111" }}>
+        <Typography variant="h6" fontWeight={700}>
           {title}
         </Typography>
         <Box>
