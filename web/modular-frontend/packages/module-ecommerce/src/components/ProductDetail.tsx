@@ -110,6 +110,15 @@ interface Props {
     industryTemplateName?: string;
     variants?: ProductVariant[];
     industryAttributes?: IndustryAttribute[];
+    // Marketplace — si source=='merchant', viene populado con info del vendedor
+    source?: "zentto" | "merchant";
+    merchant?: {
+      id: number;
+      slug: string;
+      name: string;
+      logoUrl?: string | null;
+      rating?: number | null;
+    } | null;
   };
   onBack?: () => void;
   reviews?: React.ReactNode;
@@ -464,6 +473,49 @@ export default function ProductDetail({ product, onBack, reviews }: Props) {
                 </Typography>
               )}
 
+              {/* Marketplace — Vendedor (si el producto viene de store.MerchantProduct) */}
+              {product.merchant && (
+                <Box
+                  sx={{
+                    display: "flex", alignItems: "center", gap: 1, mb: 1,
+                    py: 0.5, px: 1, bgcolor: "#f7f7f7", borderRadius: "6px",
+                    border: "1px solid #e3e6e6", width: "fit-content",
+                  }}
+                >
+                  {product.merchant.logoUrl ? (
+                    <Box
+                      component="img"
+                      src={product.merchant.logoUrl}
+                      alt={product.merchant.name}
+                      sx={{ width: 24, height: 24, borderRadius: "50%", objectFit: "cover" }}
+                    />
+                  ) : (
+                    <VerifiedIcon sx={{ fontSize: 18, color: "#007185" }} />
+                  )}
+                  <Typography variant="body2" sx={{ fontSize: 13 }}>
+                    Vendido por{" "}
+                    <Box
+                      component="a"
+                      href={`/vendedor/${product.merchant.slug}`}
+                      sx={{
+                        color: "#007185", fontWeight: 600, textDecoration: "none",
+                        "&:hover": { textDecoration: "underline", color: "#c45500" },
+                      }}
+                    >
+                      {product.merchant.name}
+                    </Box>
+                  </Typography>
+                  {product.merchant.rating != null && product.merchant.rating > 0 && (
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 0.3 }}>
+                      <ReviewStars rating={product.merchant.rating} size="small" />
+                      <Typography variant="caption" sx={{ color: "#565959", fontSize: 11 }}>
+                        ({product.merchant.rating.toFixed(1)})
+                      </Typography>
+                    </Box>
+                  )}
+                </Box>
+              )}
+
               {product.avgRating != null && product.avgRating > 0 && (
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
                   <Typography variant="body2" sx={{ color: "#007185" }}>{product.avgRating.toFixed(1)}</Typography>
@@ -639,7 +691,9 @@ export default function ProductDetail({ product, onBack, reviews }: Props) {
                   <Typography variant="body2" sx={{ color: "#067D62" }}>
                     {product.warrantyMonths && product.warrantyMonths > 0
                       ? `Garantía de ${product.warrantyMonths} ${product.warrantyMonths === 1 ? "mes" : "meses"}`
-                      : "Garantia del vendedor"}
+                      : product.merchant?.name
+                        ? `Garantía de ${product.merchant.name}`
+                        : "Garantia del vendedor"}
                   </Typography>
                 </Box>
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>

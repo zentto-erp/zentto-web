@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react';
 import {
   Box, Typography, Card, Tabs, Tab, Dialog, DialogTitle, DialogContent, DialogActions,
-  Button, Alert, TextField, Stack, MenuItem,
+  Button, Alert, TextField, Stack, MenuItem, Avatar,
 } from '@mui/material';
 import { ZenttoRecordTable, type ColumnSpec } from '@zentto/shared-ui';
 import { useAdminPendingMerchantProducts, useAdminReviewMerchantProduct, useAdminMerchants } from '@zentto/module-ecommerce';
@@ -13,11 +13,37 @@ const STATUS_LABEL: Record<string, string> = {
   pending_review: 'En revisión', approved: 'Aprobado', rejected: 'Rechazado', draft: 'Borrador',
 };
 
+const PLACEHOLDER_THUMB =
+  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3Crect fill='%23f0f2f2' width='40' height='40'/%3E%3Ctext fill='%23999' x='50%25' y='55%25' text-anchor='middle' font-size='10'%3E-%3C/text%3E%3C/svg%3E";
+
+const currencyFmt = (v: unknown) =>
+  typeof v === 'number'
+    ? `$${v.toFixed(2)}`
+    : typeof v === 'string' && !Number.isNaN(Number(v))
+      ? `$${Number(v).toFixed(2)}`
+      : String(v ?? '');
+
 const columns: ColumnSpec[] = [
+  {
+    field: 'imageUrl', header: '', width: 60, sortable: false,
+    renderCell: (_value: unknown, row: any) => (
+      <Avatar
+        variant="rounded"
+        src={row?.imageUrl || PLACEHOLDER_THUMB}
+        alt={row?.name}
+        sx={{ width: 36, height: 36, bgcolor: '#f0f2f2' }}
+      />
+    ),
+  } as any,
   { field: 'productCode',  header: 'Código', width: 140, sortable: true },
-  { field: 'name',         header: 'Producto', flex: 1, minWidth: 260, sortable: true },
+  { field: 'name',         header: 'Producto', flex: 1, minWidth: 240, sortable: true },
   { field: 'merchantName', header: 'Vendedor', width: 200, sortable: true },
-  { field: 'price',        header: 'Precio', width: 110, type: 'number', sortable: true },
+  {
+    field: 'price', header: 'Precio', width: 120, sortable: true, type: 'number',
+    renderCell: (value: unknown) => (
+      <Box sx={{ fontWeight: 600, color: '#0f1111' }}>{currencyFmt(value)}</Box>
+    ),
+  } as any,
   { field: 'stock',        header: 'Stock', width: 90, type: 'number', sortable: true },
   { field: 'category',     header: 'Categoría', width: 140, sortable: true },
   { field: 'statusLabel',  header: 'Estado', width: 140, sortable: true,
@@ -45,9 +71,10 @@ export default function AdminMerchantProductsPage() {
     id: p.id,
     productCode: p.productCode,
     name: p.name,
+    imageUrl: p.imageUrl,
     merchantId: p.merchantId,
     merchantName: p.merchantName,
-    price: Number(p.price).toFixed(2),
+    price: Number(p.price),
     stock: p.stock,
     category: p.category ?? '—',
     statusLabel: STATUS_LABEL[p.status] ?? p.status,

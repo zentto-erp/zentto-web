@@ -17,6 +17,7 @@
  *   POST   /store/admin/merchants/:id/suspend
  *   GET    /store/admin/merchant-products/pending
  *   POST   /store/admin/merchant-products/:id/review
+ *   POST   /store/admin/merchants/payouts/generate
  */
 
 import { Router } from "express";
@@ -32,6 +33,7 @@ import {
   adminSetMerchantStatus,
   adminListPendingProducts,
   adminReviewProduct,
+  adminGenerateMerchantPayouts,
 } from "./merchant.service.js";
 
 export const merchantRouter = Router();
@@ -232,6 +234,28 @@ merchantRouter.post("/admin/merchant-products/:id/review", requireJwt, async (re
       actor: user.name || String(user.sub),
     });
     if (!result.ok) return res.status(400).json(result);
+    res.json(result);
+  } catch (err: any) {
+    res.status(500).json({ error: "server_error", message: err.message });
+  }
+});
+
+// ─── Admin — generar payouts mensuales de merchants ────────
+const generateMerchantPayoutsSchema = z.object({
+  periodStart: z.string().optional(),
+  periodEnd: z.string().optional(),
+});
+
+merchantRouter.post("/admin/merchants/payouts/generate", requireJwt, async (req, res) => {
+  try {
+    const user = (req as AuthenticatedRequest).user;
+    if (!user?.isAdmin) return res.status(403).json({ error: "forbidden" });
+    const parsed = generateMerchantPayoutsSchema.safeParse(req.body ?? {});
+    if (!parsed.success) return res.status(400).json({ error: "invalid_body" });
+    const result = await adminGenerateMerchantPayouts({
+      periodStart: parsed.data.periodStart ?? null,
+      periodEnd: parsed.data.periodEnd ?? null,
+    });
     res.json(result);
   } catch (err: any) {
     res.status(500).json({ error: "server_error", message: err.message });
