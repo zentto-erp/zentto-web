@@ -26,11 +26,12 @@ const COLUMNS: ColumnDef[] = [
         field: 'imageUrl',
         header: '',
         width: 60,
-        renderCell: ({ value }: any) => (
-            value
+        renderCell: (params: any) => {
+            const value = params?.value;
+            return value
                 ? `<img src="${value}" alt="thumb" style="width:40px;height:40px;object-fit:cover;border-radius:4px;" />`
-                : `<div style="width:40px;height:40px;background:#eee;border-radius:4px;"></div>`
-        ),
+                : `<div style="width:40px;height:40px;background:#eee;border-radius:4px;"></div>`;
+        },
     },
     { field: 'code', header: 'Código', width: 120, sortable: true },
     { field: 'name', header: 'Nombre', flex: 1, minWidth: 200, sortable: true },
