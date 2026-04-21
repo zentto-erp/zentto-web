@@ -16,6 +16,7 @@ cmsPublicRouter.get("/posts", async (req: Request, res: Response) => {
     }
     const q = parsed.data;
     const { rows, total } = await listPosts({
+      companyId: q.companyId,
       vertical: q.vertical,
       category: q.category,
       locale: q.locale,
@@ -42,7 +43,8 @@ cmsPublicRouter.get("/posts", async (req: Request, res: Response) => {
 cmsPublicRouter.get("/posts/:slug", async (req: Request, res: Response) => {
   try {
     const locale = typeof req.query.locale === "string" ? req.query.locale : "es";
-    const post = await getPost(req.params.slug, locale);
+    const companyId = Number(req.query.company_id) || 1;
+    const post = await getPost(req.params.slug, locale, companyId);
     if (!post || post.Status !== "published") {
       res.status(404).json({ ok: false, error: "post_not_found" });
       return;
@@ -64,6 +66,7 @@ cmsPublicRouter.get("/pages", async (req: Request, res: Response) => {
       return;
     }
     const rows = await listPages({
+      companyId: parsed.data.companyId,
       vertical: parsed.data.vertical,
       locale: parsed.data.locale,
       status: "published",
@@ -81,7 +84,8 @@ cmsPublicRouter.get("/pages/:slug", async (req: Request, res: Response) => {
   try {
     const vertical = typeof req.query.vertical === "string" ? req.query.vertical : "corporate";
     const locale = typeof req.query.locale === "string" ? req.query.locale : "es";
-    const page = await getPage(req.params.slug, vertical, locale);
+    const companyId = Number(req.query.company_id) || 1;
+    const page = await getPage(req.params.slug, vertical, locale, companyId);
     if (!page || page.Status !== "published") {
       res.status(404).json({ ok: false, error: "page_not_found" });
       return;
