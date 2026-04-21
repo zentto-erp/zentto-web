@@ -40,15 +40,15 @@
 | # | Gap | Severidad | Apps impactadas | Evidencia |
 |---|---|---|---|---|
 | G-01 | SQL Server sin Validate/Create/Revoke/Renew de License ni SPs de Subscription/Pricing/Catalog | **BLOCKER** (mitigado por D-002) | Cualquier tenant con `DB_TYPE=sqlserver` | `web/api/sqlweb-mssql/includes/sp/` solo tiene 3 archivos License |
-| G-02 | CHECK `chk_pricing_vertical` bloquea POS/Restaurante/Ecommerce/CRM/Contabilidad | **BLOCKER** | Stream A + Fase 4 onboarding | `migrations/postgres/00082_pricing_plans_and_partners.sql:22` |
-| G-03 | `openapi.yaml` no documenta pricing/catalog/license/subscriptions/landing/tenants | **HIGH** | Partners, SDK auto-gen, E2E por contrato | 10.475 líneas revisadas, 0 coincidencias |
-| G-04 | `@zentto/platform-client` no expone submódulos `catalog` / `license` / `subscriptions` / `pricing` | **HIGH** | Hotel, medical, tickets, education, rental, inmobiliario, pos, restaurante | `web/platform-client/src/index.ts` |
+| G-02 | CHECK `chk_pricing_vertical` bloquea POS/Restaurante/Ecommerce/CRM/Contabilidad | ~~**BLOCKER**~~ **RESUELTO** (PR #486+#490, Lote 1.B) | Stream A + Fase 4 onboarding | Ampliado a 13 valores en migración `00152` |
+| G-03 | `openapi.yaml` no documenta pricing/catalog/license/subscriptions/landing/tenants | ~~**HIGH**~~ **RESUELTO** (PR #493, Lote 1.B2) | Partners, SDK auto-gen, E2E por contrato | 15 paths + 12 schemas + 3 security schemes documentados |
+| G-04 | `@zentto/platform-client` no expone submódulos `catalog` / `license` / `subscriptions` / `pricing` | ~~**HIGH**~~ **RESUELTO** (PR #496, Lote 1.C2, npm v0.6.0) | Hotel, medical, tickets, education, rental, inmobiliario, pos, restaurante | 3 submódulos publicados, 10 smoke tests verdes |
 | G-05 | Ninguna vertical hermana lee entitlements del core — cada una solo valida auth | **HIGH** | Todas las apps standalone | Grep `license\|entitlement\|subscription` → 0 hits en apps hermanas |
-| G-06 | `PLAN_MODULE_DEFAULTS` en código duplica `cfg.PricingPlan.ModuleCodes` en BD | **MEDIUM** | Todo tenant; drift entre código y BD | `web/api/src/modules/license/license.types.ts:21` |
-| G-07 | `cfg.PricingPlan.CompanyId NOT NULL DEFAULT 0` en tabla global de planes → potencial leak cross-tenant | **MEDIUM** | Multi-tenant | `migrations/postgres/00082_pricing_plans_and_partners.sql:20` |
+| G-06 | `PLAN_MODULE_DEFAULTS` en código duplica `cfg.PricingPlan.ModuleCodes` en BD | ~~**MEDIUM**~~ **RESUELTO** (PR #502, Lote 2.A) | Todo tenant; drift entre código y BD | Marcado `@deprecated` + documentación D-006 |
+| G-07 | `cfg.PricingPlan.CompanyId NOT NULL DEFAULT 0` en tabla global de planes → potencial leak cross-tenant | ~~**MEDIUM**~~ **RESUELTO** (Lote 2.C, migración `00155`) | Multi-tenant | CHECK `chk_pricing_plan_global CHECK (CompanyId = 0)` blinda el invariante. Cuando se soporten planes por tenant, bajar constraint + filtrar en SPs. |
 | G-08 | `/v1/status` sin dimensión por-tenant ni por-app; dashboard ops de Fase 2 no existe | **HIGH** | Stream B | `web/api/src/modules/health/status.routes.ts` |
-| G-09 | Notify no tiene templates de onboarding por-nicho (`htl-onboarding`, `med-onboarding`, etc.) | **MEDIUM** | Fase 4 | `zentto-notify/src/db/seed-zentto.ts`, `zentto-notify/src/templates/lead-seeds.ts:167-185` |
-| G-10 | `landing-kit` tiene 9 paletas; faltan `ecommerce`, `crm`, `contabilidad` del plan | **MEDIUM** | Fase 1 landings, Fase 4 demo | `web/modular-frontend/packages/landing-kit/src/tokens.ts:15-25` |
+| G-09 | Notify no tiene templates de onboarding por-nicho (`htl-onboarding`, `med-onboarding`, etc.) | ~~**MEDIUM**~~ **RESUELTO** (`zentto-notify#58`, Lote 2.B) | Fase 4 | 10 templates sembrados en startup (`niche-onboarding-seeds.ts`) |
+| G-10 | `landing-kit` tiene 9 paletas; faltan `ecommerce`, `crm`, `contabilidad` del plan | ~~**MEDIUM**~~ **RESUELTO** (PR #502, Lote 2.A) | Fase 1 landings, Fase 4 demo | 3 paletas nuevas en `VERTICAL_BRANDS` con contraste AA |
 
 ---
 
