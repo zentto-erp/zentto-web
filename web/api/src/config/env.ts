@@ -66,4 +66,24 @@ export const env = {
     const n = Number(raw);
     return Number.isFinite(n) && n > 0 ? n : undefined;
   })() as number | undefined,
+  /**
+   * MASTER_KEY — passphrase para cifrado PII con pgcrypto.
+   *
+   * Se usa como key simétrica para pgp_sym_encrypt / pgp_sym_decrypt sobre
+   * columnas sensibles (IBAN, account_number, tax_id en store.Affiliate y
+   * store.Merchant). La app la expone a cada transacción PG vía
+   * `SET LOCAL zentto.master_key = '...'` (ver setPiiMasterKey en db/query.ts).
+   *
+   * Opcional en dev/test: si no está seteada, los SPs que intenten cifrar
+   * fallan con error explícito, y los que sólo descifran (variante _safe)
+   * retornan NULL.
+   */
+  masterKey: (process.env.MASTER_KEY ?? "") as string,
+  /**
+   * Feature flag para activar endpoints/flows de payouts reales.
+   * Antes de activarlo en prod, la migración 00155 y la paridad T-SQL
+   * deben estar aplicadas (bloqueador del integration reviewer).
+   */
+  storeAffiliatePayoutEnabled:
+    String(process.env.STORE_AFFILIATE_PAYOUT_ENABLED || "false").toLowerCase() === "true",
 };

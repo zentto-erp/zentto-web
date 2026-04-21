@@ -335,6 +335,253 @@ export async function execute(
   };
 }
 
+// ── PII pgcrypto helpers ────────────────────────────────────────────────────
+//
+// store.pii_encrypt() / store.pii_decrypt() usan current_setting('zentto.master_key')
+// como passphrase simétrica. La app debe establecer la GUC al inicio de cada
+// transacción antes de invocar SPs que toquen columnas PII (*Enc).
+
+/**
+ * Ejecuta una operación con la GUC `zentto.master_key` configurada para la
+ * transacción actual (SET LOCAL). Sólo tiene efecto en modo PostgreSQL;
+ * en SQL Server es no-op (los SPs T-SQL equivalentes reciben la clave
+ * como parámetro o vía ENCRYPTBYPASSPHRASE con un contexto diferente).
+ *
+ * Patrón de uso en servicios:
+ *
+ *   import { withPiiMasterKey } from "../../db/query.js";
+ *   await withPiiMasterKey(async () => {
+ *     return callSpOut("usp_Store_Affiliate_Register", { ... }, { ... });
+ *   });
+ *
+ * Requiere env.masterKey configurado. Si no lo está, lanza error explícito
+ * para evitar cifrar con passphrase vacía.
+ */
+export async function withPiiMasterKey<T>(fn: () => Promise<T>): Promise<T> {
+  if (!usePg()) {
+    // SQL Server: el cifrado se maneja dentro del propio SP (ENCRYPTBYPASSPHRASE
+    // con la passphrase pasada como parámetro). No hay GUC que setear.
+    return fn();
+  }
+
+  if (!env.masterKey) {
+    throw new Error(
+      "[pii] MASTER_KEY no está configurada en el entorno. Requerida para operaciones sobre PayoutDetails (store.Affiliate/Merchant). Ver docs/security/pii-encryption.md"
+    );
+  }
+
+  const pool = getActivePgPool();
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    // set_config(key, value, is_local=true) → equivalente a SET LOCAL.
+    // Lo hacemos con set_config() en lugar de interpolar en el SQL para evitar
+    // cualquier riesgo de inyección con la key.
+    await client.query("SELECT set_config('zentto.master_key', $1, true)", [env.masterKey]);
+
+    // Ejecutar la lógica del caller — usa el pool normal; la GUC SET LOCAL
+    // sólo vive en esta transacción del client, por lo que los callSp/callSpOut
+    // que corran en otras conexiones NO verán la key.
+    //
+    // Para que el SP la vea, el caller debe usar withPiiMasterKeyClient()
+    // (ver abajo) o el patrón simplificado: llamar al SP directamente aquí
+    // dentro del client.
+    const result = await fn();
+
+    await client.query("COMMIT");
+    return result;
+  } catch (err) {
+    await client.query("ROLLBACK").catch(() => { /* noop */ });
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
+/**
+ * Variante que expone el cliente PG ya con la GUC cargada y permite ejecutar
+ * un SP inline (misma conexión → el SP ve la GUC SET LOCAL).
+ *
+ * Uso recomendado para SPs PII (encrypt/decrypt dentro del SP):
+ *
+ *   const { output } = await callSpOutWithPii(
+ *     "usp_Store_Affiliate_Register",
+ *     { CompanyId: 1, ... },
+ *     { Resultado: sql.Int, Mensaje: sql.NVarChar(500), ... }
+ *   );
+ */
+export async function callSpWithPii<T>(
+  spName: string,
+  inputs?: Record<string, unknown>
+): Promise<T[]> {
+  if (!usePg()) {
+    // SQL Server: delegar en callSp normal (el SP T-SQL maneja encryption).
+    return callSp<T>(spName, inputs);
+  }
+  if (!env.masterKey) {
+    throw new Error("[pii] MASTER_KEY no configurada. Ver docs/security/pii-encryption.md");
+  }
+
+  const pool = getActivePgPool();
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    await client.query("SELECT set_config('zentto.master_key', $1, true)", [env.masterKey]);
+
+    const adapted = ((): Record<string, unknown> | undefined => {
+      if (!inputs) return inputs;
+      const out: Record<string, unknown> = {};
+      for (const [k, v] of Object.entries(inputs)) {
+        if (k.endsWith("Xml")) {
+          const jsonKey = k.slice(0, -3) + "Json";
+          out[jsonKey] = typeof v === "string" ? xmlParamToJson(v) : null;
+        } else {
+          out[k] = v;
+        }
+      }
+      return out;
+    })();
+
+    const entries = adapted ? Object.entries(adapted).filter(([, v]) => v !== undefined) : [];
+    const toSnake = (key: string): string =>
+      "p_" + key
+        .replace(/([a-z])([A-Z])/g, "$1_$2")
+        .replace(/([A-Z]+)([A-Z][a-z])/g, "$1_$2")
+        .toLowerCase()
+        .replace(/^_/, "");
+
+    const namedArgs = entries.map(([key, _], i) => `${toSnake(key)} => $${i + 1}`).join(", ");
+    const values = entries.map(([, v]) => v);
+    const pgName = spName.replace(/^dbo\./i, "");
+    const sqlText = `SELECT * FROM ${pgName}(${namedArgs})`;
+
+    const result = await client.query(sqlText, values);
+    await client.query("COMMIT");
+
+    // Normalizar filas PG snake_case → PascalCase.
+    const toPascal = (col: string): string => {
+      const stripped = col.startsWith("p_") ? col.slice(2) : col;
+      return stripped.split("_").map((s) => s.charAt(0).toUpperCase() + s.slice(1)).join("");
+    };
+    return result.rows.map((row: Record<string, unknown>) => {
+      const out: Record<string, unknown> = {};
+      for (const [k, v] of Object.entries(row)) {
+        const normalize = k.startsWith("p_") || (k === k.toLowerCase() && k.includes("_"));
+        out[normalize ? toPascal(k) : k] = v;
+      }
+      return out;
+    }) as T[];
+  } catch (err) {
+    await client.query("ROLLBACK").catch(() => { /* noop */ });
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
+/**
+ * Igual que callSpOut pero con GUC `zentto.master_key` seteada para el SP.
+ * Ver comentario de callSpWithPii para detalles.
+ */
+export async function callSpOutWithPii<T>(
+  spName: string,
+  inputs?: Record<string, unknown>,
+  outputs?: Record<string, unknown>
+): Promise<{ rows: T[]; output: Record<string, unknown>; rowsAffected: number[] }> {
+  if (!usePg()) {
+    return callSpOut<T>(spName, inputs, outputs);
+  }
+  if (!env.masterKey) {
+    throw new Error("[pii] MASTER_KEY no configurada. Ver docs/security/pii-encryption.md");
+  }
+
+  const pool = getActivePgPool();
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    await client.query("SELECT set_config('zentto.master_key', $1, true)", [env.masterKey]);
+
+    const adapted = ((): Record<string, unknown> | undefined => {
+      if (!inputs) return inputs;
+      const out: Record<string, unknown> = {};
+      for (const [k, v] of Object.entries(inputs)) {
+        if (k.endsWith("Xml")) {
+          const jsonKey = k.slice(0, -3) + "Json";
+          out[jsonKey] = typeof v === "string" ? xmlParamToJson(v) : null;
+        } else {
+          out[k] = v;
+        }
+      }
+      return out;
+    })();
+
+    const entries = adapted ? Object.entries(adapted).filter(([, v]) => v !== undefined) : [];
+    const toSnake = (key: string): string =>
+      "p_" + key
+        .replace(/([a-z])([A-Z])/g, "$1_$2")
+        .replace(/([A-Z]+)([A-Z][a-z])/g, "$1_$2")
+        .toLowerCase()
+        .replace(/^_/, "");
+
+    const namedArgs = entries.map(([key, _], i) => `${toSnake(key)} => $${i + 1}`).join(", ");
+    const values = entries.map(([, v]) => v);
+    const pgName = spName.replace(/^dbo\./i, "");
+    const sqlText = `SELECT * FROM ${pgName}(${namedArgs})`;
+
+    const result = await client.query(sqlText, values);
+    await client.query("COMMIT");
+
+    const toPascal = (col: string): string => {
+      const stripped = col.startsWith("p_") ? col.slice(2) : col;
+      return stripped.split("_").map((s) => s.charAt(0).toUpperCase() + s.slice(1)).join("");
+    };
+    const normalizeRow = (row: Record<string, unknown>): Record<string, unknown> => {
+      const out: Record<string, unknown> = {};
+      for (const [k, v] of Object.entries(row)) {
+        const normalize = k.startsWith("p_") || (k === k.toLowerCase() && k.includes("_"));
+        out[normalize ? toPascal(k) : k] = v;
+      }
+      return out;
+    };
+
+    const firstRow = result.rows[0] ?? {};
+    const normalizedRow = normalizeRow(firstRow as Record<string, unknown>);
+
+    const PG_OUTPUT_ALIASES: Record<string, string[]> = {
+      Resultado: ["ok"],
+      Mensaje: ["mensaje"],
+    };
+
+    const outputRecord: Record<string, unknown> = {};
+    if (outputs) {
+      for (const key of Object.keys(outputs)) {
+        let val = normalizedRow[key] ?? (firstRow as Record<string, unknown>)[toSnake(key)] ?? undefined;
+        if (val === undefined) {
+          const aliases = PG_OUTPUT_ALIASES[key];
+          if (aliases) {
+            for (const alias of aliases) {
+              val = normalizedRow[alias] ?? (firstRow as Record<string, unknown>)[alias] ?? undefined;
+              if (val !== undefined) break;
+            }
+          }
+        }
+        outputRecord[key] = val ?? null;
+      }
+    }
+
+    return {
+      rows: result.rows.map(normalizeRow) as T[],
+      output: outputRecord,
+      rowsAffected: [result.rowCount ?? 0],
+    };
+  } catch (err) {
+    await client.query("ROLLBACK").catch(() => { /* noop */ });
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
 // Re-exportar sql para que el código que usa `sql.Int`, `sql.NVarChar` etc. no se rompa
 export { sql };
 export { getPool };

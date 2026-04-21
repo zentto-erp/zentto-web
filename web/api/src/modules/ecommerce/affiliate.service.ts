@@ -11,7 +11,7 @@
  *   - Admin: listar afiliados, aprobar/suspender, generar payouts
  */
 
-import { callSp, callSpOut, sql } from "../../db/query.js";
+import { callSp, callSpOut, callSpOutWithPii, sql } from "../../db/query.js";
 import { getActiveScope } from "../_shared/scope.js";
 
 function scope() {
@@ -52,7 +52,9 @@ export async function registerAffiliate(args: {
   payoutMethod?: string | null;
   payoutDetails?: Record<string, unknown> | null;
 }) {
-  const { output } = await callSpOut(
+  // PII: PayoutDetails se cifra con pgcrypto dentro del SP (usa GUC
+  // zentto.master_key seteada por callSpOutWithPii).
+  const { output } = await callSpOutWithPii(
     "usp_Store_Affiliate_Register",
     {
       CompanyId: scope().companyId,
@@ -227,7 +229,10 @@ export async function adminListAffiliates(args: {
 }) {
   const page = Math.max(args.page ?? 1, 1);
   const limit = Math.min(Math.max(args.limit ?? 20, 1), 100);
-  const { rows, output } = await callSpOut<any>(
+  // PII: admin list incluye "payoutDetails" descifrado — usamos la variante
+  // con GUC zentto.master_key seteada para que store.pii_decrypt_safe() tenga
+  // acceso a la key dentro del SP.
+  const { rows, output } = await callSpOutWithPii<any>(
     "usp_Store_Affiliate_Admin_List",
     {
       CompanyId: scope().companyId,
