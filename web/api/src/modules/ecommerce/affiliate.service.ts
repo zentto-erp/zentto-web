@@ -291,25 +291,17 @@ export async function adminGeneratePayouts(args: {
   periodStart?: string | null;
   periodEnd?: string | null;
 }) {
-  const { output } = await callSpOut(
-    "usp_Store_Affiliate_Payout_Generate",
-    {
-      CompanyId: scope().companyId,
-      PeriodStart: args.periodStart ?? null,
-      PeriodEnd: args.periodEnd ?? null,
-    },
-    {
-      Resultado: sql.Int,
-      Mensaje: sql.NVarChar(500),
-      PayoutsCreated: sql.Int,
-      TotalAmount: sql.Decimal(14, 2),
-    }
-  );
+  const rows = await callSp<any>("usp_Store_Affiliate_Payout_Generate", {
+    CompanyId: scope().companyId,
+    From: args.periodStart ?? null,
+    To: args.periodEnd ?? null,
+  });
+  const r = rows[0] ?? {};
   return {
-    ok: (output.Resultado as number) === 1,
-    message: output.Mensaje as string,
-    payoutsCreated: Number(output.PayoutsCreated ?? 0),
-    totalAmount: Number(output.TotalAmount ?? 0),
+    ok: Boolean(r.ok),
+    message: String(r.mensaje ?? ""),
+    payoutsCreated: Number(r.payoutsCreated ?? 0),
+    totalAmount: Number(r.totalAmount ?? 0),
   };
 }
 
