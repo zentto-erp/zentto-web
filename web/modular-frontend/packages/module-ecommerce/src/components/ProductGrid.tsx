@@ -16,6 +16,9 @@ interface Product {
   imageUrl?: string | null;
   avgRating?: number;
   reviewCount?: number;
+  // Marketplace — productos de store.MerchantProduct aprobados
+  source?: "zentto" | "merchant";
+  merchant?: { id: number; slug: string; name: string; rating?: number | null } | null;
 }
 
 interface Props {
@@ -75,6 +78,7 @@ export default function ProductGrid({ products, total, page, limit, loading, onP
               imageUrl={p.imageUrl}
               avgRating={p.avgRating}
               reviewCount={p.reviewCount}
+              merchant={p.merchant ?? undefined}
               onViewDetail={onViewDetail}
             />
           </Grid>

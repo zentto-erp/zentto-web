@@ -54,6 +54,32 @@ interface StoreProduct {
   isService: boolean;
   taxRate: number;
   imageUrl: string | null;
+  // Marketplace — 00158 store.UnifiedProduct
+  source?: "zentto" | "merchant";
+  merchantId?: number | null;
+  merchantSlug?: string | null;
+  merchantName?: string | null;
+}
+
+interface StoreMerchantSummary {
+  id: number;
+  slug: string;
+  name: string;
+  rating?: number | null;
+}
+
+interface StoreMerchantPublic {
+  merchantId: number;
+  storeSlug: string;
+  legalName: string;
+  description: string | null;
+  logoUrl: string | null;
+  bannerUrl: string | null;
+  contactEmail: string | null;
+  productsApproved: number;
+  avgRating: number;
+  reviewCount: number;
+  createdAt: string | Date;
 }
 
 interface StoreCategory {
@@ -94,6 +120,8 @@ export async function listProducts(params: {
   sortBy?: string;
   page?: number;
   limit?: number;
+  merchantSlug?: string;
+  includeMerchant?: boolean;
 }) {
   const page = Math.max(params.page ?? 1, 1);
   const limit = Math.min(Math.max(params.limit ?? 24, 1), 100);
@@ -116,15 +144,33 @@ export async function listProducts(params: {
       SortBy: sortBy,
       Page: page,
       Limit: limit,
+      MerchantSlug: params.merchantSlug?.trim() || null,
+      IncludeMerchant: params.includeMerchant === false ? 0 : 1,
     },
     { TotalCount: sql.Int }
   );
 
-  // Resolver URLs de imágenes relativas y agregar placeholder
-  const resolvedRows = rows.map((r: any) => ({
-    ...r,
-    imageUrl: resolveImageUrl(r.imageUrl) || PLACEHOLDER_IMAGE,
-  }));
+  // Resolver URLs de imágenes relativas y agregar placeholder.
+  // Si el producto viene del marketplace (source='merchant'), adjuntar el
+  // objeto merchant {id,slug,name} para que el storefront muestre el badge.
+  const resolvedRows = rows.map((r: any) => {
+    const base: Record<string, any> = {
+      ...r,
+      imageUrl: resolveImageUrl(r.imageUrl) || PLACEHOLDER_IMAGE,
+    };
+    if (r.source === "merchant" && r.merchantId) {
+      base.merchant = {
+        id: Number(r.merchantId),
+        slug: r.merchantSlug,
+        name: r.merchantName,
+      } as StoreMerchantSummary;
+    }
+    // Limpiar los campos planos merchant* para evitar duplicación en el payload
+    delete base.merchantId;
+    delete base.merchantSlug;
+    delete base.merchantName;
+    return base;
+  });
 
   return {
     page,
@@ -152,7 +198,10 @@ export async function getProductByCode(code: string) {
 export async function getProductByCodeFull(code: string) {
   const params = { CompanyId: scope().companyId, BranchId: scope().branchId, Code: code };
 
-  // Lanzar todas las consultas en paralelo
+  // Lanzar todas las consultas en paralelo.
+  // Los SPs de imágenes/highlights/specs aplican solo a productos 'zentto'
+  // (master.Product). Para productos merchant, usamos la ImageUrl incluida
+  // en store.UnifiedProduct.
   const [productRows, images, highlightRows, specRows] = await Promise.all([
     callSp<any>("usp_Store_Product_GetByCode", params),
     callSp<any>("usp_Store_Product_GetImages", params),
@@ -174,18 +223,74 @@ export async function getProductByCodeFull(code: string) {
   const variants: any[] = [];
   const industryAttributes: any[] = [];
 
+  // Para productos merchant, la imagen viene en el propio producto (UnifiedProduct)
+  const isMerchantProduct = product.source === "merchant";
+  const merchantImageUrl = isMerchantProduct
+    ? resolveImageUrl((product as any).imageUrl ?? null)
+    : null;
+
   // Resolver URLs de imágenes relativas a absolutas
   const resolvedImages = images.map((img: any) => ({
     ...img,
     url: resolveImageUrl(img.url) || PLACEHOLDER_IMAGE,
   }));
 
+  // Inyectar imagen del merchant si no hay imágenes registradas
+  if (resolvedImages.length === 0 && merchantImageUrl) {
+    resolvedImages.push({ id: 0, url: merchantImageUrl, role: "PRIMARY", isPrimary: true, altText: product.name });
+  }
+
   // Si no hay imágenes, agregar placeholder
   if (resolvedImages.length === 0) {
     resolvedImages.push({ id: 0, url: PLACEHOLDER_IMAGE, role: "PRIMARY", isPrimary: true, altText: "Sin imagen" });
   }
 
-  return { ...product, images: resolvedImages, highlights, specs, variants, industryAttributes };
+  // Adjuntar el objeto merchant si el producto viene del marketplace
+  const merchant = product.source === "merchant" && product.merchantId
+    ? {
+        id: Number(product.merchantId),
+        slug: product.merchantSlug,
+        name: product.merchantName,
+        logoUrl: resolveImageUrl(product.merchantLogoUrl ?? null),
+        rating: Number(product.merchantRating ?? 0),
+      }
+    : null;
+
+  // Limpiar campos planos merchant* del payload final
+  const { merchantId, merchantSlug, merchantName, merchantLogoUrl, merchantRating, ...rest } = product as any;
+
+  return {
+    ...rest,
+    merchant,
+    images: resolvedImages,
+    highlights,
+    specs,
+    variants,
+    industryAttributes,
+  };
+}
+
+// ─── Perfil público del merchant (marketplace) ─────────
+export async function getPublicMerchantBySlug(slug: string): Promise<StoreMerchantPublic | null> {
+  const rows = await callSp<any>("usp_Store_Merchant_Public_Get", {
+    CompanyId: scope().companyId,
+    Slug: slug,
+  });
+  const m = rows[0];
+  if (!m) return null;
+  return {
+    merchantId: Number(m.merchantId),
+    storeSlug: m.storeSlug,
+    legalName: m.legalName,
+    description: m.description ?? null,
+    logoUrl: resolveImageUrl(m.logoUrl ?? null),
+    bannerUrl: resolveImageUrl(m.bannerUrl ?? null),
+    contactEmail: m.contactEmail ?? null,
+    productsApproved: Number(m.productsApproved ?? 0),
+    avgRating: Number(m.avgRating ?? 0),
+    reviewCount: Number(m.reviewCount ?? 0),
+    createdAt: m.createdAt,
+  };
 }
 
 export async function listCategories() {
