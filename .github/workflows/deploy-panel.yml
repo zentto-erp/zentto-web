@@ -106,7 +106,7 @@ jobs:
           COPY --from=builder /app/apps/panel/.next ./.next
           COPY --from=builder /app/node_modules ./node_modules
           COPY --from=builder /app/apps/panel/package.json ./
-          COPY --from=builder /app/apps/panel/public ./public 2>/dev/null || true
+          COPY --from=builder /app/apps/panel/public ./public
           EXPOSE 3018
           CMD ["npx", "next", "start", "-p", "3018"]
           DEOF
