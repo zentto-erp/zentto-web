@@ -174,7 +174,7 @@ export async function adminSetMerchantStatus(args: {
   reason?: string | null;
 }) {
   const { output } = await callSpOut(
-    "usp_Store_Merchant_Admin_SetStatus",
+    "usp_Store_Merchant_Admin_Set_Status",
     {
       CompanyId: scope().companyId,
       MerchantId: args.merchantId,
