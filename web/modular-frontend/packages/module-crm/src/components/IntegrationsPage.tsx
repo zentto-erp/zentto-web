@@ -45,7 +45,6 @@ export default function IntegrationsPage() {
 
   return (
     <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, p: 2 }}>
-      <Typography variant="h5" sx={{ mb: 2 }}>Integraciones</Typography>
       <Paper sx={{ mb: 2 }}>
         <Tabs value={tab} onChange={(_, v) => setTab(v)}>
           <Tab icon={<WebhookIcon />} iconPosition="start" label="Webhooks" />

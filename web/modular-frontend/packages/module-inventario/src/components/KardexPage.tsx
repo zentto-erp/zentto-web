@@ -72,8 +72,6 @@ export default function KardexPage() {
 
   return (
     <Box sx={{ p: 2 }}>
-      <Typography variant="h5" fontWeight={600} mb={2}>Kardex de Artículo</Typography>
-
       <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} mb={2} alignItems="flex-end">
         <TextField
           size="small"

@@ -254,10 +254,6 @@ export default function FacturaForm({ numeroFactura }: FacturaFormProps) {
 
   return (
     <Box sx={{ p: 2 }}>
-      <Typography variant="h5" sx={{ mb: 3, fontWeight: 600 }}>
-        {isEdit ? "Editar Factura" : "Nueva Factura"}
-      </Typography>
-
       {submitSuccess && (
         <Alert severity="success" sx={{ mb: 2 }}>
           {isEdit ? "Factura actualizada exitosamente" : "Factura creada exitosamente"}

@@ -92,8 +92,7 @@ export default function PagosTable() {
 
   return (
     <Box sx={{ p: 2 }}>
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
-        <Typography variant="h5" fontWeight={600}>Pagos</Typography>
+      <Box sx={{ display: "flex", justifyContent: "flex-end", alignItems: "center", mb: 3 }}>
         <Button
           variant="contained"
           startIcon={<AddIcon />}

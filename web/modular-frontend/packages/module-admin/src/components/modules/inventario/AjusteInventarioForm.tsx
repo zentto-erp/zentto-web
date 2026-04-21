@@ -91,10 +91,6 @@ export default function AjusteInventarioForm() {
 
   return (
     <Box sx={{ p: 2 }}>
-      <Typography variant="h5" sx={{ mb: 3, fontWeight: 600 }}>
-        Ajuste de Inventario
-      </Typography>
-
       {submitSuccess && (
         <Alert severity="success" sx={{ mb: 2 }}>
           Movimiento registrado exitosamente

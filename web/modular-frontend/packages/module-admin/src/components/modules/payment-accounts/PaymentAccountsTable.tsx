@@ -44,7 +44,6 @@ export default function PaymentAccountsTable() {
     <Box sx={{ p: 3 }}>
       <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 3 }}>
         <Box>
-          <Typography variant="h5" fontWeight={700}>Cuentas de pago</Typography>
           <Typography variant="body2" color="text.secondary">
             Configura los providers (Paddle, Stripe, Mercantil, Binance, etc.) que usará tu empresa para cobrar.
           </Typography>
