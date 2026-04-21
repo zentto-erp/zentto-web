@@ -27,6 +27,7 @@ export const SYSTEM_MODULES = [
   'pos', 'restaurante', 'ecommerce', 'auditoria',
   'logistica', 'crm', 'manufactura', 'flota', 'shipping',
   'report-studio', 'addons',
+  'cms',
 ] as const;
 
 export type SystemModule = typeof SYSTEM_MODULES[number];
