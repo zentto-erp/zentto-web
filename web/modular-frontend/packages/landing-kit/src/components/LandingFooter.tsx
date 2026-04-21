@@ -5,7 +5,6 @@
  */
 
 import * as React from "react";
-import NextLink from "next/link";
 import BoxComp from "@mui/material/Box";
 // Cast de Box a any para permitir `component` polimórfico con `href`.
 // MUI sin TS augmentation de Next.js Link da overload errors aquí.
@@ -46,7 +45,6 @@ export function LandingFooter({
   ],
   statusLink = { label: "Estado del servicio", href: "https://status.zentto.net" },
 }: LandingFooterProps) {
-  const LinkEl = NextLink as React.ElementType;
   const year = new Date().getFullYear();
 
   return (
@@ -188,7 +186,7 @@ export function LandingFooter({
                         target: "_blank",
                         rel: "noopener noreferrer",
                       }
-                    : { component: LinkEl, href: link.href };
+                    : { component: "a", href: link.href };
                   return (
                     <Box
                       key={link.label}
@@ -240,7 +238,7 @@ export function LandingFooter({
             {legalLinks.map((link) => (
               <Box
                 key={link.href}
-                component={LinkEl as unknown as React.ElementType<any>}
+                component="a"
                 href={link.href}
                 sx={{
                   color: tokens.color.textFaint,
