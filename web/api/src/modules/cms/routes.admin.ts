@@ -15,8 +15,6 @@ import {
 } from "./service.js";
 
 // Router privado: /v1/cms/* — requiere JWT (montado después del auth middleware global).
-// TODO(auth): reemplazar guard `requireCmsEditor` por check de rol `cms_editor` cuando
-// zentto-auth emita ese rol. Mientras tanto usa fallback: companyId = 1 (ZENTTO corporate).
 export const cmsAdminRouter = Router();
 
 function requireCmsEditor(req: AuthenticatedRequest, res: Response, next: () => void) {
@@ -25,8 +23,12 @@ function requireCmsEditor(req: AuthenticatedRequest, res: Response, next: () => 
     res.status(401).json({ ok: false, error: "unauthenticated" });
     return;
   }
-  // Cada empresa accede solo a su propio contenido (companyId del JWT).
-  // TODO(auth): cuando zentto-auth emita el rol cms_editor, verificarlo aquí además.
+  const isAdmin = req.user?.isAdmin === true;
+  const hasCmsRole = Array.isArray(req.user?.roles) && req.user.roles.includes("CMS_EDITOR");
+  if (!isAdmin && !hasCmsRole) {
+    res.status(403).json({ ok: false, error: "cms_editor_required" });
+    return;
+  }
   next();
 }
 

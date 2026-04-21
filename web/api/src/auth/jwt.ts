@@ -64,6 +64,8 @@ export type JwtPayload = {
   countryCode?: string;
   timeZone?: string;
   companyAccesses?: CompanyAccessClaim[];
+  /** Roles del usuario: unión de UserApp.Roles + UserRole M:N emitidos por zentto-auth */
+  roles?: string[];
 };
 
 // ─── JWKS remoto (RS256) ──────────────────────────────────────
