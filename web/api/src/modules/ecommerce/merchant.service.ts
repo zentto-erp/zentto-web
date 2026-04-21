@@ -11,7 +11,7 @@
  *   ↳ al final se generan payouts periódicos (futuro)
  */
 
-import { callSp, callSpOut, sql } from "../../db/query.js";
+import { callSp, callSpOut, callSpWithPii, callSpOutWithPii, sql } from "../../db/query.js";
 import { getActiveScope } from "../_shared/scope.js";
 
 function scope() {
@@ -33,7 +33,9 @@ export async function applyMerchant(args: {
   payoutMethod?: string | null;
   payoutDetails?: Record<string, unknown> | null;
 }) {
-  const { output } = await callSpOut(
+  // PII: PayoutDetails se cifra con pgcrypto dentro del SP (usa GUC
+  // zentto.master_key seteada por callSpOutWithPii).
+  const { output } = await callSpOutWithPii(
     "usp_Store_Merchant_Apply",
     {
       CompanyId: scope().companyId,
@@ -146,6 +148,22 @@ export async function listMerchantProducts(args: {
 }
 
 // ─── Admin ─────────────────────────────────────────────
+
+/**
+ * Detalle admin de un merchant — incluye "payoutDetails" descifrado on-the-fly.
+ * El SP usa store.pii_decrypt_safe() que requiere la GUC zentto.master_key,
+ * que seteamos vía callSpWithPii.
+ */
+export async function adminGetMerchantDetail(merchantId: number) {
+  const rows = await callSpWithPii<any>(
+    "usp_Store_Merchant_Admin_Get_Detail",
+    {
+      CompanyId: scope().companyId,
+      MerchantId: merchantId,
+    }
+  );
+  return rows[0] ?? null;
+}
 
 export async function adminListMerchants(args: {
   status?: string | null;

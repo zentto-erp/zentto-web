@@ -11,7 +11,7 @@
  *   - Admin: listar afiliados, aprobar/suspender, generar payouts
  */
 
-import { callSp, callSpOut, sql } from "../../db/query.js";
+import { callSp, callSpOut, callSpOutWithPii, sql } from "../../db/query.js";
 import { getActiveScope } from "../_shared/scope.js";
 
 function scope() {
@@ -52,7 +52,9 @@ export async function registerAffiliate(args: {
   payoutMethod?: string | null;
   payoutDetails?: Record<string, unknown> | null;
 }) {
-  const { output } = await callSpOut(
+  // PII: PayoutDetails se cifra con pgcrypto dentro del SP (usa GUC
+  // zentto.master_key seteada por callSpOutWithPii).
+  const { output } = await callSpOutWithPii(
     "usp_Store_Affiliate_Register",
     {
       CompanyId: scope().companyId,
@@ -227,7 +229,10 @@ export async function adminListAffiliates(args: {
 }) {
   const page = Math.max(args.page ?? 1, 1);
   const limit = Math.min(Math.max(args.limit ?? 20, 1), 100);
-  const { rows, output } = await callSpOut<any>(
+  // PII: admin list incluye "payoutDetails" descifrado — usamos la variante
+  // con GUC zentto.master_key seteada para que store.pii_decrypt_safe() tenga
+  // acceso a la key dentro del SP.
+  const { rows, output } = await callSpOutWithPii<any>(
     "usp_Store_Affiliate_Admin_List",
     {
       CompanyId: scope().companyId,
@@ -291,25 +296,17 @@ export async function adminGeneratePayouts(args: {
   periodStart?: string | null;
   periodEnd?: string | null;
 }) {
-  const { output } = await callSpOut(
-    "usp_Store_Affiliate_Payout_Generate",
-    {
-      CompanyId: scope().companyId,
-      PeriodStart: args.periodStart ?? null,
-      PeriodEnd: args.periodEnd ?? null,
-    },
-    {
-      Resultado: sql.Int,
-      Mensaje: sql.NVarChar(500),
-      PayoutsCreated: sql.Int,
-      TotalAmount: sql.Decimal(14, 2),
-    }
-  );
+  const rows = await callSp<any>("usp_Store_Affiliate_Payout_Generate", {
+    CompanyId: scope().companyId,
+    From: args.periodStart ?? null,
+    To: args.periodEnd ?? null,
+  });
+  const r = rows[0] ?? {};
   return {
-    ok: (output.Resultado as number) === 1,
-    message: output.Mensaje as string,
-    payoutsCreated: Number(output.PayoutsCreated ?? 0),
-    totalAmount: Number(output.TotalAmount ?? 0),
+    ok: Boolean(r.ok),
+    message: String(r.mensaje ?? ""),
+    payoutsCreated: Number(r.payoutsCreated ?? 0),
+    totalAmount: Number(r.totalAmount ?? 0),
   };
 }
 

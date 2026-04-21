@@ -1,4 +1,6 @@
 -- usp_store_affiliate_register — SQL Server 2012+
+-- PII: PayoutDetails se cifra con ENCRYPTBYPASSPHRASE(@MasterKey, ...).
+-- Paridad con PG: store.pii_encrypt() + GUC zentto.master_key.
 IF OBJECT_ID('dbo.usp_store_affiliate_register', 'P') IS NOT NULL
     DROP PROCEDURE dbo.usp_store_affiliate_register;
 GO
@@ -11,6 +13,7 @@ CREATE PROCEDURE dbo.usp_store_affiliate_register
     @ContactEmail   NVARCHAR(200),
     @PayoutMethod   NVARCHAR(30),
     @PayoutDetails  NVARCHAR(MAX),
+    @MasterKey      NVARCHAR(256),
     @Resultado      INT OUTPUT,
     @Mensaje        NVARCHAR(500) OUTPUT,
     @ReferralCode   NVARCHAR(20) OUTPUT,
@@ -45,10 +48,21 @@ BEGIN
         SET @Attempt = @Attempt + 1;
     END;
 
+    DECLARE @Enc VARBINARY(MAX) = NULL;
+    IF @PayoutDetails IS NOT NULL AND LEN(@PayoutDetails) > 0
+    BEGIN
+        IF @MasterKey IS NULL OR LEN(@MasterKey) = 0
+        BEGIN
+            SET @Mensaje = N'MasterKey requerida para cifrar PayoutDetails';
+            RETURN;
+        END;
+        SET @Enc = ENCRYPTBYPASSPHRASE(@MasterKey, @PayoutDetails);
+    END;
+
     INSERT INTO store.Affiliate
-        (CompanyId, CustomerId, ReferralCode, Status, PayoutMethod, PayoutDetails, TaxId, LegalName, ContactEmail)
+        (CompanyId, CustomerId, ReferralCode, Status, PayoutMethod, PayoutDetailsEnc, TaxId, LegalName, ContactEmail)
     VALUES
-        (@CompanyId, @CustomerId, @Code, 'pending', @PayoutMethod, @PayoutDetails, @TaxId, @LegalName, @ContactEmail);
+        (@CompanyId, @CustomerId, @Code, 'pending', @PayoutMethod, @Enc, @TaxId, @LegalName, @ContactEmail);
 
     SET @AffiliateId   = SCOPE_IDENTITY();
     SET @ReferralCode  = @Code;

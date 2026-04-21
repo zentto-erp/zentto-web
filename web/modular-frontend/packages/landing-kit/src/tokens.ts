@@ -22,6 +22,9 @@ export type LandingVertical =
   | "rental"
   | "pos"
   | "shipping"
+  | "ecommerce"
+  | "crm"
+  | "contabilidad"
   | "default";
 
 /* ─── Neutrales + semánticos (comunes a todas las verticales) ─────────── */
@@ -148,6 +151,39 @@ export const VERTICAL_BRANDS: Record<LandingVertical, VerticalBrand> = {
     accent: "#F59E0B",
     accentLight: "#FCD34D",
     heroGradient: "linear-gradient(180deg, #1E3A8A 0%, #14122E 60%, #0B0A1F 100%)",
+  },
+  ecommerce: {
+    // Rose / magenta — asociado a retail online, vibrante, distinto del
+    // rojo de restaurante y del naranja de rental.
+    brand: "#E11D48",
+    brandStrong: "#BE123C",
+    brandLight: "#FDA4AF",
+    brandSoft: "rgba(225,29,72,0.18)",
+    accent: "#F59E0B",
+    accentLight: "#FCD34D",
+    heroGradient: "linear-gradient(180deg, #881337 0%, #14122E 60%, #0B0A1F 100%)",
+  },
+  crm: {
+    // Fuchsia — distinto del indigo de tickets y del violet de education.
+    // Evoca conexion / relacion (CRM) con carga conversacional.
+    brand: "#C026D3",
+    brandStrong: "#A21CAF",
+    brandLight: "#F0ABFC",
+    brandSoft: "rgba(192,38,211,0.18)",
+    accent: "#22D3EE",
+    accentLight: "#A5F3FC",
+    heroGradient: "linear-gradient(180deg, #701A75 0%, #14122E 60%, #0B0A1F 100%)",
+  },
+  contabilidad: {
+    // Slate — seriedad financiera, confianza, clasico profesional.
+    // Accent ambar para CTA (contraste sin saturar sobriedad).
+    brand: "#475569",
+    brandStrong: "#334155",
+    brandLight: "#CBD5E1",
+    brandSoft: "rgba(71,85,105,0.22)",
+    accent: "#F59E0B",
+    accentLight: "#FCD34D",
+    heroGradient: "linear-gradient(180deg, #1E293B 0%, #14122E 60%, #0B0A1F 100%)",
   },
   default: {
     brand: "#4F46E5",
