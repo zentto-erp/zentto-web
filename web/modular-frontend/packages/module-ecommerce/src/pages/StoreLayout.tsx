@@ -23,6 +23,7 @@ import HomeIcon from "@mui/icons-material/Home";
 import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
 import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
 import { useCartStore } from "../store/useCartStore";
+import { useAdminAuthStore } from "../store/useAdminAuthStore";
 import { useSearchHistoryStore } from "../store/useSearchHistoryStore";
 import CartDrawer from "../components/CartDrawer";
 import CurrencySelector from "../components/CurrencySelector";
@@ -32,6 +33,7 @@ import MiniCartPopper from "../components/MiniCartPopper";
 import { useStoreSearch } from "../hooks/useStoreSearch";
 import { formatPrice } from "../utils/formatCurrency";
 import { processReferralFromUrl } from "../utils/affiliate";
+import { ZenttoChatWidget } from "@zentto/shared-ui";
 
 interface Props {
   children: React.ReactNode;
@@ -56,6 +58,7 @@ export default function StoreLayout({ children, onNavigate }: Props) {
   const customerToken = useCartStore((s) => s.customerToken);
   const customerInfo = useCartStore((s) => s.customerInfo);
   const setCustomerToken = useCartStore((s) => s.setCustomerToken);
+  const adminToken = useAdminAuthStore((s) => s.token);
 
   const searchTerms = useSearchHistoryStore((s) => s.terms);
   const addSearchTerm = useSearchHistoryStore((s) => s.addTerm);
@@ -405,10 +408,12 @@ export default function StoreLayout({ children, onNavigate }: Props) {
               <ListItemIcon><ReceiptLongIcon fontSize="small" /></ListItemIcon>
               <ListItemText>Mis pedidos</ListItemText>
             </MenuItem>
-            <MenuItem onClick={() => { setUserMenuAnchor(null); onNavigate("/admin/dashboard"); }}>
-              <ListItemIcon><AdminPanelSettingsIcon fontSize="small" /></ListItemIcon>
-              <ListItemText>Panel Admin</ListItemText>
-            </MenuItem>
+            {adminToken && (
+              <MenuItem onClick={() => { setUserMenuAnchor(null); onNavigate("/admin/dashboard"); }}>
+                <ListItemIcon><AdminPanelSettingsIcon fontSize="small" /></ListItemIcon>
+                <ListItemText>Panel Admin</ListItemText>
+              </MenuItem>
+            )}
             <Divider />
             <MenuItem onClick={handleLogout}>
               <ListItemIcon><LogoutIcon fontSize="small" /></ListItemIcon>
@@ -611,10 +616,32 @@ export default function StoreLayout({ children, onNavigate }: Props) {
         <Typography variant="caption">
           &copy; {new Date().getFullYear()} Zentto Store. Todos los derechos reservados.
         </Typography>
+        <Box sx={{ mt: 0.5 }}>
+          {adminToken ? (
+            <Typography
+              variant="caption"
+              component="span"
+              onClick={() => onNavigate("/admin/dashboard")}
+              sx={{ color: "#ff9900", cursor: "pointer", fontSize: 11, "&:hover": { textDecoration: "underline" } }}
+            >
+              Panel Administrador
+            </Typography>
+          ) : (
+            <Typography
+              variant="caption"
+              component="span"
+              onClick={() => onNavigate("/admin/login")}
+              sx={{ color: "#555", cursor: "pointer", fontSize: 11, "&:hover": { color: "#888" } }}
+            >
+              Acceso administradores
+            </Typography>
+          )}
+        </Box>
       </Box>
 
       <CartSyncProvider />
       <CompareBar onOpen={() => onNavigate("/comparar")} />
+      <ZenttoChatWidget />
 
       {/* Desktop: popper compacto con preview de items + CTAs. */}
       {!isMobile && (

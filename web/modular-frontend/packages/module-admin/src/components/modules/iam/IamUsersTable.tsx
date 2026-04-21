@@ -132,12 +132,6 @@ export default function IamUsersTable() {
 
   return (
     <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-      <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
-        <Typography variant="h5" fontWeight={600} sx={{ flex: 1 }}>
-          Gestion de Usuarios (IAM)
-        </Typography>
-      </Box>
-
       <Box sx={{ flex: 1, minHeight: 400 }}>
         {registered && (
           <zentto-grid

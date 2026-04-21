@@ -8,22 +8,27 @@
  *     FeatureGrid, HowItWorksSection, PricingSection,
  *     TestimonialsSection, CTAFinal,
  *     LandingHeader, LandingFooter,
+ *     BlogTeaser, BlogTeaserClient,
  *   } from "@zentto/landing-kit";
  *
- *   const tokens = buildLandingTokens("hotel"); // tickets, medical, restaurante, ...
- *   return <SectionShell tokens={tokens} ...>...</SectionShell>;
+ *   // B2B dark landing:
+ *   const tokens = buildLandingTokens("hotel");
+ *   // B2C storefront light:
+ *   const tokens = buildLandingTokens("hotel", "light");
  */
 
 // Tokens y builder
 export {
   buildLandingTokens,
   LANDING_NEUTRALS,
+  LANDING_NEUTRALS_LIGHT,
   VERTICAL_BRANDS,
   LANDING_TYPE,
   LANDING_LEADING,
   LANDING_TRACKING,
   LANDING_RADIUS,
   LANDING_SHADOW,
+  LANDING_SHADOW_LIGHT,
   LANDING_MOTION,
   LANDING_SPACING,
   LANDING_CONTAINER,
@@ -74,8 +79,17 @@ export type { LandingHeaderProps } from "./components/LandingHeader";
 export { LandingFooter } from "./components/LandingFooter";
 export type { LandingFooterProps } from "./components/LandingFooter";
 
+// Blog — Server Component (para páginas Server Component)
 export { BlogTeaser } from "./components/BlogTeaser";
 export type { BlogTeaserProps, BlogTeaserPost } from "./components/BlogTeaser";
+
+// Blog — Client Component (para páginas con 'use client')
+export { BlogTeaserClient } from "./components/BlogTeaserClient";
+export type { BlogTeaserClientProps } from "./components/BlogTeaserClient";
+
+// Bloque de renderizado compartido (para uso avanzado)
+export { BlogPostCard } from "./components/BlogPostCard";
+export type { BlogPostCardProps } from "./components/BlogPostCard";
 
 // Metadata helpers (también disponible en @zentto/landing-kit/metadata)
 export {

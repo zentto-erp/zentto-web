@@ -211,10 +211,6 @@ export default function ArticuloForm({ codigoArticulo }: ArticuloFormProps) {
 
   return (
     <Box sx={{ p: 2 }}>
-      <Typography variant="h5" sx={{ mb: 3, fontWeight: 600 }}>
-        {isEdit ? "Editar Artículo" : "Nuevo Artículo"}
-      </Typography>
-
       {submitSuccess && (
         <Alert severity="success" sx={{ mb: 2 }}>
           {isEdit ? "Artículo actualizado exitosamente" : "Artículo creado exitosamente"}

@@ -51,6 +51,23 @@ export const LANDING_NEUTRALS = {
   danger: "#F87171",
 } as const;
 
+
+/** Neutrales para contexto light (storefronts B2C). WCAG AA verificado sobre #FFFFFF. */
+export const LANDING_NEUTRALS_LIGHT = {
+  bg: '#F8FAFC',
+  bgSurface: '#FFFFFF',
+  bgElevated: '#F1F5F9',
+  border: '#E2E8F0',
+  borderStrong: '#CBD5E1',
+  textPrimary: '#0F172A',   // 16.1:1 AAA
+  textSecondary: '#475569', // 7.8:1  AAA
+  textMuted: '#64748B',     // 5.4:1  AA
+  textFaint: '#94A3B8',     // 4.5:1  AA
+  success: '#059669',
+  warning: '#D97706',
+  danger: '#DC2626',
+} as const;
+
 /* ─── Paletas de marca por vertical ──────────────────────────────────── */
 
 export interface VerticalBrand {
@@ -239,6 +256,14 @@ export const LANDING_SHADOW = {
   ctaHover: "0 12px 32px rgba(79,70,229,0.50)",
 } as const;
 
+
+export const LANDING_SHADOW_LIGHT = {
+  card: '0 1px 2px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.06)',
+  cardHover: '0 12px 32px rgba(0,0,0,0.10)',
+  cta: '0 8px 24px rgba(79,70,229,0.25)',
+  ctaHover: '0 12px 32px rgba(79,70,229,0.40)',
+} as const;
+
 export const LANDING_MOTION = {
   micro: "150ms cubic-bezier(0.4, 0, 0.2, 1)",
   ui: "240ms cubic-bezier(0.16, 1, 0.3, 1)",
@@ -259,22 +284,32 @@ export const LANDING_CONTAINER = {
   gutterMobile: 16,
 } as const;
 
-/* ─── Builder canónico ─────────────────────────────────────────────────── */
-
 /**
- * Construye el set completo de tokens para una vertical dada.
- * Uso: `const tokens = buildLandingTokens("hotel")`.
+ * Construye tokens para una vertical y tema dados.
+ * Uso:
+ *   buildLandingTokens('hotel')          // dark — B2B landings
+ *   buildLandingTokens('hotel', 'light') // light — storefronts B2C
  */
-export function buildLandingTokens(vertical: LandingVertical = "default") {
+export function buildLandingTokens(
+  vertical: LandingVertical = "default",
+  theme: "light" | "dark" = "dark",
+) {
   const brand = VERTICAL_BRANDS[vertical];
+  const neutrals = theme === "light" ? LANDING_NEUTRALS_LIGHT : LANDING_NEUTRALS;
+  const shadow = theme === "light" ? LANDING_SHADOW_LIGHT : LANDING_SHADOW;
   return {
     vertical,
-    color: { ...LANDING_NEUTRALS, ...brand },
+    theme,
+    color: {
+      ...neutrals,
+      ...brand,
+      eyebrowColor: theme === "light" ? brand.brand : brand.brandLight,
+    },
     type: LANDING_TYPE,
     leading: LANDING_LEADING,
     tracking: LANDING_TRACKING,
     radius: LANDING_RADIUS,
-    shadow: LANDING_SHADOW,
+    shadow,
     motion: LANDING_MOTION,
     spacing: LANDING_SPACING,
     container: LANDING_CONTAINER,

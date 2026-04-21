@@ -67,10 +67,6 @@ export default function IamCompaniesTable() {
 
   return (
     <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-      <Typography variant="h5" fontWeight={600} sx={{ mb: 3 }}>
-        Empresas (multi-tenant)
-      </Typography>
-
       <Box sx={{ flex: 1, minHeight: 400 }}>
         {registered && (
           <zentto-grid

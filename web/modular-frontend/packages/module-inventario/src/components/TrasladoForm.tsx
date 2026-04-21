@@ -127,10 +127,6 @@ export default function TrasladoForm() {
 
   return (
     <Box sx={{ p: 2 }}>
-      <Typography variant="h5" sx={{ mb: 3, fontWeight: 600, display: "flex", alignItems: "center", gap: 1 }}>
-        <SwapHorizIcon /> Traslado entre Almacenes
-      </Typography>
-
       {submitSuccess && <Alert severity="success" sx={{ mb: 2 }}>Traslado ejecutado exitosamente</Alert>}
       {submitError && <Alert severity="error" sx={{ mb: 2 }}>{submitError}</Alert>}
 
