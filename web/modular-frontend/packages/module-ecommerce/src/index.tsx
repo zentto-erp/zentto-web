@@ -159,6 +159,7 @@ export { default as AdminCmsPagesList } from "./components/AdminCmsPagesList";
 export { default as AdminCmsPageEditor } from "./components/AdminCmsPageEditor";
 export { default as AdminPressReleasesList } from "./components/AdminPressReleasesList";
 export { default as AdminPressReleaseEditor } from "./components/AdminPressReleaseEditor";
+export { default as StoreChatWidget } from "./components/StoreChatWidget";
 
 // Pages
 export { default as StoreLayout } from "./pages/StoreLayout";

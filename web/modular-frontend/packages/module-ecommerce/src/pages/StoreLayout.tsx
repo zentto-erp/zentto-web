@@ -33,6 +33,7 @@ import MiniCartPopper from "../components/MiniCartPopper";
 import { useStoreSearch } from "../hooks/useStoreSearch";
 import { formatPrice } from "../utils/formatCurrency";
 import { processReferralFromUrl } from "../utils/affiliate";
+import { ZenttoChatWidget } from "@zentto/shared-ui";
 
 interface Props {
   children: React.ReactNode;
@@ -640,6 +641,7 @@ export default function StoreLayout({ children, onNavigate }: Props) {
 
       <CartSyncProvider />
       <CompareBar onOpen={() => onNavigate("/comparar")} />
+      <ZenttoChatWidget />
 
       {/* Desktop: popper compacto con preview de items + CTAs. */}
       {!isMobile && (
