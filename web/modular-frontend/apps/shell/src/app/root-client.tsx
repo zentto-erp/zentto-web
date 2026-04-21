@@ -11,12 +11,12 @@ import {
   ToastProvider,
   LocalizationProviderWrapper,
   BrandedThemeProvider,
+  ZenttoChatWidget,
 } from '@zentto/shared-ui';
 import '@zentto/shared-ui/globals.css';
 import { I18nProvider } from '@zentto/shared-i18n';
 
 import { HardwareAgentBanner } from '../components/HardwareAgentBanner';
-import { SupportChatWidget } from '../components/SupportChatWidget';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://api.zentto.net';
 const ZENTTO_DOMAINS = new Set([
@@ -102,7 +102,7 @@ export default function RootClient({ children }: { children: React.ReactNode }) 
                 <TenantGuard>
                   <AppContent>{children}</AppContent>
                 </TenantGuard>
-                <SupportChatWidget />
+                <ZenttoChatWidget />
               </LocalizationProviderWrapper>
             </I18nProvider>
           </BrandedThemeProvider>

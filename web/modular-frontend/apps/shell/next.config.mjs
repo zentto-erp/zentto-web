@@ -47,6 +47,11 @@ const securityHeaders = [
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   typescript: { ignoreBuildErrors: true },
+  async redirects() {
+    return [
+      { source: '/productos', destination: 'https://zentto.net/productos/', permanent: false },
+    ];
+  },
   async headers() {
     return [
       {

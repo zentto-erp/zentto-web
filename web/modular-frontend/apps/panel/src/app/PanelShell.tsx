@@ -38,6 +38,7 @@ import CssBaseline from "@mui/material/CssBaseline";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useRouter, usePathname } from "next/navigation";
 import { isAuthenticated, getUser, logout } from "../lib/auth";
+import { ZenttoChatWidget } from '@zentto/shared-ui';
 
 const theme = createTheme({
   palette: {
@@ -197,6 +198,7 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
         <Box component="main" sx={{ flex: 1, p: { xs: 2, md: 3 } }}>
           {children}
         </Box>
+        <ZenttoChatWidget />
       </Box>
     </Box>
   );

@@ -5,7 +5,7 @@
  */
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useCartStore } from "../store/useCartStore";
+import { useAdminAuthStore } from "../store/useAdminAuthStore";
 
 const API_BASE =
   typeof window !== "undefined"
@@ -13,8 +13,12 @@ const API_BASE =
     : "http://localhost:4000";
 
 function authHeaders(): Record<string, string> {
-  const token = useCartStore.getState().customerToken;
-  return token ? { Authorization: `Bearer ${token}` } : {};
+  const { token, activeCompanyId, activeBranchId } = useAdminAuthStore.getState();
+  if (!token) return {};
+  const headers: Record<string, string> = { Authorization: `Bearer ${token}` };
+  if (activeCompanyId) headers["X-Company-Id"] = String(activeCompanyId);
+  if (activeBranchId)  headers["X-Branch-Id"]  = String(activeBranchId);
+  return headers;
 }
 
 async function adminFetch(path: string, init: RequestInit = {}) {

@@ -12,9 +12,10 @@
  */
 
 import {
-    Box, AppBar, Toolbar, Typography, IconButton, Button, Chip,
+    Box, AppBar, Toolbar, Typography, Button, Chip,
     Drawer, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Divider,
     Accordion, AccordionSummary, AccordionDetails,
+    Select, MenuItem as MuiMenuItem, FormControl, Tooltip,
 } from '@mui/material';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import AssignmentReturnIcon from '@mui/icons-material/AssignmentReturn';
@@ -34,7 +35,10 @@ import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
 import FactCheckIcon from '@mui/icons-material/FactCheck';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { useAdminReviewsList } from '@zentto/module-ecommerce';
+import { useAdminReviewsList, useAdminLogout, useAdminAuthStore } from '@zentto/module-ecommerce';
+import type { CompanyAccess } from '@zentto/module-ecommerce';
+import LogoutIcon from '@mui/icons-material/Logout';
+import BusinessIcon from '@mui/icons-material/Business';
 
 const DRAWER_WIDTH = 240;
 
@@ -136,16 +140,31 @@ function OrangeBadge({ count }: { count: number }) {
     );
 }
 
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
+// Componente interno que solo monta cuando el admin está autenticado.
+// Extrae todos los hooks que necesitan auth para no violar Rules of Hooks.
+function AdminShell({ children }: { children: React.ReactNode }) {
     const router = useRouter();
     const pathname = usePathname();
+    const adminUser        = useAdminAuthStore((s) => s.user);
+    const companyAccesses  = useAdminAuthStore((s) => s.companyAccesses);
+    const activeCompanyId  = useAdminAuthStore((s) => s.activeCompanyId);
+    const setActiveCompany = useAdminAuthStore((s) => s.setActiveCompany);
+    const logout           = useAdminLogout();
 
-    // ── Count de pendings para los badges ──
-    // Review pending: endpoint real (limit=1 basta, contamos via total).
     const { data: reviewsPending } = useAdminReviewsList({ status: 'pending', limit: 1 });
     const counts: BadgeCounts = {
         reviewsPending: Number(reviewsPending?.total ?? 0),
-        returnsPending: 0, // TODO: cuando exista endpoint de RMA admin, leer aquí.
+        returnsPending: 0,
+    };
+
+    const handleLogout = () => {
+        logout();
+        router.replace('/admin/login');
+    };
+
+    const handleCompanyChange = (companyId: number) => {
+        const access = companyAccesses.find((c) => c.companyId === companyId);
+        if (access) setActiveCompany(access.companyId, access.branchId ?? null);
     };
 
     const activeSectionId =
@@ -186,6 +205,61 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     <Typography variant="h6" fontWeight={700} sx={{ flex: 1 }}>
                         Zentto<span style={{ color: '#ff9900' }}>Store</span> Admin
                     </Typography>
+
+                    {/* Selector multi-empresa — visible solo cuando hay más de 1 empresa */}
+                    {companyAccesses.length > 1 && (
+                        <Tooltip title="Empresa activa">
+                            <FormControl size="small" sx={{ minWidth: 180 }}>
+                                <Select
+                                    value={activeCompanyId ?? ''}
+                                    onChange={(e) => handleCompanyChange(Number(e.target.value))}
+                                    displayEmpty
+                                    startAdornment={<BusinessIcon sx={{ color: '#aab7c4', fontSize: 16, mr: 0.5 }} />}
+                                    sx={{
+                                        color: '#fff',
+                                        fontSize: 13,
+                                        '.MuiOutlinedInput-notchedOutline': { borderColor: '#37475a' },
+                                        '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#ff9900' },
+                                        '.MuiSvgIcon-root': { color: '#aab7c4' },
+                                        bgcolor: '#1a2634',
+                                    }}
+                                >
+                                    {companyAccesses.map((c: CompanyAccess) => (
+                                        <MuiMenuItem key={c.companyId} value={c.companyId}>
+                                            <Box>
+                                                <Typography variant="body2" fontWeight={600} lineHeight={1.2}>
+                                                    {c.companyName}
+                                                </Typography>
+                                                {c.branchName && (
+                                                    <Typography variant="caption" sx={{ color: '#888', lineHeight: 1 }}>
+                                                        {c.branchName}
+                                                    </Typography>
+                                                )}
+                                            </Box>
+                                        </MuiMenuItem>
+                                    ))}
+                                </Select>
+                            </FormControl>
+                        </Tooltip>
+                    )}
+
+                    {/* Empresa única — solo mostrar nombre */}
+                    {companyAccesses.length === 1 && (
+                        <Tooltip title="Empresa activa">
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mr: 1 }}>
+                                <BusinessIcon sx={{ color: '#aab7c4', fontSize: 16 }} />
+                                <Typography variant="caption" sx={{ color: '#aab7c4' }}>
+                                    {companyAccesses[0].companyName}
+                                </Typography>
+                            </Box>
+                        </Tooltip>
+                    )}
+
+                    {adminUser?.name && (
+                        <Typography variant="caption" sx={{ color: '#aab7c4', mx: 1 }}>
+                            {adminUser.name}
+                        </Typography>
+                    )}
                     <Button
                         startIcon={<ArrowBackIcon />}
                         color="inherit"
@@ -194,6 +268,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                         sx={{ textTransform: 'none', fontSize: 13 }}
                     >
                         Volver al store
+                    </Button>
+                    <Button
+                        startIcon={<LogoutIcon />}
+                        color="inherit"
+                        size="small"
+                        onClick={handleLogout}
+                        sx={{ textTransform: 'none', fontSize: 13, color: '#ff9900' }}
+                    >
+                        Salir
                     </Button>
                 </Toolbar>
             </AppBar>
@@ -327,4 +410,30 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </Box>
         </Box>
     );
+}
+
+// ── Export principal — guard de autenticación ────────────────────────────────
+export default function AdminLayout({ children }: { children: React.ReactNode }) {
+    const router   = useRouter();
+    const pathname = usePathname();
+    const adminToken = useAdminAuthStore((s) => s.token);
+    const [hydrated, setHydrated] = useState(false);
+
+    useEffect(() => { setHydrated(true); }, []);
+
+    useEffect(() => {
+        if (!hydrated) return;
+        if (pathname === '/admin/login') return;
+        if (!adminToken) router.replace('/admin/login');
+    }, [hydrated, adminToken, pathname, router]);
+
+    if (!hydrated) return null;
+
+    // La página de login se renderiza sin sidebar
+    if (pathname === '/admin/login') return <>{children}</>;
+
+    // Sin token → null mientras redirige
+    if (!adminToken) return null;
+
+    return <AdminShell>{children}</AdminShell>;
 }
