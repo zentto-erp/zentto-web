@@ -129,7 +129,7 @@ export async function listAdminProducts(params: {
   const limit = Math.min(Math.max(params.limit ?? 25, 1), 200);
 
   const { rows, output } = await callSpOut<AdminProductListItem>(
-    "usp_Store_Product_ListAdmin",
+    "usp_Store_Product_List_Admin",
     {
       CompanyId: scope().companyId,
       BranchId: scope().branchId,
