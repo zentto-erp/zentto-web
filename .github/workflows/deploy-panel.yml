@@ -73,28 +73,43 @@ jobs:
 
       - uses: docker/setup-buildx-action@v3
 
-      # Build panel as standalone Next.js app
+      # Build panel using full monorepo (workspace resolution for @zentto/* packages)
       - name: Create Dockerfile
         run: |
-          cat > Dockerfile.panel << 'EOF'
-          FROM node:22-alpine AS deps
-          WORKDIR /app
-          COPY web/modular-frontend/apps/panel/package.json ./
-          RUN npm install
-
+          cat > Dockerfile.panel << 'DEOF'
           FROM node:22-alpine AS builder
           WORKDIR /app
-          COPY --from=deps /app/node_modules ./node_modules
-          COPY web/modular-frontend/apps/panel/ ./
-          RUN npx next build || true
+
+          ARG NPM_TOKEN
+          ENV NPM_TOKEN=$NPM_TOKEN
+
+          ARG NEXT_PUBLIC_API_URL=https://api.zentto.net
+          ARG NEXT_PUBLIC_SITES_API=https://sites.zentto.net
+          ARG NEXT_PUBLIC_AUTH_API=https://auth.zentto.net
+          ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+          ENV NEXT_PUBLIC_SITES_API=$NEXT_PUBLIC_SITES_API
+          ENV NEXT_PUBLIC_AUTH_API=$NEXT_PUBLIC_AUTH_API
+
+          # Copy full monorepo for workspace resolution (@zentto/* packages)
+          COPY web/modular-frontend/ .
+
+          # Install deps via workspace and remove token
+          RUN npm ci && rm -f .npmrc
+
+          # Build panel from workspace member directory
+          WORKDIR /app/apps/panel
+          RUN npx next build
 
           FROM node:22-alpine
           WORKDIR /app
-          COPY --from=builder /app ./
+          ENV NODE_ENV=production PORT=3018 HOSTNAME=0.0.0.0
+          COPY --from=builder /app/apps/panel/.next ./.next
+          COPY --from=builder /app/node_modules ./node_modules
+          COPY --from=builder /app/apps/panel/package.json ./
+          COPY --from=builder /app/apps/panel/public ./public 2>/dev/null || true
           EXPOSE 3018
-          ENV PORT=3018 NODE_ENV=production
           CMD ["npx", "next", "start", "-p", "3018"]
-          EOF
+          DEOF
 
       - uses: docker/build-push-action@v5
         with:
@@ -104,6 +119,11 @@ jobs:
           tags: ${{ env.IMAGE }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          build-args: |
+            NPM_TOKEN=${{ secrets.NPM_TOKEN }}
+            NEXT_PUBLIC_API_URL=https://api.zentto.net
+            NEXT_PUBLIC_SITES_API=https://sites.zentto.net
+            NEXT_PUBLIC_AUTH_API=https://auth.zentto.net
 
   # ── Deploy container en servidor ────────────────────────────
   deploy:
