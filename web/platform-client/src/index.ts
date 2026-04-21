@@ -8,6 +8,9 @@ export * as cache from "./cache/index.js";
 export * as landing from "./landing/index.js";
 export * as events from "./events/index.js";
 export * as webhooks from "./webhooks/index.js";
+export * as catalog from "./catalog/index.js";
+export * as license from "./license/index.js";
+export * as subscriptions from "./subscriptions/index.js";
 
 // Tipos de error compartidos (útiles para `instanceof` en callers).
 export * from "./internal/errors.js";
