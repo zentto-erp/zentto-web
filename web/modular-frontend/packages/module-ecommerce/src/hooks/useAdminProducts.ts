@@ -5,7 +5,7 @@
  */
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useCartStore } from "../store/useCartStore";
+import { useAdminAuthStore } from "../store/useAdminAuthStore";
 
 const API_BASE =
   typeof window !== "undefined"
@@ -13,7 +13,7 @@ const API_BASE =
     : "http://localhost:4000";
 
 function authHeaders(): Record<string, string> {
-  const token = useCartStore.getState().customerToken;
+  const token = useAdminAuthStore.getState().token;
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 

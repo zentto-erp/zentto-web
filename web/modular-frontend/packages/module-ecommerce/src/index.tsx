@@ -6,6 +6,8 @@ export const MODULE_TITLE = "Comercio Electrónico";
 // Store (Zustand)
 export { useCartStore } from "./store/useCartStore";
 export type { CartItem as CartItemType, CustomerInfo } from "./store/useCartStore";
+export { useAdminAuthStore } from "./store/useAdminAuthStore";
+export type { AdminUser } from "./store/useAdminAuthStore";
 export { useFavoritesStore } from "./store/useFavoritesStore";
 export type { FavoriteItem } from "./store/useFavoritesStore";
 export { useRecentlyViewedStore } from "./store/useRecentlyViewedStore";
@@ -16,6 +18,7 @@ export { useSearchHistoryStore } from "./store/useSearchHistoryStore";
 export { useProductList, useProductDetail, useCategoryList, useBrandList, useProductReviews, useCreateReview, usePublicMerchant } from "./hooks/useStoreProducts";
 export type { ProductFilters, PublicMerchant } from "./hooks/useStoreProducts";
 export { useCustomerRegister, useCustomerLogin, useCustomerProfile, useCustomerLogout } from "./hooks/useStoreAuth";
+export { useAdminLogin, useAdminLogout } from "./hooks/useAdminLogin";
 export { useCheckout, useOrderByToken, useMyOrders } from "./hooks/useStoreOrders";
 export { useStorefrontCountries, useStorefrontCurrencies, useCountryConfig, useResolveCountry } from "./hooks/useStorefront";
 export { useWishlist, useToggleWishlist } from "./hooks/useWishlist";

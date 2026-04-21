@@ -23,6 +23,7 @@ import HomeIcon from "@mui/icons-material/Home";
 import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
 import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
 import { useCartStore } from "../store/useCartStore";
+import { useAdminAuthStore } from "../store/useAdminAuthStore";
 import { useSearchHistoryStore } from "../store/useSearchHistoryStore";
 import CartDrawer from "../components/CartDrawer";
 import CurrencySelector from "../components/CurrencySelector";
@@ -56,6 +57,7 @@ export default function StoreLayout({ children, onNavigate }: Props) {
   const customerToken = useCartStore((s) => s.customerToken);
   const customerInfo = useCartStore((s) => s.customerInfo);
   const setCustomerToken = useCartStore((s) => s.setCustomerToken);
+  const adminToken = useAdminAuthStore((s) => s.token);
 
   const searchTerms = useSearchHistoryStore((s) => s.terms);
   const addSearchTerm = useSearchHistoryStore((s) => s.addTerm);
@@ -405,10 +407,12 @@ export default function StoreLayout({ children, onNavigate }: Props) {
               <ListItemIcon><ReceiptLongIcon fontSize="small" /></ListItemIcon>
               <ListItemText>Mis pedidos</ListItemText>
             </MenuItem>
-            <MenuItem onClick={() => { setUserMenuAnchor(null); onNavigate("/admin/dashboard"); }}>
-              <ListItemIcon><AdminPanelSettingsIcon fontSize="small" /></ListItemIcon>
-              <ListItemText>Panel Admin</ListItemText>
-            </MenuItem>
+            {adminToken && (
+              <MenuItem onClick={() => { setUserMenuAnchor(null); onNavigate("/admin/dashboard"); }}>
+                <ListItemIcon><AdminPanelSettingsIcon fontSize="small" /></ListItemIcon>
+                <ListItemText>Panel Admin</ListItemText>
+              </MenuItem>
+            )}
             <Divider />
             <MenuItem onClick={handleLogout}>
               <ListItemIcon><LogoutIcon fontSize="small" /></ListItemIcon>
