@@ -101,8 +101,6 @@ export default function ComitesPage() {
 
   return (
     <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-      <Typography variant="h6" sx={{ mb: 2 }}>Comités de Seguridad e Higiene</Typography>
-
       <Box sx={{ flex: 1, minHeight: 0 }}>
         <zentto-grid ref={gridRef} height="calc(100vh - 200px)" enable-toolbar enable-header-menu enable-header-filters enable-clipboard enable-quick-search enable-context-menu enable-status-bar enable-configurator enable-grouping enable-pivot enable-create create-label="Nuevo Comité" />
       </Box>

@@ -2,6 +2,7 @@ import { z } from "zod";
 
 // ─── Post ────────────────────────────────────────────────────────────────────
 export const postListQuerySchema = z.object({
+  companyId: z.coerce.number().int().positive().default(1),
   vertical: z.string().max(50).optional(),
   category: z.string().max(50).optional(),
   locale: z.string().max(10).default("es"),
@@ -32,6 +33,7 @@ export type PostUpsertInput = z.infer<typeof postUpsertSchema>;
 
 // ─── Page ────────────────────────────────────────────────────────────────────
 export const pageListQuerySchema = z.object({
+  companyId: z.coerce.number().int().positive().default(1),
   vertical: z.string().max(50).optional(),
   locale: z.string().max(10).default("es"),
 });

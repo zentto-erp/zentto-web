@@ -1,29 +1,32 @@
 {
   "name": "@zentto/landing-kit",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Zentto Landing Kit — componentes enterprise B2B SaaS portables (Hero, TrustBar, FeatureGrid, PricingSection, ...). Base compartida para landings verticales (tickets, hotel, medical, restaurante, education, inmobiliario, rental).",
-  "main": "src/index.ts",
-  "types": "src/index.ts",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./src/index.ts",
-      "default": "./src/index.ts"
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
     },
     "./tokens": {
-      "types": "./src/tokens.ts",
-      "default": "./src/tokens.ts"
+      "types": "./dist/tokens.d.ts",
+      "default": "./dist/tokens.js"
     },
     "./metadata": {
-      "types": "./src/metadata.ts",
-      "default": "./src/metadata.ts"
+      "types": "./dist/metadata.d.ts",
+      "default": "./dist/metadata.js"
     }
   },
   "files": [
-    "src",
+    "dist",
     "README.md"
   ],
   "scripts": {
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
+    "prepublishOnly": "npm run clean && npm run build"
   },
   "keywords": [
     "zentto",

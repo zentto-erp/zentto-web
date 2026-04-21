@@ -110,9 +110,6 @@ export default function NominaBatchWizard({ onBack }: Props) {
             Volver
           </Button>
         )}
-        <Typography variant="h5" sx={{ fontWeight: 700 }}>
-          Procesar Nómina Masiva
-        </Typography>
         {batchId && (
           <Chip label={`Lote #${batchId}`} color="primary" size="small" />
         )}

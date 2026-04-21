@@ -135,10 +135,6 @@ export default function PagoForm({ numeroPago }: PagoFormProps) {
 
   return (
     <Box sx={{ p: 2 }}>
-      <Typography variant="h5" sx={{ mb: 3, fontWeight: 600 }}>
-        {isEdit ? "Editar Pago" : "Nuevo Pago"}
-      </Typography>
-
       {submitSuccess && (
         <Alert severity="success" sx={{ mb: 2 }}>
           {isEdit ? "Pago actualizado exitosamente" : "Pago registrado exitosamente"}

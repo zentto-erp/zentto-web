@@ -37,6 +37,9 @@ export interface BlogTeaserProps {
   tokens: LandingTokens;
   /** Vertical para filtrar posts. Default: 'corporate' */
   vertical?: string;
+  /** CompanyId del tenant. Default: 1 (Zentto corporate). Cada despliegue
+   *  de cliente pasa su propio companyId para ver su contenido. */
+  companyId?: number;
   /** URL base del API. Default: https://api.zentto.net */
   apiUrl?: string;
   /** Cantidad de posts a mostrar. Default: 3 */
@@ -66,9 +69,15 @@ async function fetchPosts(
   vertical: string,
   locale: string,
   limit: number,
+  companyId: number,
 ): Promise<BlogTeaserPost[]> {
   const base = apiUrl.replace(/\/$/, "");
-  const qs = new URLSearchParams({ vertical, locale, limit: String(limit) }).toString();
+  const qs = new URLSearchParams({
+    vertical,
+    locale,
+    limit: String(limit),
+    companyId: String(companyId),
+  }).toString();
   try {
     // Next.js 14+ fetch extiende RequestInit con `next.revalidate`. En entornos
     // que no sean Next (SSR genérico, Node raw), el campo se ignora silencioso.
@@ -101,6 +110,7 @@ function formatDate(iso: string | null, locale = "es"): string {
 export async function BlogTeaser({
   tokens,
   vertical = "corporate",
+  companyId = 1,
   apiUrl = "https://api.zentto.net",
   limit = 3,
   locale = "es",
@@ -110,7 +120,7 @@ export async function BlogTeaser({
   description,
   id = "blog",
 }: BlogTeaserProps) {
-  const posts = await fetchPosts(apiUrl, vertical, locale, limit);
+  const posts = await fetchPosts(apiUrl, vertical, locale, limit, companyId);
   const hrefAll = ctaHref ?? `https://zentto.net/blog?producto=${vertical}`;
 
   // Empty state: no renderiza la sección. Mantiene la landing limpia hasta que
