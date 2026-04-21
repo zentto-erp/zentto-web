@@ -9,8 +9,12 @@ const API_BASE =
     : "http://localhost:4000";
 
 function authHeaders(): Record<string, string> {
-  const token = useAdminAuthStore.getState().token;
-  return token ? { Authorization: `Bearer ${token}` } : {};
+  const { token, activeCompanyId, activeBranchId } = useAdminAuthStore.getState();
+  if (!token) return {};
+  const headers: Record<string, string> = { Authorization: `Bearer ${token}` };
+  if (activeCompanyId) headers["X-Company-Id"] = String(activeCompanyId);
+  if (activeBranchId)  headers["X-Branch-Id"]  = String(activeBranchId);
+  return headers;
 }
 
 /**

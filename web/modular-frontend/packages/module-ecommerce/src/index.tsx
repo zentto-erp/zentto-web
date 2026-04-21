@@ -7,7 +7,7 @@ export const MODULE_TITLE = "Comercio Electrónico";
 export { useCartStore } from "./store/useCartStore";
 export type { CartItem as CartItemType, CustomerInfo } from "./store/useCartStore";
 export { useAdminAuthStore } from "./store/useAdminAuthStore";
-export type { AdminUser } from "./store/useAdminAuthStore";
+export type { AdminUser, CompanyAccess } from "./store/useAdminAuthStore";
 export { useFavoritesStore } from "./store/useFavoritesStore";
 export type { FavoriteItem } from "./store/useFavoritesStore";
 export { useRecentlyViewedStore } from "./store/useRecentlyViewedStore";

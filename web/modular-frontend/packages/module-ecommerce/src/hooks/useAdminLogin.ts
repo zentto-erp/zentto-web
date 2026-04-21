@@ -7,11 +7,15 @@
  * El accessToken resultante es un JWT firmado con el mismo JWT_SECRET que usa
  * el API de DatqBoxWeb, por lo que `requireJwt` lo acepta directamente.
  *
+ * El response de zentto-auth incluye `companyAccesses` (lista de empresas/sucursales
+ * a las que tiene acceso el admin) y `defaultCompany`. Se persisten en
+ * useAdminAuthStore para que el selector de empresa del panel pueda usarlos.
+ *
  * Los clientes del store usan un flujo distinto (/store/auth/login).
  */
 
 import { useMutation } from "@tanstack/react-query";
-import { useAdminAuthStore } from "../store/useAdminAuthStore";
+import { useAdminAuthStore, type CompanyAccess } from "../store/useAdminAuthStore";
 
 const AUTH_BASE =
   typeof window !== "undefined"
@@ -40,12 +44,29 @@ export function useAdminLogin() {
     onSuccess: (data: any) => {
       if (!data?.accessToken) throw new Error("no_token");
       if (!data?.user?.isAdmin) throw new Error("not_admin");
-      setAuth(data.accessToken, {
-        sub: data.user.sub ?? data.user.userId ?? "",
-        name: data.user.displayName ?? data.user.username ?? "",
-        email: data.user.email ?? "",
-        isAdmin: true,
-      });
+
+      const companyAccesses: CompanyAccess[] = Array.isArray(data.companyAccesses)
+        ? data.companyAccesses
+        : [];
+
+      const defaultCompany: CompanyAccess | null =
+        data.defaultCompany ??
+        companyAccesses.find((c) => c.isDefault) ??
+        companyAccesses[0] ??
+        null;
+
+      setAuth(
+        data.accessToken,
+        {
+          sub: data.user.sub ?? data.user.userId ?? "",
+          name: data.user.displayName ?? data.user.username ?? "",
+          email: data.user.email ?? "",
+          isAdmin: true,
+        },
+        companyAccesses,
+        defaultCompany?.companyId ?? null,
+        defaultCompany?.branchId ?? null
+      );
     },
   });
 }

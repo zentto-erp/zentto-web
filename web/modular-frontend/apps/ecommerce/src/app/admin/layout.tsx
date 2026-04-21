@@ -12,9 +12,10 @@
  */
 
 import {
-    Box, AppBar, Toolbar, Typography, IconButton, Button, Chip,
+    Box, AppBar, Toolbar, Typography, Button, Chip,
     Drawer, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Divider,
     Accordion, AccordionSummary, AccordionDetails,
+    Select, MenuItem as MuiMenuItem, FormControl, Tooltip,
 } from '@mui/material';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import AssignmentReturnIcon from '@mui/icons-material/AssignmentReturn';
@@ -35,7 +36,9 @@ import FactCheckIcon from '@mui/icons-material/FactCheck';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useAdminReviewsList, useAdminLogout, useAdminAuthStore } from '@zentto/module-ecommerce';
+import type { CompanyAccess } from '@zentto/module-ecommerce';
 import LogoutIcon from '@mui/icons-material/Logout';
+import BusinessIcon from '@mui/icons-material/Business';
 
 const DRAWER_WIDTH = 240;
 
@@ -142,8 +145,11 @@ function OrangeBadge({ count }: { count: number }) {
 function AdminShell({ children }: { children: React.ReactNode }) {
     const router = useRouter();
     const pathname = usePathname();
-    const adminUser = useAdminAuthStore((s) => s.user);
-    const logout    = useAdminLogout();
+    const adminUser        = useAdminAuthStore((s) => s.user);
+    const companyAccesses  = useAdminAuthStore((s) => s.companyAccesses);
+    const activeCompanyId  = useAdminAuthStore((s) => s.activeCompanyId);
+    const setActiveCompany = useAdminAuthStore((s) => s.setActiveCompany);
+    const logout           = useAdminLogout();
 
     const { data: reviewsPending } = useAdminReviewsList({ status: 'pending', limit: 1 });
     const counts: BadgeCounts = {
@@ -154,6 +160,11 @@ function AdminShell({ children }: { children: React.ReactNode }) {
     const handleLogout = () => {
         logout();
         router.replace('/admin/login');
+    };
+
+    const handleCompanyChange = (companyId: number) => {
+        const access = companyAccesses.find((c) => c.companyId === companyId);
+        if (access) setActiveCompany(access.companyId, access.branchId ?? null);
     };
 
     const activeSectionId =
@@ -194,8 +205,58 @@ function AdminShell({ children }: { children: React.ReactNode }) {
                     <Typography variant="h6" fontWeight={700} sx={{ flex: 1 }}>
                         Zentto<span style={{ color: '#ff9900' }}>Store</span> Admin
                     </Typography>
+
+                    {/* Selector multi-empresa — visible solo cuando hay más de 1 empresa */}
+                    {companyAccesses.length > 1 && (
+                        <Tooltip title="Empresa activa">
+                            <FormControl size="small" sx={{ minWidth: 180 }}>
+                                <Select
+                                    value={activeCompanyId ?? ''}
+                                    onChange={(e) => handleCompanyChange(Number(e.target.value))}
+                                    displayEmpty
+                                    startAdornment={<BusinessIcon sx={{ color: '#aab7c4', fontSize: 16, mr: 0.5 }} />}
+                                    sx={{
+                                        color: '#fff',
+                                        fontSize: 13,
+                                        '.MuiOutlinedInput-notchedOutline': { borderColor: '#37475a' },
+                                        '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#ff9900' },
+                                        '.MuiSvgIcon-root': { color: '#aab7c4' },
+                                        bgcolor: '#1a2634',
+                                    }}
+                                >
+                                    {companyAccesses.map((c: CompanyAccess) => (
+                                        <MuiMenuItem key={c.companyId} value={c.companyId}>
+                                            <Box>
+                                                <Typography variant="body2" fontWeight={600} lineHeight={1.2}>
+                                                    {c.companyName}
+                                                </Typography>
+                                                {c.branchName && (
+                                                    <Typography variant="caption" sx={{ color: '#888', lineHeight: 1 }}>
+                                                        {c.branchName}
+                                                    </Typography>
+                                                )}
+                                            </Box>
+                                        </MuiMenuItem>
+                                    ))}
+                                </Select>
+                            </FormControl>
+                        </Tooltip>
+                    )}
+
+                    {/* Empresa única — solo mostrar nombre */}
+                    {companyAccesses.length === 1 && (
+                        <Tooltip title="Empresa activa">
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mr: 1 }}>
+                                <BusinessIcon sx={{ color: '#aab7c4', fontSize: 16 }} />
+                                <Typography variant="caption" sx={{ color: '#aab7c4' }}>
+                                    {companyAccesses[0].companyName}
+                                </Typography>
+                            </Box>
+                        </Tooltip>
+                    )}
+
                     {adminUser?.name && (
-                        <Typography variant="caption" sx={{ color: '#aab7c4', mr: 1 }}>
+                        <Typography variant="caption" sx={{ color: '#aab7c4', mx: 1 }}>
                             {adminUser.name}
                         </Typography>
                     )}
