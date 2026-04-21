@@ -81,10 +81,10 @@ async function run() {
     ddlResult.errors.forEach(e => console.log(`     ${e.ctx}: ${e.msg}`));
   }
 
-  // Phase 4: Patches (ejecuta todos los 0?_patch_*.sql en orden numerico)
+  // Phase 4: Patches (ejecuta todos los NN_patch_*.sql en orden numerico)
   console.log('\n4. Patches...');
   const patches = fs.readdirSync(__dirname)
-    .filter(f => /^0\d_patch_.+\.sql$/i.test(f))
+    .filter(f => /^\d{2}_patch_.+\.sql$/i.test(f))
     .sort();
   for (const pf of patches) {
     const full = path.resolve(__dirname, pf);
