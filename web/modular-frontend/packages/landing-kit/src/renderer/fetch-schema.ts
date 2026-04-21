@@ -9,7 +9,11 @@
  *   Preview (cross-subdomain):
  *   GET {apiBaseUrl}/v1/public/cms/landings/preview?token=UUID
  *
- *   Response OK:
+ *   Response OK (contrato actual, metadata + schema anidado):
+ *     { ok: true, data: { landingSchemaId, version, status, ..., schema: {
+ *         id, version, appMode, branding, landingConfig
+ *     } } }
+ *   Response OK (contrato legacy aplanado, también soportado):
  *     { ok: true, data: { id, version, appMode, branding, landingConfig } }
  *   Response error:
  *     { ok: false, error: { code, message } } (o HTTP !2xx)
@@ -95,7 +99,18 @@ export async function fetchLandingSchema(
     if (!res.ok) return undefined;
     const body = (await res.json()) as LandingApiResponse;
     if (!body.ok || body.data === undefined) return undefined;
-    return safeParseSchema(body.data);
+
+    // El endpoint devuelve metadata + `schema` anidado para los endpoints
+    // públicos (by-slug/preview). Algunos clientes de contrato más antiguos
+    // pueden aplanar a `data` directamente. Soportamos ambos: preferir
+    // `data.schema` si existe, sino caer a `data`.
+    const maybeWrapped = body.data as Record<string, unknown>;
+    const rawSchema =
+      maybeWrapped && typeof maybeWrapped === "object" && "schema" in maybeWrapped
+        ? (maybeWrapped as { schema: unknown }).schema
+        : body.data;
+
+    return safeParseSchema(rawSchema);
   } catch {
     return undefined;
   }
