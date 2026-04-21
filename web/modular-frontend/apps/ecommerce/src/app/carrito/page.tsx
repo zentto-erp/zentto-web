@@ -50,14 +50,14 @@ export default function CarritoPage() {
                                 </Box>
                                 <Box sx={{ flexGrow: 1 }}>
                                     <Typography variant="body2" fontWeight="medium">{item.productName}</Typography>
-                                    <Typography variant="caption" color="text.secondary">${item.unitPrice.toFixed(2)} c/u</Typography>
+                                    <Typography variant="caption" color="text.secondary">${Number(item.unitPrice ?? 0).toFixed(2)} c/u</Typography>
                                 </Box>
                                 <Box component="input" type="number" value={item.quantity} min={1} max={999}
                                     onChange={(e: any) => updateQuantity(item.productCode, Number(e.target.value))}
                                     style={{ width: 60, textAlign: 'center', padding: '4px' }}
                                 />
                                 <Typography variant="body2" fontWeight="bold" sx={{ minWidth: 80, textAlign: 'right' }}>
-                                    ${item.total.toFixed(2)}
+                                    ${Number(item.total ?? 0).toFixed(2)}
                                 </Typography>
                                 <Button size="small" color="error" onClick={() => removeItem(item.productCode)}>
                                     Quitar
