@@ -60,27 +60,10 @@ export const env = {
     region: process.env.HETZNER_S3_PRODUCT_IMAGES_REGION || "nbg1",
     publicUrl: process.env.HETZNER_S3_PRODUCT_IMAGES_PUBLIC_URL || "",
   },
-<<<<<<< HEAD
-  /**
-   * CompanyId default para endpoints **públicos** del storefront cuando el
-   * request no trae subdomain tenant-specific, header `X-Tenant-Id` ni cookie
-   * `tenant_id`. Típicamente apunta al tenant demo (1) en dev/prod para que
-   * `apidev.zentto.net` / `api.zentto.net` puedan responder a `/store/cms/*`
-   * y `/store/affiliate/commission-rates` sin romper con 400 `tenant_required`.
-   *
-   * Si no está definida, `resolveTenantFromRequest()` mantiene el
-   * comportamiento estricto (null → 400). Los endpoints admin (con JWT)
-   * nunca usan este fallback.
-   *
-   * Ver `web/api/src/modules/_shared/scope.ts::resolveTenantFromRequest`
-   * y `docs/deploy/env-vars-ola2.md`.
-   */
   storeDefaultCompanyId: (() => {
     const raw = process.env.STORE_DEFAULT_COMPANY_ID;
     if (!raw) return undefined;
     const n = Number(raw);
     return Number.isFinite(n) && n > 0 ? n : undefined;
   })() as number | undefined,
-=======
->>>>>>> origin/main
 };
