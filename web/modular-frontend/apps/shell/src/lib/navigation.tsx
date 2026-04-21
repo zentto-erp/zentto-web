@@ -97,6 +97,9 @@ export function buildNavigation(isAdmin: boolean, modulos: string[], pathname: s
         if (isAdmin || modulos.includes('report-studio')) {
             nav.push({ kind: 'page', segment: 'report-studio', title: 'Report Studio', icon: <AssessmentIcon /> });
         }
+        if (isAdmin || modulos.includes('cms')) {
+            nav.push({ kind: 'page', segment: 'cms', title: 'CMS / Blog', icon: <DescriptionIcon /> });
+        }
         if (isAdmin) {
             nav.push({ kind: 'page', segment: 'configuracion', title: 'Ajustes', icon: <SettingsIcon /> });
         }
@@ -562,6 +565,21 @@ export function buildNavigation(isAdmin: boolean, modulos: string[], pathname: s
         });
 
         nav.push({ kind: 'page', segment: 'compras/reportes', title: 'Reportes', icon: <PrintIcon /> });
+        return nav;
+    }
+
+    // ── App: CMS — Blog y Páginas ──────────────────────────────────
+    if ((isAdmin || has(modulos, 'cms')) && isApp('/cms')) {
+        nav.push({ kind: 'header', title: 'CONTENIDO' });
+        nav.push({ kind: 'page', segment: 'cms', title: 'Dashboard CMS', icon: <DescriptionIcon /> });
+        nav.push({
+            kind: 'page',
+            segment: 'cms/posts/new',
+            title: 'Nuevo Post',
+            icon: <AddCircleOutlineIcon />,
+        });
+        nav.push({ kind: 'divider' });
+        nav.push({ kind: 'page', segment: '', title: 'Volver al Inicio', icon: <DashboardIcon /> });
         return nav;
     }
 
