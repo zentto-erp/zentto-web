@@ -615,6 +615,27 @@ export default function StoreLayout({ children, onNavigate }: Props) {
         <Typography variant="caption">
           &copy; {new Date().getFullYear()} Zentto Store. Todos los derechos reservados.
         </Typography>
+        <Box sx={{ mt: 0.5 }}>
+          {adminToken ? (
+            <Typography
+              variant="caption"
+              component="span"
+              onClick={() => onNavigate("/admin/dashboard")}
+              sx={{ color: "#ff9900", cursor: "pointer", fontSize: 11, "&:hover": { textDecoration: "underline" } }}
+            >
+              Panel Administrador
+            </Typography>
+          ) : (
+            <Typography
+              variant="caption"
+              component="span"
+              onClick={() => onNavigate("/admin/login")}
+              sx={{ color: "#555", cursor: "pointer", fontSize: 11, "&:hover": { color: "#888" } }}
+            >
+              Acceso administradores
+            </Typography>
+          )}
+        </Box>
       </Box>
 
       <CartSyncProvider />
