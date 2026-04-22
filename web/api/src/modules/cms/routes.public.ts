@@ -1,6 +1,16 @@
 import { Router, type Request, type Response } from "express";
-import { postListQuerySchema, pageListQuerySchema } from "./schema.js";
-import { listPosts, getPost, listPages, getPage } from "./service.js";
+import {
+  postListQuerySchema,
+  pageListQuerySchema,
+  contactSubmitSchema,
+} from "./schema.js";
+import {
+  listPosts,
+  getPost,
+  listPages,
+  getPage,
+  submitContact,
+} from "./service.js";
 import { resolveTenantFromRequest } from "../_shared/scope.js";
 import { obs } from "../integrations/observability.js";
 
@@ -201,6 +211,110 @@ cmsPublicRouter.get("/pages/:slug", async (req: Request, res: Response) => {
     res.json({ ok: true, data: page });
   } catch (err: any) {
     obs.error(`cms.page.get_failed: ${err?.message ?? String(err)}`, {
+      module: MODULE_NAME,
+    });
+    res.status(500).json({ ok: false, error: "internal_error" });
+  }
+});
+
+// POST /v1/public/cms/contact/submit — envío del ContactFormAdapter.
+// Tenant resuelto via subdomain/header/cookie. Rate-limit suave por IP
+// implementado con Map in-memory (reset al reinicio del container — suficiente
+// para capture bots; escalate a Redis cuando haga falta).
+const CONTACT_RATE_WINDOW_MS = 60_000; // 1 minuto
+const CONTACT_RATE_MAX = 5; // máx 5 submits/min/IP
+const contactRateLimit = new Map<string, { count: number; resetAt: number }>();
+
+function checkContactRateLimit(ip: string): boolean {
+  const now = Date.now();
+  const entry = contactRateLimit.get(ip);
+  if (!entry || entry.resetAt <= now) {
+    contactRateLimit.set(ip, { count: 1, resetAt: now + CONTACT_RATE_WINDOW_MS });
+    return true;
+  }
+  if (entry.count >= CONTACT_RATE_MAX) return false;
+  entry.count += 1;
+  return true;
+}
+
+cmsPublicRouter.post("/contact/submit", async (req: Request, res: Response) => {
+  const startedAt = Date.now();
+  try {
+    const parsed = contactSubmitSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({
+        ok: false,
+        error: "invalid_body",
+        details: parsed.error.format(),
+      });
+      return;
+    }
+
+    const companyId = resolveTenantFromRequest(req);
+    if (!companyId) {
+      res.status(400).json({ ok: false, error: "tenant_required" });
+      return;
+    }
+
+    const ip =
+      (req.headers["x-forwarded-for"] as string | undefined)?.split(",")[0]?.trim() ??
+      req.socket?.remoteAddress ??
+      null;
+    const ua =
+      typeof req.headers["user-agent"] === "string"
+        ? req.headers["user-agent"].slice(0, 1000)
+        : null;
+
+    if (ip && !checkContactRateLimit(ip)) {
+      obs.audit("cms.contact.rate_limited", {
+        module: MODULE_NAME,
+        companyId,
+        ip,
+        vertical: parsed.data.vertical,
+      });
+      res.status(429).json({ ok: false, error: "rate_limited" });
+      return;
+    }
+
+    const result = await submitContact({
+      companyId,
+      vertical: parsed.data.vertical,
+      slug: parsed.data.slug,
+      name: parsed.data.name,
+      email: parsed.data.email,
+      subject: parsed.data.subject,
+      message: parsed.data.message,
+      ipAddress: ip,
+      userAgent: ua,
+    });
+
+    if (!result.ok) {
+      obs.error(`cms.contact.submit_failed: ${result.mensaje}`, {
+        module: MODULE_NAME,
+        companyId,
+        vertical: parsed.data.vertical,
+      });
+      res.status(400).json({ ok: false, error: result.mensaje });
+      return;
+    }
+
+    obs.audit("cms.contact.submit", {
+      module: MODULE_NAME,
+      companyId,
+      vertical: parsed.data.vertical,
+      slug: parsed.data.slug,
+      submissionId: result.submission_id,
+    });
+    obs.perf("cms.contact.submit", Date.now() - startedAt, {
+      module: MODULE_NAME,
+    });
+
+    res.status(201).json({
+      ok: true,
+      data: { submissionId: result.submission_id },
+    });
+  } catch (err: any) {
+    obs.error(`cms.contact.submit_crashed: ${err?.message ?? String(err)}`, {
       module: MODULE_NAME,
     });
     res.status(500).json({ ok: false, error: "internal_error" });

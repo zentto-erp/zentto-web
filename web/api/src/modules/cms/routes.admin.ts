@@ -1,6 +1,10 @@
 import { Router, type Response } from "express";
 import type { AuthenticatedRequest } from "../../middleware/auth.js";
-import { postUpsertSchema, pageUpsertSchema } from "./schema.js";
+import {
+  postUpsertSchema,
+  pageUpsertSchema,
+  contactListQuerySchema,
+} from "./schema.js";
 import {
   listPosts,
   getPost,
@@ -12,6 +16,8 @@ import {
   upsertPage,
   publishPage,
   deletePage,
+  listContactSubmissions,
+  type ContactSubmissionItem,
 } from "./service.js";
 
 // Router privado: /v1/cms/* — requiere JWT (montado después del auth middleware global).
@@ -238,6 +244,41 @@ cmsAdminRouter.delete("/pages/:id", async (req, res) => {
   try {
     const result = await deletePage(pageId, companyId);
     res.status(result.ok ? 200 : 404).json(result);
+  } catch (err: any) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+// ─── Contact Submissions (inbox admin) ───────────────────────────────────────
+cmsAdminRouter.get("/contact-submissions", async (req, res) => {
+  try {
+    const companyId = (req as AuthenticatedRequest).scope!.companyId;
+    const parsed = contactListQuerySchema.safeParse(req.query);
+    if (!parsed.success) {
+      res.status(400).json({
+        ok: false,
+        error: "invalid_query",
+        details: parsed.error.format(),
+      });
+      return;
+    }
+    const { rows, total } = await listContactSubmissions({
+      companyId,
+      vertical: parsed.data.vertical,
+      status: parsed.data.status,
+      limit: parsed.data.limit,
+      offset: parsed.data.offset,
+    });
+    res.json({
+      ok: true,
+      data: rows.map((r: ContactSubmissionItem) => {
+        const { TotalCount: _t, ...rest } = r;
+        return rest;
+      }),
+      total,
+      limit: parsed.data.limit,
+      offset: parsed.data.offset,
+    });
   } catch (err: any) {
     res.status(500).json({ ok: false, error: err.message });
   }
