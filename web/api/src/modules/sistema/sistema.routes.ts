@@ -4,11 +4,24 @@ import * as service from './sistema.service.js';
 
 const router = Router();
 
-// /v1/sistema/notificaciones
+// /v1/sistema/notificaciones?appCode=crm
+// Scope:
+//   - usuarioId: del JWT
+//   - companyId: del header x-company-id (inyectado por el cliente)
+//   - appCode:   del query param (frontend lo pasa segun la app actual)
 router.get('/notificaciones', async (req, res) => {
     try {
         const usuarioId = (req as AuthenticatedRequest).user?.sub;
-        const data = await service.getNotificaciones(usuarioId);
+        const rawCompanyId = req.header('x-company-id');
+        const companyId = rawCompanyId ? Number(rawCompanyId) : null;
+        const appCode = typeof req.query.appCode === 'string' && req.query.appCode.trim()
+            ? req.query.appCode.trim().toLowerCase()
+            : null;
+        const data = await service.getNotificaciones(
+            usuarioId,
+            Number.isFinite(companyId) && companyId! > 0 ? companyId : null,
+            appCode,
+        );
         res.json({ ok: true, data });
     } catch (e: any) {
         res.status(500).json({ ok: false, error: e.message });
