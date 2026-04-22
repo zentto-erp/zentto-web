@@ -67,3 +67,24 @@ export const pageUpsertSchema = z.object({
   pageType: z.enum(CMS_PAGE_TYPES).default("custom"),
 });
 export type PageUpsertInput = z.infer<typeof pageUpsertSchema>;
+
+// ─── Contact Submission ──────────────────────────────────────────────────────
+// Endpoint público POST /v1/public/cms/contact/submit — consumido por el
+// `ContactFormAdapter` del `@zentto/landing-kit`. Multi-tenant: CompanyId
+// se resuelve via `resolveTenantFromRequest`, NO viene en body.
+export const contactSubmitSchema = z.object({
+  vertical: z.string().min(1).max(50).default("corporate"),
+  slug: z.string().min(1).max(100).default("contacto"),
+  name: z.string().min(1).max(200),
+  email: z.string().email().max(200),
+  subject: z.string().max(200).default(""),
+  message: z.string().min(1).max(5000),
+});
+export type ContactSubmitInput = z.infer<typeof contactSubmitSchema>;
+
+export const contactListQuerySchema = z.object({
+  vertical: z.string().max(50).optional(),
+  status: z.string().max(20).optional(),
+  limit: z.coerce.number().int().min(1).max(200).default(50),
+  offset: z.coerce.number().int().min(0).default(0),
+});
