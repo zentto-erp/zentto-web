@@ -26,6 +26,10 @@ import type { LandingTokens } from "../../tokens";
 export interface ContactFormClientProps {
   tokens: LandingTokens;
   submitEndpoint?: string;
+  /** Vertical a mandar en el body del submit — resuelve scoping en backend. */
+  vertical?: string;
+  /** Slug de la página de origen — default "contacto". */
+  slug?: string;
   subjects: string[];
   submitLabel: string;
   successMessage: string;
@@ -36,6 +40,8 @@ type FormState = "idle" | "submitting" | "success" | "error";
 export function ContactFormClient({
   tokens,
   submitEndpoint,
+  vertical,
+  slug,
   subjects,
   submitLabel,
   successMessage,
@@ -73,11 +79,38 @@ export function ContactFormClient({
         const res = await fetch(submitEndpoint, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name, email, subject, message }),
+          credentials: "include",
+          body: JSON.stringify({
+            name,
+            email,
+            subject,
+            message,
+            vertical: vertical ?? "corporate",
+            slug: slug ?? "contacto",
+          }),
         });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        if (!res.ok) {
+          // El backend responde `{ ok: false, error: "..." }`. Mapeamos los
+          // errores conocidos a mensajes legibles; el resto → mensaje genérico.
+          let errBody: { error?: string } | null = null;
+          try {
+            errBody = await res.json();
+          } catch {
+            // no JSON response
+          }
+          const errCode = errBody?.error ?? `HTTP ${res.status}`;
+          const MSG_MAP: Record<string, string> = {
+            invalid_body: "Completa los campos requeridos.",
+            email_invalid: "Email con formato inválido.",
+            name_required: "El nombre es obligatorio.",
+            message_required: "Escribe un mensaje.",
+            tenant_required: "No pudimos identificar tu organización.",
+            rate_limited: "Demasiados envíos. Intenta en 1 minuto.",
+          };
+          throw new Error(MSG_MAP[errCode] ?? "No pudimos enviar el mensaje.");
+        }
       } else {
-        // Demo mode: sin backend aún, simulamos latencia.
+        // Demo mode: sin endpoint configurado, simulamos latencia.
         await new Promise((r) => setTimeout(r, 800));
       }
       setState("success");
