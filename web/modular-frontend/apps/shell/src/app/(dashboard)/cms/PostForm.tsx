@@ -1,8 +1,10 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
+import dynamic from "next/dynamic";
 import {
-  Box, Stack, TextField, MenuItem, Button, Typography, Paper, Alert, CircularProgress, Switch, FormControlLabel, Tabs, Tab,
+  Box, Stack, TextField, MenuItem, Button, Typography, Paper, Alert, CircularProgress, Switch, FormControlLabel,
+  ToggleButton, ToggleButtonGroup, useMediaQuery, useTheme,
 } from "@mui/material";
 import SaveIcon from "@mui/icons-material/Save";
 import PublishIcon from "@mui/icons-material/Publish";
@@ -10,7 +12,19 @@ import UnpublishedIcon from "@mui/icons-material/Unpublished";
 import DeleteIcon from "@mui/icons-material/Delete";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import EditIcon from "@mui/icons-material/Edit";
+import VerticalSplitIcon from "@mui/icons-material/VerticalSplit";
 import { useRouter } from "next/navigation";
+
+// Monaco requiere `window`/`document` — dynamic con SSR disabled es obligatorio
+// en Next. Lazy-load del chunk pesado solo cuando el editor está en pantalla.
+const MonacoEditor = dynamic(() => import("@monaco-editor/react"), {
+  ssr: false,
+  loading: () => (
+    <Box sx={{ height: 420, display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <CircularProgress size={24} />
+    </Box>
+  ),
+});
 import {
   VERTICALS, CATEGORIES, markdownToHtml, slugify,
   type CmsPost,
@@ -43,7 +57,16 @@ export function PostForm({ initial }: Props) {
 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [tab, setTab] = useState<"edit" | "preview">("edit");
+  // `view` controla qué mostrar en el editor:
+  //   'edit'    — solo Monaco
+  //   'split'   — Monaco (izq) + preview HTML (der) en desktop
+  //   'preview' — solo preview HTML
+  // En mobile colapsamos 'split' a tabs porque el ancho no alcanza.
+  const [view, setView] = useState<"edit" | "split" | "preview">("split");
+  const theme = useTheme();
+  const isDesktop = useMediaQuery(theme.breakpoints.up("md"));
+  const effectiveView: "edit" | "split" | "preview" =
+    view === "split" && !isDesktop ? "edit" : view;
 
   useEffect(() => {
     if (autoSlug) setSlug(slugify(title));
@@ -118,7 +141,7 @@ export function PostForm({ initial }: Props) {
   }
 
   return (
-    <Box sx={{ p: 3, maxWidth: 1200, mx: "auto" }}>
+    <Box sx={{ p: 3, maxWidth: 1600, mx: "auto" }}>
       <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 3 }}>
         <Typography variant="h5" fontWeight={700}>
           {editing ? `Editar post #${initial?.PostId}` : "Nuevo post"}
@@ -210,38 +233,80 @@ export function PostForm({ initial }: Props) {
             inputProps={{ maxLength: 500 }}
           />
 
-          <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ mb: 1 }}>
-            <Tab value="edit" icon={<EditIcon fontSize="small" />} iconPosition="start" label="Markdown" />
-            <Tab value="preview" icon={<VisibilityIcon fontSize="small" />} iconPosition="start" label="Preview" />
-          </Tabs>
+          <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1 }}>
+            <Typography variant="subtitle2" color="text.secondary">
+              Cuerpo (Markdown)
+            </Typography>
+            <ToggleButtonGroup
+              value={effectiveView}
+              exclusive
+              size="small"
+              onChange={(_, v) => { if (v) setView(v); }}
+            >
+              <ToggleButton value="edit" aria-label="Solo editor">
+                <EditIcon fontSize="small" />
+              </ToggleButton>
+              {isDesktop && (
+                <ToggleButton value="split" aria-label="Split editor + preview">
+                  <VerticalSplitIcon fontSize="small" />
+                </ToggleButton>
+              )}
+              <ToggleButton value="preview" aria-label="Solo preview">
+                <VisibilityIcon fontSize="small" />
+              </ToggleButton>
+            </ToggleButtonGroup>
+          </Stack>
 
-          {tab === "edit" ? (
-            <TextField
-              label="Cuerpo (Markdown)"
-              value={body}
-              onChange={(e) => setBody(e.target.value)}
-              fullWidth
-              multiline
-              minRows={18}
-              sx={{
-                "& textarea": { fontFamily: "monospace", fontSize: "0.9rem", lineHeight: 1.6 },
-              }}
-              placeholder={"## Sección\n\nPárrafo de texto...\n\n- Bullet 1\n- Bullet 2\n\n[link](https://zentto.net)"}
-            />
-          ) : (
-            <Box
-              sx={{
-                minHeight: 420,
-                p: 3,
-                border: 1,
-                borderColor: "divider",
-                borderRadius: 1,
-                fontSize: "1rem",
-                "& img": { maxWidth: "100%" },
-              }}
-              dangerouslySetInnerHTML={{ __html: bodyPreview || "<em style='opacity:0.5'>Sin contenido</em>" }}
-            />
-          )}
+          <Box
+            sx={{
+              display: "grid",
+              gap: 2,
+              gridTemplateColumns: effectiveView === "split" ? "1fr 1fr" : "1fr",
+              alignItems: "stretch",
+              minHeight: 500,
+            }}
+          >
+            {effectiveView !== "preview" && (
+              <Box sx={{ border: 1, borderColor: "divider", borderRadius: 1, overflow: "hidden" }}>
+                <MonacoEditor
+                  height="500px"
+                  defaultLanguage="markdown"
+                  theme={theme.palette.mode === "dark" ? "vs-dark" : "vs-light"}
+                  value={body}
+                  onChange={(v) => setBody(v ?? "")}
+                  options={{
+                    wordWrap: "on",
+                    minimap: { enabled: false },
+                    fontSize: 14,
+                    lineNumbers: "on",
+                    scrollBeyondLastLine: false,
+                    smoothScrolling: true,
+                    automaticLayout: true,
+                    padding: { top: 12, bottom: 12 },
+                  }}
+                />
+              </Box>
+            )}
+            {effectiveView !== "edit" && (
+              <Box
+                sx={{
+                  p: 3,
+                  border: 1,
+                  borderColor: "divider",
+                  borderRadius: 1,
+                  fontSize: "1rem",
+                  overflow: "auto",
+                  maxHeight: 500,
+                  bgcolor: "background.paper",
+                  "& img": { maxWidth: "100%" },
+                  "& a": { color: "primary.main" },
+                }}
+                dangerouslySetInnerHTML={{
+                  __html: bodyPreview || "<em style='opacity:0.5'>Sin contenido — empieza a escribir markdown a la izquierda.</em>",
+                }}
+              />
+            )}
+          </Box>
         </Paper>
 
         <Stack spacing={2}>
