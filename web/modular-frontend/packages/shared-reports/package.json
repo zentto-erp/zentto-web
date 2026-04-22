@@ -15,9 +15,9 @@
     "@zentto/report-core": "^1.9.2",
     "@zentto/report-designer": "^1.9.2",
     "@zentto/report-viewer": "^1.9.2",
-    "@zentto/shared-api": "0.1.0",
-    "@zentto/shared-auth": "0.1.0",
-    "@zentto/shared-ui": "0.1.0",
+    "@zentto/shared-api": "*",
+    "@zentto/shared-auth": "*",
+    "@zentto/shared-ui": "*",
     "react": "^19.0.0"
   }
 }
