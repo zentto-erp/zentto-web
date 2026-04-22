@@ -35,7 +35,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <ZenttoLayout navigationFields={navigationContainer}>
+    <ZenttoLayout navigationFields={navigationContainer} appCode="shell">
       {children}
     </ZenttoLayout>
   );

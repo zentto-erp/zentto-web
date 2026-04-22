@@ -43,7 +43,7 @@ function AppContent({ children }: { children: React.ReactNode }) {
                 <LoadingFallback />
             ) : (
                 <ToastProvider>
-                    <ZenttoLayout navigationFields={navigation}>
+                    <ZenttoLayout navigationFields={navigation} appCode="auditoria">
                         <Suspense fallback={<LoadingFallback />}>{children}</Suspense>
                     </ZenttoLayout>
                 </ToastProvider>
