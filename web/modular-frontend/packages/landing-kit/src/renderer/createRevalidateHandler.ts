@@ -140,10 +140,14 @@ export function createRevalidateHandler(
 
     // Next 16: hay que llamar a revalidateTag Y revalidatePath para que el
     // HTML SSG se regenere. Ver project_landing_schemas_cms.md bug #7.
-    // El segundo arg `'max'` invalida el profile de mayor TTL por default.
+    // Cast a variadic para compat Next 15 (1 arg) y Next 16 (2 args: profile).
+    const revalidateTagCompat = revalidateTag as unknown as (
+      tag: string,
+      ...rest: unknown[]
+    ) => void;
     for (const tag of tagsToInvalidate) {
       try {
-        revalidateTag(tag, "max");
+        revalidateTagCompat(tag);
       } catch {
         // Invalidaciones son fire-and-forget; no bloqueamos la respuesta.
       }
