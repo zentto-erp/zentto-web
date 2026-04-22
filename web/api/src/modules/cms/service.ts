@@ -57,8 +57,12 @@ export interface PageDetail extends PageListItem {
 }
 
 // ─── Post service ────────────────────────────────────────────────────────────
+// `companyId` es obligatorio en todos los services: los routers resuelven el
+// tenant (`resolveTenantFromRequest` en público, `req.scope.companyId` en admin)
+// y fallan con 400/401 si no se resuelve. No hay fallback a `1` — cross-tenant
+// reads del legacy eran un leak latente documentado en el integration review.
 export async function listPosts(opts: {
-  companyId?: number;
+  companyId: number;
   vertical?: string;
   category?: string;
   locale: string;
@@ -67,7 +71,7 @@ export async function listPosts(opts: {
   offset: number;
 }): Promise<{ rows: PostListItem[]; total: number }> {
   const rows = (await callSp("usp_cms_post_list", {
-    CompanyId: opts.companyId ?? 1,
+    CompanyId: opts.companyId,
     Vertical: opts.vertical ?? null,
     Category: opts.category ?? null,
     Locale: opts.locale,
@@ -80,7 +84,11 @@ export async function listPosts(opts: {
   return { rows, total };
 }
 
-export async function getPost(slug: string, locale: string, companyId = 1): Promise<PostDetail | null> {
+export async function getPost(
+  slug: string,
+  locale: string,
+  companyId: number,
+): Promise<PostDetail | null> {
   const rows = (await callSp("usp_cms_post_get", {
     Slug: slug,
     Locale: locale,
@@ -146,13 +154,13 @@ export async function deletePost(
 
 // ─── Page service ────────────────────────────────────────────────────────────
 export async function listPages(opts: {
-  companyId?: number;
+  companyId: number;
   vertical?: string;
   locale: string;
   status?: string;
 }): Promise<PageListItem[]> {
   return (await callSp("usp_cms_page_list", {
-    CompanyId: opts.companyId ?? 1,
+    CompanyId: opts.companyId,
     Vertical: opts.vertical ?? null,
     Locale: opts.locale,
     Status: opts.status ?? "published",
@@ -163,7 +171,7 @@ export async function getPage(
   slug: string,
   vertical: string,
   locale: string,
-  companyId = 1,
+  companyId: number,
 ): Promise<PageDetail | null> {
   const rows = (await callSp("usp_cms_page_get", {
     Slug: slug,

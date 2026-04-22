@@ -1,8 +1,10 @@
 import { z } from "zod";
 
 // ─── Post ────────────────────────────────────────────────────────────────────
+// `companyId` es opcional en query; endpoints públicos lo resuelven via
+// `resolveTenantFromRequest` (subdomain/header/cookie/env) y 400 si es null.
 export const postListQuerySchema = z.object({
-  companyId: z.coerce.number().int().positive().default(1),
+  companyId: z.coerce.number().int().positive().optional(),
   vertical: z.string().max(50).optional(),
   category: z.string().max(50).optional(),
   locale: z.string().max(10).default("es"),
@@ -33,7 +35,7 @@ export type PostUpsertInput = z.infer<typeof postUpsertSchema>;
 
 // ─── Page ────────────────────────────────────────────────────────────────────
 export const pageListQuerySchema = z.object({
-  companyId: z.coerce.number().int().positive().default(1),
+  companyId: z.coerce.number().int().positive().optional(),
   vertical: z.string().max(50).optional(),
   locale: z.string().max(10).default("es"),
 });
