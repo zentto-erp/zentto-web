@@ -54,9 +54,22 @@ interface ContactFormConfig {
   successMessage?: string;
 }
 
-export function ContactFormAdapter({ section, tokens }: SectionAdapterProps) {
+export function ContactFormAdapter({
+  section,
+  tokens,
+  apiBaseUrl,
+}: SectionAdapterProps) {
   const cfg = ((section as unknown as Record<string, unknown>)
     .contactFormConfig ?? {}) as ContactFormConfig;
+
+  // Default endpoint al backend CMS real (desde 2.1.0-beta.3). Si el schema
+  // configura `submitEndpoint` explícitamente, respetamos. Si no, armamos la
+  // URL canónica a partir del `apiBaseUrl` del LandingRenderer.
+  const resolvedEndpoint =
+    cfg.submitEndpoint ??
+    (apiBaseUrl
+      ? `${apiBaseUrl.endsWith("/") ? apiBaseUrl.slice(0, -1) : apiBaseUrl}/v1/public/cms/contact/submit`
+      : undefined);
 
   return (
     <SectionShell
@@ -107,7 +120,9 @@ export function ContactFormAdapter({ section, tokens }: SectionAdapterProps) {
         {/* Columna derecha: form interactivo (Client Component) */}
         <ContactFormClient
           tokens={tokens}
-          submitEndpoint={cfg.submitEndpoint}
+          submitEndpoint={resolvedEndpoint}
+          vertical={(section as unknown as Record<string, unknown>).vertical as string | undefined}
+          slug={(section as unknown as Record<string, unknown>).slug as string | undefined}
           subjects={cfg.subjects ?? []}
           submitLabel={cfg.submitLabel ?? "Enviar mensaje"}
           successMessage={

@@ -1,6 +1,6 @@
 {
   "name": "@zentto/landing-kit",
-  "version": "2.1.0-beta.2",
+  "version": "2.1.0-beta.3",
   "description": "Zentto Landing Kit — componentes enterprise B2B SaaS portables (Hero, TrustBar, FeatureGrid, PricingSection, ...) + runtime renderer de schemas JSON (v2.0) + infraestructura de blog. Base compartida para landings verticales (tickets, hotel, medical, restaurante, education, inmobiliario, rental).",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
