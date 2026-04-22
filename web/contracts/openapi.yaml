@@ -1099,6 +1099,23 @@ components:
           additionalProperties: true
       additionalProperties: true
 
+    CmsPageType:
+      type: string
+      description: |
+        Tipo canónico de página corporativa en el CMS. Usado por el editor CMS
+        para ofrecer plantillas (about/contact/press/legal-terms/legal-privacy/
+        case-study) y por los renderers para seleccionar layout específico.
+        `custom` es el default para páginas sin tipo.
+      enum:
+        - about
+        - contact
+        - press
+        - legal-terms
+        - legal-privacy
+        - case-study
+        - custom
+      default: custom
+
     CmsPage:
       type: object
       required: [cmsPageId, slug, title, status]
@@ -1111,6 +1128,8 @@ components:
           type: string
           nullable: true
           description: Template visual a usar (ej. `about`, `contact`, `faq`, `jobs`).
+        pageType:
+          $ref: "#/components/schemas/CmsPageType"
         config:
           $ref: "#/components/schemas/EcommerceCmsBlockConfig"
         seo:
@@ -1132,6 +1151,8 @@ components:
         title:       { type: string, maxLength: 200 }
         subtitle:    { type: string, maxLength: 300, nullable: true }
         templateKey: { type: string, maxLength: 80, nullable: true }
+        pageType:
+          $ref: "#/components/schemas/CmsPageType"
         config:
           $ref: "#/components/schemas/EcommerceCmsBlockConfig"
         seo:

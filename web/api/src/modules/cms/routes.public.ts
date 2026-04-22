@@ -136,12 +136,14 @@ cmsPublicRouter.get("/pages", async (req: Request, res: Response) => {
       vertical: parsed.data.vertical,
       locale: parsed.data.locale,
       status: "published",
+      pageType: parsed.data.pageType,
     });
 
     obs.audit("cms.page.list", {
       module: MODULE_NAME,
       companyId,
       vertical: parsed.data.vertical,
+      pageType: parsed.data.pageType,
       locale: parsed.data.locale,
       total: rows.length,
     });

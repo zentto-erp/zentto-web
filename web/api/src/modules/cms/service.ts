@@ -41,6 +41,7 @@ export interface PageListItem {
   CompanyId: number;
   Slug: string;
   Vertical: string;
+  PageType: string;
   Locale: string;
   Title: string;
   Status: string;
@@ -158,12 +159,14 @@ export async function listPages(opts: {
   vertical?: string;
   locale: string;
   status?: string;
+  pageType?: string;
 }): Promise<PageListItem[]> {
   return (await callSp("usp_cms_page_list", {
     CompanyId: opts.companyId,
     Vertical: opts.vertical ?? null,
     Locale: opts.locale,
     Status: opts.status ?? "published",
+    PageType: opts.pageType ?? null,
   })) as PageListItem[];
 }
 
@@ -197,6 +200,7 @@ export async function upsertPage(
     Meta: JSON.stringify(input.meta ?? {}),
     SeoTitle: input.seoTitle,
     SeoDescription: input.seoDescription,
+    PageType: input.pageType,
   })) as Array<{ ok: boolean; mensaje: string; PageId: number }>;
 
   const r = rows[0] ?? { ok: false, mensaje: "no_result", PageId: 0 };
