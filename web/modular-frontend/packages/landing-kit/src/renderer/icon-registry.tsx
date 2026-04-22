@@ -75,6 +75,37 @@ import PersonOutline from "@mui/icons-material/PersonOutline";
 import ShoppingCartOutlined from "@mui/icons-material/ShoppingCartOutlined";
 import InventoryOutlined from "@mui/icons-material/InventoryOutlined";
 
+// ─── Medical ────────────────────────────────────────────────────────────
+import CalendarMonthOutlined from "@mui/icons-material/CalendarMonthOutlined";
+import MedicalServicesOutlined from "@mui/icons-material/MedicalServicesOutlined";
+import BiotechOutlined from "@mui/icons-material/BiotechOutlined";
+import LocalPharmacyOutlined from "@mui/icons-material/LocalPharmacyOutlined";
+import HealthAndSafetyOutlined from "@mui/icons-material/HealthAndSafetyOutlined";
+import ReceiptLongOutlined from "@mui/icons-material/ReceiptLongOutlined";
+
+// ─── Education ──────────────────────────────────────────────────────────
+import AssignmentOutlined from "@mui/icons-material/AssignmentOutlined";
+import ForumOutlined from "@mui/icons-material/ForumOutlined";
+import GradingOutlined from "@mui/icons-material/GradingOutlined";
+
+// ─── Rental ─────────────────────────────────────────────────────────────
+import BookOnlineOutlined from "@mui/icons-material/BookOnlineOutlined";
+import HandshakeOutlined from "@mui/icons-material/HandshakeOutlined";
+import MonetizationOnOutlined from "@mui/icons-material/MonetizationOnOutlined";
+
+// ─── Inmobiliario ───────────────────────────────────────────────────────
+import HomeWorkOutlined from "@mui/icons-material/HomeWorkOutlined";
+import MapOutlined from "@mui/icons-material/MapOutlined";
+
+// ─── Restaurante ────────────────────────────────────────────────────────
+import DeliveryDiningOutlined from "@mui/icons-material/DeliveryDiningOutlined";
+import RestaurantMenuOutlined from "@mui/icons-material/RestaurantMenuOutlined";
+import SoupKitchenOutlined from "@mui/icons-material/SoupKitchenOutlined";
+import TableRestaurantOutlined from "@mui/icons-material/TableRestaurantOutlined";
+
+// ─── POS ────────────────────────────────────────────────────────────────
+import LoyaltyOutlined from "@mui/icons-material/LoyaltyOutlined";
+
 // MUI `OverridableComponent` requires generic component prop — lo aceptamos
 // como `React.ElementType` y hacemos cast en el render.
 type IconComponent = React.ElementType;
@@ -145,6 +176,37 @@ export const ICON_MAP: Record<string, IconComponent> = {
   PersonOutline,
   ShoppingCartOutlined,
   InventoryOutlined,
+
+  // Medical
+  CalendarMonthOutlined,
+  MedicalServicesOutlined,
+  BiotechOutlined,
+  LocalPharmacyOutlined,
+  HealthAndSafetyOutlined,
+  ReceiptLongOutlined,
+
+  // Education
+  AssignmentOutlined,
+  ForumOutlined,
+  GradingOutlined,
+
+  // Rental
+  BookOnlineOutlined,
+  HandshakeOutlined,
+  MonetizationOnOutlined,
+
+  // Inmobiliario
+  HomeWorkOutlined,
+  MapOutlined,
+
+  // Restaurante
+  DeliveryDiningOutlined,
+  RestaurantMenuOutlined,
+  SoupKitchenOutlined,
+  TableRestaurantOutlined,
+
+  // POS
+  LoyaltyOutlined,
 };
 
 /**
