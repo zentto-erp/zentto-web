@@ -258,7 +258,7 @@ export async function deleteAdminProduct(code: string, userId: number | null = n
 
 export async function publishToggle(code: string, publish?: boolean, userId: number | null = null) {
   const { output } = await callSpOut(
-    "usp_Store_Product_PublishToggle",
+    "usp_Store_Product_Publish_Toggle",
     {
       CompanyId: scope().companyId,
       Code: code,
