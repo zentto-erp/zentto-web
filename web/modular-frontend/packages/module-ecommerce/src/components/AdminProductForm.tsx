@@ -16,6 +16,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
     Box, Tabs, Tab, TextField, Typography, Paper, Button, Stack, Grid,
     FormControlLabel, Switch, MenuItem, IconButton, Chip, Alert, CircularProgress,
+    Autocomplete,
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import StarIcon from "@mui/icons-material/Star";
@@ -262,26 +263,30 @@ export default function AdminProductForm({ code, onSaved }: Props) {
             <Paper elevation={1} sx={{ p: 2, borderRadius: 2 }}>
                 <Typography variant="overline" color="text.secondary">Organización</Typography>
                 <Stack spacing={1.5} sx={{ mt: 1 }}>
-                    <TextField
-                        select size="small" label="Categoría" fullWidth
-                        value={basic.category ?? ""}
-                        onChange={(e) => setBasic({ ...basic, category: e.target.value })}
-                    >
-                        <MenuItem value="">(Sin categoría)</MenuItem>
-                        {(catData?.rows ?? []).map((c: any) => (
-                            <MenuItem key={c.code} value={c.code}>{c.name}</MenuItem>
-                        ))}
-                    </TextField>
-                    <TextField
-                        select size="small" label="Marca" fullWidth
-                        value={basic.brand ?? ""}
-                        onChange={(e) => setBasic({ ...basic, brand: e.target.value })}
-                    >
-                        <MenuItem value="">(Sin marca)</MenuItem>
-                        {(brandData?.rows ?? []).map((b: any) => (
-                            <MenuItem key={b.code} value={b.code}>{b.name}</MenuItem>
-                        ))}
-                    </TextField>
+                    <Autocomplete
+                        size="small"
+                        fullWidth
+                        options={(catData?.rows ?? []) as Array<{ code: string; name: string }>}
+                        getOptionLabel={(o) => o.name ?? ""}
+                        isOptionEqualToValue={(opt, val) => opt.code === val.code}
+                        value={(catData?.rows ?? []).find((c: any) => c.code === basic.category) ?? null}
+                        onChange={(_, v) => setBasic({ ...basic, category: v?.code ?? "" })}
+                        renderInput={(params) => <TextField {...params} label="Categoría" placeholder="Buscar categoría..." />}
+                        noOptionsText="Sin resultados"
+                        clearOnEscape
+                    />
+                    <Autocomplete
+                        size="small"
+                        fullWidth
+                        options={(brandData?.rows ?? []) as Array<{ code: string; name: string }>}
+                        getOptionLabel={(o) => o.name ?? ""}
+                        isOptionEqualToValue={(opt, val) => opt.code === val.code}
+                        value={(brandData?.rows ?? []).find((b: any) => b.code === basic.brand) ?? null}
+                        onChange={(_, v) => setBasic({ ...basic, brand: v?.code ?? "" })}
+                        renderInput={(params) => <TextField {...params} label="Marca" placeholder="Buscar marca..." />}
+                        noOptionsText="Sin resultados"
+                        clearOnEscape
+                    />
                 </Stack>
             </Paper>
 
