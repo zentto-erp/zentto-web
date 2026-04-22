@@ -106,6 +106,11 @@ import TableRestaurantOutlined from "@mui/icons-material/TableRestaurantOutlined
 // ─── POS ────────────────────────────────────────────────────────────────
 import LoyaltyOutlined from "@mui/icons-material/LoyaltyOutlined";
 
+// ─── Tickets ────────────────────────────────────────────────────────────
+import DesignServicesOutlined from "@mui/icons-material/DesignServicesOutlined";
+import QrCode2Outlined from "@mui/icons-material/QrCode2Outlined";
+import DirectionsRunOutlined from "@mui/icons-material/DirectionsRunOutlined";
+
 // MUI `OverridableComponent` requires generic component prop — lo aceptamos
 // como `React.ElementType` y hacemos cast en el render.
 type IconComponent = React.ElementType;
@@ -207,6 +212,11 @@ export const ICON_MAP: Record<string, IconComponent> = {
 
   // POS
   LoyaltyOutlined,
+
+  // Tickets
+  DesignServicesOutlined,
+  QrCode2Outlined,
+  DirectionsRunOutlined,
 };
 
 /**
