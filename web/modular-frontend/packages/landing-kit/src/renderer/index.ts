@@ -26,6 +26,11 @@ export {
   type BuiltLandingMetadata,
 } from "./metadata";
 export { fetchLandingSchema, type FetchSchemaOpts } from "./fetch-schema";
+export {
+  createRevalidateHandler,
+  type CreateRevalidateHandlerOptions,
+  type RevalidateRequestBody,
+} from "./createRevalidateHandler";
 export type {
   LandingRegistry,
   LandingRendererProps,
