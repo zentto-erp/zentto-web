@@ -16,9 +16,9 @@
     "@tanstack/react-query": "^5.64.2",
     "@zentto/datagrid": "^1.5.0",
     "@zentto/datagrid-core": "^1.4.0",
-    "@zentto/shared-api": "0.1.0",
-    "@zentto/shared-auth": "0.1.0",
-    "@zentto/shared-ui": "0.1.0",
+    "@zentto/shared-api": "*",
+    "@zentto/shared-auth": "*",
+    "@zentto/shared-ui": "*",
     "qrcode-generator": "^2.0.4",
     "react": "^19.2.4"
   }
