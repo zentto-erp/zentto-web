@@ -17,18 +17,18 @@ CREATE PROCEDURE dbo.usp_Store_PressRelease_Upsert
     @Status         NVARCHAR(20)   = N'draft',
     @Resultado      INT            OUTPUT,
     @Mensaje        NVARCHAR(500)  OUTPUT,
-    @OutPressId     BIGINT         OUTPUT
+    @OutPressReleaseId     BIGINT         OUTPUT
 AS
 BEGIN
     SET NOCOUNT ON;
     SET XACT_ABORT ON;
     BEGIN TRY
         IF @Slug IS NULL OR LTRIM(RTRIM(@Slug)) = N''
-        BEGIN SET @Resultado = 0; SET @Mensaje = N'slug requerido';  SET @OutPressId = NULL; RETURN; END
+        BEGIN SET @Resultado = 0; SET @Mensaje = N'slug requerido';  SET @OutPressReleaseId = NULL; RETURN; END
         IF @Title IS NULL OR LTRIM(RTRIM(@Title)) = N''
-        BEGIN SET @Resultado = 0; SET @Mensaje = N'title requerido'; SET @OutPressId = NULL; RETURN; END
+        BEGIN SET @Resultado = 0; SET @Mensaje = N'title requerido'; SET @OutPressReleaseId = NULL; RETURN; END
         IF @Status NOT IN (N'draft', N'published', N'archived')
-        BEGIN SET @Resultado = 0; SET @Mensaje = N'status invalido'; SET @OutPressId = NULL; RETURN; END
+        BEGIN SET @Resultado = 0; SET @Mensaje = N'status invalido'; SET @OutPressReleaseId = NULL; RETURN; END
 
         DECLARE @id BIGINT = @PressReleaseId;
         IF @id IS NULL
@@ -46,7 +46,7 @@ BEGIN
                 CASE WHEN @Status = N'published' THEN GETUTCDATE() ELSE NULL END,
                 GETUTCDATE(), GETUTCDATE()
             );
-            SET @OutPressId = CAST(SCOPE_IDENTITY() AS BIGINT);
+            SET @OutPressReleaseId = CAST(SCOPE_IDENTITY() AS BIGINT);
             SET @Resultado = 1; SET @Mensaje = N'creado';
         END
         ELSE
@@ -66,14 +66,14 @@ BEGIN
                                    END,
                    UpdatedAt     = GETUTCDATE()
              WHERE CompanyId = @CompanyId AND PressReleaseId = @id;
-            SET @OutPressId = @id;
+            SET @OutPressReleaseId = @id;
             SET @Resultado = 1; SET @Mensaje = N'actualizado';
         END
     END TRY
     BEGIN CATCH
         SET @Resultado = 0;
         SET @Mensaje   = LEFT(ERROR_MESSAGE(), 500);
-        SET @OutPressId = NULL;
+        SET @OutPressReleaseId = NULL;
     END CATCH
 END
 GO
