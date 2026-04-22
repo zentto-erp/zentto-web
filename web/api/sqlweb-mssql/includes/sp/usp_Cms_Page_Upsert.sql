@@ -17,6 +17,7 @@ CREATE PROCEDURE dbo.usp_Cms_Page_Upsert
     @Meta           NVARCHAR(MAX)  = N'{}',
     @SeoTitle       NVARCHAR(300)  = '',
     @SeoDescription NVARCHAR(500)  = '',
+    @PageType       VARCHAR(30)    = 'custom',
     @Resultado      INT            OUTPUT,
     @Mensaje        NVARCHAR(500)  OUTPUT,
     @OutPageId      INT            OUTPUT
@@ -42,16 +43,30 @@ BEGIN
             RETURN;
         END
 
+        IF @PageType IS NULL OR @PageType NOT IN (
+            N'about', N'contact', N'press',
+            N'legal-terms', N'legal-privacy',
+            N'case-study', N'custom'
+        )
+        BEGIN
+            SET @Resultado = 0;
+            SET @Mensaje = N'invalid_page_type';
+            SET @OutPageId = NULL;
+            RETURN;
+        END
+
         IF @PageId IS NULL OR @PageId = 0
         BEGIN
-            INSERT INTO cms.Page (
+            INSERT INTO cms.[Page] (
                 CompanyId, Slug, Vertical, Locale,
                 Title, Body, Meta,
-                SeoTitle, SeoDescription
+                SeoTitle, SeoDescription,
+                PageType
             ) VALUES (
                 @CompanyId, @Slug, @Vertical, @Locale,
                 @Title, @Body, @Meta,
-                @SeoTitle, @SeoDescription
+                @SeoTitle, @SeoDescription,
+                @PageType
             );
 
             SET @OutPageId = CAST(SCOPE_IDENTITY() AS INT);
@@ -60,7 +75,7 @@ BEGIN
         END
         ELSE
         BEGIN
-            IF NOT EXISTS (SELECT 1 FROM cms.Page WHERE PageId = @PageId)
+            IF NOT EXISTS (SELECT 1 FROM cms.[Page] WHERE PageId = @PageId)
             BEGIN
                 SET @Resultado = 0;
                 SET @Mensaje = N'page_not_found';
@@ -68,7 +83,7 @@ BEGIN
                 RETURN;
             END
 
-            UPDATE cms.Page SET
+            UPDATE cms.[Page] SET
                 Slug           = @Slug,
                 Vertical       = @Vertical,
                 Locale         = @Locale,
@@ -77,6 +92,7 @@ BEGIN
                 Meta           = @Meta,
                 SeoTitle       = @SeoTitle,
                 SeoDescription = @SeoDescription,
+                PageType       = @PageType,
                 UpdatedAt      = SYSUTCDATETIME()
             WHERE PageId = @PageId;
 

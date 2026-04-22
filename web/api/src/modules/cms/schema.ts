@@ -34,10 +34,24 @@ export const postUpsertSchema = z.object({
 export type PostUpsertInput = z.infer<typeof postUpsertSchema>;
 
 // ─── Page ────────────────────────────────────────────────────────────────────
+// Tipos canónicos de página corporativa — soft enum. Valores aceptados por la
+// BD (CHECK constraint) y usados por el editor CMS para ofrecer plantillas.
+export const CMS_PAGE_TYPES = [
+  "about",
+  "contact",
+  "press",
+  "legal-terms",
+  "legal-privacy",
+  "case-study",
+  "custom",
+] as const;
+export type CmsPageType = (typeof CMS_PAGE_TYPES)[number];
+
 export const pageListQuerySchema = z.object({
   companyId: z.coerce.number().int().positive().optional(),
   vertical: z.string().max(50).optional(),
   locale: z.string().max(10).default("es"),
+  pageType: z.enum(CMS_PAGE_TYPES).optional(),
 });
 
 export const pageUpsertSchema = z.object({
@@ -50,5 +64,6 @@ export const pageUpsertSchema = z.object({
   meta: z.record(z.unknown()).default({}),
   seoTitle: z.string().max(300).default(""),
   seoDescription: z.string().max(500).default(""),
+  pageType: z.enum(CMS_PAGE_TYPES).default("custom"),
 });
 export type PageUpsertInput = z.infer<typeof pageUpsertSchema>;

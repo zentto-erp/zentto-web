@@ -154,7 +154,8 @@ cmsAdminRouter.get("/pages", async (req, res) => {
     const vertical = typeof req.query.vertical === "string" ? req.query.vertical : undefined;
     const locale = typeof req.query.locale === "string" ? req.query.locale : "es";
     const status = typeof req.query.status === "string" ? req.query.status : undefined;
-    const rows = await listPages({ companyId, vertical, locale, status });
+    const pageType = typeof req.query.pageType === "string" ? req.query.pageType : undefined;
+    const rows = await listPages({ companyId, vertical, locale, status, pageType });
     res.json({ ok: true, data: rows });
   } catch (err: any) {
     res.status(500).json({ ok: false, error: err.message });
