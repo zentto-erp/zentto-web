@@ -1064,10 +1064,13 @@ components:
         mimeType:        { type: string }
         fileSizeBytes:   { type: integer }
 # ─── Store CMS ──────────────────────────────────────────────────────────
-    LandingConfig:
+    EcommerceCmsBlockConfig:
       type: object
       description: |
-        Configuración JSONB libre del layout visual de una página CMS.
+        Configuración JSONB libre del layout visual de una página del CMS de
+        ecommerce (StudioPageRenderer en module-ecommerce). Distinto de
+        `CmsLandingConfig` (landing-kit / studio-core) usado en las landings
+        B2B y consumer.
         Contiene arreglo de bloques tipados (Hero, FAQ, Stats, Team, Timeline,
         Jobs, ReturnSteps, richtext, etc.) que el `StudioPageRenderer`
         renderiza en orden.
@@ -1109,7 +1112,7 @@ components:
           nullable: true
           description: Template visual a usar (ej. `about`, `contact`, `faq`, `jobs`).
         config:
-          $ref: "#/components/schemas/LandingConfig"
+          $ref: "#/components/schemas/EcommerceCmsBlockConfig"
         seo:
           type: object
           additionalProperties: true
@@ -1130,7 +1133,7 @@ components:
         subtitle:    { type: string, maxLength: 300, nullable: true }
         templateKey: { type: string, maxLength: 80, nullable: true }
         config:
-          $ref: "#/components/schemas/LandingConfig"
+          $ref: "#/components/schemas/EcommerceCmsBlockConfig"
         seo:
           type: object
           additionalProperties: true
