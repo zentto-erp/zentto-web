@@ -295,3 +295,17 @@ export async function listContactSubmissions(opts: {
   const total = rows[0]?.TotalCount ? Number(rows[0].TotalCount) : 0;
   return { rows, total };
 }
+
+export async function updateContactStatus(
+  submissionId: number,
+  companyId: number,
+  status: "pending" | "read" | "archived",
+): Promise<{ ok: boolean; mensaje: string }> {
+  const rows = (await callSp("usp_cms_contact_update_status", {
+    SubmissionId: submissionId,
+    CompanyId: companyId,
+    Status: status,
+  })) as Array<{ ok: boolean; mensaje: string }>;
+  const r = rows[0] ?? { ok: false, mensaje: "no_result" };
+  return { ok: Boolean(r.ok), mensaje: String(r.mensaje) };
+}

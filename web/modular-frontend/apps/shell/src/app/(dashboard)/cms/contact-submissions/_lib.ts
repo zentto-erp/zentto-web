@@ -3,17 +3,14 @@
 /**
  * Service layer para el inbox de contact-submissions CMS.
  *
- * Backend: GET /v1/cms/contact-submissions — admin endpoint (requiere JWT +
- * rol admin o CMS_EDITOR). Lista mensajes enviados desde el
- * `ContactFormAdapter` de `@zentto/landing-kit`.
+ * Backend:
+ *   GET   /v1/cms/contact-submissions       — lista (filtro vertical/status).
+ *   PATCH /v1/cms/contact-submissions/:id   — actualiza status (read/archived).
  *
- * NOTA: el backend NO expone (todavía) un endpoint PUT/PATCH para actualizar
- * status (read/archived). Esa capacidad se marca como TODO en la UI y sólo
- * se habilitará cuando exista el SP + endpoint (seguimiento: siguiente PR
- * del plan CMS Dogfooding).
+ * Ambos requieren JWT + rol admin o CMS_EDITOR.
  */
 
-import { apiGet } from "@zentto/shared-api";
+import { apiGet, apiPatch } from "@zentto/shared-api";
 import { VERTICALS } from "../_lib";
 
 export { VERTICALS };
@@ -51,6 +48,13 @@ export async function listContactSubmissions(
   opts: { vertical?: string; status?: ContactStatus; limit?: number; offset?: number } = {},
 ): Promise<ContactListResponse> {
   return apiGet("/v1/cms/contact-submissions", opts as Record<string, unknown>);
+}
+
+export async function updateContactStatus(
+  id: number,
+  status: "pending" | "read" | "archived",
+): Promise<{ ok: boolean; mensaje: string }> {
+  return apiPatch(`/v1/cms/contact-submissions/${id}`, { status });
 }
 
 /** Construye un link mailto pre-rellenado para responder. */

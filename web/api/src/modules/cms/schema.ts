@@ -88,3 +88,12 @@ export const contactListQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(200).default(50),
   offset: z.coerce.number().int().min(0).default(0),
 });
+
+// Estados aceptados para PATCH de ContactSubmission.Status (CHECK constraint
+// en BD). El endpoint admin valida contra este enum; el SP también defiende.
+export const CMS_CONTACT_STATUSES = ["pending", "read", "archived"] as const;
+export type CmsContactStatus = (typeof CMS_CONTACT_STATUSES)[number];
+
+export const contactUpdateStatusSchema = z.object({
+  status: z.enum(CMS_CONTACT_STATUSES),
+});

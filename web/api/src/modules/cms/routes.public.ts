@@ -13,6 +13,7 @@ import {
 } from "./service.js";
 import { resolveTenantFromRequest } from "../_shared/scope.js";
 import { obs } from "../integrations/observability.js";
+import { notifyEmail } from "../_shared/notify.js";
 
 // Router público: /v1/public/cms/* — sin JWT.
 // Solo expone contenido con Status='published'.
@@ -24,6 +25,60 @@ import { obs } from "../integrations/observability.js";
 // dogfooding CMS 2026-04-22).
 
 const MODULE_NAME = "cms-public";
+
+function capitalize(s: string): string {
+  if (!s) return s;
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function buildContactNotifyHtml(params: {
+  vertical: string;
+  name: string;
+  email: string;
+  subject: string;
+  message: string;
+  submissionId: number;
+  ipAddress: string | null;
+}): string {
+  const adminLink = `https://appdev.zentto.net/cms/contact-submissions?highlight=${params.submissionId}`;
+  const subjectLine = params.subject
+    ? `<tr><td style="padding:6px 12px;font-weight:600;color:#555">Asunto</td><td style="padding:6px 12px">${escapeHtml(params.subject)}</td></tr>`
+    : "";
+  const ipLine = params.ipAddress
+    ? `<tr><td style="padding:6px 12px;font-weight:600;color:#555">IP</td><td style="padding:6px 12px;color:#999;font-family:monospace">${escapeHtml(params.ipAddress)}</td></tr>`
+    : "";
+  return `
+    <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto">
+      <div style="background:#1a1a2e;color:#fff;padding:20px;text-align:center;border-radius:8px 8px 0 0">
+        <h2 style="margin:0;font-size:18px">Nuevo mensaje de contacto — Zentto ${escapeHtml(capitalize(params.vertical))}</h2>
+      </div>
+      <div style="padding:20px;background:#fff;border:1px solid #eee">
+        <table style="width:100%;border-collapse:collapse;font-size:14px">
+          <tr><td style="padding:6px 12px;font-weight:600;color:#555;width:120px">Nombre</td><td style="padding:6px 12px">${escapeHtml(params.name)}</td></tr>
+          <tr><td style="padding:6px 12px;font-weight:600;color:#555">Email</td><td style="padding:6px 12px"><a href="mailto:${escapeHtml(params.email)}" style="color:#6C63FF">${escapeHtml(params.email)}</a></td></tr>
+          ${subjectLine}
+          ${ipLine}
+        </table>
+        <div style="margin-top:16px;padding:16px;background:#f7f7fc;border-radius:6px;white-space:pre-wrap;font-size:14px;line-height:1.5;color:#333">${escapeHtml(params.message)}</div>
+        <div style="margin-top:20px;text-align:center">
+          <a href="${adminLink}" style="display:inline-block;padding:10px 20px;background:#6C63FF;color:#fff;text-decoration:none;border-radius:6px;font-weight:600">Ver en el inbox</a>
+        </div>
+      </div>
+      <div style="padding:12px;text-align:center;color:#999;font-size:12px">
+        Zentto CMS · submission #${params.submissionId}
+      </div>
+    </div>
+  `;
+}
 
 export const cmsPublicRouter = Router();
 
@@ -308,6 +363,35 @@ cmsPublicRouter.post("/contact/submit", async (req: Request, res: Response) => {
     obs.perf("cms.contact.submit", Date.now() - startedAt, {
       module: MODULE_NAME,
     });
+
+    // Notify admin — fire-and-forget. El destinatario sale de
+    // `CMS_CONTACT_NOTIFY_TO` (con fallback a `hola@zentto.net`). No bloquea
+    // la respuesta 201 al usuario — si notify está down el mensaje sigue
+    // persistido en BD y visible en el inbox `/cms/contact-submissions`.
+    const notifyTo =
+      process.env.CMS_CONTACT_NOTIFY_TO ?? "hola@zentto.net";
+    if (notifyTo) {
+      const verticalLabel = parsed.data.vertical ?? "corporate";
+      void notifyEmail(
+        notifyTo,
+        `[Zentto ${capitalize(verticalLabel)}] Nuevo mensaje de ${parsed.data.name}`,
+        buildContactNotifyHtml({
+          vertical: verticalLabel,
+          name: parsed.data.name,
+          email: parsed.data.email,
+          subject: parsed.data.subject,
+          message: parsed.data.message,
+          submissionId: result.submission_id,
+          ipAddress: ip,
+        }),
+        { track: false },
+      ).catch((err) => {
+        obs.error(`cms.contact.notify_failed: ${err?.message ?? String(err)}`, {
+          module: MODULE_NAME,
+          submissionId: result.submission_id,
+        });
+      });
+    }
 
     res.status(201).json({
       ok: true,
