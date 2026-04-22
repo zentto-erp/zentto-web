@@ -77,6 +77,8 @@ import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium';
 import BusinessIcon from '@mui/icons-material/Business';
 import PaletteIcon from '@mui/icons-material/Palette';
 import WebIcon from '@mui/icons-material/Web';
+import ArticleIcon from '@mui/icons-material/Article';
+import EmailIcon from '@mui/icons-material/Email';
 
 export function has(modulos: string[], mod: SystemModule): boolean {
     return modulos.includes(mod);
@@ -579,7 +581,9 @@ export function buildNavigation(isAdmin: boolean, modulos: string[], pathname: s
             title: 'Nuevo Post',
             icon: <AddCircleOutlineIcon />,
         });
+        nav.push({ kind: 'page', segment: 'cms/pages', title: 'Páginas', icon: <ArticleIcon /> });
         nav.push({ kind: 'page', segment: 'cms/landings', title: 'Landings', icon: <WebIcon /> });
+        nav.push({ kind: 'page', segment: 'cms/contact-submissions', title: 'Inbox Contacto', icon: <EmailIcon /> });
         nav.push({ kind: 'divider' });
         nav.push({ kind: 'page', segment: '', title: 'Volver al Inicio', icon: <DashboardIcon /> });
         return nav;
