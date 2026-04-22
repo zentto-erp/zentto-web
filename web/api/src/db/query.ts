@@ -168,6 +168,13 @@ async function pgCallSpOut<T>(
           }
         }
       }
+      // Fallback: SQL Server usa @OutFoo como OUTPUT, pero las funciones PG
+      // retornan "Foo" en el RETURNS TABLE. Si la key empieza con "Out",
+      // probar sin el prefijo.
+      if (val === undefined && key.startsWith("Out") && key.length > 3) {
+        const unprefixed = key.slice(3);
+        val = normalizedRow[unprefixed] ?? firstRow[toSnakeParam(unprefixed)] ?? undefined;
+      }
       outputRecord[key] = val ?? null;
     }
   }

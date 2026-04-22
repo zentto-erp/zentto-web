@@ -1,0 +1,355 @@
+{
+  "id": "zentto-hotel-landing",
+  "version": "1.0.0",
+  "appMode": "landing",
+  "branding": {
+    "title": "Zentto Hotel",
+    "subtitle": "PMS enterprise para hoteleros",
+    "primaryColor": "#0891b2",
+    "accentColor": "#67e8f9",
+    "homeSegment": "para-hoteles",
+    "logoIconId": "HotelOutlined"
+  },
+  "landingConfig": {
+    "seo": {
+      "title": "Zentto Hotel — PMS moderno para hoteleros",
+      "description": "Property management system con channel manager, revenue en vivo, housekeeping digital y facturación fiscal LATAM. Setup en menos de un día.",
+      "ogImage": "/og/hotel-landing.png",
+      "canonical": "https://hotel.zentto.net/para-hoteles"
+    },
+    "navbar": {
+      "verticalName": "Hotel",
+      "logoIconId": "HotelOutlined",
+      "links": [
+        { "label": "Producto", "href": "#features" },
+        { "label": "Cómo funciona", "href": "#how" },
+        { "label": "Precios", "href": "#pricing" },
+        { "label": "Para huéspedes", "href": "/" }
+      ],
+      "primaryCta": {
+        "label": "Solicitar demo",
+        "href": "mailto:ventas@zentto.net?subject=Demo%20Zentto%20Hotel",
+        "external": true
+      },
+      "loginHref": "/login",
+      "homeHref": "/para-hoteles",
+      "sticky": true
+    },
+    "sections": [
+      {
+        "id": "hero-hotel",
+        "type": "hero",
+        "anchor": "hero",
+        "heroConfig": {
+          "headline": "El PMS que",
+          "subheadline": "escala contigo.",
+          "description": "Front desk, channel manager, revenue, housekeeping y facturación fiscal LATAM en una sola plataforma. Desde hoteles boutique hasta cadenas con multi-propiedad.",
+          "ctaPrimary": {
+            "label": "Solicitar demo",
+            "href": "mailto:ventas@zentto.net?subject=Demo%20Zentto%20Hotel",
+            "external": true
+          },
+          "ctaSecondary": {
+            "label": "Probar 14 días gratis",
+            "href": "/register"
+          },
+          "extensions": {
+            "__landingKit": {
+              "eyebrow": {
+                "dot": true,
+                "label": "PMS enterprise para hoteleros",
+                "dotColorToken": "success"
+              },
+              "headlineAccentGradient": true,
+              "trustBadges": [
+                { "iconId": "CheckCircleOutline", "label": "14 días gratis, sin tarjeta" },
+                { "iconId": "BoltOutlined", "label": "Setup en < 1 día" },
+                { "iconId": "CloudSyncOutlined", "label": "Migración sin perder reservas" }
+              ],
+              "mockupComponentId": "hero-hotel-frontdesk"
+            }
+          }
+        },
+        "background": {
+          "type": "gradient",
+          "valueToken": "heroGradient"
+        }
+      },
+      {
+        "id": "trust-hotels",
+        "type": "logos",
+        "logosConfig": {
+          "variant": "text-only",
+          "label": "Hoteles que ya operan en Zentto Hotel",
+          "logos": [
+            { "name": "Hotel Caracas Plaza" },
+            { "name": "Cadena VenuHotel" },
+            { "name": "Boutique Margarita" },
+            { "name": "Andes Resort" },
+            { "name": "Grupo PacificStay" },
+            { "name": "Posadas del Sur" }
+          ]
+        }
+      },
+      {
+        "id": "features-core",
+        "type": "features",
+        "anchor": "features",
+        "featuresConfig": {
+          "eyebrow": "Producto",
+          "title": "Todo lo que un hotel profesional necesita",
+          "description": "Una plataforma única desde el check-in hasta el cierre nocturno. Sin integrar 5 herramientas distintas.",
+          "layout": "grid-3",
+          "items": [
+            {
+              "iconId": "EventSeatOutlined",
+              "title": "Front desk moderno",
+              "description": "Check-in / check-out en segundos, asignación automática de habitaciones y gestión de no-shows en un solo panel."
+            },
+            {
+              "iconId": "CloudSyncOutlined",
+              "title": "Channel manager integrado",
+              "description": "Booking.com, Expedia, Airbnb, Despegar — sincroniza tarifas y disponibilidad en tiempo real sin doble-reservas."
+            },
+            {
+              "iconId": "InsightsOutlined",
+              "title": "Revenue en vivo",
+              "description": "RevPAR, ocupación y ADR actualizados al minuto. Alertas de oportunidad de pricing dinámico."
+            },
+            {
+              "iconId": "VpnKeyOutlined",
+              "title": "Housekeeping digital",
+              "description": "Estado de habitaciones, asignación de camaristas, bitácora de incidencias y checklists firmables por QR."
+            },
+            {
+              "iconId": "PaymentOutlined",
+              "title": "Pagos + facturación fiscal",
+              "description": "Stripe, terminales fiscales LATAM (VE, CO, MX), notas de consumo por habitación y cierre nocturno automático."
+            },
+            {
+              "iconId": "HotelOutlined",
+              "title": "Multi-propiedad",
+              "description": "Cadenas y grupos hoteleros con consolidación de reportes, políticas comunes y branding por propiedad."
+            }
+          ]
+        }
+      },
+      {
+        "id": "how-it-works",
+        "type": "timeline",
+        "anchor": "how",
+        "timelineConfig": {
+          "variant": "numbered-horizontal",
+          "eyebrow": "Migración",
+          "title": "De Opera / Excel a Zentto Hotel en 3 pasos",
+          "description": "Nuestro equipo migra tu inventario, tarifas y reservas activas sin downtime.",
+          "steps": [
+            {
+              "step": "01",
+              "title": "Conecta tu PMS existente",
+              "description": "Importamos tu inventario, tarifas y reservas activas desde Opera, Cloudbeds o Excel en menos de 4 horas."
+            },
+            {
+              "step": "02",
+              "title": "Configura tarifas y canales",
+              "description": "Sincroniza Booking, Expedia y tu web. Define yield, temporadas y restricciones en una sola pantalla."
+            },
+            {
+              "step": "03",
+              "title": "Opera y reporta",
+              "description": "Front desk, housekeeping, F&B, cierre nocturno y reportes en vivo. Tu equipo entrena en 2 horas."
+            }
+          ]
+        }
+      },
+      {
+        "id": "pricing-main",
+        "type": "pricing",
+        "anchor": "pricing",
+        "pricingConfig": {
+          "title": "Precios por propiedad, sin sorpresas",
+          "description": "Sin comisiones por reserva, sin permanencia. Cancela cuando quieras.",
+          "plans": [
+            {
+              "name": "Starter",
+              "price": "$79",
+              "period": "por mes · 1 propiedad",
+              "description": "Hoteles boutique y posadas hasta 20 habitaciones.",
+              "bullets": [
+                "Front desk + housekeeping",
+                "Channel manager (2 OTAs)",
+                "Pagos con Stripe",
+                "Reportes estándar",
+                "Soporte por email"
+              ],
+              "cta": { "label": "Probar 14 días gratis", "href": "/register" },
+              "highlight": false
+            },
+            {
+              "name": "Pro",
+              "price": "$199",
+              "period": "por mes · 1 propiedad",
+              "description": "La opción más popular para hoteles de 20 a 120 habitaciones.",
+              "bullets": [
+                "Todo en Starter +",
+                "Channel manager ilimitado",
+                "Revenue dashboards en vivo",
+                "Facturación fiscal LATAM",
+                "API + webhooks",
+                "Soporte prioritario 12/7"
+              ],
+              "cta": {
+                "label": "Solicitar demo",
+                "href": "mailto:ventas@zentto.net?subject=Demo%20Zentto%20Hotel%20Pro",
+                "external": true
+              },
+              "highlight": true,
+              "badge": "Recomendado"
+            },
+            {
+              "name": "Cadena",
+              "price": "A medida",
+              "period": "contactar ventas",
+              "description": "Cadenas y grupos con múltiples propiedades y marcas.",
+              "bullets": [
+                "Multi-propiedad ilimitada",
+                "SLA 99.9% con soporte 24/7",
+                "SSO corporativo",
+                "Reportes consolidados",
+                "Branding white-label",
+                "Account manager dedicado"
+              ],
+              "cta": {
+                "label": "Hablar con ventas",
+                "href": "mailto:ventas@zentto.net?subject=Cotizaci%C3%B3n%20Cadena%20Hotelera",
+                "external": true
+              },
+              "highlight": false
+            }
+          ]
+        }
+      },
+      {
+        "id": "testimonials-main",
+        "type": "testimonials",
+        "testimonialsConfig": {
+          "variant": "featured-plus-grid",
+          "title": "Hoteleros que ya migraron",
+          "description": "Boutique, resorts y cadenas que operan 100% en Zentto Hotel.",
+          "items": [
+            {
+              "quote": "Migramos de Opera en 3 semanas. El channel manager nos quitó 40 horas al mes de ajustar tarifas a mano, y el cierre nocturno pasó de 2 horas a 15 minutos.",
+              "author": "María González",
+              "role": "Front Office Manager",
+              "company": "Hotel Caracas Plaza",
+              "featured": true
+            },
+            {
+              "quote": "Los reportes en vivo cambiaron cómo negociamos con OTAs. Vemos el RevPAR por canal en tiempo real.",
+              "author": "Carlos Méndez",
+              "role": "Revenue Manager",
+              "company": "Cadena VenuHotel",
+              "featured": false
+            },
+            {
+              "quote": "Housekeeping digital acabó con los papeles. Las camaristas ven el mapa de habitaciones en tablets.",
+              "author": "Ana Rivera",
+              "role": "Gerente de Operaciones",
+              "company": "Andes Resort",
+              "featured": false
+            }
+          ]
+        }
+      },
+      {
+        "id": "blog-teaser-hotel",
+        "type": "blog-preview",
+        "blogPreviewConfig": {
+          "title": "Ideas para hoteleros",
+          "description": "Revenue management, canal manager, fiscal LATAM — escribimos sobre el oficio real de operar un hotel.",
+          "dataSource": {
+            "type": "zentto-cms",
+            "vertical": "hotel",
+            "locale": "es",
+            "limit": 3
+          },
+          "readMoreHref": "/blog",
+          "readMoreLabel": "Ver todos los artículos"
+        }
+      },
+      {
+        "id": "cta-final",
+        "type": "cta",
+        "ctaConfig": {
+          "title": "¿Listo para modernizar tu operación?",
+          "subtitle": "Agenda una demo de 30 minutos y te mostramos tu hotel corriendo en Zentto.",
+          "ctaPrimary": {
+            "label": "Solicitar demo",
+            "href": "mailto:ventas@zentto.net?subject=Demo%20Zentto%20Hotel",
+            "external": true
+          },
+          "ctaSecondary": {
+            "label": "Probar 14 días gratis",
+            "href": "/register"
+          }
+        }
+      }
+    ],
+    "footer": {
+      "verticalName": "Hotel",
+      "logoIconId": "HotelOutlined",
+      "brandTagline": "Property management system con channel manager, revenue y fiscal LATAM integrado.",
+      "columns": [
+        {
+          "title": "Producto",
+          "links": [
+            { "label": "Front desk", "href": "#features" },
+            { "label": "Channel manager", "href": "#features" },
+            { "label": "Revenue", "href": "#features" },
+            { "label": "Housekeeping", "href": "#features" }
+          ]
+        },
+        {
+          "title": "Soluciones",
+          "links": [
+            { "label": "Hoteles boutique", "href": "#features" },
+            { "label": "Resorts", "href": "#features" },
+            { "label": "Cadenas", "href": "#features" },
+            { "label": "Hostales y posadas", "href": "#features" }
+          ]
+        },
+        {
+          "title": "Recursos",
+          "links": [
+            { "label": "Centro de ayuda", "href": "https://docs.zentto.net", "external": true },
+            { "label": "Documentación API", "href": "https://docs.zentto.net/api/hotel", "external": true },
+            { "label": "Estado del servicio", "href": "https://status.zentto.net", "external": true },
+            { "label": "Blog", "href": "/blog" }
+          ]
+        },
+        {
+          "title": "Empresa",
+          "links": [
+            { "label": "Acerca de Zentto", "href": "https://zentto.net", "external": true },
+            { "label": "Contacto", "href": "mailto:info@zentto.net", "external": true },
+            { "label": "Términos de uso", "href": "/terminos" },
+            { "label": "Privacidad", "href": "/privacidad" }
+          ]
+        }
+      ],
+      "social": [
+        { "label": "X (Twitter)", "iconId": "X", "href": "https://x.com/zenttohq" },
+        { "label": "LinkedIn", "iconId": "LinkedIn", "href": "https://linkedin.com/company/zentto" },
+        { "label": "GitHub", "iconId": "GitHub", "href": "https://github.com/zentto-erp" }
+      ],
+      "legalLinks": [
+        { "label": "Términos", "href": "/terminos" },
+        { "label": "Privacidad", "href": "/privacidad" }
+      ],
+      "statusLink": {
+        "label": "Estado del servicio",
+        "href": "https://status.zentto.net"
+      }
+    }
+  }
+}

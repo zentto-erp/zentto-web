@@ -12,11 +12,13 @@
  */
 
 import {
-    Box, AppBar, Toolbar, Typography, Button, Chip,
+    Box, AppBar, Toolbar, Typography, Button, Chip, IconButton,
     Drawer, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Divider,
     Accordion, AccordionSummary, AccordionDetails,
     Select, MenuItem as MuiMenuItem, FormControl, Tooltip,
+    useMediaQuery, useTheme,
 } from '@mui/material';
+import MenuIcon from '@mui/icons-material/Menu';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import AssignmentReturnIcon from '@mui/icons-material/AssignmentReturn';
 import SpeedIcon from '@mui/icons-material/Speed';
@@ -145,11 +147,19 @@ function OrangeBadge({ count }: { count: number }) {
 function AdminShell({ children }: { children: React.ReactNode }) {
     const router = useRouter();
     const pathname = usePathname();
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+    const [mobileOpen, setMobileOpen] = useState(false);
     const adminUser        = useAdminAuthStore((s) => s.user);
     const companyAccesses  = useAdminAuthStore((s) => s.companyAccesses);
     const activeCompanyId  = useAdminAuthStore((s) => s.activeCompanyId);
     const setActiveCompany = useAdminAuthStore((s) => s.setActiveCompany);
     const logout           = useAdminLogout();
+
+    // Cerrar drawer al navegar en mobile
+    useEffect(() => {
+        if (isMobile) setMobileOpen(false);
+    }, [pathname, isMobile]);
 
     const { data: reviewsPending } = useAdminReviewsList({ status: 'pending', limit: 1 });
     const counts: BadgeCounts = {
@@ -196,11 +206,20 @@ function AdminShell({ children }: { children: React.ReactNode }) {
                 sx={{
                     zIndex: 1300,
                     bgcolor: '#131921',
-                    width: `calc(100% - ${DRAWER_WIDTH}px)`,
-                    ml: `${DRAWER_WIDTH}px`,
+                    width: { xs: '100%', md: `calc(100% - ${DRAWER_WIDTH}px)` },
+                    ml: { xs: 0, md: `${DRAWER_WIDTH}px` },
                 }}
             >
                 <Toolbar sx={{ gap: 1 }}>
+                    <IconButton
+                        color="inherit"
+                        edge="start"
+                        onClick={() => setMobileOpen((o) => !o)}
+                        sx={{ display: { xs: 'inline-flex', md: 'none' }, mr: 0.5 }}
+                        aria-label="Abrir menu"
+                    >
+                        <MenuIcon />
+                    </IconButton>
                     <StoreIcon sx={{ color: '#ff9900' }} />
                     <Typography variant="h6" fontWeight={700} sx={{ flex: 1 }}>
                         Zentto<span style={{ color: '#ff9900' }}>Store</span> Admin
@@ -281,29 +300,108 @@ function AdminShell({ children }: { children: React.ReactNode }) {
                 </Toolbar>
             </AppBar>
 
-            <Drawer
-                variant="permanent"
+            <Box
+                component="nav"
+                sx={{ width: { md: DRAWER_WIDTH }, flexShrink: { md: 0 } }}
+                aria-label="Panel administrativo"
+            >
+                <Drawer
+                    variant="temporary"
+                    open={mobileOpen}
+                    onClose={() => setMobileOpen(false)}
+                    ModalProps={{ keepMounted: true }}
+                    sx={{
+                        display: { xs: 'block', md: 'none' },
+                        '& .MuiDrawer-paper': {
+                            width: DRAWER_WIDTH,
+                            boxSizing: 'border-box',
+                            bgcolor: '#232f3e',
+                            color: '#fff',
+                        },
+                    }}
+                >
+                    <DrawerContent
+                        sections={NAV_SECTIONS}
+                        expandedMap={expandedMap}
+                        activeSectionId={activeSectionId}
+                        handleExpandChange={handleExpandChange}
+                        pathname={pathname}
+                        router={router}
+                        counts={counts}
+                    />
+                </Drawer>
+                <Drawer
+                    variant="permanent"
+                    open
+                    sx={{
+                        display: { xs: 'none', md: 'block' },
+                        '& .MuiDrawer-paper': {
+                            width: DRAWER_WIDTH,
+                            boxSizing: 'border-box',
+                            bgcolor: '#232f3e',
+                            color: '#fff',
+                        },
+                    }}
+                >
+                    <DrawerContent
+                        sections={NAV_SECTIONS}
+                        expandedMap={expandedMap}
+                        activeSectionId={activeSectionId}
+                        handleExpandChange={handleExpandChange}
+                        pathname={pathname}
+                        router={router}
+                        counts={counts}
+                    />
+                </Drawer>
+            </Box>
+
+            <Box
+                component="main"
                 sx={{
-                    width: DRAWER_WIDTH,
-                    flexShrink: 0,
-                    '& .MuiDrawer-paper': {
-                        width: DRAWER_WIDTH,
-                        boxSizing: 'border-box',
-                        bgcolor: '#232f3e',
-                        color: '#fff',
-                    },
+                    flexGrow: 1,
+                    p: { xs: 2, sm: 3 },
+                    mt: 8,
+                    bgcolor: '#f5f5f5',
+                    minHeight: '100vh',
+                    width: { md: `calc(100% - ${DRAWER_WIDTH}px)` },
                 }}
             >
-                <Toolbar sx={{ bgcolor: '#131921' }}>
+                {children}
+            </Box>
+        </Box>
+    );
+}
+
+// Contenido del drawer — compartido entre mobile y desktop
+function DrawerContent({
+    sections,
+    expandedMap,
+    activeSectionId,
+    handleExpandChange,
+    pathname,
+    router,
+    counts,
+}: {
+    sections: NavSection[];
+    expandedMap: Record<string, boolean>;
+    activeSectionId: string;
+    handleExpandChange: (id: string) => (_: unknown, expanded: boolean) => void;
+    pathname: string;
+    router: ReturnType<typeof useRouter>;
+    counts: BadgeCounts;
+}) {
+    return (
+        <>
+            <Toolbar sx={{ bgcolor: '#131921' }}>
                     <Typography variant="subtitle2" fontWeight={700} sx={{ color: '#ff9900', fontSize: 12 }}>
                         PANEL ADMINISTRATIVO
                     </Typography>
                 </Toolbar>
                 <Divider sx={{ bgcolor: '#37475a' }} />
 
-                <Box sx={{ overflowY: 'auto' }}>
-                    {NAV_SECTIONS.map((section) => {
-                        const expanded = expandedMap[section.id] ?? section.id === activeSectionId;
+            <Box sx={{ overflowY: 'auto' }}>
+                {sections.map((section) => {
+                    const expanded = expandedMap[section.id] ?? section.id === activeSectionId;
                         return (
                             <Accordion
                                 key={section.id}
@@ -398,17 +496,9 @@ function AdminShell({ children }: { children: React.ReactNode }) {
                                 </AccordionDetails>
                             </Accordion>
                         );
-                    })}
-                </Box>
-            </Drawer>
-
-            <Box
-                component="main"
-                sx={{ flexGrow: 1, p: 3, mt: 8, bgcolor: '#f5f5f5', minHeight: '100vh' }}
-            >
-                {children}
+                })}
             </Box>
-        </Box>
+        </>
     );
 }
 

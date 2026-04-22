@@ -744,6 +744,98 @@ components:
         seoDescription: { type: string }
 
     # ═══════════════════════════════════════════════════════════════════
+    # CMS Landing Schemas (ADR-LANDING-001)
+    # ═══════════════════════════════════════════════════════════════════
+    CmsLandingConfig:
+      type: object
+      description: |
+        Schema JSON de un landing de vertical (proviene de `zentto-studio-core`
+        `LandingConfig`). Permisivo en `sections[].*` — la validación estricta
+        se delega al renderer `@zentto/landing-kit`.
+      required: [id, version, landingConfig]
+      additionalProperties: true
+      properties:
+        id:       { type: string, example: "landing/hotel/default" }
+        version:  { type: string, example: "2026.04.21" }
+        appMode:  { type: string, enum: [landing] }
+        branding: { type: object, additionalProperties: true }
+        landingConfig:
+          type: object
+          additionalProperties: true
+          required: [sections]
+          properties:
+            navbar: { type: object, additionalProperties: true }
+            footer: { type: object, additionalProperties: true }
+            sections:
+              type: array
+              items:
+                type: object
+                required: [id, type]
+                additionalProperties: true
+                properties:
+                  id:   { type: string }
+                  type: { type: string, example: hero }
+
+    CmsLandingListItem:
+      type: object
+      properties:
+        landingSchemaId: { type: integer }
+        companyId:       { type: integer }
+        vertical:        { type: string }
+        slug:            { type: string }
+        locale:          { type: string }
+        version:         { type: integer }
+        status:          { type: string, enum: [draft, published, archived] }
+        publishedAt:     { type: string, format: date-time, nullable: true }
+        updatedAt:       { type: string, format: date-time }
+
+    CmsLandingPublic:
+      type: object
+      description: Respuesta pública del landing publicado (solo campos server-safe)
+      properties:
+        landingSchemaId: { type: integer }
+        companyId:       { type: integer }
+        vertical:        { type: string }
+        slug:            { type: string }
+        locale:          { type: string }
+        version:         { type: integer }
+        status:          { type: string, example: published }
+        schema:          { $ref: "#/components/schemas/CmsLandingConfig" }
+        themeTokens:     { type: object, nullable: true, additionalProperties: true }
+        seoMeta:         { type: object, nullable: true, additionalProperties: true }
+        publishedAt:     { type: string, format: date-time, nullable: true }
+        updatedAt:       { type: string, format: date-time, nullable: true }
+
+    CmsLandingDetail:
+      allOf:
+        - $ref: "#/components/schemas/CmsLandingListItem"
+        - type: object
+          properties:
+            draftSchema:     { $ref: "#/components/schemas/CmsLandingConfig" }
+            publishedSchema:
+              oneOf:
+                - { $ref: "#/components/schemas/CmsLandingConfig" }
+                - { type: "null" }
+            themeTokens:     { type: object, nullable: true, additionalProperties: true }
+            seoMeta:         { type: object, nullable: true, additionalProperties: true }
+            previewToken:    { type: string, nullable: true }
+            createdAt:       { type: string, format: date-time }
+            createdBy:       { type: integer, nullable: true }
+            publishedBy:     { type: integer, nullable: true }
+            updatedBy:       { type: integer, nullable: true }
+
+    CmsLandingUpsertInput:
+      type: object
+      required: [draftSchema]
+      properties:
+        vertical:    { type: string, maxLength: 50, description: "Requerido al crear" }
+        slug:        { type: string, maxLength: 100, default: default }
+        locale:      { type: string, minLength: 2, maxLength: 10, default: es }
+        draftSchema: { $ref: "#/components/schemas/CmsLandingConfig" }
+        themeTokens: { type: object, nullable: true, additionalProperties: true, description: Override opcional de tokens (las 9 paletas de landing-kit siguen siendo fuente de verdad por defecto) }
+        seoMeta:     { type: object, nullable: true, additionalProperties: true, description: "title, description, og:image, etc." }
+
+    # ═══════════════════════════════════════════════════════════════════
     # Store Admin — Ola 2 (feat/ecommerce-admin-productos)
     # ═══════════════════════════════════════════════════════════════════
     StoreProductUpsertRequest:
@@ -11227,6 +11319,214 @@ paths:
       responses:
         "200":
           description: Página publicada
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # CMS — Landing Schemas (ADR-LANDING-001)
+  # Persistencia JSON de LandingConfig por tenant/vertical/slug/locale con
+  # draft/published/versioning + preview token cross-subdomain + revalidate opt-in.
+  # Primer PR del plan "landing schemas en CMS" (Opción 3: studio schema + landing-kit renderer).
+  # ──────────────────────────────────────────────────────────────────────────
+
+  /v1/public/cms/landings/by-slug:
+    get:
+      tags: [CMS Landings]
+      summary: Landing publicado (SSG/SSR público)
+      description: |
+        Devuelve el PublishedSchema del landing para un tenant+vertical+slug+locale.
+        CompanyId se resuelve del query, subdomain, header `X-Tenant-Id`, cookie
+        `tenant_id` o `STORE_DEFAULT_COMPANY_ID`. Cache CDN 5 min.
+      parameters:
+        - in: query
+          name: vertical
+          required: true
+          schema: { type: string, example: hotel }
+        - in: query
+          name: slug
+          schema: { type: string, default: default }
+        - in: query
+          name: locale
+          schema: { type: string, default: es }
+        - in: query
+          name: companyId
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Landing encontrado (published)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:   { type: boolean }
+                  data: { $ref: "#/components/schemas/CmsLandingPublic" }
+        "400": { description: tenant_required o invalid_query }
+        "404": { description: landing_not_found }
+
+  /v1/public/cms/landings/preview:
+    get:
+      tags: [CMS Landings]
+      summary: Preview cross-subdomain por token UUID (público)
+      description: |
+        Devuelve el DraftSchema cuando el token coincide. No cachea.
+        Pensado para `hotel.zentto.net?preview=TOKEN` donde cookies httpOnly
+        de `zentto.net` no llegan.
+      parameters:
+        - in: query
+          name: token
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: Preview OK (DraftSchema) }
+        "400": { description: invalid_token }
+        "404": { description: preview_not_found }
+
+  /v1/cms/landings:
+    get:
+      tags: [CMS Landings]
+      summary: Admin — lista landings del tenant
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: query
+          name: vertical
+          schema: { type: string }
+        - in: query
+          name: status
+          schema: { type: string, enum: [draft, published, archived] }
+        - in: query
+          name: limit
+          schema: { type: integer, default: 50, maximum: 100 }
+        - in: query
+          name: offset
+          schema: { type: integer, default: 0 }
+      responses:
+        "200":
+          description: Lista admin de landings
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:     { type: boolean }
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/CmsLandingListItem" }
+                  total:  { type: integer }
+                  limit:  { type: integer }
+                  offset: { type: integer }
+
+  /v1/cms/landings/{id}:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          oneOf:
+            - { type: integer }
+            - { type: string, enum: ["new"] }
+    get:
+      tags: [CMS Landings]
+      summary: Admin — detalle completo (Draft + Published + metadata)
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: Landing encontrado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:   { type: boolean }
+                  data: { $ref: "#/components/schemas/CmsLandingDetail" }
+        "404": { description: landing_not_found }
+    put:
+      tags: [CMS Landings]
+      summary: Admin — upsert draft (usar id `new` o `0` para crear)
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CmsLandingUpsertInput" }
+      responses:
+        "200": { description: landing_draft_updated }
+        "201": { description: landing_draft_created }
+        "400": { description: invalid_body / validation_failed }
+
+  /v1/cms/landings/{id}/publish:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema: { type: integer }
+    post:
+      tags: [CMS Landings]
+      summary: Admin — publica el DraftSchema (copia → Published + version++)
+      description: |
+        Incrementa la versión, escribe snapshot en `cms.LandingSchemaHistory` y
+        dispara webhook `revalidate` al frontend vertical (si flag
+        `LANDING_REVALIDATE_ENABLED=true` y hay URL mapeada).
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: landing_published
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:      { type: boolean }
+                  mensaje: { type: string, example: landing_published }
+                  data:
+                    type: object
+                    properties:
+                      landingSchemaId: { type: integer }
+                      version:         { type: integer }
+                      vertical:        { type: string }
+        "404": { description: landing_not_found }
+
+  /v1/cms/landings/{id}/versions:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema: { type: integer }
+    get:
+      tags: [CMS Landings]
+      summary: Admin — historial de versiones publicadas
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: query
+          name: limit
+          schema: { type: integer, default: 20, maximum: 100 }
+        - in: query
+          name: offset
+          schema: { type: integer, default: 0 }
+      responses:
+        "200":
+          description: Lista de versiones (más recientes primero)
+
+  /v1/cms/landings/{id}/preview-token:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema: { type: integer }
+    post:
+      tags: [CMS Landings]
+      summary: Admin — genera o limpia el PreviewToken UUID
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                clear: { type: boolean, default: false }
+      responses:
+        "200":
+          description: "Token rotado (o limpiado si clear=true)"
+
   # ═══════════════════════════════════════════════════════════════════════
   # Store Admin — Ola 2 (feat/ecommerce-admin-productos)
   # Backoffice del ecommerce. Todos los endpoints requieren JWT + isAdmin

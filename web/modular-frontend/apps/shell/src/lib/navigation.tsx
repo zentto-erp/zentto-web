@@ -76,6 +76,7 @@ import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium';
 import BusinessIcon from '@mui/icons-material/Business';
 import PaletteIcon from '@mui/icons-material/Palette';
+import WebIcon from '@mui/icons-material/Web';
 
 export function has(modulos: string[], mod: SystemModule): boolean {
     return modulos.includes(mod);
@@ -568,7 +569,7 @@ export function buildNavigation(isAdmin: boolean, modulos: string[], pathname: s
         return nav;
     }
 
-    // ── App: CMS — Blog y Páginas ──────────────────────────────────
+    // ── App: CMS — Blog, Páginas y Landings ────────────────────────
     if ((isAdmin || has(modulos, 'cms')) && isApp('/cms')) {
         nav.push({ kind: 'header', title: 'CONTENIDO' });
         nav.push({ kind: 'page', segment: 'cms', title: 'Dashboard CMS', icon: <DescriptionIcon /> });
@@ -578,6 +579,7 @@ export function buildNavigation(isAdmin: boolean, modulos: string[], pathname: s
             title: 'Nuevo Post',
             icon: <AddCircleOutlineIcon />,
         });
+        nav.push({ kind: 'page', segment: 'cms/landings', title: 'Landings', icon: <WebIcon /> });
         nav.push({ kind: 'divider' });
         nav.push({ kind: 'page', segment: '', title: 'Volver al Inicio', icon: <DashboardIcon /> });
         return nav;
