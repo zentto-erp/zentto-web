@@ -11271,6 +11271,42 @@ paths:
         "200":
           description: Lista paginada de submissions del tenant
 
+  /v1/cms/contact-submissions/{id}:
+    patch:
+      tags: [CMS]
+      summary: Admin — actualiza el status de una submission (pending/read/archived)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+                  enum: [pending, read, archived]
+      responses:
+        "200":
+          description: Status actualizado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  mensaje: { type: string, example: status_updated }
+        "400":
+          description: Body inválido (status no aceptado)
+        "404":
+          description: Submission no existe o pertenece a otro tenant
+
   /v1/cms/posts:
     get:
       tags: [CMS]

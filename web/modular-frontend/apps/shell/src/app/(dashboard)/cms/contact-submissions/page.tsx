@@ -20,9 +20,10 @@ import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import MarkEmailReadIcon from "@mui/icons-material/MarkEmailRead";
 import ArchiveIcon from "@mui/icons-material/Archive";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
-  listContactSubmissions, VERTICALS, CONTACT_STATUSES, buildMailtoReply,
+  listContactSubmissions, updateContactStatus,
+  VERTICALS, CONTACT_STATUSES, buildMailtoReply,
   type ContactStatus, type ContactSubmission,
 } from "./_lib";
 
@@ -47,9 +48,18 @@ function truncate(s: string, n = 120): string {
 }
 
 export default function CmsContactInboxPage() {
+  const queryClient = useQueryClient();
   const [verticalFilter, setVerticalFilter] = useState<string>("");
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [expanded, setExpanded] = useState<Record<number, boolean>>({});
+
+  const statusMutation = useMutation({
+    mutationFn: ({ id, status }: { id: number; status: "pending" | "read" | "archived" }) =>
+      updateContactStatus(id, status),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["cms-contact-submissions"] });
+    },
+  });
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["cms-contact-submissions", verticalFilter, statusFilter],
@@ -199,16 +209,49 @@ export default function CmsContactInboxPage() {
                     >
                       Responder
                     </Button>
-                    <Tooltip title="Marcar como leído (endpoint backend pendiente)">
+                    <Tooltip
+                      title={
+                        s.Status === "read"
+                          ? "Marcar como pendiente"
+                          : "Marcar como leído"
+                      }
+                    >
                       <span>
-                        <IconButton size="small" disabled>
+                        <IconButton
+                          size="small"
+                          disabled={statusMutation.isPending}
+                          onClick={() =>
+                            statusMutation.mutate({
+                              id: s.ContactSubmissionId,
+                              status: s.Status === "read" ? "pending" : "read",
+                            })
+                          }
+                          color={s.Status === "read" ? "primary" : "default"}
+                        >
                           <MarkEmailReadIcon fontSize="small" />
                         </IconButton>
                       </span>
                     </Tooltip>
-                    <Tooltip title="Archivar (endpoint backend pendiente)">
+                    <Tooltip
+                      title={
+                        s.Status === "archived"
+                          ? "Desarchivar"
+                          : "Archivar"
+                      }
+                    >
                       <span>
-                        <IconButton size="small" disabled>
+                        <IconButton
+                          size="small"
+                          disabled={statusMutation.isPending}
+                          onClick={() =>
+                            statusMutation.mutate({
+                              id: s.ContactSubmissionId,
+                              status:
+                                s.Status === "archived" ? "pending" : "archived",
+                            })
+                          }
+                          color={s.Status === "archived" ? "primary" : "default"}
+                        >
                           <ArchiveIcon fontSize="small" />
                         </IconButton>
                       </span>
