@@ -41,7 +41,8 @@ export default function ZenttoLayout({
     navigationFields,
     rightPanel,
     rightPanelOpen,
-    onRightPanelClose
+    onRightPanelClose,
+    appCode,
 }: {
     children: React.ReactNode,
     navigationFields?: Array<Record<string, unknown>>,
@@ -57,7 +58,13 @@ export default function ZenttoLayout({
      * Callback cuando el usuario cierra el panel lateral. Disponible como
      * prop informativa — normalmente ya lo maneja `rightPanel.onClose`.
      */
-    onRightPanelClose?: () => void
+    onRightPanelClose?: () => void,
+    /**
+     * Código de la app actual ('crm', 'ventas', 'ecommerce', 'pos', etc.).
+     * Se propaga al NotificationsMenu para filtrar notificaciones por app.
+     * Si no se provee, se usa NEXT_PUBLIC_APP_CODE como fallback.
+     */
+    appCode?: string
 }) {
     const pathname = usePathname();
     const router = useRouter();
@@ -321,7 +328,7 @@ export default function ZenttoLayout({
                             <LocaleSelectorButton />
                             <ThemeToggle />
                             <HelpButton />
-                            <NotificationsMenu />
+                            <NotificationsMenu appCode={appCode} />
                             <TasksMenu />
                             <MessagesMenu />
                             <SidebarFooterAccount mini={false} />
