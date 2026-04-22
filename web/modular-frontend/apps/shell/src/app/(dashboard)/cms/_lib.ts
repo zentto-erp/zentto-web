@@ -58,15 +58,17 @@ export interface CmsPage {
   CompanyId: number;
   Slug: string;
   Vertical: string;
+  /** 'about' | 'contact' | 'press' | 'legal-terms' | 'legal-privacy' | 'case-study' | 'custom' */
+  PageType?: string;
   Locale: string;
   Title: string;
-  Body: string;
-  Meta: Record<string, unknown>;
+  Body?: string;
+  Meta?: Record<string, unknown>;
   SeoTitle: string;
   SeoDescription: string;
   Status: string;
   PublishedAt: string | null;
-  CreatedAt: string;
+  CreatedAt?: string;
   UpdatedAt: string;
 }
 
