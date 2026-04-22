@@ -330,6 +330,11 @@ export async function createApp() {
   const { cmsPublicRouter } = await import("./modules/cms/routes.public.js");
   app.use("/v1/public/cms", cmsPublicRouter);
 
+  // CMS público — Landing Schemas (foundation PR landing-kit dogfooding).
+  // Ver ADR-LANDING-001 + modules/cms/landing-schemas.routes.ts.
+  const { cmsLandingPublicRouter } = await import("./modules/cms/landing-schemas.routes.js");
+  app.use("/v1/public/cms", cmsLandingPublicRouter);
+
   // Licencias — /validate es público (BYOC servers); resto protegido por Master-Key, sin JWT
   app.use("/v1/license", licenseRouter);
 
@@ -560,6 +565,11 @@ export async function createApp() {
   // Ver ADR-CMS-001 + modules/cms/routes.admin.ts.
   const { cmsAdminRouter } = await import("./modules/cms/routes.admin.js");
   app.use("/v1/cms", cmsAdminRouter);
+
+  // CMS administración — Landing Schemas (foundation PR).
+  // Ver ADR-LANDING-001 + modules/cms/landing-schemas.routes.ts.
+  const { cmsLandingAdminRouter } = await import("./modules/cms/landing-schemas.routes.js");
+  app.use("/v1/cms", cmsLandingAdminRouter);
 
   // Configuraciones Globales (BD, Tasas, Licencias)
   app.use("/v1/config", configRouter);

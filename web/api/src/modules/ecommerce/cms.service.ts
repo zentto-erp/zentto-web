@@ -314,12 +314,12 @@ export async function upsertPressRelease(input: {
   }, {
     Resultado: sql.Int,
     Mensaje: sql.NVarChar(500),
-    OutPressId: sql.BigInt,
+    OutPressReleaseId: sql.BigInt,
   });
   return {
     ok: Number(output?.Resultado ?? output?.resultado ?? 0) === 1,
     mensaje: String(output?.Mensaje ?? output?.mensaje ?? ""),
-    pressReleaseId: output?.OutPressId ?? output?.PressReleaseId ?? output?.pressReleaseId ?? null,
+    pressReleaseId: output?.OutPressReleaseId ?? output?.PressReleaseId ?? output?.pressReleaseId ?? null,
   };
 }
 

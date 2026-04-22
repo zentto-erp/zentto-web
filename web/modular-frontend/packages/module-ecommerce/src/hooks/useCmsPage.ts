@@ -1,6 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useAdminAuthStore } from "../store/useAdminAuthStore";
 import type { LandingConfig } from "../components/StudioPageRenderer";
 
 const API_BASE =
@@ -18,6 +19,9 @@ async function storeGet(path: string) {
 async function storeAuth(path: string, method: string, token: string | null, body?: unknown) {
   const headers: Record<string, string> = { "Content-Type": "application/json" };
   if (token) headers["Authorization"] = `Bearer ${token}`;
+  const { activeCompanyId, activeBranchId } = useAdminAuthStore.getState();
+  if (activeCompanyId) headers["X-Company-Id"] = String(activeCompanyId);
+  if (activeBranchId) headers["X-Branch-Id"] = String(activeBranchId);
   const res = await fetch(`${API_BASE}${path}`, {
     method,
     headers,
@@ -88,9 +92,7 @@ export interface CmsPageSummaryApi {
 }
 
 function adminToken(): string | null {
-  if (typeof window === "undefined") return null;
-  // JWT de admin viene del session admin del ERP; usamos el mismo storage.
-  return localStorage.getItem("adminToken") || localStorage.getItem("zentto_admin_token") || null;
+  return useAdminAuthStore.getState().token;
 }
 
 export function useAdminCmsPages(status?: string) {

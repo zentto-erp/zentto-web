@@ -1,11 +1,11 @@
--- usp_Store_Product_ListAdmin
+-- usp_Store_Product_List_Admin
 -- Lista admin completa: incluye draft + publicado + stock bajo. Usa @TotalCount OUTPUT.
 
-IF OBJECT_ID('dbo.usp_Store_Product_ListAdmin', 'P') IS NOT NULL
-    DROP PROCEDURE dbo.usp_Store_Product_ListAdmin;
+IF OBJECT_ID('dbo.usp_Store_Product_List_Admin', 'P') IS NOT NULL
+    DROP PROCEDURE dbo.usp_Store_Product_List_Admin;
 GO
 
-CREATE PROCEDURE dbo.usp_Store_Product_ListAdmin
+CREATE PROCEDURE dbo.usp_Store_Product_List_Admin
     @CompanyId      INT             = 1,
     @BranchId       INT             = 1,
     @Search         NVARCHAR(200)   = NULL,
