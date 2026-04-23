@@ -34,6 +34,14 @@ CREATE INDEX IF NOT EXISTS ix_cms_page_company_vertical_type
     ON cms."Page" ("CompanyId", "Vertical", "PageType");
 
 -- ── usp_cms_page_list · filtro opcional por page_type ────────────────────────
+-- DROP previo: PostgreSQL no permite cambiar RETURNS TABLE de una función
+-- existente con CREATE OR REPLACE (SQLSTATE 42P13). El signature de la función
+-- anterior existía con 4 parámetros y sin "PageType" en el RETURNS TABLE.
+-- +goose StatementBegin
+DROP FUNCTION IF EXISTS usp_cms_page_list(INTEGER, VARCHAR, VARCHAR, VARCHAR);
+DROP FUNCTION IF EXISTS usp_cms_page_list(INTEGER, VARCHAR, VARCHAR, VARCHAR, VARCHAR);
+-- +goose StatementEnd
+
 -- +goose StatementBegin
 CREATE OR REPLACE FUNCTION usp_cms_page_list(
     p_company_id INTEGER DEFAULT 1,
@@ -72,6 +80,11 @@ $$;
 -- +goose StatementEnd
 
 -- ── usp_cms_page_get · retorna PageType en el detalle ────────────────────────
+-- DROP previo por el mismo motivo: el return-type cambia (se añade PageType).
+-- +goose StatementBegin
+DROP FUNCTION IF EXISTS usp_cms_page_get(VARCHAR, VARCHAR, VARCHAR, INTEGER);
+-- +goose StatementEnd
+
 -- +goose StatementBegin
 CREATE OR REPLACE FUNCTION usp_cms_page_get(
     p_slug       VARCHAR,
@@ -115,6 +128,14 @@ $$;
 -- +goose StatementEnd
 
 -- ── usp_cms_page_upsert · acepta p_page_type ─────────────────────────────────
+-- DROP previo: se añade un parámetro al final, lo cual en PostgreSQL es una
+-- firma distinta. CREATE OR REPLACE sin DROP funciona SOLO si los parámetros
+-- no cambian en número/tipo — aquí hay 11 vs 10, por lo que DROP es necesario.
+-- +goose StatementBegin
+DROP FUNCTION IF EXISTS usp_cms_page_upsert(INTEGER, INTEGER, VARCHAR, VARCHAR, VARCHAR, VARCHAR, TEXT, JSONB, VARCHAR, VARCHAR);
+DROP FUNCTION IF EXISTS usp_cms_page_upsert(INTEGER, INTEGER, VARCHAR, VARCHAR, VARCHAR, VARCHAR, TEXT, JSONB, VARCHAR, VARCHAR, VARCHAR);
+-- +goose StatementEnd
+
 -- +goose StatementBegin
 CREATE OR REPLACE FUNCTION usp_cms_page_upsert(
     p_page_id         INTEGER DEFAULT NULL,
@@ -201,6 +222,11 @@ $$;
 -- luego quitar la columna.
 
 -- +goose StatementBegin
+DROP FUNCTION IF EXISTS usp_cms_page_list(INTEGER, VARCHAR, VARCHAR, VARCHAR, VARCHAR);
+DROP FUNCTION IF EXISTS usp_cms_page_list(INTEGER, VARCHAR, VARCHAR, VARCHAR);
+-- +goose StatementEnd
+
+-- +goose StatementBegin
 CREATE OR REPLACE FUNCTION usp_cms_page_list(
     p_company_id INTEGER DEFAULT 1,
     p_vertical   VARCHAR DEFAULT NULL,
@@ -232,6 +258,10 @@ BEGIN
     ORDER BY p."Slug";
 END;
 $$;
+-- +goose StatementEnd
+
+-- +goose StatementBegin
+DROP FUNCTION IF EXISTS usp_cms_page_get(VARCHAR, VARCHAR, VARCHAR, INTEGER);
 -- +goose StatementEnd
 
 -- +goose StatementBegin
@@ -273,6 +303,11 @@ BEGIN
     LIMIT 1;
 END;
 $$;
+-- +goose StatementEnd
+
+-- +goose StatementBegin
+DROP FUNCTION IF EXISTS usp_cms_page_upsert(INTEGER, INTEGER, VARCHAR, VARCHAR, VARCHAR, VARCHAR, TEXT, JSONB, VARCHAR, VARCHAR, VARCHAR);
+DROP FUNCTION IF EXISTS usp_cms_page_upsert(INTEGER, INTEGER, VARCHAR, VARCHAR, VARCHAR, VARCHAR, TEXT, JSONB, VARCHAR, VARCHAR);
 -- +goose StatementEnd
 
 -- +goose StatementBegin

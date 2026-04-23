@@ -13,6 +13,11 @@ import * as React from "react";
 import { BlogTeaser } from "../../components/BlogTeaser";
 import type { SectionAdapterProps } from "../types";
 
+// `@types/react@18` no tipifica async Server Components — BlogTeaser es async
+// porque hace fetch al CMS. Cast pragmático mientras no migremos a `@types/react@19`.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const BlogTeaserAsync = BlogTeaser as unknown as React.FC<any>;
+
 export async function BlogTeaserAdapter({
   section,
   tokens,
@@ -44,7 +49,7 @@ export async function BlogTeaserAdapter({
 
   // BlogTeaser devuelve null si no hay posts — cumple fallback strategy.
   return (
-    <BlogTeaser
+    <BlogTeaserAsync
       tokens={tokens}
       vertical={vertical}
       theme={tokens.theme as "light" | "dark"}

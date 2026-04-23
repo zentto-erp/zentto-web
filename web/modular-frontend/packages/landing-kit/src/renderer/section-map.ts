@@ -3,9 +3,12 @@
  *
  * Agregar un nuevo tipo de sección = agregar entrada aquí + crear adapter en
  * `./adapters/`. No hay magic imports ni convención de nombres — todo explícito.
+ *
+ * Los adapters pueden ser sync o async (Server Components de React 19 pueden
+ * devolver `Promise<ReactNode>`). El tipo `SectionAdapter` abarca ambos.
  */
 
-import * as React from "react";
+import type * as React from "react";
 import type { SectionAdapterProps } from "./types";
 
 import { HeroAdapter } from "./adapters/HeroAdapter";
@@ -19,10 +22,15 @@ import { TimelineAdapter } from "./adapters/TimelineAdapter";
 import { ContactFormAdapter } from "./adapters/ContactFormAdapter";
 import { CustomSectionResolver } from "./adapters/CustomSectionResolver";
 
-export const SECTION_MAP: Record<
-  string,
-  React.ComponentType<SectionAdapterProps>
-> = {
+/**
+ * Adapter de sección — acepta tanto componentes sync como async Server
+ * Components (RSC), los cuales devuelven `Promise<ReactNode>`.
+ */
+export type SectionAdapter = (
+  props: SectionAdapterProps,
+) => React.ReactNode | Promise<React.ReactNode>;
+
+export const SECTION_MAP: Record<string, SectionAdapter> = {
   hero: HeroAdapter,
   features: FeatureGridAdapter,
   pricing: PricingSectionAdapter,
@@ -39,8 +47,6 @@ export const SECTION_MAP: Record<
  * Resuelve el tipo de sección a su adapter. `null` si no hay adapter para
  * ese tipo — el renderer logueará warning y omitirá la sección (no rompe).
  */
-export function resolveSection(
-  type: string,
-): React.ComponentType<SectionAdapterProps> | null {
+export function resolveSection(type: string): SectionAdapter | null {
   return SECTION_MAP[type] ?? null;
 }
