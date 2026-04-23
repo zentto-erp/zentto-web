@@ -38,6 +38,11 @@ jobs:
 
       # Salta silenciosamente si la versión del package.json ya está publicada.
       # Solo publica cuando alguien bumpeó web/platform-client/package.json.
+      #
+      # Workaround dos bugs de npm (ver publish-landing-kit.yml para detalle):
+      #   1. `npm publish` dentro de un workspace monorepo → 404 persistente.
+      #      Copiamos el paquete a $RUNNER_TEMP para aislar la request.
+      #   2. `npm publish` en prereleases requiere `--tag <tag>` explícito.
       - name: Publish if new version
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN_PLATFORM_CLIENT || secrets.NPM_TOKEN }}
@@ -49,5 +54,18 @@ jobs:
             echo "✓ Version $PKG_VERSION ya publicada — skip."
             exit 0
           fi
-          npm publish --access restricted
+
+          PUBLISH_ARGS="--access restricted"
+          if [[ "$PKG_VERSION" == *-* ]]; then
+            PUBLISH_ARGS="$PUBLISH_ARGS --tag beta"
+          fi
+
+          PUBLISH_DIR="${RUNNER_TEMP:-/tmp}/pkg-publish-platform-client"
+          rm -rf "$PUBLISH_DIR"
+          mkdir -p "$PUBLISH_DIR"
+          cp -r package.json dist "$PUBLISH_DIR/"
+          if [ -f README.md ]; then cp README.md "$PUBLISH_DIR/"; fi
+
+          cd "$PUBLISH_DIR"
+          npm publish $PUBLISH_ARGS
           echo "✓ Publicado @zentto/platform-client@$PKG_VERSION"
