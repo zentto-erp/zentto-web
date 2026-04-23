@@ -127,8 +127,13 @@ export function LandingRenderer({
             }
             return null;
           }
+          // Adapter puede ser sync o async (Server Component). `@types/react@18`
+          // no tipifica async components — cast a FC para satisfacer JSX.
+          const AdapterFC = Adapter as unknown as React.FC<
+            import("./types").SectionAdapterProps
+          >;
           return (
-            <Adapter
+            <AdapterFC
               key={section.id}
               section={section}
               tokens={tokens}
