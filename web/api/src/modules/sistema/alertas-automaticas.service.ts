@@ -11,6 +11,14 @@ interface AlertaGenerada {
   mensaje: string;
   usuarioId: string | null; // null = global (todos los usuarios)
   rutaNavegacion: string | null;
+  /**
+   * Codigo de la app donde aparece la notificacion: 'nomina',
+   * 'inventario', 'ventas', 'compras', 'contabilidad', 'bancos', etc.
+   * null = broadcast a todas las apps.
+   */
+  appCode: string | null;
+  /** Empresa a la que pertenece la alerta. null = global. */
+  companyId: number | null;
 }
 
 async function insertNotificacion(alerta: AlertaGenerada) {
@@ -20,6 +28,8 @@ async function insertNotificacion(alerta: AlertaGenerada) {
     Mensaje: alerta.mensaje,
     UsuarioId: alerta.usuarioId,
     RutaNavegacion: alerta.rutaNavegacion,
+    CompanyId: alerta.companyId,
+    AppCode: alerta.appCode,
   });
 }
 
@@ -38,6 +48,8 @@ async function checkFacturasVencidas(): Promise<AlertaGenerada[]> {
         mensaje: `Hay ${r.cantidad} facturas vencidas por un total de ${r.montoTotal?.toFixed(2) ?? "0.00"}`,
         usuarioId: null,
         rutaNavegacion: "/ventas/cxc",
+        appCode: "ventas",
+        companyId: null,
       });
     }
   } catch { /* SP no existe aún — skip */ }
@@ -59,6 +71,8 @@ async function checkStockBajo(): Promise<AlertaGenerada[]> {
         mensaje: `${r.cantidad} artículos están por debajo del stock mínimo`,
         usuarioId: null,
         rutaNavegacion: "/inventario",
+        appCode: "inventario",
+        companyId: null,
       });
     }
   } catch { /* SP no existe aún — skip */ }
@@ -80,6 +94,8 @@ async function checkCxpPorVencer(): Promise<AlertaGenerada[]> {
         mensaje: `${r.cantidad} documentos por pagar vencen en los próximos 7 días (${r.montoTotal?.toFixed(2) ?? "0.00"})`,
         usuarioId: null,
         rutaNavegacion: "/compras/cxp",
+        appCode: "compras",
+        companyId: null,
       });
     }
   } catch { /* SP no existe aún — skip */ }
@@ -101,6 +117,8 @@ async function checkConciliacionPendiente(): Promise<AlertaGenerada[]> {
         mensaje: `${r.cantidad} cuentas bancarias tienen conciliación pendiente este mes`,
         usuarioId: null,
         rutaNavegacion: "/bancos/conciliacion",
+        appCode: "bancos",
+        companyId: null,
       });
     }
   } catch { /* SP no existe aún — skip */ }
@@ -122,6 +140,8 @@ async function checkNominaPendiente(): Promise<AlertaGenerada[]> {
         mensaje: "La nómina del período actual no ha sido procesada",
         usuarioId: null,
         rutaNavegacion: "/nomina",
+        appCode: "nomina",
+        companyId: null,
       });
     }
   } catch { /* SP no existe aún — skip */ }
@@ -143,6 +163,8 @@ async function checkAsientosBorrador(): Promise<AlertaGenerada[]> {
         mensaje: `${r.cantidad} asientos contables pendientes de aprobación`,
         usuarioId: null,
         rutaNavegacion: "/contabilidad/asientos",
+        appCode: "contabilidad",
+        companyId: null,
       });
     }
   } catch { /* SP no existe aún — skip */ }
@@ -164,6 +186,8 @@ async function checkVacacionesPendientes(): Promise<AlertaGenerada[]> {
         mensaje: `${r.cantidad} solicitudes de vacaciones pendientes de aprobación`,
         usuarioId: null,
         rutaNavegacion: "/nomina/vacaciones/solicitudes",
+        appCode: "nomina",
+        companyId: null,
       });
     }
   } catch { /* SP no existe aún — skip */ }

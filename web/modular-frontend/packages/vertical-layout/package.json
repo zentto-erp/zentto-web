@@ -1,0 +1,70 @@
+{
+  "name": "@zentto/vertical-layout",
+  "version": "0.1.0",
+  "description": "Layout compartido para dashboards de las 8 apps verticales de Zentto (hotel, medical, education, tickets, rental, inmobiliario, restaurante, pos). Sidebar colapsable + topbar + theme toggle. Standalone: sin deps del workspace ERP (shared-auth, shared-api) — cada vertical mantiene su propia auth.",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
+    "prepublishOnly": "npm run clean && npm run build"
+  },
+  "keywords": [
+    "zentto",
+    "layout",
+    "sidebar",
+    "dashboard",
+    "mui",
+    "next"
+  ],
+  "author": "Zentto",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/zentto-erp/zentto-web.git",
+    "directory": "web/modular-frontend/packages/vertical-layout"
+  },
+  "homepage": "https://zentto.net",
+  "publishConfig": {
+    "access": "restricted",
+    "registry": "https://registry.npmjs.org"
+  },
+  "dependencies": {
+    "@zentto/design-tokens": "^0.1.0"
+  },
+  "peerDependencies": {
+    "@mui/icons-material": ">=6",
+    "@mui/material": ">=6",
+    "next": ">=14",
+    "next-auth": ">=5.0.0-beta",
+    "react": ">=18",
+    "react-dom": ">=18"
+  },
+  "devDependencies": {
+    "@mui/icons-material": "^6.5.0",
+    "@mui/material": "^6.5.0",
+    "@types/node": "^20",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "next": "^16",
+    "next-auth": "5.0.0-beta.25",
+    "react": "^19",
+    "react-dom": "^19",
+    "typescript": "^5"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

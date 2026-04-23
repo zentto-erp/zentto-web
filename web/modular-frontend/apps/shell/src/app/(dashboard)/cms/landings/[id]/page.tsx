@@ -246,12 +246,22 @@ export default function LandingEditorPage() {
   });
 
   // Handler para el evento `auto-save` del designer (disparado cada `autoSaveMs`).
+  // Desde `@zentto/studio-react@0.15.0-beta.4` el `detail` ES el config directo.
+  // Versiones previas emitían `detail: { config }`. Usamos fallback para cubrir
+  // ambos casos mientras convive la versión vieja en otros consumidores.
   const handleAutoSave = useCallback(
     (event: Event) => {
-      const detail = (event as CustomEvent).detail as Record<string, unknown> | undefined;
-      if (!detail) return;
-      setConfig(detail);
-      saveMut.mutate(detail);
+      const rawDetail = (event as CustomEvent).detail as
+        | Record<string, unknown>
+        | { config: Record<string, unknown> }
+        | undefined;
+      if (!rawDetail) return;
+      const schema =
+        typeof (rawDetail as { config?: unknown }).config === "object"
+          ? ((rawDetail as { config: Record<string, unknown> }).config)
+          : (rawDetail as Record<string, unknown>);
+      setConfig(schema);
+      saveMut.mutate(schema);
     },
     [saveMut],
   );

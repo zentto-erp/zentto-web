@@ -40,7 +40,7 @@ function AppShell({
             {!showContent ? (
                 <LoadingFallback />
             ) : (
-                <ZenttoLayout navigationFields={navigation}>
+                <ZenttoLayout navigationFields={navigation} appCode="crm">
                     <Suspense fallback={<LoadingFallback />}>{children}</Suspense>
                 </ZenttoLayout>
             )}

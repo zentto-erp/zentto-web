@@ -71,6 +71,8 @@ export { default as CustomStepper } from './components/CustomStepper';
 export type { CustomStepperProps, StepDef } from './components/CustomStepper';
 export { default as ContextActionHeader } from './components/ContextActionHeader';
 export { default as ZenttoLayout } from './components/ZenttoLayout';
+export { default as ZenttoVerticalLayout } from './components/ZenttoVerticalLayout';
+export type { ZenttoVerticalLayoutProps } from './components/ZenttoVerticalLayout';
 export { default as RightDetailDrawer } from './components/RightDetailDrawer';
 export type {
   RightDetailDrawerProps,

@@ -58,15 +58,17 @@ export interface CmsPage {
   CompanyId: number;
   Slug: string;
   Vertical: string;
+  /** 'about' | 'contact' | 'press' | 'legal-terms' | 'legal-privacy' | 'case-study' | 'custom' */
+  PageType?: string;
   Locale: string;
   Title: string;
-  Body: string;
-  Meta: Record<string, unknown>;
+  Body?: string;
+  Meta?: Record<string, unknown>;
   SeoTitle: string;
   SeoDescription: string;
   Status: string;
   PublishedAt: string | null;
-  CreatedAt: string;
+  CreatedAt?: string;
   UpdatedAt: string;
 }
 
@@ -179,6 +181,11 @@ function toPageBody(p: Partial<CmsPage> & { slug: string; title: string }) {
 }
 
 // ─── Markdown preview helper ────────────────────────────────────────────────
+// Renderer simple (regex) suficiente para blog posts Zentto. Soporta:
+// headings, bold/italic, code inline/block, links, imágenes, listas
+// bullet/numeradas, blockquote, hr, tables GFM.
+// Si los posts crecen en complejidad (footnotes, task lists, syntax
+// highlight), migrar a `marked` (ya disponible en module-nomina).
 export function markdownToHtml(md: string): string {
   if (!md) return "";
   let html = md
@@ -186,17 +193,55 @@ export function markdownToHtml(md: string): string {
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;");
 
+  // Code blocks (antes que inline code para no cortar fences).
   html = html.replace(/```(\w+)?\n([\s\S]*?)```/g, (_, _l, code) =>
     `<pre style="background:rgba(0,0,0,0.08);padding:12px;border-radius:8px;overflow-x:auto;font-size:0.875rem;"><code>${code}</code></pre>`,
   );
   html = html.replace(/`([^`]+)`/g, '<code style="background:rgba(0,0,0,0.08);padding:2px 6px;border-radius:4px;font-size:0.875rem;">$1</code>');
+
+  // Tables GFM — header row + separator + body rows.
+  html = html.replace(
+    /^(\|.+\|)\n(\|[\s\-:|]+\|)\n((?:\|.*\|\n?)+)/gm,
+    (_, header: string, _sep: string, body: string) => {
+      const headerCells = header
+        .trim().slice(1, -1).split("|").map((c) => c.trim());
+      const bodyRows = body
+        .trim().split("\n").map((row) =>
+          row.trim().slice(1, -1).split("|").map((c) => c.trim()),
+        );
+      const th = headerCells
+        .map((c) => `<th style="padding:8px 12px;border:1px solid rgba(0,0,0,0.1);text-align:left;background:rgba(0,0,0,0.04);">${c}</th>`)
+        .join("");
+      const tb = bodyRows
+        .map((row) =>
+          `<tr>${row.map((c) => `<td style="padding:8px 12px;border:1px solid rgba(0,0,0,0.1);">${c}</td>`).join("")}</tr>`,
+        )
+        .join("");
+      return `<table style="border-collapse:collapse;margin:16px 0;width:100%;font-size:0.9rem;"><thead><tr>${th}</tr></thead><tbody>${tb}</tbody></table>`;
+    },
+  );
+
   html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" style="max-width:100%;border-radius:8px;margin:12px 0;"/>');
   html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" style="color:#6C63FF;text-decoration:underline;">$1</a>');
+  html = html.replace(/^#### (.+)$/gm, '<h4 style="font-size:1rem;font-weight:700;margin:16px 0 6px;">$1</h4>');
   html = html.replace(/^### (.+)$/gm, '<h3 style="font-size:1.1rem;font-weight:700;margin:20px 0 8px;">$1</h3>');
   html = html.replace(/^## (.+)$/gm, '<h2 style="font-size:1.35rem;font-weight:700;margin:24px 0 10px;">$1</h2>');
   html = html.replace(/^# (.+)$/gm, '<h1 style="font-size:1.6rem;font-weight:700;margin:28px 0 12px;">$1</h1>');
+
+  // Blockquote.
+  html = html.replace(/^&gt; (.+)$/gm, '<blockquote style="border-left:3px solid #6C63FF;padding:4px 12px;margin:12px 0;color:rgba(0,0,0,0.7);font-style:italic;">$1</blockquote>');
+
+  // HR.
+  html = html.replace(/^---+$/gm, '<hr style="border:0;border-top:1px solid rgba(0,0,0,0.1);margin:20px 0;"/>');
+
+  // Listas numeradas.
+  html = html.replace(/^(\d+)\. (.+)$/gm, '<li data-ol="1" style="margin-left:1.5rem;list-style:decimal;">$2</li>');
+  // Listas bullet.
   html = html.replace(/^- (.+)$/gm, '<li style="margin-left:1.5rem;list-style:disc;">$1</li>');
-  html = html.replace(/(<li[^>]*>.*?<\/li>\n?)+/g, (m) => `<ul style="margin:10px 0;">${m}</ul>`);
+  // Wrap groups of <li>.
+  html = html.replace(/(<li data-ol="1"[^>]*>.*?<\/li>\n?)+/g, (m) => `<ol style="margin:10px 0;">${m}</ol>`);
+  html = html.replace(/(<li(?![^>]*data-ol)[^>]*>.*?<\/li>\n?)+/g, (m) => `<ul style="margin:10px 0;">${m}</ul>`);
+
   html = html.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
   html = html.replace(/\*([^*]+)\*/g, "<em>$1</em>");
 
@@ -205,7 +250,7 @@ export function markdownToHtml(md: string): string {
     .map((chunk) => {
       const t = chunk.trim();
       if (!t) return "";
-      if (/^<(h\d|ul|pre|img|div|section|article)/.test(t)) return t;
+      if (/^<(h\d|ul|ol|pre|img|div|section|article|blockquote|hr|table)/.test(t)) return t;
       return `<p style="margin:10px 0;line-height:1.7;">${t.replace(/\n/g, "<br/>")}</p>`;
     })
     .join("\n");

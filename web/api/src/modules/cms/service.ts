@@ -41,6 +41,7 @@ export interface PageListItem {
   CompanyId: number;
   Slug: string;
   Vertical: string;
+  PageType: string;
   Locale: string;
   Title: string;
   Status: string;
@@ -57,8 +58,12 @@ export interface PageDetail extends PageListItem {
 }
 
 // ─── Post service ────────────────────────────────────────────────────────────
+// `companyId` es obligatorio en todos los services: los routers resuelven el
+// tenant (`resolveTenantFromRequest` en público, `req.scope.companyId` en admin)
+// y fallan con 400/401 si no se resuelve. No hay fallback a `1` — cross-tenant
+// reads del legacy eran un leak latente documentado en el integration review.
 export async function listPosts(opts: {
-  companyId?: number;
+  companyId: number;
   vertical?: string;
   category?: string;
   locale: string;
@@ -67,7 +72,7 @@ export async function listPosts(opts: {
   offset: number;
 }): Promise<{ rows: PostListItem[]; total: number }> {
   const rows = (await callSp("usp_cms_post_list", {
-    CompanyId: opts.companyId ?? 1,
+    CompanyId: opts.companyId,
     Vertical: opts.vertical ?? null,
     Category: opts.category ?? null,
     Locale: opts.locale,
@@ -80,7 +85,11 @@ export async function listPosts(opts: {
   return { rows, total };
 }
 
-export async function getPost(slug: string, locale: string, companyId = 1): Promise<PostDetail | null> {
+export async function getPost(
+  slug: string,
+  locale: string,
+  companyId: number,
+): Promise<PostDetail | null> {
   const rows = (await callSp("usp_cms_post_get", {
     Slug: slug,
     Locale: locale,
@@ -146,16 +155,18 @@ export async function deletePost(
 
 // ─── Page service ────────────────────────────────────────────────────────────
 export async function listPages(opts: {
-  companyId?: number;
+  companyId: number;
   vertical?: string;
   locale: string;
   status?: string;
+  pageType?: string;
 }): Promise<PageListItem[]> {
   return (await callSp("usp_cms_page_list", {
-    CompanyId: opts.companyId ?? 1,
+    CompanyId: opts.companyId,
     Vertical: opts.vertical ?? null,
     Locale: opts.locale,
     Status: opts.status ?? "published",
+    PageType: opts.pageType ?? null,
   })) as PageListItem[];
 }
 
@@ -163,7 +174,7 @@ export async function getPage(
   slug: string,
   vertical: string,
   locale: string,
-  companyId = 1,
+  companyId: number,
 ): Promise<PageDetail | null> {
   const rows = (await callSp("usp_cms_page_get", {
     Slug: slug,
@@ -189,6 +200,7 @@ export async function upsertPage(
     Meta: JSON.stringify(input.meta ?? {}),
     SeoTitle: input.seoTitle,
     SeoDescription: input.seoDescription,
+    PageType: input.pageType,
   })) as Array<{ ok: boolean; mensaje: string; PageId: number }>;
 
   const r = rows[0] ?? { ok: false, mensaje: "no_result", PageId: 0 };
@@ -216,6 +228,83 @@ export async function deletePage(
   const rows = (await callSp("usp_cms_page_delete", {
     PageId: pageId,
     CompanyId: companyId,
+  })) as Array<{ ok: boolean; mensaje: string }>;
+  const r = rows[0] ?? { ok: false, mensaje: "no_result" };
+  return { ok: Boolean(r.ok), mensaje: String(r.mensaje) };
+}
+
+// ─── Contact Submission service ──────────────────────────────────────────────
+export interface ContactSubmissionItem {
+  ContactSubmissionId: number;
+  CompanyId: number;
+  Vertical: string;
+  Slug: string;
+  Name: string;
+  Email: string;
+  Subject: string;
+  Message: string;
+  Status: string;
+  CreatedAt: string;
+  TotalCount?: string | number;
+}
+
+export async function submitContact(opts: {
+  companyId: number;
+  vertical: string;
+  slug: string;
+  name: string;
+  email: string;
+  subject: string;
+  message: string;
+  ipAddress: string | null;
+  userAgent: string | null;
+}): Promise<{ ok: boolean; mensaje: string; submission_id: number }> {
+  const rows = (await callSp("usp_cms_contact_submit", {
+    CompanyId: opts.companyId,
+    Vertical: opts.vertical,
+    Slug: opts.slug,
+    Name: opts.name,
+    Email: opts.email,
+    Subject: opts.subject,
+    Message: opts.message,
+    IpAddress: opts.ipAddress,
+    UserAgent: opts.userAgent,
+  })) as Array<{ ok: boolean; mensaje: string; submission_id: number }>;
+  const r = rows[0] ?? { ok: false, mensaje: "no_result", submission_id: 0 };
+  return {
+    ok: Boolean(r.ok),
+    mensaje: String(r.mensaje),
+    submission_id: Number(r.submission_id ?? 0),
+  };
+}
+
+export async function listContactSubmissions(opts: {
+  companyId: number;
+  vertical?: string;
+  status?: string;
+  limit: number;
+  offset: number;
+}): Promise<{ rows: ContactSubmissionItem[]; total: number }> {
+  const rows = (await callSp("usp_cms_contact_list", {
+    CompanyId: opts.companyId,
+    Vertical: opts.vertical ?? null,
+    Status: opts.status ?? null,
+    Limit: opts.limit,
+    Offset: opts.offset,
+  })) as ContactSubmissionItem[];
+  const total = rows[0]?.TotalCount ? Number(rows[0].TotalCount) : 0;
+  return { rows, total };
+}
+
+export async function updateContactStatus(
+  submissionId: number,
+  companyId: number,
+  status: "pending" | "read" | "archived",
+): Promise<{ ok: boolean; mensaje: string }> {
+  const rows = (await callSp("usp_cms_contact_update_status", {
+    SubmissionId: submissionId,
+    CompanyId: companyId,
+    Status: status,
   })) as Array<{ ok: boolean; mensaje: string }>;
   const r = rows[0] ?? { ok: false, mensaje: "no_result" };
   return { ok: Boolean(r.ok), mensaje: String(r.mensaje) };

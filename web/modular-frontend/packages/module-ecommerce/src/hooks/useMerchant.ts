@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCartStore } from "../store/useCartStore";
+import { formatApiError } from "./_shared/apiError";
 
 const API_BASE =
   typeof window !== "undefined"
@@ -19,7 +20,7 @@ async function call(path: string, init?: RequestInit) {
     headers: { ...(init?.headers || {}), ...authHeaders() },
   });
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error((data as { message?: string }).message || res.statusText);
+  if (!res.ok) throw new Error(formatApiError(data, res.statusText || `HTTP ${res.status}`));
   return data;
 }
 

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import {
     Box, Stack, Typography, Button, TextField, MenuItem, Chip,
     Paper, CircularProgress, Switch, FormControlLabel, IconButton,
+    Autocomplete,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import SearchIcon from '@mui/icons-material/Search';
@@ -142,7 +143,13 @@ export default function AdminProductosPage() {
 
     return (
         <Box>
-            <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
+            <Stack
+                direction={{ xs: 'column', sm: 'row' }}
+                justifyContent="space-between"
+                alignItems={{ xs: 'stretch', sm: 'center' }}
+                spacing={{ xs: 1, sm: 0 }}
+                sx={{ mb: 2 }}
+            >
                 <Typography variant="h5" fontWeight={700}>
                     Productos
                 </Typography>
@@ -150,55 +157,49 @@ export default function AdminProductosPage() {
                     variant="contained"
                     startIcon={<AddIcon />}
                     onClick={() => router.push('/admin/productos/nuevo')}
-                    sx={{ bgcolor: '#ff9900', '&:hover': { bgcolor: '#e68a00' } }}
+                    sx={{ bgcolor: '#ff9900', '&:hover': { bgcolor: '#e68a00' }, alignSelf: { xs: 'flex-start', sm: 'auto' } }}
                 >
                     Nuevo producto
                 </Button>
             </Stack>
 
-            <Paper sx={{ p: 2, mb: 2 }}>
-                <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems="center">
+            <Paper sx={{ p: { xs: 1.5, sm: 2 }, mb: 2 }}>
+                <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5} alignItems={{ xs: 'stretch', md: 'center' }}>
                     <TextField
                         size="small"
                         placeholder="Buscar por código, nombre…"
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         InputProps={{ startAdornment: <SearchIcon fontSize="small" sx={{ mr: 1, color: '#999' }} /> }}
-                        sx={{ flex: 1, minWidth: 220 }}
+                        sx={{ flex: 1, minWidth: { md: 220 } }}
                     />
-                    <TextField
+                    <Autocomplete
                         size="small"
-                        select
-                        label="Categoría"
-                        value={category}
-                        onChange={(e) => setCategory(e.target.value)}
-                        sx={{ minWidth: 170 }}
-                    >
-                        <MenuItem value="">(Todas)</MenuItem>
-                        {(catData?.rows ?? []).map((c: any) => (
-                            <MenuItem key={c.code} value={c.code}>{c.name}</MenuItem>
-                        ))}
-                    </TextField>
-                    <TextField
+                        options={(catData?.rows ?? []) as Array<{ code: string; name: string }>}
+                        getOptionLabel={(o) => o.name ?? ''}
+                        isOptionEqualToValue={(opt, val) => opt.code === val.code}
+                        value={(catData?.rows ?? []).find((c: any) => c.code === category) ?? null}
+                        onChange={(_, v) => setCategory(v?.code ?? '')}
+                        renderInput={(params) => <TextField {...params} label="Categoría" />}
+                        sx={{ minWidth: { md: 180 }, width: { xs: '100%', md: 'auto' } }}
+                    />
+                    <Autocomplete
                         size="small"
-                        select
-                        label="Marca"
-                        value={brand}
-                        onChange={(e) => setBrand(e.target.value)}
-                        sx={{ minWidth: 170 }}
-                    >
-                        <MenuItem value="">(Todas)</MenuItem>
-                        {(brandData?.rows ?? []).map((b: any) => (
-                            <MenuItem key={b.code} value={b.code}>{b.name}</MenuItem>
-                        ))}
-                    </TextField>
+                        options={(brandData?.rows ?? []) as Array<{ code: string; name: string }>}
+                        getOptionLabel={(o) => o.name ?? ''}
+                        isOptionEqualToValue={(opt, val) => opt.code === val.code}
+                        value={(brandData?.rows ?? []).find((b: any) => b.code === brand) ?? null}
+                        onChange={(_, v) => setBrand(v?.code ?? '')}
+                        renderInput={(params) => <TextField {...params} label="Marca" />}
+                        sx={{ minWidth: { md: 180 }, width: { xs: '100%', md: 'auto' } }}
+                    />
                     <TextField
                         size="small"
                         select
                         label="Estado"
                         value={published}
                         onChange={(e) => setPublished(e.target.value as any)}
-                        sx={{ minWidth: 160 }}
+                        sx={{ minWidth: { md: 140 }, width: { xs: '100%', md: 'auto' } }}
                     >
                         <MenuItem value="">Todos</MenuItem>
                         <MenuItem value="published">Publicados</MenuItem>
