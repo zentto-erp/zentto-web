@@ -57,12 +57,16 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           PKG_VERSION=$(node -p "require('./package.json').version")
-          PUBLISHED=$(npm view @zentto/landing-kit version 2>/dev/null || echo "")
-          echo "Local: $PKG_VERSION | Published: $PUBLISHED"
-          if [ "$PKG_VERSION" = "$PUBLISHED" ]; then
+          # Chequear la versión EXACTA, no el `latest`. `npm view @pkg version`
+          # devuelve el tag `latest` (stable), ignorando los prereleases. Eso
+          # hacía que el workflow reintentara publicar prereleases ya existentes
+          # (p.ej. `2.1.0-beta.4` vs stable `1.3.3`) y npm devolvía 403
+          # "cannot publish over previously published versions".
+          if npm view "@zentto/landing-kit@$PKG_VERSION" version >/dev/null 2>&1; then
             echo "Version $PKG_VERSION ya publicada — skip."
             exit 0
           fi
+          echo "Publicando @zentto/landing-kit@$PKG_VERSION..."
 
           # Detecta prerelease por presencia de '-' (2.1.0-beta.4 → beta).
           PUBLISH_ARGS="--access restricted --ignore-scripts"
@@ -76,6 +80,21 @@ jobs:
           mkdir -p "$PUBLISH_DIR"
           cp -r package.json README.md dist "$PUBLISH_DIR/"
           if [ -d scripts ]; then cp -r scripts "$PUBLISH_DIR/"; fi
+
+          # Defensivo: remover `prepublishOnly` y `prepare` del package.json
+          # copiado para que `npm publish` no intente reconstruir. `dist/` ya
+          # viene del step Typecheck + build previo. `--ignore-scripts` debería
+          # bastar, pero npm 10 a veces ignora el flag para `prepublishOnly`.
+          node -e "
+            const fs = require('fs');
+            const p = JSON.parse(fs.readFileSync('$PUBLISH_DIR/package.json','utf8'));
+            if (p.scripts) {
+              delete p.scripts.prepublishOnly;
+              delete p.scripts.prepare;
+              delete p.scripts.prepack;
+            }
+            fs.writeFileSync('$PUBLISH_DIR/package.json', JSON.stringify(p, null, 2) + '\n');
+          "
 
           cd "$PUBLISH_DIR"
           npm publish $PUBLISH_ARGS
