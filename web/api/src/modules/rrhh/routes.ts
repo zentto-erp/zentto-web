@@ -2,8 +2,14 @@
  * Rutas de RRHH — Módulos complementarios de Recursos Humanos
  *
  * Montado en /v1/rrhh
+ *
+ * ALERT-3: algunos handlers migraron al patrón `next(err)` + `ApiError` —
+ * ver `utils/api-error.ts` y `middleware/error-handler.ts`. Los handlers que
+ * aún usan `res.status(500).json({ error: String(err) })` se migrarán en
+ * sprints posteriores (44 ocurrencias aquí, 343 en todo el core). El patrón
+ * nuevo es el canónico para código futuro.
  */
-import { Router, Request, Response } from "express";
+import { Router, Request, Response, NextFunction } from "express";
 import { z } from "zod";
 import * as svc from "./service.js";
 import { emitRRHHAccountingEntry } from "./rrhh-contabilidad.service.js";
@@ -26,7 +32,9 @@ const generateProfitSharingSchema = z.object({
 });
 
 // GET /v1/rrhh/utilidades
-router.get("/utilidades", async (req: Request, res: Response) => {
+// EJEMPLO TEMPLATE ALERT-3: delega al global error handler vía next(err).
+// Evita `res.status(500).json({ error: String(err) })` que exponía stack.
+router.get("/utilidades", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const result = await svc.listProfitSharing({
       year: req.query.year ? parseInt(req.query.year as string) : undefined,
@@ -34,13 +42,14 @@ router.get("/utilidades", async (req: Request, res: Response) => {
       limit: req.query.limit ? parseInt(req.query.limit as string) : 50,
     });
     res.json(result);
-  } catch (err: any) {
-    res.status(500).json({ error: String(err) });
+  } catch (err) {
+    next(err);
   }
 });
 
 // POST /v1/rrhh/utilidades/generate
-router.post("/utilidades/generate", async (req: Request, res: Response) => {
+// EJEMPLO TEMPLATE ALERT-3: next(err) en lugar de String(err).
+router.post("/utilidades/generate", async (req: Request, res: Response, next: NextFunction) => {
   const parsed = generateProfitSharingSchema.safeParse(req.body);
   if (!parsed.success) {
     return res.status(400).json({ error: "invalid_payload", issues: parsed.error.flatten() });
@@ -65,8 +74,8 @@ router.post("/utilidades/generate", async (req: Request, res: Response) => {
     }
 
     res.status(result.success ? 200 : 400).json({ ...result, contabilidad });
-  } catch (err: any) {
-    res.status(500).json({ error: String(err) });
+  } catch (err) {
+    next(err);
   }
 });
 
