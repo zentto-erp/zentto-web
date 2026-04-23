@@ -43,6 +43,15 @@ jobs:
 
       # Publica solo si la version del package.json cambió respecto a npm.
       # zizmor: ignore[use-trusted-publishing] — npm trusted publishing requiere OIDC setup aparte.
+      #
+      # Workaround dos bugs de npm:
+      #   1. npm publish DENTRO de un workspace monorepo devuelve persistente
+      #      404 al hacer PUT al registry (metadato del workspace root
+      #      contamina la request). Workaround: copiar el paquete a
+      #      $RUNNER_TEMP/pkg-publish (fuera del workspace) y publicar ahí.
+      #   2. npm 10+ exige `--tag <tag>` al publicar prereleases (cualquier
+      #      versión con `-`). Detectamos prerelease por presencia de `-` y
+      #      usamos `--tag beta` (las stable usan `latest` por default).
       - name: Publish if new version
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
@@ -54,5 +63,20 @@ jobs:
             echo "Version $PKG_VERSION ya publicada — skip."
             exit 0
           fi
-          npm publish --access restricted --ignore-scripts
+
+          # Detecta prerelease por presencia de '-' (2.1.0-beta.4 → beta).
+          PUBLISH_ARGS="--access restricted --ignore-scripts"
+          if [[ "$PKG_VERSION" == *-* ]]; then
+            PUBLISH_ARGS="$PUBLISH_ARGS --tag beta"
+          fi
+
+          # Aislar fuera del workspace monorepo.
+          PUBLISH_DIR="${RUNNER_TEMP:-/tmp}/pkg-publish-landing-kit"
+          rm -rf "$PUBLISH_DIR"
+          mkdir -p "$PUBLISH_DIR"
+          cp -r package.json README.md dist "$PUBLISH_DIR/"
+          if [ -d scripts ]; then cp -r scripts "$PUBLISH_DIR/"; fi
+
+          cd "$PUBLISH_DIR"
+          npm publish $PUBLISH_ARGS
           echo "Publicado @zentto/landing-kit@$PKG_VERSION"
