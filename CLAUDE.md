@@ -185,3 +185,30 @@ A    api.zentto.net  178.104.56.185
 - Todas las fechas en **UTC-0**. Display convierte a timezone de empresa.
 - No hacer `git push --force` a `main` sin confirmacion explicita.
 - Deploy a produccion solo via CI/CD (push a main) o `workflow_dispatch`.
+
+## Error handling en routes (ALERT-3)
+
+- **NUNCA** `res.status(500).json({ error: String(err) })` — expone stack trace.
+- Patrón canónico:
+  - `catch (err) { next(err); }` → delega al global handler (`middleware/error-handler.ts`).
+  - O lanzar explícito: `throw new ApiError(400, "invalid_payload", "...")` (ver `utils/api-error.ts`).
+- El global handler ya reconoce `ApiError`, errores de parseo JSON y Zod. Nunca expone stack en `NODE_ENV=production`.
+- Migración progresiva: las routes viejas con `String(err)` se migran en cada PR que las toque (no en batch).
+
+## Pool PostgreSQL (ALERT-4)
+
+- Default `PG_POOL_MAX=40` (antes 10). Override por env si el tenant lo requiere.
+- `PG_POOL_STATS_INTERVAL_SEC=30` (default): si algún pool tiene `waitingCount>0`, se loguea.
+- Estadísticas en runtime: `getPoolStats()` de `db/pg-pool-manager.ts`.
+
+## JWT dual secret (ALERT-1)
+
+- Firma primaria: HS256 con `JWT_SECRET` (en futuro RS256 via JWKS).
+- Fallback opcional: `JWT_SECRET_FALLBACK` — solo se aplica si la verificación primaria falla por *invalid signature* (no por expiración).
+- Usar solo durante migraciones de secret. Dejar vacío desactiva el fallback sin riesgo.
+
+## Backoffice TOTP (ALERT-2)
+
+- La BD es la **única** fuente de verdad. El fallback a env var `BACKOFFICE_TOTP_SECRET` fue eliminado.
+- Bootstrap / recovery: `node scripts/backoffice-setup-totp.cjs` (idempotente; `--force` regenera).
+- Si la BD falla, `/v1/backoffice/auth/login` responde `503 backoffice_auth_unavailable` (ya no se acepta secret de env).

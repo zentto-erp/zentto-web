@@ -69,39 +69,44 @@ async function getTotpSecret(): Promise<string> {
   if (cachedSecret && (now - cachedSecret.loadedAt) < CACHE_TTL_MS) {
     return cachedSecret.value;
   }
-  // 1) BD (fuente de verdad)
+  // ALERT-2: SOLO BD. El fallback a env var BACKOFFICE_TOTP_SECRET quedó
+  // deprecado porque permitía que un operador con acceso al .env (pero no a
+  // la BD) tomara control del backoffice. Si la BD no tiene secret,
+  // `usp_cfg_backoffice_auth_get` retorna vacío y el flujo exige setup
+  // explícito (`scripts/backoffice-setup-totp.cjs` o el endpoint /setup).
   try {
     const rows = await callSp<{ Value: string }>("usp_cfg_backoffice_auth_get", { Key: TOTP_KEY });
     if (rows[0]?.Value) {
       cachedSecret = { value: rows[0].Value, loadedAt: now };
       return rows[0].Value;
     }
+    // BD accesible pero vacía → setup pendiente
+    return "";
   } catch (err: any) {
-    console.warn("[backoffice-auth] BD no disponible, fallback a env var:", err?.message);
+    // BD no disponible: esto es un error operativo real, no un motivo para
+    // aceptar un secret de env var. Propagamos para que /login responda 5xx
+    // y el operador investigue en lugar de confiar en un fallback frágil.
+    console.error("[backoffice-auth] BD no disponible al leer TOTP secret:", err?.message);
+    throw new Error("backoffice_auth_db_unavailable");
   }
-  // 2) Env var (bootstrap inicial — primera vez en un ambiente nuevo)
-  const envValue = process.env.BACKOFFICE_TOTP_SECRET ?? "";
-  // Auto-migra: si la env tiene secret y la BD está vacía, persistirlo.
-  if (envValue) {
-    try {
-      await callSp("usp_cfg_backoffice_auth_set", { Key: TOTP_KEY, Value: envValue });
-      cachedSecret = { value: envValue, loadedAt: now };
-    } catch {
-      // ignorar; al menos retornamos el valor para no romper el login
-    }
-  }
-  return envValue;
 }
 
 async function setTotpSecret(secret: string): Promise<void> {
+  // ALERT-2: BD es la única fuente de verdad. Ya no se escribe a
+  // process.env.BACKOFFICE_TOTP_SECRET — el fallback fue eliminado.
   await callSp("usp_cfg_backoffice_auth_set", { Key: TOTP_KEY, Value: secret });
   cachedSecret = { value: secret, loadedAt: Date.now() };
-  // Mantener process.env actualizado por compatibilidad con código que aún lo lea.
-  process.env.BACKOFFICE_TOTP_SECRET = secret;
 }
 
 async function isSetupDone(): Promise<boolean> {
-  return !!(await getTotpSecret());
+  try {
+    return !!(await getTotpSecret());
+  } catch {
+    // ALERT-2: si la BD falla, consideramos setup "no hecho" desde la
+    // perspectiva de /status (UX: no mostrar confirmación verde cuando no
+    // podemos afirmarlo). /login sí propaga el 503.
+    return false;
+  }
 }
 
 // ─── Rate limiter en memoria (anti-brute-force login) ────────────────────────
@@ -284,8 +289,19 @@ router.post("/login", async (req: Request, res: Response) => {
     return;
   }
 
-  // Si TOTP no está configurado aún → redirigir al setup
-  const totpSecret = await getTotpSecret();
+  // Si TOTP no está configurado aún → redirigir al setup.
+  // Si la BD no está disponible → 503 explícito (ALERT-2: ya no hay fallback).
+  let totpSecret: string;
+  try {
+    totpSecret = await getTotpSecret();
+  } catch (err: any) {
+    obs.error(`backoffice.auth.login.totp_read_failed: ${err?.message}`, { module: "backoffice-auth" });
+    res.status(503).json({
+      error: "backoffice_auth_unavailable",
+      hint: "Base de datos no disponible. Verifica conectividad o ejecuta scripts/backoffice-setup-totp.cjs.",
+    });
+    return;
+  }
   if (!totpSecret) {
     res.status(428).json({ error: "totp_not_configured", setupRequired: true });
     return;
