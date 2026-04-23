@@ -152,7 +152,9 @@ export function ContactFormClient({
         autoComplete="off"
         tabIndex={-1}
         value={website}
-        onChange={(e) => setWebsite((e.target as HTMLInputElement).value)}
+        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+          setWebsite(e.target.value)
+        }
         sx={{
           position: "absolute",
           left: "-10000px",
