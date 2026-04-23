@@ -1,6 +1,11 @@
 import { Router, type Response } from "express";
 import type { AuthenticatedRequest } from "../../middleware/auth.js";
-import { postUpsertSchema, pageUpsertSchema } from "./schema.js";
+import {
+  postUpsertSchema,
+  pageUpsertSchema,
+  contactListQuerySchema,
+  contactUpdateStatusSchema,
+} from "./schema.js";
 import {
   listPosts,
   getPost,
@@ -12,6 +17,9 @@ import {
   upsertPage,
   publishPage,
   deletePage,
+  listContactSubmissions,
+  updateContactStatus,
+  type ContactSubmissionItem,
 } from "./service.js";
 
 // Router privado: /v1/cms/* — requiere JWT (montado después del auth middleware global).
@@ -154,7 +162,8 @@ cmsAdminRouter.get("/pages", async (req, res) => {
     const vertical = typeof req.query.vertical === "string" ? req.query.vertical : undefined;
     const locale = typeof req.query.locale === "string" ? req.query.locale : "es";
     const status = typeof req.query.status === "string" ? req.query.status : undefined;
-    const rows = await listPages({ companyId, vertical, locale, status });
+    const pageType = typeof req.query.pageType === "string" ? req.query.pageType : undefined;
+    const rows = await listPages({ companyId, vertical, locale, status, pageType });
     res.json({ ok: true, data: rows });
   } catch (err: any) {
     res.status(500).json({ ok: false, error: err.message });
@@ -236,6 +245,70 @@ cmsAdminRouter.delete("/pages/:id", async (req, res) => {
   }
   try {
     const result = await deletePage(pageId, companyId);
+    res.status(result.ok ? 200 : 404).json(result);
+  } catch (err: any) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+// ─── Contact Submissions (inbox admin) ───────────────────────────────────────
+cmsAdminRouter.get("/contact-submissions", async (req, res) => {
+  try {
+    const companyId = (req as AuthenticatedRequest).scope!.companyId;
+    const parsed = contactListQuerySchema.safeParse(req.query);
+    if (!parsed.success) {
+      res.status(400).json({
+        ok: false,
+        error: "invalid_query",
+        details: parsed.error.format(),
+      });
+      return;
+    }
+    const { rows, total } = await listContactSubmissions({
+      companyId,
+      vertical: parsed.data.vertical,
+      status: parsed.data.status,
+      limit: parsed.data.limit,
+      offset: parsed.data.offset,
+    });
+    res.json({
+      ok: true,
+      data: rows.map((r: ContactSubmissionItem) => {
+        const { TotalCount: _t, ...rest } = r;
+        return rest;
+      }),
+      total,
+      limit: parsed.data.limit,
+      offset: parsed.data.offset,
+    });
+  } catch (err: any) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+// PATCH /v1/cms/contact-submissions/:id — actualiza status (read/archived).
+cmsAdminRouter.patch("/contact-submissions/:id", async (req, res) => {
+  try {
+    const companyId = (req as AuthenticatedRequest).scope!.companyId;
+    const submissionId = Number(req.params.id);
+    if (!Number.isFinite(submissionId) || submissionId <= 0) {
+      res.status(400).json({ ok: false, error: "invalid_id" });
+      return;
+    }
+    const parsed = contactUpdateStatusSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({
+        ok: false,
+        error: "invalid_body",
+        details: parsed.error.format(),
+      });
+      return;
+    }
+    const result = await updateContactStatus(
+      submissionId,
+      companyId,
+      parsed.data.status,
+    );
     res.status(result.ok ? 200 : 404).json(result);
   } catch (err: any) {
     res.status(500).json({ ok: false, error: err.message });

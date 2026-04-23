@@ -1064,10 +1064,13 @@ components:
         mimeType:        { type: string }
         fileSizeBytes:   { type: integer }
 # ─── Store CMS ──────────────────────────────────────────────────────────
-    LandingConfig:
+    EcommerceCmsBlockConfig:
       type: object
       description: |
-        Configuración JSONB libre del layout visual de una página CMS.
+        Configuración JSONB libre del layout visual de una página del CMS de
+        ecommerce (StudioPageRenderer en module-ecommerce). Distinto de
+        `CmsLandingConfig` (landing-kit / studio-core) usado en las landings
+        B2B y consumer.
         Contiene arreglo de bloques tipados (Hero, FAQ, Stats, Team, Timeline,
         Jobs, ReturnSteps, richtext, etc.) que el `StudioPageRenderer`
         renderiza en orden.
@@ -1096,6 +1099,23 @@ components:
           additionalProperties: true
       additionalProperties: true
 
+    CmsPageType:
+      type: string
+      description: |
+        Tipo canónico de página corporativa en el CMS. Usado por el editor CMS
+        para ofrecer plantillas (about/contact/press/legal-terms/legal-privacy/
+        case-study) y por los renderers para seleccionar layout específico.
+        `custom` es el default para páginas sin tipo.
+      enum:
+        - about
+        - contact
+        - press
+        - legal-terms
+        - legal-privacy
+        - case-study
+        - custom
+      default: custom
+
     CmsPage:
       type: object
       required: [cmsPageId, slug, title, status]
@@ -1108,8 +1128,10 @@ components:
           type: string
           nullable: true
           description: Template visual a usar (ej. `about`, `contact`, `faq`, `jobs`).
+        pageType:
+          $ref: "#/components/schemas/CmsPageType"
         config:
-          $ref: "#/components/schemas/LandingConfig"
+          $ref: "#/components/schemas/EcommerceCmsBlockConfig"
         seo:
           type: object
           additionalProperties: true
@@ -1129,8 +1151,10 @@ components:
         title:       { type: string, maxLength: 200 }
         subtitle:    { type: string, maxLength: 300, nullable: true }
         templateKey: { type: string, maxLength: 80, nullable: true }
+        pageType:
+          $ref: "#/components/schemas/CmsPageType"
         config:
-          $ref: "#/components/schemas/LandingConfig"
+          $ref: "#/components/schemas/EcommerceCmsBlockConfig"
         seo:
           type: object
           additionalProperties: true
@@ -11164,6 +11188,124 @@ paths:
           description: Página encontrada
         "404":
           description: Página no encontrada o no publicada
+
+  /v1/public/cms/contact/submit:
+    post:
+      tags: [CMS]
+      summary: Envía un mensaje del ContactFormAdapter (público, sin JWT)
+      description: |
+        Endpoint consumido por el `ContactFormAdapter` del `@zentto/landing-kit`
+        en las páginas `/contacto` de las 8 verticales. Persiste el mensaje
+        en `cms.ContactSubmission` con CompanyId resuelto via subdomain /
+        header / cookie (sin argumento en body). Rate-limit por IP: 5/min.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, email, message]
+              properties:
+                vertical:
+                  type: string
+                  maxLength: 50
+                  default: corporate
+                slug:
+                  type: string
+                  maxLength: 100
+                  default: contacto
+                name:
+                  type: string
+                  minLength: 1
+                  maxLength: 200
+                email:
+                  type: string
+                  format: email
+                  maxLength: 200
+                subject:
+                  type: string
+                  maxLength: 200
+                message:
+                  type: string
+                  minLength: 1
+                  maxLength: 5000
+      responses:
+        "201":
+          description: Submission creada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  data:
+                    type: object
+                    properties:
+                      submissionId: { type: integer }
+        "400":
+          description: Body inválido, tenant no resoluble, o validación fallida
+        "429":
+          description: Rate-limit excedido (5 submissions/min/IP)
+        "500":
+          description: Error interno
+
+  /v1/cms/contact-submissions:
+    get:
+      tags: [CMS]
+      summary: Admin — inbox de mensajes de contacto del tenant
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: query
+          name: vertical
+          schema: { type: string }
+        - in: query
+          name: status
+          schema: { type: string, enum: [pending, read, archived] }
+        - in: query
+          name: limit
+          schema: { type: integer, default: 50, maximum: 200 }
+        - in: query
+          name: offset
+          schema: { type: integer, default: 0 }
+      responses:
+        "200":
+          description: Lista paginada de submissions del tenant
+
+  /v1/cms/contact-submissions/{id}:
+    patch:
+      tags: [CMS]
+      summary: Admin — actualiza el status de una submission (pending/read/archived)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+                  enum: [pending, read, archived]
+      responses:
+        "200":
+          description: Status actualizado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  mensaje: { type: string, example: status_updated }
+        "400":
+          description: Body inválido (status no aceptado)
+        "404":
+          description: Submission no existe o pertenece a otro tenant
 
   /v1/cms/posts:
     get:

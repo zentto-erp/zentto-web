@@ -1,24 +1,21 @@
 'use client';
 
 /**
- * Admin layout — sidebar con acordeones por sección.
+ * Admin layout — estilo ZenttoLayout (@zentto/shared-ui).
  *
- * Designer Ola 2 specs:
- *   - Orden de secciones: Ventas → Catálogo → Contenido → Sistema
- *   - Badges naranja con count pending (reviews, devoluciones) desde la API.
- *   - Item activo: bg #37475a + color #ff9900.
- *   - Persistencia estado acordeón en localStorage (`zentto_admin_sidebar_<section>`).
- *   - Auto-expand de la sección activa al cargar según `pathname`.
+ * Sigue el mismo patron visual que el resto del ERP:
+ *   - Sidebar 260px full / 72px mini (toggle con boton)
+ *   - Drawer temporary en mobile (<md), permanent en desktop
+ *   - AppBar limpio con breadcrumbs + chip de empresa
+ *   - Item activo: indicador izquierdo + bg naranja translucido
+ *   - Acordeones por seccion con expand/collapse
  */
 
 import {
-    Box, AppBar, Toolbar, Typography, Button, Chip, IconButton,
-    Drawer, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Divider,
-    Accordion, AccordionSummary, AccordionDetails,
-    Select, MenuItem as MuiMenuItem, FormControl, Tooltip,
-    useMediaQuery, useTheme,
+    Box, Toolbar, Typography, Chip, Drawer, List, ListItem,
+    ListItemIcon, ListItemText, Collapse, IconButton, Tooltip,
+    Menu, MenuItem, Button, Avatar, useMediaQuery, useTheme,
 } from '@mui/material';
-import MenuIcon from '@mui/icons-material/Menu';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import AssignmentReturnIcon from '@mui/icons-material/AssignmentReturn';
 import SpeedIcon from '@mui/icons-material/Speed';
@@ -31,24 +28,28 @@ import CategoryIcon from '@mui/icons-material/Category';
 import LabelIcon from '@mui/icons-material/Label';
 import RateReviewIcon from '@mui/icons-material/RateReview';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import MonetizationOnIcon from '@mui/icons-material/MonetizationOn';
 import StorefrontIcon from '@mui/icons-material/Storefront';
 import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
 import FactCheckIcon from '@mui/icons-material/FactCheck';
+import MenuOutlinedIcon from '@mui/icons-material/MenuOutlined';
+import MenuOpenOutlinedIcon from '@mui/icons-material/MenuOpenOutlined';
+import LogoutIcon from '@mui/icons-material/Logout';
+import BusinessIcon from '@mui/icons-material/Business';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useAdminReviewsList, useAdminLogout, useAdminAuthStore } from '@zentto/module-ecommerce';
 import type { CompanyAccess } from '@zentto/module-ecommerce';
-import LogoutIcon from '@mui/icons-material/Logout';
-import BusinessIcon from '@mui/icons-material/Business';
 
-const DRAWER_WIDTH = 240;
+const FULL_SIDEBAR_WIDTH = 260;
+const MINI_SIDEBAR_WIDTH = 72;
+const ACCENT = '#ff9900';
 
 interface NavItem {
     label: string;
     href: string;
     icon: React.ReactNode;
-    /** Si es función, se evalúa cada render con los contadores pending. */
     badge?: number | null | ((counts: BadgeCounts) => number | null);
 }
 interface NavSection { id: string; label: string; items: NavItem[]; }
@@ -74,10 +75,10 @@ const NAV_SECTIONS: NavSection[] = [
     },
     {
         id: 'catalogo',
-        label: 'Catálogo',
+        label: 'Catalogo',
         items: [
             { label: 'Productos', href: '/admin/productos', icon: <Inventory2Icon fontSize="small" /> },
-            { label: 'Categorías', href: '/admin/categorias', icon: <CategoryIcon fontSize="small" /> },
+            { label: 'Categorias', href: '/admin/categorias', icon: <CategoryIcon fontSize="small" /> },
             { label: 'Marcas', href: '/admin/marcas', icon: <LabelIcon fontSize="small" /> },
         ],
     },
@@ -85,10 +86,10 @@ const NAV_SECTIONS: NavSection[] = [
         id: 'marketplace',
         label: 'Marketplace',
         items: [
-            { label: 'Afiliados',              href: '/admin/afiliados',              icon: <MonetizationOnIcon fontSize="small" /> },
-            { label: 'Comisiones',             href: '/admin/afiliados/comisiones',   icon: <ReceiptLongIcon fontSize="small" /> },
-            { label: 'Vendedores',             href: '/admin/vendedores',             icon: <StorefrontIcon fontSize="small" /> },
-            { label: 'Productos marketplace',  href: '/admin/vendedores/productos',   icon: <FactCheckIcon fontSize="small" /> },
+            { label: 'Afiliados', href: '/admin/afiliados', icon: <MonetizationOnIcon fontSize="small" /> },
+            { label: 'Comisiones', href: '/admin/afiliados/comisiones', icon: <ReceiptLongIcon fontSize="small" /> },
+            { label: 'Vendedores', href: '/admin/vendedores', icon: <StorefrontIcon fontSize="small" /> },
+            { label: 'Productos marketplace', href: '/admin/vendedores/productos', icon: <FactCheckIcon fontSize="small" /> },
         ],
     },
     {
@@ -96,12 +97,12 @@ const NAV_SECTIONS: NavSection[] = [
         label: 'Contenido',
         items: [
             {
-                label: 'Reseñas',
+                label: 'Resenas',
                 href: '/admin/reviews',
                 icon: <RateReviewIcon fontSize="small" />,
                 badge: (c) => c.reviewsPending || null,
             },
-            { label: 'CMS Pages',      href: '/admin/cms',    icon: <ArticleIcon fontSize="small" /> },
+            { label: 'CMS Pages', href: '/admin/cms', icon: <ArticleIcon fontSize="small" /> },
             { label: 'Press Releases', href: '/admin/prensa', icon: <NewspaperIcon fontSize="small" /> },
         ],
     },
@@ -114,23 +115,13 @@ const NAV_SECTIONS: NavSection[] = [
     },
 ];
 
-const storageKey = (section: string) => `zentto_admin_sidebar_${section}`;
-
-function readStoredState(sectionId: string): boolean | null {
-    if (typeof window === 'undefined') return null;
-    const v = window.localStorage.getItem(storageKey(sectionId));
-    if (v === 'open') return true;
-    if (v === 'closed') return false;
-    return null;
-}
-
 function OrangeBadge({ count }: { count: number }) {
     return (
         <Chip
             size="small"
             label={count}
             sx={{
-                bgcolor: '#ff9900',
+                bgcolor: ACCENT,
                 color: '#0f1111',
                 height: 18,
                 fontSize: 11,
@@ -142,24 +133,17 @@ function OrangeBadge({ count }: { count: number }) {
     );
 }
 
-// Componente interno que solo monta cuando el admin está autenticado.
-// Extrae todos los hooks que necesitan auth para no violar Rules of Hooks.
 function AdminShell({ children }: { children: React.ReactNode }) {
     const router = useRouter();
     const pathname = usePathname();
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-    const [mobileOpen, setMobileOpen] = useState(false);
-    const adminUser        = useAdminAuthStore((s) => s.user);
-    const companyAccesses  = useAdminAuthStore((s) => s.companyAccesses);
-    const activeCompanyId  = useAdminAuthStore((s) => s.activeCompanyId);
-    const setActiveCompany = useAdminAuthStore((s) => s.setActiveCompany);
-    const logout           = useAdminLogout();
 
-    // Cerrar drawer al navegar en mobile
-    useEffect(() => {
-        if (isMobile) setMobileOpen(false);
-    }, [pathname, isMobile]);
+    const adminUser = useAdminAuthStore((s) => s.user);
+    const companyAccesses = useAdminAuthStore((s) => s.companyAccesses);
+    const activeCompanyId = useAdminAuthStore((s) => s.activeCompanyId);
+    const setActiveCompany = useAdminAuthStore((s) => s.setActiveCompany);
+    const logout = useAdminLogout();
 
     const { data: reviewsPending } = useAdminReviewsList({ status: 'pending', limit: 1 });
     const counts: BadgeCounts = {
@@ -167,270 +151,85 @@ function AdminShell({ children }: { children: React.ReactNode }) {
         returnsPending: 0,
     };
 
+    const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
+    const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
+    const [companyMenuAnchor, setCompanyMenuAnchor] = useState<HTMLElement | null>(null);
+    const [userMenuAnchor, setUserMenuAnchor] = useState<HTMLElement | null>(null);
+
+    const activeSectionId =
+        NAV_SECTIONS.find((s) => s.items.some((i) => pathname === i.href || pathname.startsWith(i.href + '/')))?.id ?? 'ventas';
+
+    useEffect(() => {
+        setOpenSections((prev) => ({ ...prev, [activeSectionId]: true }));
+    }, [activeSectionId]);
+
+    useEffect(() => {
+        if (isMobile) setSidebarOpen(false);
+    }, [pathname, isMobile]);
+
+    useEffect(() => {
+        setSidebarOpen(!isMobile);
+    }, [isMobile]);
+
     const handleLogout = () => {
+        setUserMenuAnchor(null);
         logout();
         router.replace('/admin/login');
     };
 
-    const handleCompanyChange = (companyId: number) => {
-        const access = companyAccesses.find((c) => c.companyId === companyId);
-        if (access) setActiveCompany(access.companyId, access.branchId ?? null);
+    const handleCompanyChange = (companyId: number, branchId: number | null) => {
+        setActiveCompany(companyId, branchId);
+        setCompanyMenuAnchor(null);
     };
 
-    const activeSectionId =
-        NAV_SECTIONS.find((s) => s.items.some((i) => pathname.startsWith(i.href)))?.id ?? 'ventas';
-
-    // Estado por acordeón con hidratación idempotente desde localStorage.
-    const [expandedMap, setExpandedMap] = useState<Record<string, boolean>>({});
-
-    useEffect(() => {
-        const init: Record<string, boolean> = {};
-        for (const s of NAV_SECTIONS) {
-            const stored = readStoredState(s.id);
-            init[s.id] = stored ?? s.id === activeSectionId;
-        }
-        setExpandedMap(init);
-    }, [activeSectionId]);
-
-    const handleExpandChange = (sectionId: string) => (_: unknown, expanded: boolean) => {
-        setExpandedMap((prev) => ({ ...prev, [sectionId]: expanded }));
-        if (typeof window !== 'undefined') {
-            window.localStorage.setItem(storageKey(sectionId), expanded ? 'open' : 'closed');
-        }
+    const toggleSection = (id: string) => {
+        setOpenSections((prev) => ({ ...prev, [id]: !prev[id] }));
     };
 
-    return (
-        <Box sx={{ display: 'flex', minHeight: '100vh' }}>
-            <AppBar
-                position="fixed"
-                sx={{
-                    zIndex: 1300,
-                    bgcolor: '#131921',
-                    width: { xs: '100%', md: `calc(100% - ${DRAWER_WIDTH}px)` },
-                    ml: { xs: 0, md: `${DRAWER_WIDTH}px` },
-                }}
-            >
-                <Toolbar sx={{ gap: 1 }}>
-                    <IconButton
-                        color="inherit"
-                        edge="start"
-                        onClick={() => setMobileOpen((o) => !o)}
-                        sx={{ display: { xs: 'inline-flex', md: 'none' }, mr: 0.5 }}
-                        aria-label="Abrir menu"
-                    >
-                        <MenuIcon />
-                    </IconButton>
-                    <StoreIcon sx={{ color: '#ff9900' }} />
-                    <Typography variant="h6" fontWeight={700} sx={{ flex: 1 }}>
-                        Zentto<span style={{ color: '#ff9900' }}>Store</span> Admin
-                    </Typography>
+    const activeCompany = companyAccesses.find((c) => c.companyId === activeCompanyId);
+    const companyLabel = activeCompany
+        ? `${activeCompany.companyCode}${activeCompany.branchCode ? '/' + activeCompany.branchCode : ''} - ${activeCompany.companyName}`
+        : 'Sin empresa';
 
-                    {/* Selector multi-empresa — visible solo cuando hay más de 1 empresa */}
-                    {companyAccesses.length > 1 && (
-                        <Tooltip title="Empresa activa">
-                            <FormControl size="small" sx={{ minWidth: 180 }}>
-                                <Select
-                                    value={activeCompanyId ?? ''}
-                                    onChange={(e) => handleCompanyChange(Number(e.target.value))}
-                                    displayEmpty
-                                    startAdornment={<BusinessIcon sx={{ color: '#aab7c4', fontSize: 16, mr: 0.5 }} />}
-                                    sx={{
-                                        color: '#fff',
-                                        fontSize: 13,
-                                        '.MuiOutlinedInput-notchedOutline': { borderColor: '#37475a' },
-                                        '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#ff9900' },
-                                        '.MuiSvgIcon-root': { color: '#aab7c4' },
-                                        bgcolor: '#1a2634',
-                                    }}
-                                >
-                                    {companyAccesses.map((c: CompanyAccess) => (
-                                        <MuiMenuItem key={c.companyId} value={c.companyId}>
-                                            <Box>
-                                                <Typography variant="body2" fontWeight={600} lineHeight={1.2}>
-                                                    {c.companyName}
-                                                </Typography>
-                                                {c.branchName && (
-                                                    <Typography variant="caption" sx={{ color: '#888', lineHeight: 1 }}>
-                                                        {c.branchName}
-                                                    </Typography>
-                                                )}
-                                            </Box>
-                                        </MuiMenuItem>
-                                    ))}
-                                </Select>
-                            </FormControl>
-                        </Tooltip>
-                    )}
+    const actualSidebarWidth = isMobile ? 0 : (sidebarOpen ? FULL_SIDEBAR_WIDTH : MINI_SIDEBAR_WIDTH);
+    const drawerPaperWidth = isMobile ? FULL_SIDEBAR_WIDTH : (sidebarOpen ? FULL_SIDEBAR_WIDTH : MINI_SIDEBAR_WIDTH);
 
-                    {/* Empresa única — solo mostrar nombre */}
-                    {companyAccesses.length === 1 && (
-                        <Tooltip title="Empresa activa">
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mr: 1 }}>
-                                <BusinessIcon sx={{ color: '#aab7c4', fontSize: 16 }} />
-                                <Typography variant="caption" sx={{ color: '#aab7c4' }}>
-                                    {companyAccesses[0].companyName}
-                                </Typography>
-                            </Box>
-                        </Tooltip>
-                    )}
-
-                    {adminUser?.name && (
-                        <Typography variant="caption" sx={{ color: '#aab7c4', mx: 1 }}>
-                            {adminUser.name}
-                        </Typography>
-                    )}
-                    <Button
-                        startIcon={<ArrowBackIcon />}
-                        color="inherit"
-                        size="small"
-                        onClick={() => router.push('/')}
-                        sx={{ textTransform: 'none', fontSize: 13 }}
-                    >
-                        Volver al store
-                    </Button>
-                    <Button
-                        startIcon={<LogoutIcon />}
-                        color="inherit"
-                        size="small"
-                        onClick={handleLogout}
-                        sx={{ textTransform: 'none', fontSize: 13, color: '#ff9900' }}
-                    >
-                        Salir
-                    </Button>
-                </Toolbar>
-            </AppBar>
-
-            <Box
-                component="nav"
-                sx={{ width: { md: DRAWER_WIDTH }, flexShrink: { md: 0 } }}
-                aria-label="Panel administrativo"
-            >
-                <Drawer
-                    variant="temporary"
-                    open={mobileOpen}
-                    onClose={() => setMobileOpen(false)}
-                    ModalProps={{ keepMounted: true }}
-                    sx={{
-                        display: { xs: 'block', md: 'none' },
-                        '& .MuiDrawer-paper': {
-                            width: DRAWER_WIDTH,
-                            boxSizing: 'border-box',
-                            bgcolor: '#232f3e',
-                            color: '#fff',
-                        },
-                    }}
-                >
-                    <DrawerContent
-                        sections={NAV_SECTIONS}
-                        expandedMap={expandedMap}
-                        activeSectionId={activeSectionId}
-                        handleExpandChange={handleExpandChange}
-                        pathname={pathname}
-                        router={router}
-                        counts={counts}
-                    />
-                </Drawer>
-                <Drawer
-                    variant="permanent"
-                    open
-                    sx={{
-                        display: { xs: 'none', md: 'block' },
-                        '& .MuiDrawer-paper': {
-                            width: DRAWER_WIDTH,
-                            boxSizing: 'border-box',
-                            bgcolor: '#232f3e',
-                            color: '#fff',
-                        },
-                    }}
-                >
-                    <DrawerContent
-                        sections={NAV_SECTIONS}
-                        expandedMap={expandedMap}
-                        activeSectionId={activeSectionId}
-                        handleExpandChange={handleExpandChange}
-                        pathname={pathname}
-                        router={router}
-                        counts={counts}
-                    />
-                </Drawer>
-            </Box>
-
-            <Box
-                component="main"
-                sx={{
-                    flexGrow: 1,
-                    p: { xs: 2, sm: 3 },
-                    mt: 8,
-                    bgcolor: '#f5f5f5',
-                    minHeight: '100vh',
-                    width: { md: `calc(100% - ${DRAWER_WIDTH}px)` },
-                }}
-            >
-                {children}
-            </Box>
-        </Box>
-    );
-}
-
-// Contenido del drawer — compartido entre mobile y desktop
-function DrawerContent({
-    sections,
-    expandedMap,
-    activeSectionId,
-    handleExpandChange,
-    pathname,
-    router,
-    counts,
-}: {
-    sections: NavSection[];
-    expandedMap: Record<string, boolean>;
-    activeSectionId: string;
-    handleExpandChange: (id: string) => (_: unknown, expanded: boolean) => void;
-    pathname: string;
-    router: ReturnType<typeof useRouter>;
-    counts: BadgeCounts;
-}) {
-    return (
+    const renderSidebarContent = () => (
         <>
-            <Toolbar sx={{ bgcolor: '#131921' }}>
-                    <Typography variant="subtitle2" fontWeight={700} sx={{ color: '#ff9900', fontSize: 12 }}>
-                        PANEL ADMINISTRATIVO
-                    </Typography>
-                </Toolbar>
-                <Divider sx={{ bgcolor: '#37475a' }} />
+            <Box sx={{ display: 'flex', alignItems: 'center', px: 1.5, height: 64, minHeight: 64, borderBottom: (t) => `1px solid ${t.palette.divider}` }}>
+                <Tooltip title={sidebarOpen ? 'Contraer menu' : 'Expandir menu'}>
+                    <Box sx={{ width: 48, minWidth: 48, display: 'flex', justifyContent: 'center' }}>
+                        <IconButton
+                            onClick={() => setSidebarOpen(!sidebarOpen)}
+                            size="small"
+                            sx={{ width: 32, height: 32, borderRadius: '6px', color: 'text.secondary' }}
+                        >
+                            {sidebarOpen ? <MenuOpenOutlinedIcon fontSize="small" /> : <MenuOutlinedIcon fontSize="small" />}
+                        </IconButton>
+                    </Box>
+                </Tooltip>
+                <Box sx={{ overflow: 'hidden', maxWidth: sidebarOpen ? 200 : 0, opacity: sidebarOpen ? 1 : 0, transition: 'max-width 0.2s ease, opacity 0.15s ease', whiteSpace: 'nowrap', ml: 1 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <StoreIcon sx={{ color: ACCENT, fontSize: 22 }} />
+                        <Typography variant="subtitle1" fontWeight={700} sx={{ fontSize: '0.95rem' }}>
+                            Zentto<span style={{ color: ACCENT }}>Store</span>
+                        </Typography>
+                    </Box>
+                </Box>
+            </Box>
 
-            <Box sx={{ overflowY: 'auto' }}>
-                {sections.map((section) => {
-                    const expanded = expandedMap[section.id] ?? section.id === activeSectionId;
-                        return (
-                            <Accordion
-                                key={section.id}
-                                expanded={expanded}
-                                onChange={handleExpandChange(section.id)}
-                                disableGutters
-                                square
-                                elevation={0}
-                                sx={{
-                                    bgcolor: 'transparent',
-                                    color: '#fff',
-                                    '&:before': { display: 'none' },
-                                    borderBottom: '1px solid #37475a',
-                                }}
-                            >
-                                <AccordionSummary
-                                    expandIcon={
-                                        <ExpandMoreIcon
-                                            sx={{
-                                                color: '#aab7c4',
-                                                transition: 'transform 150ms',
-                                            }}
-                                        />
-                                    }
+            <Box sx={{ overflowY: 'auto', flexGrow: 1, py: 1 }}>
+                {NAV_SECTIONS.map((section) => {
+                    const isOpen = openSections[section.id] ?? section.id === activeSectionId;
+                    return (
+                        <Box key={section.id}>
+                            {sidebarOpen && (
+                                <Box
+                                    onClick={() => toggleSection(section.id)}
                                     sx={{
-                                        minHeight: 40,
-                                        px: 2,
-                                        '& .MuiAccordionSummary-content': { my: 0.5 },
-                                        '&:hover': { bgcolor: '#37475a' },
+                                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                        px: 3, pt: 2, pb: 0.5, cursor: 'pointer',
+                                        '&:hover': { bgcolor: 'action.hover' },
                                     }}
                                 >
                                     <Typography
@@ -439,72 +238,229 @@ function DrawerContent({
                                             fontWeight: 700,
                                             letterSpacing: 0.8,
                                             textTransform: 'uppercase',
-                                            color: '#cccccc',
-                                            fontSize: 12,
+                                            color: 'text.secondary',
+                                            fontSize: 11,
                                         }}
                                     >
                                         {section.label}
                                     </Typography>
-                                </AccordionSummary>
-                                <AccordionDetails sx={{ p: 0 }}>
-                                    <List dense disablePadding>
-                                        {section.items.map((item) => {
-                                            const active = pathname === item.href || pathname.startsWith(item.href + '/');
-                                            const badgeVal = typeof item.badge === 'function'
-                                                ? item.badge(counts)
-                                                : (item.badge ?? null);
-                                            return (
-                                                <ListItem key={item.href} disablePadding>
-                                                    <ListItemButton
-                                                        onClick={() => router.push(item.href)}
-                                                        selected={active}
-                                                        sx={{
-                                                            pl: 3,
-                                                            color: '#fff',
-                                                            position: 'relative',
-                                                            '&.Mui-selected': {
-                                                                bgcolor: '#37475a',
-                                                                color: '#ff9900',
-                                                                '&::before': {
-                                                                    content: '""',
-                                                                    position: 'absolute',
-                                                                    left: 0,
-                                                                    top: 0,
-                                                                    bottom: 0,
-                                                                    width: 3,
-                                                                    bgcolor: '#ff9900',
-                                                                },
-                                                            },
-                                                            '&:hover': { bgcolor: '#37475a' },
-                                                        }}
-                                                    >
-                                                        <ListItemIcon sx={{ color: 'inherit', minWidth: 32 }}>
+                                    {isOpen ? <ExpandLessIcon fontSize="small" sx={{ color: 'text.disabled' }} /> : <ExpandMoreIcon fontSize="small" sx={{ color: 'text.disabled' }} />}
+                                </Box>
+                            )}
+                            <Collapse in={sidebarOpen ? isOpen : true} timeout="auto" unmountOnExit>
+                                <List sx={{ py: 0 }}>
+                                    {section.items.map((item) => {
+                                        const active = pathname === item.href || pathname.startsWith(item.href + '/');
+                                        const badgeVal = typeof item.badge === 'function' ? item.badge(counts) : (item.badge ?? null);
+                                        return (
+                                            <ListItem key={item.href} disablePadding sx={{ position: 'relative', my: '2px', px: '12px', minHeight: 44 }}>
+                                                <Box
+                                                    sx={{
+                                                        position: 'absolute',
+                                                        top: 0, bottom: 0,
+                                                        left: 12, right: 12,
+                                                        borderRadius: 1.5,
+                                                        bgcolor: active ? (t) => t.palette.mode === 'dark' ? 'rgba(255,153,0,0.15)' : 'rgba(255,153,0,0.1)' : 'transparent',
+                                                        boxShadow: active ? `inset 4px 0 0 0 ${ACCENT}` : 'none',
+                                                        pointerEvents: 'none',
+                                                    }}
+                                                />
+                                                <Box
+                                                    onClick={() => router.push(item.href)}
+                                                    sx={{
+                                                        position: 'relative',
+                                                        display: 'flex', alignItems: 'center',
+                                                        minHeight: 44, width: '100%',
+                                                        cursor: 'pointer',
+                                                        color: active ? 'text.primary' : 'text.secondary',
+                                                        borderRadius: 1.5,
+                                                        '&:hover': {
+                                                            bgcolor: active ? (t) => t.palette.mode === 'dark' ? 'rgba(255,153,0,0.25)' : 'rgba(255,153,0,0.15)' : 'action.hover',
+                                                        }
+                                                    }}
+                                                >
+                                                    <Tooltip title={!sidebarOpen ? item.label : ''} placement="right" disableHoverListener={sidebarOpen}>
+                                                        <ListItemIcon sx={{ minWidth: 48, color: 'inherit', justifyContent: 'center' }}>
                                                             {item.icon}
                                                         </ListItemIcon>
+                                                    </Tooltip>
+                                                    <Box sx={{ overflow: 'hidden', maxWidth: sidebarOpen ? 200 : 0, opacity: sidebarOpen ? 1 : 0, transition: 'max-width 0.2s ease, opacity 0.15s ease', display: 'flex', alignItems: 'center', flexGrow: 1, whiteSpace: 'nowrap' }}>
                                                         <ListItemText
                                                             primary={item.label}
-                                                            primaryTypographyProps={{ fontSize: 13 }}
+                                                            primaryTypographyProps={{ fontSize: '0.88rem', fontWeight: active ? 600 : 400, whiteSpace: 'nowrap' }}
                                                         />
-                                                        {badgeVal && badgeVal > 0 ? (
-                                                            <OrangeBadge count={badgeVal} />
-                                                        ) : null}
-                                                    </ListItemButton>
-                                                </ListItem>
-                                            );
-                                        })}
-                                    </List>
-                                </AccordionDetails>
-                            </Accordion>
-                        );
+                                                        {badgeVal && badgeVal > 0 ? <OrangeBadge count={badgeVal} /> : null}
+                                                    </Box>
+                                                </Box>
+                                            </ListItem>
+                                        );
+                                    })}
+                                </List>
+                            </Collapse>
+                        </Box>
+                    );
                 })}
             </Box>
         </>
     );
+
+    return (
+        <Box sx={{ display: 'flex', height: '100vh', width: '100vw', overflow: 'hidden', bgcolor: 'background.default' }}>
+            <Drawer
+                variant={isMobile ? 'temporary' : 'permanent'}
+                open={sidebarOpen}
+                onClose={() => setSidebarOpen(false)}
+                ModalProps={{ keepMounted: true }}
+                sx={{
+                    width: drawerPaperWidth,
+                    flexShrink: 0,
+                    transition: 'width 0.2s',
+                    '& .MuiDrawer-paper': {
+                        width: drawerPaperWidth,
+                        boxSizing: 'border-box',
+                        borderRight: (t) => `1px solid ${t.palette.divider}`,
+                        backgroundColor: 'background.paper',
+                        color: 'text.primary',
+                        boxShadow: isMobile ? '4px 0 20px rgba(0,0,0,0.3)' : 'none',
+                        transition: 'width 0.2s',
+                        overflowX: 'hidden',
+                    },
+                }}
+            >
+                {renderSidebarContent()}
+            </Drawer>
+
+            <Box sx={{ display: 'flex', flexDirection: 'column', flexGrow: 1, width: `calc(100% - ${actualSidebarWidth}px)`, transition: 'width 0.2s', minWidth: 0 }}>
+                <Box component="header" sx={{ backgroundColor: 'background.paper', color: 'text.primary' }}>
+                    <Toolbar variant="dense" sx={{ height: 64, minHeight: 64, maxHeight: 64, px: { xs: 1.5, sm: 3 }, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: (t) => `1px solid ${t.palette.divider}`, gap: 1 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', minWidth: 0, flexGrow: 1 }}>
+                            {isMobile && (
+                                <IconButton
+                                    onClick={() => setSidebarOpen(true)}
+                                    size="small"
+                                    sx={{ width: 32, height: 32, borderRadius: '6px', mr: 1, color: 'text.secondary' }}
+                                    aria-label="Abrir menu"
+                                >
+                                    <MenuOutlinedIcon fontSize="small" />
+                                </IconButton>
+                            )}
+                            <Typography variant="body2" sx={{ color: 'text.secondary', display: { xs: 'none', sm: 'flex' }, alignItems: 'center', gap: 1, minWidth: 0 }}>
+                                <Typography component="span" sx={{ color: ACCENT, fontWeight: 600, cursor: 'pointer' }} onClick={() => router.push('/')}>
+                                    Store
+                                </Typography>
+                                <span>/</span>
+                                <Typography component="span" sx={{ fontWeight: 500, textTransform: 'capitalize', color: 'text.primary', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 300 }}>
+                                    {(pathname || '').replace('/admin/', '').replace(/\//g, ' / ') || 'Admin'}
+                                </Typography>
+                            </Typography>
+                            <Box sx={{ display: { xs: 'flex', sm: 'none' }, alignItems: 'center', gap: 0.5 }}>
+                                <StoreIcon sx={{ color: ACCENT, fontSize: 20 }} />
+                                <Typography variant="subtitle2" fontWeight={700} sx={{ fontSize: '0.9rem' }}>
+                                    Store
+                                </Typography>
+                            </Box>
+                            <Box sx={{ ml: 2, display: { xs: 'none', md: 'flex' }, gap: 1, minWidth: 0 }}>
+                                <Chip
+                                    size="small"
+                                    icon={<BusinessIcon sx={{ fontSize: 14 }} />}
+                                    label={companyLabel}
+                                    onClick={(e) => {
+                                        if (companyAccesses.length > 1) setCompanyMenuAnchor(e.currentTarget);
+                                    }}
+                                    sx={{
+                                        bgcolor: ACCENT, color: '#0f1111', fontWeight: 600, fontSize: '0.72rem',
+                                        cursor: companyAccesses.length > 1 ? 'pointer' : 'default',
+                                        maxWidth: 280,
+                                        '& .MuiChip-label': { overflow: 'hidden', textOverflow: 'ellipsis' },
+                                    }}
+                                />
+                            </Box>
+                        </Box>
+
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0.5, sm: 1 } }}>
+                            <Button
+                                startIcon={<ArrowBackIcon />}
+                                size="small"
+                                onClick={() => router.push('/')}
+                                sx={{ textTransform: 'none', fontSize: 13, display: { xs: 'none', md: 'inline-flex' }, color: 'text.secondary' }}
+                            >
+                                Volver al store
+                            </Button>
+                            <IconButton
+                                onClick={(e) => setUserMenuAnchor(e.currentTarget)}
+                                size="small"
+                                sx={{ ml: 0.5 }}
+                                aria-label="Cuenta"
+                            >
+                                <Avatar sx={{ width: 30, height: 30, bgcolor: ACCENT, color: '#0f1111', fontSize: '0.8rem', fontWeight: 700 }}>
+                                    {(adminUser?.name ?? 'A').charAt(0).toUpperCase()}
+                                </Avatar>
+                            </IconButton>
+                        </Box>
+
+                        <Menu
+                            anchorEl={companyMenuAnchor}
+                            open={Boolean(companyMenuAnchor)}
+                            onClose={() => setCompanyMenuAnchor(null)}
+                            slotProps={{ paper: { sx: { minWidth: 280 } } }}
+                        >
+                            {companyAccesses.map((c: CompanyAccess, idx) => (
+                                <MenuItem
+                                    key={idx}
+                                    selected={c.companyId === activeCompanyId}
+                                    onClick={() => handleCompanyChange(c.companyId, c.branchId ?? null)}
+                                >
+                                    <Box>
+                                        <Typography variant="body2" fontWeight={600}>
+                                            {c.companyCode}{c.branchCode ? '/' + c.branchCode : ''} - {c.companyName}
+                                        </Typography>
+                                        {c.branchName && (
+                                            <Typography variant="caption" color="text.secondary">
+                                                {c.branchName} . {c.countryCode}
+                                            </Typography>
+                                        )}
+                                    </Box>
+                                </MenuItem>
+                            ))}
+                        </Menu>
+
+                        <Menu
+                            anchorEl={userMenuAnchor}
+                            open={Boolean(userMenuAnchor)}
+                            onClose={() => setUserMenuAnchor(null)}
+                            slotProps={{ paper: { sx: { minWidth: 220 } } }}
+                        >
+                            <Box sx={{ px: 2, py: 1 }}>
+                                <Typography variant="body2" fontWeight={600}>{adminUser?.name || 'Administrador'}</Typography>
+                                {adminUser?.email && (
+                                    <Typography variant="caption" color="text.secondary">{adminUser.email}</Typography>
+                                )}
+                            </Box>
+                            {companyAccesses.length > 1 && (
+                                <MenuItem onClick={(e) => { setUserMenuAnchor(null); setCompanyMenuAnchor(e.currentTarget); }}>
+                                    <BusinessIcon fontSize="small" sx={{ mr: 1 }} /> Cambiar empresa
+                                </MenuItem>
+                            )}
+                            <MenuItem onClick={() => { setUserMenuAnchor(null); router.push('/'); }}>
+                                <ArrowBackIcon fontSize="small" sx={{ mr: 1 }} /> Volver al store
+                            </MenuItem>
+                            <MenuItem onClick={handleLogout} sx={{ color: 'error.main' }}>
+                                <LogoutIcon fontSize="small" sx={{ mr: 1 }} /> Salir
+                            </MenuItem>
+                        </Menu>
+                    </Toolbar>
+                </Box>
+
+                <Box component="main" sx={{ flexGrow: 1, minHeight: 0, overflow: 'auto', bgcolor: 'background.default', p: { xs: 1.5, sm: 2, md: 3 } }}>
+                    {children}
+                </Box>
+            </Box>
+        </Box>
+    );
 }
 
-// ── Export principal — guard de autenticación ────────────────────────────────
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
-    const router   = useRouter();
+    const router = useRouter();
     const pathname = usePathname();
     const adminToken = useAdminAuthStore((s) => s.token);
     const [hydrated, setHydrated] = useState(false);
@@ -518,11 +474,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     }, [hydrated, adminToken, pathname, router]);
 
     if (!hydrated) return null;
-
-    // La página de login se renderiza sin sidebar
     if (pathname === '/admin/login') return <>{children}</>;
-
-    // Sin token → null mientras redirige
     if (!adminToken) return null;
 
     return <AdminShell>{children}</AdminShell>;

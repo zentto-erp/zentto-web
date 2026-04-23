@@ -274,6 +274,8 @@ async function processMessage(payload: EachMessagePayload): Promise<void> {
         data.mensaje || '',
         data.usuarioId || null,
         data.ruta || null,
+        data.appCode ?? null,
+        data.companyId ?? null,
       );
       return;
     }
@@ -322,12 +324,31 @@ function safeCall(fn: (data: Record<string, any>) => string, data: Record<string
   }
 }
 
+/**
+ * Deriva el appCode del primer segmento de una ruta de navegacion.
+ * Ej: "/nomina/vacaciones" → "nomina". Si la ruta no matchea ninguna app
+ * conocida, retorna null (broadcast a todas las apps).
+ */
+const KNOWN_APP_CODES = new Set([
+  'shell', 'crm', 'ventas', 'compras', 'inventario', 'nomina', 'contabilidad',
+  'bancos', 'flota', 'pos', 'restaurante', 'auditoria', 'logistica', 'manufactura',
+  'ecommerce', 'panel', 'shipping', 'lab',
+]);
+
+function deriveAppCodeFromRoute(ruta: string | null | undefined): string | null {
+  if (!ruta) return null;
+  const seg = ruta.replace(/^\/+/, '').split('/')[0]?.toLowerCase();
+  return seg && KNOWN_APP_CODES.has(seg) ? seg : null;
+}
+
 async function insertNotification(
   tipo: string,
   titulo: string,
   mensaje: string,
   usuarioId: string | null,
   ruta: string | null,
+  appCode?: string | null,
+  companyId?: number | null,
 ): Promise<void> {
   try {
     await callSp('usp_Sys_Notificacion_Insert', {
@@ -336,6 +357,8 @@ async function insertNotification(
       Mensaje: mensaje,
       UsuarioId: usuarioId,
       RutaNavegacion: ruta,
+      AppCode: appCode ?? deriveAppCodeFromRoute(ruta),
+      CompanyId: companyId ?? null,
     });
   } catch (err) {
     console.error('[kafka-consumer] Failed to insert notification:', (err as Error).message);

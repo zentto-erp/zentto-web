@@ -16,6 +16,7 @@ import { CTAFinalAdapter } from "./adapters/CTAFinalAdapter";
 import { TrustBarAdapter } from "./adapters/TrustBarAdapter";
 import { BlogTeaserAdapter } from "./adapters/BlogTeaserAdapter";
 import { TimelineAdapter } from "./adapters/TimelineAdapter";
+import { ContactFormAdapter } from "./adapters/ContactFormAdapter";
 import { CustomSectionResolver } from "./adapters/CustomSectionResolver";
 
 export const SECTION_MAP: Record<
@@ -30,6 +31,7 @@ export const SECTION_MAP: Record<
   logos: TrustBarAdapter,
   "blog-preview": BlogTeaserAdapter,
   timeline: TimelineAdapter,
+  "contact-form": ContactFormAdapter,
   custom: CustomSectionResolver,
 };
 

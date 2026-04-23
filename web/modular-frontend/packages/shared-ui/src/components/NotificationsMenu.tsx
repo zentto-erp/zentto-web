@@ -21,22 +21,38 @@ type Notification = {
     route: string | null;
 };
 
-export default function NotificationsMenu() {
+interface NotificationsMenuProps {
+    /**
+     * Codigo de la app actual (ej: 'crm', 'ventas', 'ecommerce').
+     * Si se provee, el backend filtra notificaciones de esa app + broadcasts
+     * cross-app. Si no se provee, lee process.env.NEXT_PUBLIC_APP_CODE como
+     * fallback. Si ninguno esta disponible, se muestran todas las notificaciones.
+     */
+    appCode?: string;
+}
+
+export default function NotificationsMenu({ appCode: appCodeProp }: NotificationsMenuProps = {}) {
     const router = useRouter();
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
     const [notifications, setNotifications] = useState<Notification[]>([]);
 
+    // Fallback a NEXT_PUBLIC_APP_CODE si la app no pasa el prop explicitamente.
+    const appCode = (appCodeProp || process.env.NEXT_PUBLIC_APP_CODE || '').toLowerCase() || null;
+
     React.useEffect(() => {
         const fetchNotifs = async () => {
             try {
-                const data = await apiGet('/v1/sistema/notificaciones');
+                const path = appCode
+                    ? `/v1/sistema/notificaciones?appCode=${encodeURIComponent(appCode)}`
+                    : '/v1/sistema/notificaciones';
+                const data = await apiGet(path);
                 if (data?.data) setNotifications(data.data);
             } catch (e) { }
         };
         fetchNotifs();
         const interval = setInterval(fetchNotifs, 30000); // refresh every 30s
         return () => clearInterval(interval);
-    }, []);
+    }, [appCode]);
 
     const open = Boolean(anchorEl);
     const unreadCount = notifications.filter(n => !n.read).length;

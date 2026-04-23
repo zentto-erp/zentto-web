@@ -1,8 +1,14 @@
 import { callSp } from '../../db/query.js';
 
-export async function getNotificaciones(usuarioId?: string) {
+export async function getNotificaciones(
+    usuarioId?: string,
+    companyId?: number | null,
+    appCode?: string | null,
+) {
     const rows = await callSp<any>('usp_Sys_Notificacion_List', {
-        UsuarioId: usuarioId || null
+        UsuarioId: usuarioId || null,
+        CompanyId: companyId ?? null,
+        AppCode: appCode || null,
     });
 
     return rows.map((r: any) => ({

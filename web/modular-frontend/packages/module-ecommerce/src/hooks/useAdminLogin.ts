@@ -45,11 +45,17 @@ export function useAdminLogin() {
       if (!data?.accessToken) throw new Error("no_token");
       if (!data?.user?.isAdmin) throw new Error("not_admin");
 
-      const companyAccesses: CompanyAccess[] = Array.isArray(data.companyAccesses)
-        ? data.companyAccesses
-        : [];
+      // El backend de zentto-auth expone companyAccesses y defaultCompany
+      // DENTRO de data.user (shape: { user: { companyAccesses: [...], defaultCompany: {} } }).
+      // Fallback al top-level por si cambia en el futuro.
+      const rawAccesses =
+        data.user?.companyAccesses ??
+        data.companyAccesses ??
+        [];
+      const companyAccesses: CompanyAccess[] = Array.isArray(rawAccesses) ? rawAccesses : [];
 
       const defaultCompany: CompanyAccess | null =
+        data.user?.defaultCompany ??
         data.defaultCompany ??
         companyAccesses.find((c) => c.isDefault) ??
         companyAccesses[0] ??
