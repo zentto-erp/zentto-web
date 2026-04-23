@@ -54,12 +54,12 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN_DESIGN_TOKENS || secrets.NPM_TOKEN }}
         run: |
           PKG_VERSION=$(node -p "require('./package.json').version")
-          PUBLISHED=$(npm view @zentto/design-tokens version 2>/dev/null || echo "")
-          echo "Local: $PKG_VERSION | Published: $PUBLISHED"
-          if [ "$PKG_VERSION" = "$PUBLISHED" ]; then
+          # Chequear versión EXACTA (ver comentario en publish-landing-kit.yml).
+          if npm view "@zentto/design-tokens@$PKG_VERSION" version >/dev/null 2>&1; then
             echo "Version $PKG_VERSION ya publicada — skip."
             exit 0
           fi
+          echo "Publicando @zentto/design-tokens@$PKG_VERSION..."
 
           PUBLISH_ARGS="--access restricted --ignore-scripts"
           if [[ "$PKG_VERSION" == *-* ]]; then
@@ -71,6 +71,21 @@ jobs:
           mkdir -p "$PUBLISH_DIR"
           cp -r package.json dist "$PUBLISH_DIR/"
           if [ -f README.md ]; then cp README.md "$PUBLISH_DIR/"; fi
+
+          # Remover prepublishOnly/prepare para que npm publish no reconstruya.
+          # npm 10 a veces ignora `--ignore-scripts` para `prepublishOnly`, y
+          # el build requiere `tsconfig.build.json` + `scripts/` que NO están
+          # en el temp dir. dist/ ya viene del step previo Typecheck + build.
+          node -e "
+            const fs = require('fs');
+            const p = JSON.parse(fs.readFileSync('$PUBLISH_DIR/package.json','utf8'));
+            if (p.scripts) {
+              delete p.scripts.prepublishOnly;
+              delete p.scripts.prepare;
+              delete p.scripts.prepack;
+            }
+            fs.writeFileSync('$PUBLISH_DIR/package.json', JSON.stringify(p, null, 2) + '\n');
+          "
 
           cd "$PUBLISH_DIR"
           npm publish $PUBLISH_ARGS
