@@ -31,13 +31,36 @@ export const env = {
     user: process.env.PG_USER || "postgres",
     password: process.env.PG_PASSWORD || "",
     poolMin: Number(process.env.PG_POOL_MIN || 0),
-    poolMax: Number(process.env.PG_POOL_MAX || 10),
+    // ALERT-4: default subido de 10 → 40. Con 30+ requests concurrentes el
+    // pool quedaba exhausto y generaba latencias altas. 40 deja margen
+    // razonable para el pico de producción. Override con PG_POOL_MAX.
+    poolMax: Number(process.env.PG_POOL_MAX || 40),
     ssl: String(process.env.PG_SSL || "false").toLowerCase() === "true",
+    /**
+     * ALERT-4: logging de `pool.waitingCount` cada N segundos. Útil en dev y
+     * producción inicial para detectar pool exhaustion. `0` apaga el monitor.
+     */
+    poolStatsIntervalSec: Number(process.env.PG_POOL_STATS_INTERVAL_SEC || 30),
   },
   jwt: {
     // OBLIGATORIO: debe coincidir con el JWT_SECRET de zentto-auth y de todos los API hijos.
     // Fail-fast: lanza al cargar si no está seteado o es un placeholder.
     secret: requireEnv("JWT_SECRET"),
+    /**
+     * ALERT-1 (transición HS256 → RS256/JWKS):
+     *
+     * `secretFallback` permite validar tokens HS256 firmados con un secret
+     * distinto al primario (p.ej. el secret histórico de zentto-auth cuando
+     * ambos servicios quedaron desincronizados). Solo se usa en `verifyJwt`
+     * como *segundo intento* si la verificación con el secret primario falla
+     * por `invalid signature`. Los tokens nuevos se siguen firmando con el
+     * `secret` primario.
+     *
+     * Esta es una salvaguarda temporal: el destino final es que TODO el
+     * ecosistema valide tokens RS256 vs el JWKS de zentto-auth (ya soportado
+     * en `auth/jwt.ts`). Dejar vacío apaga el fallback sin riesgo.
+     */
+    secretFallback: (process.env.JWT_SECRET_FALLBACK ?? "").trim() || null,
     expires: process.env.JWT_EXPIRES || "12h",
   },
   redisUrl: process.env.REDIS_URL || "",

@@ -104,3 +104,44 @@ export function getPoolStats(): {
     waiting: pool.waitingCount,
   }));
 }
+
+/**
+ * ALERT-4: monitor periódico de pool.waitingCount. Solo loguea si alguno de
+ * los pools tiene requests en cola (ruido bajo en operación normal; alerta
+ * visible en pico de carga).
+ *
+ * Idempotente: llamadas múltiples reemplazan el timer previo.
+ */
+let poolStatsTimer: NodeJS.Timeout | null = null;
+export function startPoolStatsMonitor(intervalSec: number): void {
+  if (poolStatsTimer) {
+    clearInterval(poolStatsTimer);
+    poolStatsTimer = null;
+  }
+  if (!intervalSec || intervalSec <= 0) return;
+
+  const intervalMs = intervalSec * 1000;
+  const maxPool = env.pg.poolMax;
+  console.log(
+    `[pg-pool] monitor activo — intervalo ${intervalSec}s, pool.max=${maxPool}`
+  );
+  poolStatsTimer = setInterval(() => {
+    const stats = getPoolStats();
+    const waiting = stats.filter((s) => s.waiting > 0);
+    if (waiting.length === 0) return;
+    for (const s of waiting) {
+      console.warn(
+        `[pg-pool] db=${s.dbName} total=${s.total}/${maxPool} idle=${s.idle} waiting=${s.waiting}`
+      );
+    }
+  }, intervalMs);
+  // No mantener el event loop vivo por el monitor
+  poolStatsTimer.unref?.();
+}
+
+export function stopPoolStatsMonitor(): void {
+  if (poolStatsTimer) {
+    clearInterval(poolStatsTimer);
+    poolStatsTimer = null;
+  }
+}

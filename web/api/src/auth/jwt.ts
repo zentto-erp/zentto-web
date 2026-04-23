@@ -120,9 +120,30 @@ export async function verifyJwt(token: string): Promise<JwtPayload & jwt.JwtPayl
     return payload as unknown as JwtPayload & jwt.JwtPayload;
   }
 
-  // HS256 fallback (legacy)
-  return jwt.verify(token, env.jwt.secret, {
-    algorithms: ["HS256"],
-    ...(JWT_ISSUER && { issuer: JWT_ISSUER }),
-  }) as JwtPayload & jwt.JwtPayload;
+  // HS256 — primer intento con el secret primario
+  try {
+    return jwt.verify(token, env.jwt.secret, {
+      algorithms: ["HS256"],
+      ...(JWT_ISSUER && { issuer: JWT_ISSUER }),
+    }) as JwtPayload & jwt.JwtPayload;
+  } catch (primaryErr: any) {
+    // ALERT-1: fallback a secret secundario (p.ej. el de zentto-auth durante
+    // la ventana de transición). Solo se aplica si:
+    //   - el error es de firma inválida (no de token expirado/malformado),
+    //   - hay un JWT_SECRET_FALLBACK configurado.
+    // Para errores de expiración o de formato, propaga tal cual: no tiene
+    // sentido re-verificar con otro secret.
+    const fallback = env.jwt.secretFallback;
+    const isSignatureError =
+      primaryErr?.name === "JsonWebTokenError" &&
+      typeof primaryErr?.message === "string" &&
+      primaryErr.message.toLowerCase().includes("invalid signature");
+    if (!fallback || !isSignatureError) {
+      throw primaryErr;
+    }
+    return jwt.verify(token, fallback, {
+      algorithms: ["HS256"],
+      ...(JWT_ISSUER && { issuer: JWT_ISSUER }),
+    }) as JwtPayload & jwt.JwtPayload;
+  }
 }

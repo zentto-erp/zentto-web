@@ -688,17 +688,11 @@ export async function createApp() {
     startWebhookRetryJob();
   }
 
-  // ── Global error handler — NUNCA retornar 502, siempre JSON ──
-  app.use((err: any, _req: any, res: any, _next: any) => {
-    console.error("[UNHANDLED]", err?.message || err, err?.stack?.split("\n").slice(0, 3).join("\n"));
-    if (!res.headersSent) {
-      res.status(500).json({
-        error: "internal_server_error",
-        message: err?.message || "Error interno del servidor",
-        ...(process.env.NODE_ENV !== "production" ? { stack: err?.stack?.split("\n").slice(0, 5) } : {}),
-      });
-    }
-  });
+  // ── Global error handler — ALERT-3 ──
+  // Formaliza el contrato: reconoce ApiError, nunca expone stack en producción,
+  // cubre parse errors de JSON y Zod. Siempre responde JSON (no 502).
+  const { globalErrorHandler } = await import("./middleware/error-handler.js");
+  app.use(globalErrorHandler);
 
   // Catch unhandled promise rejections para que no crasheen el proceso
   process.on("unhandledRejection", (reason: any) => {

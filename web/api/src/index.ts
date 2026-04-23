@@ -14,8 +14,20 @@ const app = await createApp();
 const httpServer = createServer(app);
 attachFiscalRelayWs(httpServer);
 
-httpServer.listen(port, () => {
+httpServer.listen(port, async () => {
   console.log(`[api] listening on :${port}`);
+
+  // ALERT-4: activar monitor de pool.waitingCount (opt-in por env var).
+  try {
+    const { env } = await import("./config/env.js");
+    const { startPoolStatsMonitor } = await import("./db/pg-pool-manager.js");
+    console.log(
+      `[api] pg pool config — max=${env.pg.poolMax} min=${env.pg.poolMin} ssl=${env.pg.ssl}`
+    );
+    startPoolStatsMonitor(env.pg.poolStatsIntervalSec);
+  } catch (err: any) {
+    console.warn("[api] no se pudo iniciar pool stats monitor:", err?.message ?? err);
+  }
 
   // Pre-calentar caché de inventario (~64k artículos) en background
   warmUp()
