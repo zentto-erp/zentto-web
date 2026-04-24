@@ -9,7 +9,7 @@ export const brandRouter = Router();
  * Público (dentro del scope JWT) — devuelve la config de marca del tenant.
  * Cache de 60s en el service.
  */
-brandRouter.get("/config", async (req, res) => {
+brandRouter.get("/config", async (req, res, next) => {
   try {
     const authReq = req as AuthenticatedRequest;
     const companyId = authReq.scope?.companyId ?? 1;
@@ -36,8 +36,8 @@ brandRouter.get("/config", async (req, res) => {
     }
 
     res.json(config);
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+  } catch (err) {
+    next(err);
   }
 });
 
@@ -45,13 +45,13 @@ brandRouter.get("/config", async (req, res) => {
  * PUT /v1/brand/config
  * Admin — upsert de la config de marca del tenant.
  */
-brandRouter.put("/config", async (req, res) => {
+brandRouter.put("/config", async (req, res, next) => {
   try {
     const authReq = req as AuthenticatedRequest;
     const companyId = authReq.scope?.companyId ?? 1;
     const result = await upsertBrandConfig(companyId, req.body);
     res.json({ success: result.ok, message: result.mensaje });
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+  } catch (err) {
+    next(err);
   }
 });
