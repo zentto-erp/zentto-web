@@ -41,10 +41,10 @@ export const metadata: Metadata = {
     follow: false,
     nocache: true,
   },
-  icons: {
-    icon: '/favicon.ico',
-    apple: '/apple-touch-icon.png',
-  },
+  // Icons auto-detectados por Next.js App Router desde
+  // src/app/{favicon.ico, icon.png, apple-icon.png}. Declararlos aqui
+  // apuntando a /favicon.ico y /apple-touch-icon.png (que no existen
+  // en public/) forzaba 404 en el browser.
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -53,7 +53,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <InitColorSchemeScript attribute="data-toolpad-color-scheme" />
       </head>
-      <body>
+      {/*
+        InitColorSchemeScript inyecta atributos de tema en <html>/<body>
+        antes de hydration para evitar flash de tema incorrecto. Esto
+        causa un diff server vs client que React 18 reporta como error
+        #418 en produccion (solo warning en dev). suppressHydrationWarning
+        a nivel body cubre el gap sin afectar validacion de hijos.
+      */}
+      <body suppressHydrationWarning>
         <RootClient>{children}</RootClient>
       </body>
     </html>
