@@ -30850,8 +30850,10 @@ CREATE FUNCTION public.usp_pay_companyconfig_list(p_company_id integer DEFAULT N
     AS $$
 BEGIN
     RETURN QUERY
-    SELECT cc."Id", cc."EmpresaId", cc."SucursalId", cc."CountryCode",
-           cc."ProviderId", p."Code", p."Name", p."ProviderType",
+    SELECT cc."Id", cc."EmpresaId", cc."SucursalId",
+           cc."CountryCode"::varchar,
+           cc."ProviderId",
+           p."Code"::varchar, p."Name"::varchar, p."ProviderType"::varchar,
            cc."Environment", cc."AutoCapture", cc."AllowRefunds", cc."MaxRefundDays",
            cc."IsActive", cc."CreatedAt", cc."UpdatedAt"
     FROM pay."CompanyPaymentConfig" cc
@@ -30867,8 +30869,10 @@ CREATE FUNCTION public.usp_pay_companyconfig_listbycompany(p_company_id integer,
     AS $$
 BEGIN
     RETURN QUERY
-    SELECT cc."Id", cc."EmpresaId", cc."SucursalId", cc."CountryCode",
-           cc."ProviderId", p."Code", p."Name", p."ProviderType",
+    SELECT cc."Id", cc."EmpresaId", cc."SucursalId",
+           cc."CountryCode"::varchar,
+           cc."ProviderId",
+           p."Code"::varchar, p."Name"::varchar, p."ProviderType"::varchar,
            cc."Environment", cc."ClientId", cc."ClientSecret",
            cc."MerchantId", cc."TerminalId", cc."IntegratorId",
            cc."CertificatePath", cc."ExtraConfig",
