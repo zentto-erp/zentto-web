@@ -39243,6 +39243,8 @@ END;
 $$;
 
 
+-- Acepta UserCode o Email (identidad global). Migracion 00171 lo reforzo;
+-- el baseline queda alineado para rebuilds desde cero.
 CREATE FUNCTION public.usp_usuarios_getbycodigo(p_cod_usuario character varying) RETURNS TABLE("Cod_Usuario" character varying, "Password" character varying, "Nombre" character varying, "Tipo" character varying, "Updates" boolean, "Addnews" boolean, "Deletes" boolean, "Creador" boolean, "Cambiar" boolean, "PrecioMinimo" boolean, "Credito" boolean, "IsAdmin" boolean, "Avatar" text)
     LANGUAGE plpgsql
     AS $$
@@ -39263,7 +39265,12 @@ BEGIN
         u."IsAdmin",
         u."Avatar"
     FROM sec."User" u
-    WHERE u."UserCode" = p_cod_usuario AND u."IsDeleted" = FALSE;
+    WHERE u."IsDeleted" = FALSE
+      AND (u."UserCode" = p_cod_usuario OR u."Email" = p_cod_usuario)
+    ORDER BY
+        CASE WHEN u."UserCode" = p_cod_usuario THEN 0 ELSE 1 END,
+        u."UserId"
+    LIMIT 1;
 END;
 $$;
 
