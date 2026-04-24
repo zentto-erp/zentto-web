@@ -44,8 +44,11 @@ export async function getBrandConfig(companyId: number): Promise<BrandConfig | n
   const cached = cache.get(companyId);
   if (cached && Date.now() - cached.ts < CACHE_TTL) return cached.data;
 
+  // Keys en PascalCase: callSp usa toSnakeParam() que antepone `p_`
+  // automaticamente (CompanyId -> p_company_id). Pasar `p_company_id`
+  // produce `p_p_company_id` y el SP falla con "function does not exist".
   const rows = await callSp("usp_cfg_brand_config_get", {
-    p_company_id: companyId,
+    CompanyId: companyId,
   }) as BrandConfig[];
 
   const row = rows[0] ?? null;
@@ -57,21 +60,22 @@ export async function upsertBrandConfig(
   companyId: number,
   input: BrandConfigInput,
 ): Promise<{ ok: boolean; mensaje: string }> {
+  // Keys en PascalCase — ver nota en getBrandConfig.
   const rows = await callSp("usp_cfg_brand_config_upsert", {
-    p_company_id: companyId,
-    p_logo_url: input.logoUrl ?? "",
-    p_favicon_url: input.faviconUrl ?? "",
-    p_primary_color: input.primaryColor ?? "#FFB547",
-    p_secondary_color: input.secondaryColor ?? "#232f3e",
-    p_accent_color: input.accentColor ?? "#FFB547",
-    p_app_name: input.appName ?? "",
-    p_support_email: input.supportEmail ?? "",
-    p_support_phone: input.supportPhone ?? "",
-    p_custom_domain: input.customDomain ?? "",
-    p_custom_css: input.customCss ?? "",
-    p_footer_text: input.footerText ?? "",
-    p_login_bg_url: input.loginBgUrl ?? "",
-    p_is_active: input.isActive ?? true,
+    CompanyId: companyId,
+    LogoUrl: input.logoUrl ?? "",
+    FaviconUrl: input.faviconUrl ?? "",
+    PrimaryColor: input.primaryColor ?? "#FFB547",
+    SecondaryColor: input.secondaryColor ?? "#232f3e",
+    AccentColor: input.accentColor ?? "#FFB547",
+    AppName: input.appName ?? "",
+    SupportEmail: input.supportEmail ?? "",
+    SupportPhone: input.supportPhone ?? "",
+    CustomDomain: input.customDomain ?? "",
+    CustomCss: input.customCss ?? "",
+    FooterText: input.footerText ?? "",
+    LoginBgUrl: input.loginBgUrl ?? "",
+    IsActive: input.isActive ?? true,
   }) as Array<{ ok: boolean; mensaje: string }>;
 
   // Invalidate cache for this company
