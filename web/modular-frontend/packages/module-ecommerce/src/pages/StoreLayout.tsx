@@ -641,7 +641,7 @@ export default function StoreLayout({ children, onNavigate }: Props) {
 
       <CartSyncProvider />
       <CompareBar onOpen={() => onNavigate("/comparar")} />
-      <ZenttoChatWidget />
+      <script src="https://docs.zentto.net/widget.js" defer />
 
       {/* Desktop: popper compacto con preview de items + CTAs. */}
       {!isMobile && (

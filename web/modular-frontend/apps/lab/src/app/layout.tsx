@@ -166,7 +166,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <Box sx={{ flex: 1, overflow: "auto", p: { xs: 1, sm: 2 } }}>
                 {children}
               </Box>
-              <ZenttoChatWidget />
+              <script src="https://docs.zentto.net/widget.js" defer />
             </Box>
           </ThemeProvider>
         </QueryClientProvider>

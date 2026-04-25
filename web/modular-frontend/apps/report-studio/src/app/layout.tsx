@@ -11,7 +11,6 @@ import {
     LoadingFallback,
     ToastProvider,
     BrandedThemeProvider,
-    ZenttoChatWidget,
 } from '@zentto/shared-ui';
 import '@zentto/shared-ui/globals.css';
 
@@ -52,7 +51,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                                 <BrandedThemeProvider defaultMode="system">
                                     <CssBaseline />
                                     <AppContent>{children}</AppContent>
-                                    <ZenttoChatWidget />
+                                    <script src="https://docs.zentto.net/widget.js" defer />
                                 </BrandedThemeProvider>
                             
                         </AuthProvider>
