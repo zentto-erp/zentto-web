@@ -67,21 +67,61 @@ const updateSchema = z.object({
 // ─── Self-service routes (any authenticated user) ─────────────
 // These routes are placed BEFORE requireAdmin so any user can access them.
 
-/** GET /v1/usuarios/me – own profile */
-usuariosRouter.get("/me", async (req, res) => {
+/** GET /v1/usuarios/me – own profile
+ *
+ * Identidad "global": el JWT puede venir de dos fuentes:
+ *  - /v1/auth/login del ERP   → `sub = UserCode`
+ *  - zentto-auth (auth.zentto.net) → `sub = email`
+ *
+ * usp_usuarios_getbycodigo acepta ambos desde la migración 00171 (UserCode OR
+ * Email, prioridad al match exacto de UserCode). Si el usuario existe solo en
+ * zentto-auth y aun no tiene registro local en sec."User", devolvemos un
+ * perfil virtual armado desde el JWT payload para que el frontend pueda
+ * hidratar name/email/permisos sin romperse.
+ */
+usuariosRouter.get("/me", async (req, res, next) => {
   try {
     const user = (req as Request & { user?: JwtPayload }).user;
     if (!user?.sub) return res.status(401).json({ error: "unauthorized" });
-    const record = await getUsuarioByCodigoSP(user.sub);
-    if (!record) return res.status(404).json({ error: "not_found" });
+
+    // Intento 1: SP con OR UserCode/Email sobre user.sub
+    let record = await getUsuarioByCodigoSP(user.sub);
+
+    // Intento 2: si el JWT trae `email` distinto de `sub`, probar con ese
+    if (!record && user.email && user.email !== user.sub) {
+      record = await getUsuarioByCodigoSP(user.email);
+    }
+
+    // Fallback virtual: usuario global de zentto-auth sin registro local.
+    // El JWT ya paso verificacion en requireJwt — los claims son confiables.
+    if (!record) {
+      const permisos = user.permisos;
+      return res.json({
+        Cod_Usuario: user.sub,
+        Nombre: user.name || user.sub,
+        Email: user.email || (user.sub.includes("@") ? user.sub : null),
+        Tipo: user.tipo || null,
+        IsAdmin: user.isAdmin === true,
+        Updates: permisos?.canUpdate === true,
+        Addnews: permisos?.canCreate === true,
+        Deletes: permisos?.canDelete === true,
+        Creador: permisos?.isCreator === true,
+        Cambiar: permisos?.canChangePwd === true,
+        PrecioMinimo: permisos?.canChangePrice === true,
+        Credito: permisos?.canGiveCredit === true,
+        Avatar: null,
+        _virtual: true,
+      });
+    }
+
     // Strip password from response
     const { Password, ...safe } = record as Record<string, unknown>;
     void Password;
     // Avatar is fetched separately – returns null if column not yet migrated
     const avatar = await getUserAvatar(user.sub);
     return res.json({ ...safe, Avatar: avatar });
-  } catch (err: unknown) {
-    return res.status(500).json({ error: "internal", message: err instanceof Error ? err.message : String(err) });
+  } catch (err) {
+    return next(err);
   }
 });
 
