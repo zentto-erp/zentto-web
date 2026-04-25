@@ -2,6 +2,7 @@
 
 // Pull in web component JSX type declarations (zentto-grid, report-viewer, report-designer)
 import '@zentto/shared-ui/web-components';
+import Script from 'next/script';
 
 import React, { useState, useMemo } from "react";
 import { ZenttoChatWidget } from '@zentto/shared-ui';
@@ -166,7 +167,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <Box sx={{ flex: 1, overflow: "auto", p: { xs: 1, sm: 2 } }}>
                 {children}
               </Box>
-              <script src="https://docs.zentto.net/widget.js" defer />
+              <Script src="https://docs.zentto.net/widget.js" strategy="afterInteractive" />
             </Box>
           </ThemeProvider>
         </QueryClientProvider>

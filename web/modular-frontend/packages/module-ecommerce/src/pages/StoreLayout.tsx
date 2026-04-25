@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import Script from 'next/script';
 import {
   AppBar, Toolbar, Typography, IconButton, Badge, Box, Container, Button,
   InputBase, Divider, Menu, MenuItem, ListItemIcon, ListItemText, useMediaQuery, useTheme,
@@ -641,7 +642,7 @@ export default function StoreLayout({ children, onNavigate }: Props) {
 
       <CartSyncProvider />
       <CompareBar onOpen={() => onNavigate("/comparar")} />
-      <script src="https://docs.zentto.net/widget.js" defer />
+      <Script src="https://docs.zentto.net/widget.js" strategy="afterInteractive" />
 
       {/* Desktop: popper compacto con preview de items + CTAs. */}
       {!isMobile && (

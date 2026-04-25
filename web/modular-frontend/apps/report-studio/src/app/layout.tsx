@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import Script from 'next/script';
 import { Suspense, useEffect, useState } from 'react';
 import CssBaseline from '@mui/material/CssBaseline';
 import InitColorSchemeScript from '@mui/material/InitColorSchemeScript';
@@ -51,7 +52,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                                 <BrandedThemeProvider defaultMode="system">
                                     <CssBaseline />
                                     <AppContent>{children}</AppContent>
-                                    <script src="https://docs.zentto.net/widget.js" defer />
+                                    <Script src="https://docs.zentto.net/widget.js" strategy="afterInteractive" />
                                 </BrandedThemeProvider>
                             
                         </AuthProvider>
