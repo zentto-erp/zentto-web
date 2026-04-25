@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { Suspense, useEffect, useState } from 'react';
+import Script from 'next/script';
 import CssBaseline from '@mui/material/CssBaseline';
 import InitColorSchemeScript from '@mui/material/InitColorSchemeScript';
 import { SessionProvider, useSession } from 'next-auth/react';
@@ -70,6 +71,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                                     <CssBaseline />
                                     <LocalizationProviderWrapper>
                                         <AppContent>{children}</AppContent>
+                                        <Script src="https://docs.zentto.net/widget.js" strategy="afterInteractive" />
                                     </LocalizationProviderWrapper>
                                 </BrandedThemeProvider>
                             

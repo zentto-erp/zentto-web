@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { Suspense } from 'react';
+import Script from 'next/script';
 import CssBaseline from '@mui/material/CssBaseline';
 import InitColorSchemeScript from '@mui/material/InitColorSchemeScript';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -49,12 +50,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </head>
             <body>
                 <QueryClientProvider client={queryClient}>
-                    
+
                         <BrandedThemeProvider defaultMode="system">
                             <CssBaseline />
                             <AppContent>{children}</AppContent>
+                            <Script src="https://docs.zentto.net/widget.js" strategy="afterInteractive" />
                         </BrandedThemeProvider>
-                    
+
                 </QueryClientProvider>
             </body>
         </html>
