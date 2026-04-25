@@ -64,7 +64,10 @@
     "start:shipping": "npm --workspace @zentto/app-shipping run start",
     "dev:report-studio": "npm --workspace @zentto/report-studio run dev",
     "build:report-studio": "npm --workspace @zentto/report-studio run build",
-    "start:report-studio": "npm --workspace @zentto/report-studio run start"
+    "start:report-studio": "npm --workspace @zentto/report-studio run start",
+    "security:precheck": "node scripts/security-precheck.cjs",
+    "security:precheck:strict": "node scripts/security-precheck.cjs --strict",
+    "security:report": "node scripts/security-aggregate.cjs"
   },
   "overrides": {
     "title": "4.0.1",
