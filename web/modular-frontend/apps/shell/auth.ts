@@ -262,6 +262,32 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           domain: COOKIE_DOMAIN,
         },
       },
+      // CSRF debe compartir el mismo domain que sessionToken para que las
+      // micro-apps (contabilidad, ecommerce, panel, etc.) puedan validar
+      // el token contra el endpoint de signout/signin del shell.
+      // Sin esto, NextAuth lanza `MissingCSRF` en signout y entra en loop
+      // de redirect. NO se puede usar `__Host-` prefix con domain — el
+      // browser lo bloquea (`__Host-` exige cookie sin domain attribute).
+      csrfToken: {
+        name: '__Secure-next-auth.csrf-token',
+        options: {
+          httpOnly: true,
+          sameSite: 'lax' as const,
+          path: '/',
+          secure: true,
+          domain: COOKIE_DOMAIN,
+        },
+      },
+      callbackUrl: {
+        name: '__Secure-next-auth.callback-url',
+        options: {
+          httpOnly: true,
+          sameSite: 'lax' as const,
+          path: '/',
+          secure: true,
+          domain: COOKIE_DOMAIN,
+        },
+      },
     },
   }),
   callbacks: {
