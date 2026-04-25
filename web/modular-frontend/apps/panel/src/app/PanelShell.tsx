@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import Script from 'next/script';
 import {
   Box,
   Drawer,
@@ -198,7 +199,7 @@ export default function PanelShell({ children }: { children: React.ReactNode }) 
         <Box component="main" sx={{ flex: 1, p: { xs: 2, md: 3 } }}>
           {children}
         </Box>
-        <script src="https://docs.zentto.net/widget.js" defer />
+        <Script src="https://docs.zentto.net/widget.js" strategy="afterInteractive" />
       </Box>
     </Box>
   );
