@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import Script from 'next/script';
 import { Suspense, useEffect, useState } from 'react';
 import CssBaseline from '@mui/material/CssBaseline';
 import { SessionProvider } from 'next-auth/react';
@@ -79,7 +80,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                                     <CssBaseline />
                                     <LocalizationProviderWrapper>
                                         <AppContent>{children}</AppContent>
-                                        <script src="https://docs.zentto.net/widget.js" defer />
+                                        <Script src="https://docs.zentto.net/widget.js" strategy="afterInteractive" />
                                     </LocalizationProviderWrapper>
                                 </BrandedThemeProvider>
                             

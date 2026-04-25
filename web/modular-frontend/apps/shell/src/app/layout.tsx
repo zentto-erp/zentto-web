@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Script from 'next/script';
 import InitColorSchemeScript from '@mui/material/InitColorSchemeScript';
 import RootClient from './root-client';
 
@@ -68,7 +69,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           /pos, /crm, etc) y se conecta a notify.zentto.net/api/support/chat.
           Una sola línea inyecta el widget en los 15 modulos del ERP.
         */}
-        <script src="https://docs.zentto.net/widget.js" defer />
+        <Script src="https://docs.zentto.net/widget.js" strategy="afterInteractive" />
       </body>
     </html>
   );
