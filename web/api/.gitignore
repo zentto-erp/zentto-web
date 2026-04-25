@@ -44,3 +44,6 @@ coverage/
 # Database
 *.db
 *.sqlite
+
+# zb (zentto-bash) symbol index local — generado por `zb index`, no se versiona
+.zentto/
