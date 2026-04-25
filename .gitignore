@@ -27,3 +27,6 @@ md/
 
 # TypeScript incremental build cache (auto-generado)
 *.tsbuildinfo
+
+# zb (zentto-bash) symbol index local — generado por `zb index`, no se versiona
+.zentto/
