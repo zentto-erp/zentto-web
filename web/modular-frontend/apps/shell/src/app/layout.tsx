@@ -62,6 +62,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       */}
       <body suppressHydrationWarning>
         <RootClient>{children}</RootClient>
+        {/*
+          Widget unificado del ecosistema Zentto (Web Component).
+          Auto-detecta appContext desde el pathname (/contabilidad,
+          /pos, /crm, etc) y se conecta a notify.zentto.net/api/support/chat.
+          Una sola línea inyecta el widget en los 15 modulos del ERP.
+        */}
+        <script src="https://docs.zentto.net/widget.js" defer />
       </body>
     </html>
   );

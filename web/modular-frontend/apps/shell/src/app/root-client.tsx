@@ -11,7 +11,6 @@ import {
   ToastProvider,
   LocalizationProviderWrapper,
   BrandedThemeProvider,
-  ZenttoChatWidget,
 } from '@zentto/shared-ui';
 import '@zentto/shared-ui/globals.css';
 import { I18nProvider } from '@zentto/shared-i18n';
@@ -102,7 +101,11 @@ export default function RootClient({ children }: { children: React.ReactNode }) 
                 <TenantGuard>
                   <AppContent>{children}</AppContent>
                 </TenantGuard>
-                <ZenttoChatWidget />
+                {/*
+                  Chat widget unificado: cargado via <script> en layout.tsx.
+                  Web Component docs.zentto.net/widget.js auto-detecta
+                  appContext desde pathname.
+                */}
               </LocalizationProviderWrapper>
             </I18nProvider>
           </BrandedThemeProvider>
