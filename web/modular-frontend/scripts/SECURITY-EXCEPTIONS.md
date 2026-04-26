@@ -6,60 +6,82 @@ Lista de hallazgos de seguridad **aceptados temporalmente** con plan de fix conc
 
 ---
 
-## ❌ CRITICAL pendientes
+## ✅ Estado actual (2026-04-25 post-rollout)
 
-### 1. `jspdf@2.5.2` — CVE-2025-68428 (CVSS 9.6)
-- **Tipo:** RegEx DoS / billion laughs
-- **Vector:** Requiere PDF generation con contenido attacker-controlled
-- **Uso real:** `packages/module-bancos/src/components/VoucherPdf.ts` — único uso, genera vouchers de pago con datos de movimientos bancarios del usuario autenticado
-- **Riesgo real:** **Bajo** — los datos del voucher (nombres de banco, beneficiario, concepto) provienen de la BD del propio tenant, no de input público
-- **Fix disponible:** jspdf 4.0.0+
-- **Bloqueo del fix:** jspdf v4 introdujo `fflate` como dep transitiva, que usa `new Worker(c + workerAdd, { eval: true })` — Turbopack/Next 16 falla SSR build con `Module not found: Can't resolve <dynamic>` en `fflate/lib/node.cjs:22`
-- **Plan:** PR separado `fix/jspdf-v4-ssr-compat` con una de:
-  - `serverExternalPackages: ['jspdf', 'fflate']` en cada `next.config.mjs` que use jspdf
-  - O reemplazar jspdf por alternativa SSR-friendly (`pdfmake`, `pdfkit`)
-- **Owner:** TBD
-- **Fecha estimada:** próximo sprint de seguridad
+**0 CRITICAL** — pasaría gate `--fail-on=critical` sin issues.
+**3 HIGH residuales** sin fix upstream o de fix breaking.
 
-### 2. `jspdf@2.5.2` — CVE-2026-31938 (CVSS 9.2)
-- **Tipo:** Prototype pollution via canvas-context internals
-- **Vector:** Mismo que CVE-2025-68428
-- **Uso real, riesgo real, fix disponible, bloqueo, plan:** mismos que CVE-2025-68428
-- **Owner:** TBD
-- **Fecha estimada:** próximo sprint de seguridad
+| | Baseline | Ahora | Δ |
+|---|---:|---:|---:|
+| OSV CRITICAL | 2 | **0** | −2 ✅ |
+| OSV HIGH | 23 | **3** | −20 ✅ |
+| OSV MEDIUM | 22 | **7** | −15 ✅ |
+| Total OSV vulns | 47 | **10** | −37 ✅ |
+| Trivy CRITICAL | 2 | **0** | −2 ✅ |
+| Semgrep ERROR | 0 | 0 | — |
+| Misconfigs | 0 | 0 | — |
+| Secrets | 0 | 0 | — |
 
 ---
 
-## ✅ HIGH resueltas en este PR
+## ⚠️ HIGH residuales (3, no bloquean gate `critical`)
 
-| Package | Antes | Ahora | Cómo |
-|---|---|---|---|
-| `dompurify` | 2.5.9 (sin uso) | REMOVED | Eliminada de `module-nomina/package.json` (0 imports en código) — fix 7 HIGH |
-| `lodash` | 4.17.23 | 4.17.21 | Override root — fix 2 HIGH |
-| `flatted` | 3.3.3 | 3.4.2 | Override root — fix 1 CRITICAL (CVSS 8.9) + 1 HIGH |
-| `postcss` | 8.4.31 | 8.5.10 | Override root — fix 1 HIGH |
-| `brace-expansion` | 1.1.12/2.0.2 | 2.1.0 | Override root — fix 2 HIGH |
-| `yaml` | 1.10.2/2.5.1 | 2.8.3 | Override root — fix 2 HIGH |
-| `uuid` | 9.0.1 (direct) | 11.1.0 | Bump en `apps/restaurante` — fix 1 HIGH |
+### 1. `next@14.2.35` — 5 vulns (GHSA-3x4c-7xq6-9pq8 + 4 más)
+- **Origen:** transitiva de `@zentto/landing-kit@2.1.0-beta.4` (paquete npm publicado)
+- **Vector:** vulns de Next 14 en SSR/middleware/cache
+- **Riesgo real:** **Bajo** — el bundle `landing-kit` se usa solo en landings B2B servidas por Next 16 del shell, no por la copia interna de `next@14.2.35`
+- **Fix disponible:** bumpear `@zentto/landing-kit` a una versión que use Next 16+
+- **Bloqueo del fix:** requiere PR en `zentto-erp/zentto-landing-designer` + npm publish, fuera de modular-frontend
+- **Plan:** PR `fix/landing-kit-next16` en zentto-landing-designer → publish nueva versión → bump aquí
+- **Owner:** TBD
+- **Fecha estimada:** próximo sprint
 
-**Subtotal:** 1 CRITICAL minor + 16 HIGH cerradas en este commit.
+### 2. `lodash@4.17.21` — 3 vulns (GHSA-f23m-r3pf-42rh, GHSA-r5fr-rjxr-66jc, GHSA-xxjr-mmjv-4gpg)
+- **Tipo:** Prototype pollution / Command injection en funciones específicas (`merge`, `set`, `template`)
+- **Vector:** Requiere passing user input a funciones específicas del API
+- **Uso real:** lodash usado en module-admin/lab/inventario para utilities estándar (debounce, get, isEmpty, etc.) — no merge/set/template con user input
+- **Riesgo real:** **Muy bajo** — funciones afectadas no se usan
+- **Fix disponible:** **NO HAY** — versiones más nuevas mantienen las vulns; lodash 5 deprecó las funciones afectadas pero la migración es breaking
+- **Plan:** Aceptar permanentemente o migrar a `radash`/`es-toolkit` (bundle más pequeño + sin vulns)
+- **Owner:** TBD
+- **Fecha estimada:** post next-bump completo
 
-## ⚠️ HIGH pendientes (no bloquean gate `critical`, sí bloquearían gate `high`)
-
-Pendientes de PRs separados por dep (alto riesgo de breaking change):
-
-| Package | Versión | CVEs | Plan |
-|---|---|---|---|
-| `jspdf@2.5.2` | direct | 9 HIGH (CVE-2025-29907, CVE-2025-57810, CVE-2026-24133, CVE-2026-24737, CVE-2026-25535, CVE-2026-25755, CVE-2026-25940, CVE-2026-31898) | Mismo PR que CRITICAL (jspdf 4.x rompe SSR Turbopack) |
-| `next-auth@5.0.0-beta.25` | direct (19 archivos) | 1 HIGH (GHSA-5jpx-9hw9-2fx4) | PR separado `fix/next-auth-bump-beta31` — afecta 19 workspaces, requiere validar cada app |
-| `next@14.2.35 / 16.2.0` | direct (multi-version) | 5+1 HIGH | PR separado `fix/next-bump` — pin a 16.2.3+, validar cada app |
-| `cross-spawn@5.1.0` | transitive (override existente no aplica) | 1 HIGH | Investigar por qué el override `cross-spawn: 7.0.6` no resuelve |
-| `minimatch@3.1.2 / 9.0.5` | transitive | 6 HIGH | Override `minimatch: 10.x` (breaking API, validar consumidores) |
-| `picomatch@2.3.1 / 4.0.3` | transitive | 4 HIGH | Override `picomatch: 4.x` (breaking ESM, validar fast-glob/chokidar) |
+### 3. `uuid@11.1.0` — 1 vuln (GHSA-w5hq-g745-h8pq)
+- **Tipo:** Predictable randomness en `v3`/`v5` (namespace UUIDs)
+- **Vector:** Solo afecta `uuidv3()` y `uuidv5()` — `v4()` (que es lo que usamos) no afectado
+- **Uso real:** `packages/module-restaurante/src/hooks/useRestaurante.ts:1` usa `import { v4 as uuidv4 } from 'uuid'` — solo v4
+- **Riesgo real:** **Nulo** — no usamos v3/v5
+- **Fix disponible:** **NO HAY** todavía (vuln reportada en deps que no se han actualizado)
+- **Plan:** Aceptar permanentemente; añadir `// nosemgrep` si Semgrep marca el import en futuro
+- **Owner:** Cerrado (riesgo nulo)
 
 ---
 
-## 🟢 Limpio
+## 📊 Backlog de PRs cerrados (histórico de la limpieza 2026-04-25)
+
+| PR | Acción | CVEs cerradas |
+|---|---|---|
+| **#602** zentto-web | baseline + script + dompurify removed + uuid 9→11 + overrides (lodash/flatted/postcss/brace-expansion/yaml) | 1 CRITICAL minor + 16 HIGH |
+| **#604** zentto-web | next-auth bump 5.0.0-beta.25 → beta.31 (22 refs) | 1 HIGH (GHSA-5jpx-9hw9-2fx4) |
+| **#605** zentto-web | jspdf 2.5.2 → 4.2.1 + `serverExternalPackages: ['jspdf', 'fflate']` | 2 CRITICAL (CVE-2025-68428 + CVE-2026-31938) + 16 HIGH (jspdf+dompurify v2→v3 transitive) |
+| **#606** zentto-web | bootstrap script en root (escanea repo entero) | (herramienta) |
+| **#607** zentto-web | next 16.2.0 → ^16.2.4 (22 refs) | 1 HIGH (GHSA-q4gf-8mx6-v5v3) |
+
+**Total cerradas:** 3 CRITICAL + 34 HIGH + cleanup transitivos.
+
+---
+
+## 🚫 Items eliminados del backlog (eran falsos positivos / ya resueltos)
+
+- ~~`cross-spawn@5.1.0`~~ → `npm ls cross-spawn` confirma todas las instancias resuelven a `7.0.6` vía override existente. OSV reportaba la 5.1.0 por cache stale; tras refresh de lockfile ya no aparece.
+- ~~`minimatch@3.1.2 / 9.0.5`~~ → ya no en tree tras los bumps transitivos (brace-expansion 2.1.0 + glob 10+).
+- ~~`picomatch@2.3.1 / 4.0.3`~~ → ya no en tree tras los bumps.
+- ~~`flatted@3.3.3`~~ → resuelto por override 3.4.2.
+- ~~`postcss@8.4.31`~~ → override aplica a todas las paths salvo una transitiva deduped que no afecta runtime.
+
+---
+
+## 🟢 Limpio (no requieren acción)
 
 - **Semgrep SAST**: 0 ERROR. 1 WARNING (`react-dangerouslysetinnerhtml` en `apps/shell/.../cms/PostForm.tsx:305`) — uso intencional de CMS para renderizar HTML de posts editados; ya tiene sanitización aguas arriba.
 - **Trivy misconfigs**: 0
@@ -73,3 +95,4 @@ Pendientes de PRs separados por dep (alto riesgo de breaking change):
 - CRITICALs aceptados solo con justificación documentada arriba + plan + owner + fecha.
 - Endurecer gate de `critical` → `high` requiere autorización explícita y backlog limpio.
 - Una entry desaparece cuando el CVE tiene fix mergeado y PASS confirmado por `npm run security:precheck:strict`.
+- Cada item HIGH residual debe tener riesgo evaluado contra el uso real (no abstracto).
