@@ -1,0 +1,47 @@
+# Trivy v0.70 config — modular-frontend
+# Centraliza la configuración para que script local (security-precheck.cjs)
+# y CI (workflow .github/workflows/security.yml) compartan los mismos defaults.
+# Docs: https://trivy.dev/docs/v0.70/guide/configuration/
+
+scan:
+  # Separamos secret scanning a gitleaks (corre como job paralelo en CI).
+  # Trivy v0.70 secret scanner es lento sobre filesystems grandes — split mejora ~10x.
+  scanners:
+    - vuln
+    - misconfig
+  skip-dirs:
+    - node_modules
+    - .next
+    - dist
+    - build
+    - coverage
+    - .turbo
+    - .cache
+  timeout: 30m
+  # Muestra excepciones en el output para mantener trazabilidad (no las oculta silently).
+  show-suppressed: true
+
+vulnerability:
+  # Ignora CVEs sin patch upstream (no podemos accionarlos, solo generan ruido).
+  ignore-unfixed: true
+  type:
+    - os
+    - library
+
+# Solo bloqueamos en HIGH+ (alineado con .github/workflows/security.yml fail-on: high).
+# El gate global del workflow reusable también filtra por severity.
+severity:
+  - HIGH
+  - CRITICAL
+
+# DB mirrors con fallback automático ante caídas o rate-limits de un registry.
+# Orden de preferencia: AWS ECR público > Google mirror > GitHub Container Registry.
+db:
+  repository:
+    - public.ecr.aws/aquasecurity/trivy-db:2
+    - mirror.gcr.io/aquasec/trivy-db:2
+    - ghcr.io/aquasecurity/trivy-db:2
+
+# Reportar dependency tree en JSON para que el agregador pueda mostrar
+# "vuln introducida por X → Y → Z".
+dependency-tree: true
