@@ -56,7 +56,7 @@ beforeAll(() => {
         user: process.env.PG_USER ?? "zentto_app",
         password: process.env.PG_PASSWORD ?? "",
         ssl:
-          process.env.PG_SSL === "true" ? { rejectUnauthorized: false } : false, // nosemgrep: javascript.lang.security.audit.sqli.node-bypass-tls-verification
+          process.env.PG_SSL === "true" ? { rejectUnauthorized: false } : false, // nosemgrep: bypass-tls-verification
       });
 });
 
@@ -64,7 +64,7 @@ afterAll(async () => {
   await pool.end();
 });
 
-describe("CRM Redesign (ADR-CRM-001) — Tablas", () => {
+describe("CRM Redesign (ADR-CRM-001) â€” Tablas", () => {
   for (const [schema, table] of REQUIRED_CRM_TABLES) {
     it(`${schema}.${table} debe existir`, async () => {
       const r = await pool.query(
@@ -86,7 +86,7 @@ describe("CRM Redesign (ADR-CRM-001) — Tablas", () => {
   });
 });
 
-describe("CRM Redesign (ADR-CRM-001) — Funciones PL/pgSQL", () => {
+describe("CRM Redesign (ADR-CRM-001) â€” Funciones PL/pgSQL", () => {
   for (const fn of REQUIRED_CRM_SPS) {
     it(`${fn} debe existir en public`, async () => {
       const r = await pool.query(

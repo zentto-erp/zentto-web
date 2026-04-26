@@ -1,5 +1,5 @@
 /**
- * Pool manager dinámico para PostgreSQL — multi-tenant
+ * Pool manager dinÃ¡mico para PostgreSQL â€” multi-tenant
  *
  * Reemplaza el singleton de pg.ts con un cache de pools por base de datos.
  * getMasterPool() devuelve el pool de la BD configurada en .env (PG_DATABASE).
@@ -19,11 +19,11 @@ export interface TenantDbConfig {
   isDemo?: boolean;
 }
 
-/** Cache: dbName → Pool */
+/** Cache: dbName â†’ Pool */
 const pools = new Map<string, Pool>();
 
 /**
- * Obtiene (o crea) el pool de un tenant específico.
+ * Obtiene (o crea) el pool de un tenant especÃ­fico.
  */
 export function getTenantPool(config: TenantDbConfig): Pool {
   const key = config.dbName;
@@ -40,7 +40,7 @@ export function getTenantPool(config: TenantDbConfig): Pool {
     max: config.poolMax ?? 5,
     // Security: rejectUnauthorized=false is intentional for internal Docker network
     // connections (172.18.0.x) where certs are self-signed.
-    ssl: (config.ssl ?? env.pg.ssl) ? { rejectUnauthorized: false } : false, // nosemgrep: javascript.lang.security.audit.sqli.node-bypass-tls-verification
+    ssl: (config.ssl ?? env.pg.ssl) ? { rejectUnauthorized: false } : false, // nosemgrep: bypass-tls-verification
     idleTimeoutMillis: 60_000,
     connectionTimeoutMillis: 10_000,
   });
@@ -54,7 +54,7 @@ export function getTenantPool(config: TenantDbConfig): Pool {
 }
 
 /**
- * Pool de la BD master — para login, health, tenant resolve.
+ * Pool de la BD master â€” para login, health, tenant resolve.
  * Usa la config PG existente del .env (PG_DATABASE).
  */
 export function getMasterPool(): Pool {
@@ -71,7 +71,7 @@ export function getMasterPool(): Pool {
   });
 }
 
-/** Cerrar pool de un tenant específico */
+/** Cerrar pool de un tenant especÃ­fico */
 export async function closeTenantPool(dbName: string): Promise<void> {
   const pool = pools.get(dbName);
   if (pool) {
@@ -90,7 +90,7 @@ export async function closeAllPools(): Promise<void> {
   pools.clear();
 }
 
-/** Estadísticas de pools activos */
+/** EstadÃ­sticas de pools activos */
 export function getPoolStats(): {
   dbName: string;
   total: number;
@@ -106,11 +106,11 @@ export function getPoolStats(): {
 }
 
 /**
- * ALERT-4: monitor periódico de pool.waitingCount. Solo loguea si alguno de
- * los pools tiene requests en cola (ruido bajo en operación normal; alerta
+ * ALERT-4: monitor periÃ³dico de pool.waitingCount. Solo loguea si alguno de
+ * los pools tiene requests en cola (ruido bajo en operaciÃ³n normal; alerta
  * visible en pico de carga).
  *
- * Idempotente: llamadas múltiples reemplazan el timer previo.
+ * Idempotente: llamadas mÃºltiples reemplazan el timer previo.
  */
 let poolStatsTimer: NodeJS.Timeout | null = null;
 export function startPoolStatsMonitor(intervalSec: number): void {
@@ -123,7 +123,7 @@ export function startPoolStatsMonitor(intervalSec: number): void {
   const intervalMs = intervalSec * 1000;
   const maxPool = env.pg.poolMax;
   console.log(
-    `[pg-pool] monitor activo — intervalo ${intervalSec}s, pool.max=${maxPool}`
+    `[pg-pool] monitor activo â€” intervalo ${intervalSec}s, pool.max=${maxPool}`
   );
   poolStatsTimer = setInterval(() => {
     const stats = getPoolStats();

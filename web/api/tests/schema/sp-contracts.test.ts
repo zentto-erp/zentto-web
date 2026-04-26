@@ -1,11 +1,11 @@
 /**
  * sp-contracts.test.ts
  *
- * Valida TODOS los stored procedures/funciones de PostgreSQL automáticamente.
+ * Valida TODOS los stored procedures/funciones de PostgreSQL automÃ¡ticamente.
  * - No requiere lista manual: escanea pg_proc en tiempo real
  * - Detecta overloads duplicados (causa principal de errores POS)
  * - Verifica tipos BIGINT donde se requiere
- * - Solo lectura (pg_proc) — no modifica datos
+ * - Solo lectura (pg_proc) â€” no modifica datos
  *
  * Variables de entorno:
  *   PG_CONNECTION_STRING  o  PG_HOST + PG_PORT + PG_DATABASE + PG_USER + PG_PASSWORD
@@ -15,9 +15,9 @@ import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import pg from "pg";
 import "dotenv/config";
 
-// ────────────────────────────────────────────────────────────────────────────
-// Conexión
-// ────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ConexiÃ³n
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 let pool: pg.Pool;
 
@@ -31,7 +31,7 @@ beforeAll(() => {
         user: process.env.PG_USER ?? "zentto_app",
         password: process.env.PG_PASSWORD ?? "",
         ssl:
-          process.env.PG_SSL === "true" ? { rejectUnauthorized: false } : false, // nosemgrep: javascript.lang.security.audit.sqli.node-bypass-tls-verification
+          process.env.PG_SSL === "true" ? { rejectUnauthorized: false } : false, // nosemgrep: bypass-tls-verification
       });
 });
 
@@ -39,9 +39,9 @@ afterAll(async () => {
   await pool.end();
 });
 
-// ────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Helpers
-// ────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 interface FuncOverload {
   proname: string;
@@ -105,18 +105,18 @@ async function getFuncMeta(funcName: string): Promise<FuncMeta[]> {
   }));
 }
 
-// ────────────────────────────────────────────────────────────────────────────
-// Test 1: La DB está bootstrapped (sanity check)
-// ────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Test 1: La DB estÃ¡ bootstrapped (sanity check)
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-describe("SP Contracts — DB bootstrapped", () => {
+describe("SP Contracts â€” DB bootstrapped", () => {
   it("debe tener al menos 100 funciones usp_*", async () => {
     const names = await getAllFunctionNames();
     expect(
       names.length,
-      `Solo hay ${names.length} funciones — la DB puede no estar inicializada`,
+      `Solo hay ${names.length} funciones â€” la DB puede no estar inicializada`,
     ).toBeGreaterThanOrEqual(100);
-    console.log(`  ℹ  Total funciones únicas usp_*: ${names.length}`);
+    console.log(`  â„¹  Total funciones Ãºnicas usp_*: ${names.length}`);
   });
 
   it("tabla public._migrations debe existir", async () => {
@@ -130,22 +130,22 @@ describe("SP Contracts — DB bootstrapped", () => {
   });
 });
 
-// ────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Test 2: CERO overloads duplicados en TODAS las funciones
-// (Este es el test crítico — detecta la causa raíz de los errores POS)
-// ────────────────────────────────────────────────────────────────────────────
+// (Este es el test crÃ­tico â€” detecta la causa raÃ­z de los errores POS)
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-describe("SP Contracts — sin overloads duplicados (todas las funciones)", () => {
-  it("ninguna función usp_* debe tener más de 1 overload", async () => {
+describe("SP Contracts â€” sin overloads duplicados (todas las funciones)", () => {
+  it("ninguna funciÃ³n usp_* debe tener mÃ¡s de 1 overload", async () => {
     const overloads = await getFunctionsWithOverloads();
 
     if (overloads.length > 0) {
       const report = overloads
         .map((f) => `  - ${f.proname}: ${f.count} overloads`)
         .join("\n");
-      console.error(`\n⚠️  Funciones con overloads duplicados:\n${report}\n`);
+      console.error(`\nâš ï¸  Funciones con overloads duplicados:\n${report}\n`);
       console.error(
-        `Solución: crear migración en sqlweb-pg/migrations/ con:\n` +
+        `SoluciÃ³n: crear migraciÃ³n en sqlweb-pg/migrations/ con:\n` +
           `  DROP FUNCTION IF EXISTS <nombre>(tipo1, tipo2, ...) CASCADE;\n` +
           `  DROP FUNCTION IF EXISTS <nombre>(...)\n`,
       );
@@ -153,7 +153,7 @@ describe("SP Contracts — sin overloads duplicados (todas las funciones)", () =
 
     expect(
       overloads.length,
-      `Hay ${overloads.length} función(es) con overloads duplicados:\n` +
+      `Hay ${overloads.length} funciÃ³n(es) con overloads duplicados:\n` +
         overloads
           .map((f) => `  ${f.proname} (${f.count} versiones)`)
           .join("\n"),
@@ -161,11 +161,11 @@ describe("SP Contracts — sin overloads duplicados (todas las funciones)", () =
   });
 });
 
-// ────────────────────────────────────────────────────────────────────────────
-// Test 3: Funciones POS críticas — tipos BIGINT correctos
-// ────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Test 3: Funciones POS crÃ­ticas â€” tipos BIGINT correctos
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-describe("SP Contracts — tipos BIGINT en funciones POS", () => {
+describe("SP Contracts â€” tipos BIGINT en funciones POS", () => {
   const bigintReturnFunctions = [
     "usp_pos_waitticket_create",
     "usp_pos_waitticketline_insert",
@@ -175,22 +175,22 @@ describe("SP Contracts — tipos BIGINT en funciones POS", () => {
   for (const fn of bigintReturnFunctions) {
     it(`${fn} debe retornar "Resultado" como BIGINT`, async () => {
       const metas = await getFuncMeta(fn);
-      expect(metas.length, `La función ${fn} no existe en la base de datos`).toBeGreaterThan(0);
+      expect(metas.length, `La funciÃ³n ${fn} no existe en la base de datos`).toBeGreaterThan(0);
       const meta = metas[0];
       expect(
         meta.rettype.toLowerCase(),
-        `${fn} retorna "${meta.rettype}" — se esperaba bigint`,
+        `${fn} retorna "${meta.rettype}" â€” se esperaba bigint`,
       ).toContain("bigint");
     });
   }
 
-  it("usp_pos_waitticketline_insert primer parámetro debe ser bigint", async () => {
+  it("usp_pos_waitticketline_insert primer parÃ¡metro debe ser bigint", async () => {
     const metas = await getFuncMeta("usp_pos_waitticketline_insert");
     expect(metas.length, "usp_pos_waitticketline_insert no existe").toBeGreaterThan(0);
     const firstArgType = metas[0]?.argtypes[0] ?? "";
     expect(
       firstArgType.toLowerCase(),
-      `Primer argumento es "${firstArgType}" — se esperaba bigint`,
+      `Primer argumento es "${firstArgType}" â€” se esperaba bigint`,
     ).toContain("bigint");
   });
 
@@ -200,16 +200,16 @@ describe("SP Contracts — tipos BIGINT en funciones POS", () => {
     const thirdArgType = metas[0]?.argtypes[2] ?? "";
     expect(
       thirdArgType.toLowerCase(),
-      `Tercer argumento de usp_pos_waitticket_recover es "${thirdArgType}" — se esperaba bigint`,
+      `Tercer argumento de usp_pos_waitticket_recover es "${thirdArgType}" â€” se esperaba bigint`,
     ).toContain("bigint");
   });
 });
 
-// ────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Test 4: Funciones de infraestructura obligatorias
-// ────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-describe("SP Contracts — funciones de infraestructura", () => {
+describe("SP Contracts â€” funciones de infraestructura", () => {
   const requiredFunctions = [
     // Auth + config (sistema base)
     "usp_sec_user_authenticate",
@@ -218,7 +218,7 @@ describe("SP Contracts — funciones de infraestructura", () => {
     // POS
     "usp_pos_waitticket_create",
     "usp_pos_saleticket_create",
-    // Shipping (migración 00020)
+    // Shipping (migraciÃ³n 00020)
     "usp_shipping_customer_register",
     "usp_shipping_customer_login",
     "usp_shipping_shipment_create",
@@ -229,12 +229,12 @@ describe("SP Contracts — funciones de infraestructura", () => {
     "usp_sys_backup_complete",
     "usp_sys_backup_fail",
     "usp_sys_backup_list",
-    // Resource management (migración 00028)
+    // Resource management (migraciÃ³n 00028)
     "usp_sys_resource_audit",
     "usp_sys_cleanup_scan",
     "usp_sys_cleanup_list",
     "usp_sys_cleanup_process",
-    // Módulos de negocio — nombres exactos de pg_proc
+    // MÃ³dulos de negocio â€” nombres exactos de pg_proc
     "usp_ar_receivable_list",
     "usp_ap_payable_list",
     "usp_fin_bank_list",
@@ -253,7 +253,7 @@ describe("SP Contracts — funciones de infraestructura", () => {
     "usp_crm_lead_list",
     "usp_crm_activity_list",
     "usp_crm_pipeline_getstages",
-    // CRM — Saved Views (CRM-108)
+    // CRM â€” Saved Views (CRM-108)
     "usp_crm_saved_view_list",
     "usp_crm_saved_view_detail",
     "usp_crm_saved_view_upsert",
@@ -269,7 +269,7 @@ describe("SP Contracts — funciones de infraestructura", () => {
     // POS
     "usp_pos_saleticketline_insert",
     "usp_pos_waitticketline_insert",
-    // Fiscal (migración 00042)
+    // Fiscal (migraciÃ³n 00042)
     "usp_fiscal_taxbook_populate",
     "usp_fiscal_taxbook_list",
     "usp_fiscal_taxbook_summary",
@@ -292,19 +292,19 @@ describe("SP Contracts — funciones de infraestructura", () => {
         [fn.toLowerCase()],
       );
       const exists = Number(res.rows[0]?.cnt ?? 0) > 0;
-      expect(exists, `La función ${fn} no existe en la base de datos`).toBe(
+      expect(exists, `La funciÃ³n ${fn} no existe en la base de datos`).toBe(
         true,
       );
     });
   }
 });
 
-// ────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Test 5: Reporte de estado (informativo, siempre pasa)
-// ────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-describe("SP Contracts — reporte de estado", () => {
-  it("muestra resumen de funciones por módulo", async () => {
+describe("SP Contracts â€” reporte de estado", () => {
+  it("muestra resumen de funciones por mÃ³dulo", async () => {
     const res = await pool.query<{ modulo: string; total: string }>(
       `SELECT
          SPLIT_PART(proname, '_', 2) AS modulo,
@@ -314,7 +314,7 @@ describe("SP Contracts — reporte de estado", () => {
        GROUP BY modulo
        ORDER BY total DESC`,
     );
-    console.log("\n  📊 Funciones por módulo:");
+    console.log("\n  ðŸ“Š Funciones por mÃ³dulo:");
     for (const row of res.rows) {
       console.log(`     ${row.modulo.padEnd(15)} ${row.total}`);
     }
@@ -322,12 +322,12 @@ describe("SP Contracts — reporte de estado", () => {
   });
 });
 
-// ────────────────────────────────────────────────────────────────────────────
-// Test 6: Sin TIMESTAMP WITH TIME ZONE — obligatorio, falla si hay problemas
-// ────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Test 6: Sin TIMESTAMP WITH TIME ZONE â€” obligatorio, falla si hay problemas
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-describe("SP Contracts — sin TIMESTAMP WITH TIME ZONE", () => {
-  it("ninguna función usp_* debe usar timestamp with time zone en argumentos o retorno", async () => {
+describe("SP Contracts â€” sin TIMESTAMP WITH TIME ZONE", () => {
+  it("ninguna funciÃ³n usp_* debe usar timestamp with time zone en argumentos o retorno", async () => {
     const res = await pool.query<{
       proname: string;
       args: string;
@@ -350,7 +350,7 @@ describe("SP Contracts — sin TIMESTAMP WITH TIME ZONE", () => {
 
     if (list.length > 0) {
       console.error(
-        "\n[SP Contracts] Funciones con TIMESTAMP WITH TIME ZONE (TIMESTAMPTZ) — se esperaba TIMESTAMP sin zona:",
+        "\n[SP Contracts] Funciones con TIMESTAMP WITH TIME ZONE (TIMESTAMPTZ) â€” se esperaba TIMESTAMP sin zona:",
       );
       for (const row of list) {
         const argsHit = /timestamp with time zone/i.test(row.args ?? "")
@@ -364,28 +364,28 @@ describe("SP Contracts — sin TIMESTAMP WITH TIME ZONE", () => {
         if (retHit) console.error(`      ${retHit}`);
       }
       console.error(
-        "\nSolución: reemplazar TIMESTAMPTZ / TIMESTAMP WITH TIME ZONE por TIMESTAMP en los scripts sqlweb-pg/\n",
+        "\nSoluciÃ³n: reemplazar TIMESTAMPTZ / TIMESTAMP WITH TIME ZONE por TIMESTAMP en los scripts sqlweb-pg/\n",
       );
     }
 
     expect(
       list.length,
-      `Hay ${list.length} función(es) usando TIMESTAMP WITH TIME ZONE. ` +
+      `Hay ${list.length} funciÃ³n(es) usando TIMESTAMP WITH TIME ZONE. ` +
         `Todas las fechas deben ser TIMESTAMP (sin zona). ` +
         `Funciones afectadas: ${list.map((r) => r.proname).join(", ")}`,
     ).toBe(0);
   });
 });
 
-// ────────────────────────────────────────────────────────────────────────────
-// Test 7: Parámetros de entidades principales deben ser BIGINT — obligatorio
-// ────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Test 7: ParÃ¡metros de entidades principales deben ser BIGINT â€” obligatorio
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-describe("SP Contracts — parámetros de entidades deben ser BIGINT", () => {
+describe("SP Contracts â€” parÃ¡metros de entidades deben ser BIGINT", () => {
   /**
-   * Sufijos de columnas BIGINT según el DDL real del proyecto.
+   * Sufijos de columnas BIGINT segÃºn el DDL real del proyecto.
    * El matching es case-insensitive y tolerante a snake_case y camelCase.
-   * Ejemplos de parámetros que matchean "customerid":
+   * Ejemplos de parÃ¡metros que matchean "customerid":
    *   p_customer_id, p_customerid, customerid, customer_id
    */
   const bigintEntitySuffixes: string[] = [
@@ -408,7 +408,7 @@ describe("SP Contracts — parámetros de entidades deben ser BIGINT", () => {
   ];
 
   /**
-   * Normaliza un nombre de parámetro PostgreSQL a minúsculas sin guiones bajos
+   * Normaliza un nombre de parÃ¡metro PostgreSQL a minÃºsculas sin guiones bajos
    * para compararlo contra los sufijos de la lista.
    * Ejemplos:
    *   "p_customer_id integer" -> "customerid"
@@ -433,7 +433,7 @@ describe("SP Contracts — parámetros de entidades deben ser BIGINT", () => {
     return tokens.slice(1).join(" ").toLowerCase();
   }
 
-  it("todos los parámetros de entidad BIGINT deben declararse como bigint (no integer)", async () => {
+  it("todos los parÃ¡metros de entidad BIGINT deben declararse como bigint (no integer)", async () => {
     const res = await pool.query<{ proname: string; args: string }>(
       `SELECT p.proname,
               pg_get_function_arguments(p.oid) AS args
@@ -484,10 +484,10 @@ describe("SP Contracts — parámetros de entidades deben ser BIGINT", () => {
 
     if (mismatches.length > 0) {
       console.error(
-        `\n[SP Contracts] Parámetros de entidad que deberían ser BIGINT pero no lo son (${mismatches.length}):`,
+        `\n[SP Contracts] ParÃ¡metros de entidad que deberÃ­an ser BIGINT pero no lo son (${mismatches.length}):`,
       );
       console.error(
-        `  ${"FUNCIÓN".padEnd(50)} ${"PARÁMETRO".padEnd(30)} ${"TIPO ACTUAL".padEnd(20)} TIPO ESPERADO`,
+        `  ${"FUNCIÃ“N".padEnd(50)} ${"PARÃMETRO".padEnd(30)} ${"TIPO ACTUAL".padEnd(20)} TIPO ESPERADO`,
       );
       console.error(`  ${"-".repeat(115)}`);
       for (const m of mismatches) {
@@ -496,13 +496,13 @@ describe("SP Contracts — parámetros de entidades deben ser BIGINT", () => {
         );
       }
       console.error(
-        "\nSolución: cambiar INTEGER -> BIGINT en los scripts sqlweb-pg/ para los parámetros afectados.\n",
+        "\nSoluciÃ³n: cambiar INTEGER -> BIGINT en los scripts sqlweb-pg/ para los parÃ¡metros afectados.\n",
       );
     }
 
     expect(
       mismatches.length,
-      `Hay ${mismatches.length} parámetro(s) de entidad declarados con tipo incorrecto. ` +
+      `Hay ${mismatches.length} parÃ¡metro(s) de entidad declarados con tipo incorrecto. ` +
         `Se esperaba bigint. Primeros 5 afectados: ` +
         mismatches
           .slice(0, 5)
@@ -512,11 +512,11 @@ describe("SP Contracts — parámetros de entidades deben ser BIGINT", () => {
   });
 });
 
-// ────────────────────────────────────────────────────────────────────────────
-// Test 7b: Columnas de RETURNS TABLE de entidades también deben ser BIGINT
-// ────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Test 7b: Columnas de RETURNS TABLE de entidades tambiÃ©n deben ser BIGINT
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-describe("SP Contracts — columnas de RETURNS TABLE deben ser BIGINT", () => {
+describe("SP Contracts â€” columnas de RETURNS TABLE deben ser BIGINT", () => {
   /**
    * Mismos sufijos que Test 7. El matching es case-insensitive y tolerante
    * a snake_case y camelCase en los nombres de columna del RETURNS TABLE.
@@ -545,9 +545,9 @@ describe("SP Contracts — columnas de RETURNS TABLE deben ser BIGINT", () => {
   /**
    * Parsea el resultado de pg_get_function_result cuando es RETURNS TABLE.
    * Formato: TABLE("ColName" bigint, "OtherCol" integer, ...)
-   * Devuelve pares { name: string normalizado, type: string en minúsculas }.
-   * El name ya viene sin guiones bajos y en minúsculas para facilitar la
-   * comparación con bigintEntitySuffixes.
+   * Devuelve pares { name: string normalizado, type: string en minÃºsculas }.
+   * El name ya viene sin guiones bajos y en minÃºsculas para facilitar la
+   * comparaciÃ³n con bigintEntitySuffixes.
    */
   function parseReturnsCols(rettype: string): { name: string; type: string }[] {
     if (!rettype.trim().toUpperCase().startsWith("TABLE")) return [];
@@ -617,10 +617,10 @@ describe("SP Contracts — columnas de RETURNS TABLE deben ser BIGINT", () => {
 
     if (mismatches.length > 0) {
       console.error(
-        `\n[SP Contracts] Columnas de RETURNS TABLE que deberían ser BIGINT pero no lo son (${mismatches.length}):`,
+        `\n[SP Contracts] Columnas de RETURNS TABLE que deberÃ­an ser BIGINT pero no lo son (${mismatches.length}):`,
       );
       console.error(
-        `  ${"FUNCIÓN".padEnd(50)} ${"COLUMNA RETORNO".padEnd(30)} ${"TIPO ACTUAL".padEnd(20)} TIPO ESPERADO`,
+        `  ${"FUNCIÃ“N".padEnd(50)} ${"COLUMNA RETORNO".padEnd(30)} ${"TIPO ACTUAL".padEnd(20)} TIPO ESPERADO`,
       );
       console.error(`  ${"-".repeat(115)}`);
       for (const m of mismatches) {
@@ -629,7 +629,7 @@ describe("SP Contracts — columnas de RETURNS TABLE deben ser BIGINT", () => {
         );
       }
       console.error(
-        "\nSolución: cambiar INTEGER -> BIGINT en las columnas de RETURNS TABLE de los scripts sqlweb-pg/\n",
+        "\nSoluciÃ³n: cambiar INTEGER -> BIGINT en las columnas de RETURNS TABLE de los scripts sqlweb-pg/\n",
       );
     }
 
@@ -645,14 +645,14 @@ describe("SP Contracts — columnas de RETURNS TABLE deben ser BIGINT", () => {
   });
 });
 
-// Test 8 eliminado — todas las funciones antes "opcionales" ahora son
+// Test 8 eliminado â€” todas las funciones antes "opcionales" ahora son
 // obligatorias en Test 4 (requiredFunctions). 0 skips permitidos.
 
-// ────────────────────────────────────────────────────────────────────────────
-// Test 9: Tablas del esquema sys — deben existir tras las migraciones
-// ────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Test 9: Tablas del esquema sys â€” deben existir tras las migraciones
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-describe("SP Contracts — tablas sys de gestión de tenants", () => {
+describe("SP Contracts â€” tablas sys de gestiÃ³n de tenants", () => {
   const requiredSysTables = [
     { schema: "sys", table: "TenantDatabase" },
     { schema: "sys", table: "License" },
@@ -673,17 +673,17 @@ describe("SP Contracts — tablas sys de gestión de tenants", () => {
       );
       expect(
         res.rows[0]?.exists,
-        `La tabla ${schema}."${table}" no existe — revisar migraciones goose`,
+        `La tabla ${schema}."${table}" no existe â€” revisar migraciones goose`,
       ).toBe(true);
     });
   }
 });
 
-// ────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Test 10: Reporte de inconsistencias TIMESTAMPTZ (informativo, siempre pasa)
-// ────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-describe("SP Contracts — reporte TIMESTAMPTZ (informativo)", () => {
+describe("SP Contracts â€” reporte TIMESTAMPTZ (informativo)", () => {
   it("imprime funciones con timestamp with time zone como reporte informativo", async () => {
     const res = await pool.query<{
       proname: string;
@@ -708,10 +708,10 @@ describe("SP Contracts — reporte TIMESTAMPTZ (informativo)", () => {
       );
     } else {
       console.log(
-        `\n[SP Contracts] Reporte TIMESTAMPTZ — ${res.rows.length} función(es) con TIMESTAMP WITH TIME ZONE:`,
+        `\n[SP Contracts] Reporte TIMESTAMPTZ â€” ${res.rows.length} funciÃ³n(es) con TIMESTAMP WITH TIME ZONE:`,
       );
       console.log(
-        `  ${"FUNCIÓN".padEnd(50)} ${"ARGS (fragmento)".padEnd(60)} RETORNO`,
+        `  ${"FUNCIÃ“N".padEnd(50)} ${"ARGS (fragmento)".padEnd(60)} RETORNO`,
       );
       console.log(`  ${"-".repeat(130)}`);
       for (const row of res.rows) {
@@ -731,7 +731,7 @@ describe("SP Contracts — reporte TIMESTAMPTZ (informativo)", () => {
       console.log("");
     }
 
-    // Siempre pasa — es solo informativo
+    // Siempre pasa â€” es solo informativo
     expect(true).toBe(true);
   });
 });

@@ -14,12 +14,18 @@ permissions:
   security-events: write
 
 jobs:
-  # Security scan informa findings pero SOLO bloquea en CRITICAL (ERROR).
-  # Los WARNINGs (high) se revisan y corrigen progresivamente en features
-  # dedicadas. Cuando queden pocos, se puede endurecer prod a fail-on=high.
-  # Política actual: never bloquear deploys por WARNING.
+  # Gate endurecido a HIGH (2026-04-25): tras el rollout de seguridad
+  # (PRs #602/#604/#605/#606/#607/#608) cerramos 3 CRITICAL + 34 HIGH y
+  # quedan 3 HIGH residuales con riesgo evaluado, suprimidas en
+  # web/modular-frontend/.osv-scanner.toml y .trivyignore.
+  # Cualquier nueva HIGH bloqueará el merge — atender de inmediato.
+  # Para volver a critical-only en emergencia: cambiar a `fail-on: critical`.
   security:
     uses: zentto-erp/.github/.github/workflows/security.yml@main
     with:
-      fail-on: critical
+      fail-on: high
+      # Secret scanning split por recomendación oficial de Trivy
+      # (https://trivy.dev/docs/guide/scanner/secret#recommendation):
+      # Trivy hace solo vuln+misconfig (más rápido), gitleaks owns secrets.
+      run-gitleaks: true
     secrets: inherit

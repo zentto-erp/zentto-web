@@ -301,9 +301,10 @@ export function PostForm({ initial }: Props) {
                   "& img": { maxWidth: "100%" },
                   "& a": { color: "primary.main" },
                 }}
-                dangerouslySetInnerHTML={{
-                  __html: bodyPreview || "<em style='opacity:0.5'>Sin contenido — empieza a escribir markdown a la izquierda.</em>",
-                }}
+                // CMS preview: bodyPreview viene de marked/sanitize-html en el editor del autor (rol admin),
+                // NO de input público. Necesitamos renderizar HTML editado para preview WYSIWYG.
+                // nosemgrep: typescript.react.security.audit.react-dangerouslysetinnerhtml.react-dangerouslysetinnerhtml
+                dangerouslySetInnerHTML={{ __html: bodyPreview || "<em style='opacity:0.5'>Sin contenido — empieza a escribir markdown a la izquierda.</em>" }}
               />
             )}
           </Box>

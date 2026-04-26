@@ -4,7 +4,7 @@
  * [LEGACY] Ejecuta migraciones incrementales de PostgreSQL sobre sqlweb-pg/migrations.
  * - La ruta can??nica de despliegue es web/api/migrations/postgres (goose)
  * - Este script solo existe para recuperar fixes legacy mientras se absorben
- * - Registra cada migración aplicada en public._migrations
+ * - Registra cada migraciÃ³n aplicada en public._migrations
  * - Idempotente: salta migraciones ya aplicadas
  * - Para instalaciones nuevas: ejecutar run_all.sql primero, luego este script
  * - No usar como fuente principal para produccion nueva
@@ -26,9 +26,9 @@ import 'dotenv/config';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const MIGRATIONS_DIR = join(__dirname, '../../sqlweb-pg/migrations');
 
-// ────────────────────────────────────────────────────────────────────────────
-// Conexión
-// ────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ConexiÃ³n
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function createPool(): pg.Pool {
   if (process.env.PG_CONNECTION_STRING) {
@@ -40,13 +40,13 @@ function createPool(): pg.Pool {
     database: process.env.PG_DATABASE ?? 'zentto_prod',
     user:     process.env.PG_USER     ?? 'zentto_app',
     password: process.env.PG_PASSWORD ?? '',
-    ssl:      process.env.PG_SSL === 'true' ? { rejectUnauthorized: false } : false, // nosemgrep: javascript.lang.security.audit.sqli.node-bypass-tls-verification
+    ssl:      process.env.PG_SSL === 'true' ? { rejectUnauthorized: false } : false, // nosemgrep: bypass-tls-verification
   });
 }
 
-// ────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Tabla de control
-// ────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const CREATE_MIGRATIONS_TABLE = `
   CREATE TABLE IF NOT EXISTS public._migrations (
@@ -78,9 +78,9 @@ async function recordMigration(
   );
 }
 
-// ────────────────────────────────────────────────────────────────────────────
-// Archivos de migración
-// ────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Archivos de migraciÃ³n
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function getMigrationFiles(): string[] {
   if (!existsSync(MIGRATIONS_DIR)) {
@@ -89,18 +89,18 @@ function getMigrationFiles(): string[] {
   }
   return readdirSync(MIGRATIONS_DIR)
     .filter(f => f.endsWith('.sql'))
-    .sort(); // orden lexicográfico por nombre (ej: 001_, 002_, ...)
+    .sort(); // orden lexicogrÃ¡fico por nombre (ej: 001_, 002_, ...)
 }
 
-// ────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Main
-// ────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 async function main(): Promise<void> {
   console.log('');
-  console.log('══════════════════════════════════════════════════════');
-  console.log('  Zentto — Migraciones PostgreSQL Incrementales');
-  console.log('══════════════════════════════════════════════════════');
+  console.log('â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•');
+  console.log('  Zentto â€” Migraciones PostgreSQL Incrementales');
+  console.log('â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•');
   console.log('');
 
   const pool = createPool();
@@ -113,7 +113,7 @@ async function main(): Promise<void> {
 
     const files = getMigrationFiles();
     if (files.length === 0) {
-      console.log('[INFO] No hay archivos de migración en', MIGRATIONS_DIR);
+      console.log('[INFO] No hay archivos de migraciÃ³n en', MIGRATIONS_DIR);
       return;
     }
 
@@ -122,7 +122,7 @@ async function main(): Promise<void> {
     console.log('');
 
     if (pending.length === 0) {
-      console.log('[OK]   Base de datos al día. Nada que aplicar.');
+      console.log('[OK]   Base de datos al dÃ­a. Nada que aplicar.');
       return;
     }
 
@@ -142,23 +142,23 @@ async function main(): Promise<void> {
         const durationMs = Date.now() - start;
         await recordMigration(client, file, durationMs);
         await client.query('COMMIT');
-        console.log(`✓ (${durationMs}ms)`);
+        console.log(`âœ“ (${durationMs}ms)`);
         successCount++;
       } catch (err) {
         await client.query('ROLLBACK');
         const msg = (err as Error).message.split('\n')[0];
-        console.log(`✗`);
+        console.log(`âœ—`);
         console.error(`[ERROR] ${file}: ${msg}`);
         errorCount++;
-        // Detener al primer error — no aplicar migraciones dependientes
+        // Detener al primer error â€” no aplicar migraciones dependientes
         break;
       }
     }
 
     console.log('');
-    console.log('──────────────────────────────────────────────────────');
+    console.log('â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€');
     console.log(`[DONE] Exitosas: ${successCount} | Errores: ${errorCount}`);
-    console.log('══════════════════════════════════════════════════════');
+    console.log('â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•');
     console.log('');
 
     if (errorCount > 0) {

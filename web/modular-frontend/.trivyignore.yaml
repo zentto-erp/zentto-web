@@ -1,0 +1,24 @@
+# Trivy ignorefile YAML — modular-frontend
+# Formato YAML con `statement` y `expired_at` para audit trail y revisión periódica.
+# Docs: https://trivy.dev/docs/v0.70/guide/configuration/filtering/
+#
+# Cada vuln debe tener:
+#   - id: CVE/GHSA ID
+#   - statement: por qué se acepta (cita ticket o PR si hay)
+#   - expired_at: fecha de re-evaluación obligatoria (max 90 días)
+
+vulnerabilities:
+  - id: GHSA-r5fr-rjxr-66jc
+    statement: |
+      lodash@4.17.21 prototype pollution. Sin fix upstream — versiones más nuevas
+      mantienen la vuln; lodash 5 es breaking. Funciones afectadas
+      (lodash.merge/set/template con user input) NO se usan en el codebase
+      (verificado: solo debounce/get/isEmpty). Migración a `radash`/`es-toolkit`
+      planeada en backlog post-rollout. Ver SECURITY-EXCEPTIONS.md.
+    expired_at: 2026-07-25
+
+  - id: CVE-2026-4800
+    statement: |
+      Mismo finding que GHSA-r5fr-rjxr-66jc — Trivy mapea con CVE ID,
+      OSV con GHSA ID. Necesario duplicar para que ambos scanners lo respeten.
+    expired_at: 2026-07-25

@@ -1,0 +1,9 @@
+# OSV-scanner ignore config — modular-frontend
+# Vulns aceptadas con riesgo evaluado en SECURITY-EXCEPTIONS.md.
+# Cualquier nueva vuln NO listada aquí bloqueará el gate.
+# Re-evaluar cada entrada en cada sprint de seguridad.
+
+[[IgnoredVulns]]
+id = "GHSA-r5fr-rjxr-66jc"  # lodash@4.17.21 prototype pollution
+ignoreUntil = 2027-04-25
+reason = "Sin fix upstream. Funciones afectadas (lodash.merge/set/template con user input) NO se usan en el codebase. Verificado: solo se usan utilidades estándar (debounce, get, isEmpty)."

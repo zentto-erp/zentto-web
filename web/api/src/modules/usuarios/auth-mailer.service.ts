@@ -14,7 +14,7 @@ type AuthMailResult = {
   messageId?: string;
 };
 
-// ─── Config ────────────────────────────────────────────
+// â”€â”€â”€ Config â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function isDevelopment() {
   const nodeEnv = String(process.env.NODE_ENV || "development").toLowerCase();
@@ -33,7 +33,7 @@ export function getAuthPublicBaseUrl() {
 
 const MAIL_FROM = process.env.MAIL_FROM || "Zentto <no-reply@zentto.net>";
 
-// ─── SMTP Transport (envío directo desde el servidor) ──
+// â”€â”€â”€ SMTP Transport (envÃ­o directo desde el servidor) â”€â”€
 
 let _transporter: Transporter | null = null;
 
@@ -53,10 +53,10 @@ function getTransporter(): Transporter | null {
       secure: smtpPort === 465,
       auth: smtpUser ? { user: smtpUser, pass: smtpPass } : undefined,
       // Security: rejectUnauthorized=false for internal SMTP relays without public CA certs
-      tls: { rejectUnauthorized: false }, // nosemgrep: javascript.lang.security.audit.sqli.node-bypass-tls-verification
+      tls: { rejectUnauthorized: false }, // nosemgrep: bypass-tls-verification
     });
   } else {
-    // Envío directo: el servidor actúa como su propio MTA
+    // EnvÃ­o directo: el servidor actÃºa como su propio MTA
     // Resuelve MX del destinatario y entrega directo
     _transporter = createTransport({
       direct: true,
@@ -80,7 +80,7 @@ async function sendBySmtp(payload: AuthMailPayload): Promise<{ sent: boolean; me
       html: payload.html,
     });
 
-    console.info(`[MAIL] Sent to ${payload.to} — messageId: ${info.messageId}`);
+    console.info(`[MAIL] Sent to ${payload.to} â€” messageId: ${info.messageId}`);
     return { sent: true, messageId: info.messageId };
   } catch (err: any) {
     console.error(`[MAIL] Failed to send to ${payload.to}:`, err.message);
@@ -88,7 +88,7 @@ async function sendBySmtp(payload: AuthMailPayload): Promise<{ sent: boolean; me
   }
 }
 
-// ─── Webhook fallback (compatibilidad con sistema anterior) ──
+// â”€â”€â”€ Webhook fallback (compatibilidad con sistema anterior) â”€â”€
 
 async function sendByWebhook(payload: AuthMailPayload): Promise<boolean> {
   const url = String(process.env.AUTH_MAIL_WEBHOOK_URL || "").trim();
@@ -114,7 +114,7 @@ async function sendByWebhook(payload: AuthMailPayload): Promise<boolean> {
   return response.ok;
 }
 
-// ─── Envío principal ────────────────────────────────────
+// â”€â”€â”€ EnvÃ­o principal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export async function sendAuthMail(payload: AuthMailPayload): Promise<AuthMailResult> {
   // 1. Intentar SMTP (directo o relay)
