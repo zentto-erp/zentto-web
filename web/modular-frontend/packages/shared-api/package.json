@@ -11,7 +11,7 @@
   "dependencies": {
     "@tanstack/react-query": "^5.64.2",
     "@zentto/auth-client": "^0.3.0",
-    "next-auth": "^5.0.0-beta.25",
+    "next-auth": "5.0.0-beta.31",
     "react": "^19.2.4",
     "zustand": "^5.0.3"
   }

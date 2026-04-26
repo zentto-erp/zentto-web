@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-test-all-endpoints.py — Prueba masiva de TODOS los endpoints de la API Zentto.
+test-all-endpoints.py â€” Prueba masiva de TODOS los endpoints de la API Zentto.
 Fase 1: Login + discovery (obtener IDs reales de la BD).
 Fase 2: Test de todos los GET endpoints con datos reales + query params.
 Genera reporte de OK/FAIL.
@@ -21,7 +21,7 @@ def api(method, path, body=None, token=None):
         headers["Authorization"] = f"Bearer {token}"
     req = urllib.request.Request(url, data=data, headers=headers, method=method)
     try:
-        resp = urllib.request.urlopen(req, timeout=TIMEOUT, context=ctx)  # nosemgrep: python.lang.security.audit.dynamic-urllib-use-detected
+        resp = urllib.request.urlopen(req, timeout=TIMEOUT, context=ctx)  # nosemgrep: dynamic-urllib-use-detected
         ct = resp.headers.get("content-type", "")
         raw = resp.read().decode()
         if ct.startswith("application/json"):
@@ -46,10 +46,10 @@ if status != 200 or not isinstance(body, dict) or "token" not in body:
     sys.exit(1)
 token = body["token"]
 user_id = body.get("userId", body.get("id", None))
-print(f"OK — Admin logged in, userId={user_id}, {len(body.get('modulos',[]))} modules")
+print(f"OK â€” Admin logged in, userId={user_id}, {len(body.get('modulos',[]))} modules")
 
 # =============================================
-# FASE 1: DISCOVERY — obtener IDs reales
+# FASE 1: DISCOVERY â€” obtener IDs reales
 # =============================================
 print("\n=== FASE 1: DISCOVERY ===")
 
@@ -131,10 +131,10 @@ with open("scripts/endpoints.json") as f:
 
 get_endpoints = [e for e in endpoints if e["method"] == "GET"]
 
-# Rutas legacy eliminadas de endpoints.json — ya no se prueban
+# Rutas legacy eliminadas de endpoints.json â€” ya no se prueban
 LEGACY_ROUTES = set()
 
-# Endpoints que necesitan query params específicos
+# Endpoints que necesitan query params especÃ­ficos
 QUERY_PARAMS = {
     "/v1/contabilidad/reportes/libro-mayor": "?fechaDesde=2026-01-01&fechaHasta=2026-03-23&codCuenta=1.1",
     "/v1/contabilidad/reportes/mayor-analitico": "?fechaDesde=2026-01-01&fechaHasta=2026-03-23&codCuenta=1.1",
@@ -156,7 +156,7 @@ QUERY_PARAMS = {
 SKIP_ENDPOINTS = {
     "/v1/auth/verify-email",       # necesita token de email real
     "/v1/integrations/zoho/callback",  # necesita auth code de Zoho
-    "/v1/devices/my",              # necesita userId válido del JWT (admin test no tiene sub numérico)
+    "/v1/devices/my",              # necesita userId vÃ¡lido del JWT (admin test no tiene sub numÃ©rico)
 }
 
 print(f"\n=== FASE 2: TESTING {len(get_endpoints)} GET ENDPOINTS ===\n")

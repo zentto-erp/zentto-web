@@ -19,7 +19,7 @@
     "@zentto/shared-api": "*",
     "@zentto/shared-auth": "*",
     "@zentto/shared-ui": "*",
-    "next": "16.2.0",
+    "next": "^16.2.4",
     "qrcode-generator": "^2.0.4",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

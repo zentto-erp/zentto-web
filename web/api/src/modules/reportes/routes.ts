@@ -2,16 +2,16 @@ import { Router, Request, Response } from "express";
 
 export const reportesRouter = Router();
 
-// ═══════════════════════════════════════════════════════════════
-// CONFIGURACIÓN DE MOTORES DE REPORTES
-// ═══════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// CONFIGURACIÃ“N DE MOTORES DE REPORTES
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 const CRYSTAL_SERVER = process.env.REPORT_SERVER_URL || "http://localhost:5060";
 const JSREPORT_SERVER = process.env.JSREPORT_SERVER_URL || "http://localhost:5070";
 const SSRS_SERVER = process.env.SSRS_SERVER_URL || "http://localhost/ReportServer";
 const SSRS_PORTAL = process.env.SSRS_PORTAL_URL || "http://localhost/Reports";
 
-// ─── Helper para fetch con timeout ───
+// â”€â”€â”€ Helper para fetch con timeout â”€â”€â”€
 async function safeFetch(url: string, options?: RequestInit, timeoutMs = 5000) {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -23,9 +23,9 @@ async function safeFetch(url: string, options?: RequestInit, timeoutMs = 5000) {
     }
 }
 
-// ═══════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // ENDPOINT UNIFICADO: Estado de todos los motores de reportes
-// ═══════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 reportesRouter.get("/engines", async (_req: Request, res: Response) => {
     const engines: any[] = [];
 
@@ -56,7 +56,7 @@ reportesRouter.get("/engines", async (_req: Request, res: Response) => {
             httpStatus: r.status,
             url: SSRS_SERVER,
             portal: SSRS_PORTAL,
-            note: r.status === 401 ? "Requiere autenticación Windows" : undefined
+            note: r.status === 401 ? "Requiere autenticaciÃ³n Windows" : undefined
         });
     } catch {
         engines.push({
@@ -70,9 +70,9 @@ reportesRouter.get("/engines", async (_req: Request, res: Response) => {
     res.json({ engines });
 });
 
-// ═══════════════════════════════════════════════════════════════
-// CRYSTAL REPORTS (.NET Framework 4.8) — Puerto 5060
-// ═══════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// CRYSTAL REPORTS (.NET Framework 4.8) â€” Puerto 5060
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 reportesRouter.get("/crystal/health", async (_req: Request, res: Response) => {
     try {
@@ -137,16 +137,16 @@ reportesRouter.post("/crystal/render", async (req: Request, res: Response) => {
         if (contentDisposition) res.setHeader("Content-Disposition", contentDisposition);
 
         const buffer = await response.arrayBuffer();
-        // nosemgrep: javascript.express.security.audit.xss.direct-response-write — binary report proxy, not user input
+        // nosemgrep: direct-response-write â€” binary report proxy, not user input
         res.send(Buffer.from(buffer));
     } catch (error: any) {
         res.status(502).json({ success: false, message: error?.message, hint: "Crystal Server no disponible" });
     }
 });
 
-// ═══════════════════════════════════════════════════════════════
-// JSREPORT (Open Source Node.js) — Puerto 5070
-// ═══════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// JSREPORT (Open Source Node.js) â€” Puerto 5070
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 reportesRouter.get("/jsreport/health", async (_req: Request, res: Response) => {
     try {
@@ -202,18 +202,18 @@ reportesRouter.post("/jsreport/render", async (req: Request, res: Response) => {
         if (contentDisposition) res.setHeader("Content-Disposition", contentDisposition);
 
         const buffer = await response.arrayBuffer();
-        // nosemgrep: javascript.express.security.audit.xss.direct-response-write — binary report proxy, not user input
+        // nosemgrep: direct-response-write â€” binary report proxy, not user input
         res.send(Buffer.from(buffer));
     } catch (error: any) {
         res.status(502).json({ success: false, message: error?.message, hint: "jsreport no disponible" });
     }
 });
 
-// ═══════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // RUTAS LEGACY (compatibilidad con las rutas originales)
-// ═══════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-// /health → Crystal por defecto
+// /health â†’ Crystal por defecto
 reportesRouter.get("/health", async (_req: Request, res: Response) => {
     try {
         const response = await safeFetch(`${CRYSTAL_SERVER}/api/health`);
@@ -224,7 +224,7 @@ reportesRouter.get("/health", async (_req: Request, res: Response) => {
     }
 });
 
-// /catalogo → Crystal por defecto
+// /catalogo â†’ Crystal por defecto
 reportesRouter.get("/catalogo", async (_req: Request, res: Response) => {
     try {
         const response = await safeFetch(`${CRYSTAL_SERVER}/api/reportes/catalogo`);
@@ -235,7 +235,7 @@ reportesRouter.get("/catalogo", async (_req: Request, res: Response) => {
     }
 });
 
-// /render → Crystal por defecto (backward compatible)
+// /render â†’ Crystal por defecto (backward compatible)
 reportesRouter.post("/render", async (req: Request, res: Response) => {
     try {
         const body = {
@@ -263,25 +263,25 @@ reportesRouter.post("/render", async (req: Request, res: Response) => {
         if (contentDisposition) res.setHeader("Content-Disposition", contentDisposition);
 
         const buffer = await response.arrayBuffer();
-        // nosemgrep: javascript.express.security.audit.xss.direct-response-write — binary report proxy, not user input
+        // nosemgrep: direct-response-write â€” binary report proxy, not user input
         res.send(Buffer.from(buffer));
     } catch (error: any) {
         res.status(502).json({ success: false, message: error?.message });
     }
 });
 
-// ═══════════════════════════════════════════════════════════════
-// ZENTTO REPORT ENGINE — Saved Report Layouts
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ZENTTO REPORT ENGINE â€” Saved Report Layouts
 // Proxy to zentto-cache for report persistence
-// ═══════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-// ═══════════════════════════════════════════════════════════════
-// ZENTTO PDF ENGINE — Proxy to pdf-engine service
-// ═══════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ZENTTO PDF ENGINE â€” Proxy to pdf-engine service
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 const PDF_ENGINE_URL = process.env.PDF_ENGINE_URL || "http://localhost:5050";
 
-// POST /v1/reportes/pdf — generate PDF from layout + data
+// POST /v1/reportes/pdf â€” generate PDF from layout + data
 // Query params: ?format=base64 returns JSON { pdf: "base64string", filename: "..." }
 //               ?format=binary (default) returns raw PDF bytes
 reportesRouter.post("/pdf", async (req: Request, res: Response) => {
@@ -336,7 +336,7 @@ function cacheQuery(req: Request): string {
     return `companyId=${companyId}&userId=${userId}`;
 }
 
-// GET /v1/reportes/saved — list saved reports
+// GET /v1/reportes/saved â€” list saved reports
 reportesRouter.get("/saved", async (req: Request, res: Response) => {
     try {
         const resp = await safeFetch(
@@ -401,7 +401,7 @@ reportesRouter.put("/saved/:id", async (req: Request, res: Response) => {
     }
 });
 
-// GET /v1/reportes/public — list public/company-wide reports
+// GET /v1/reportes/public â€” list public/company-wide reports
 reportesRouter.get("/public", async (req: Request, res: Response) => {
     try {
         const companyId = (req as any).companyId || (req as any).jwt?.companyId || "1";
@@ -418,7 +418,7 @@ reportesRouter.get("/public", async (req: Request, res: Response) => {
     }
 });
 
-// GET /v1/reportes/public/:id — get a single public report with full layout
+// GET /v1/reportes/public/:id â€” get a single public report with full layout
 reportesRouter.get("/public/:id", async (req: Request, res: Response) => {
     try {
         const companyId = (req as any).companyId || (req as any).jwt?.companyId || "1";
@@ -435,7 +435,7 @@ reportesRouter.get("/public/:id", async (req: Request, res: Response) => {
     }
 });
 
-// PUT /v1/reportes/public/:id — save a public/company-wide report
+// PUT /v1/reportes/public/:id â€” save a public/company-wide report
 reportesRouter.put("/public/:id", async (req: Request, res: Response) => {
     try {
         const companyId = String((req as any).companyId || (req as any).jwt?.companyId || "1");
