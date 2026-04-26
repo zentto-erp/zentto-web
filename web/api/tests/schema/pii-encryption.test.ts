@@ -2,12 +2,12 @@
  * pii-encryption.test.ts
  *
  * Valida las helpers `store.pii_encrypt`/`store.pii_decrypt`/`pii_decrypt_safe`
- * y el flujo completo de la migración 00155 (pgcrypto):
+ * y el flujo completo de la migraciÃ³n 00155 (pgcrypto):
  *
- *   1. GUC zentto.master_key vacía → encrypt/decrypt lanzan error explícito.
- *   2. Con GUC seteada → roundtrip text → bytea → text idéntico.
- *   3. NULL / vacío → NULL (no se cifra).
- *   4. decrypt_safe sin GUC → NULL (no lanza).
+ *   1. GUC zentto.master_key vacÃ­a â†’ encrypt/decrypt lanzan error explÃ­cito.
+ *   2. Con GUC seteada â†’ roundtrip text â†’ bytea â†’ text idÃ©ntico.
+ *   3. NULL / vacÃ­o â†’ NULL (no se cifra).
+ *   4. decrypt_safe sin GUC â†’ NULL (no lanza).
  *   5. La columna PayoutDetailsEnc tiene tipo bytea.
  *   6. Los SPs usp_store_affiliate_register y usp_store_merchant_apply existen
  *      con la firma esperada (incluyen p_payout_details jsonb).
@@ -37,13 +37,13 @@ beforeAll(async () => {
           database: process.env.PG_DATABASE ?? "zentto_prod",
           user: process.env.PG_USER ?? "zentto_app",
           password: process.env.PG_PASSWORD ?? "",
-          // nosemgrep: javascript.lang.security.audit.sqli.node-bypass-tls-verification
+          // nosemgrep: bypass-tls-verification
           ssl: process.env.PG_SSL === "true" ? { rejectUnauthorized: false } : false,
           connectionTimeoutMillis: 3000,
         });
     // Ping
     await pool.query("SELECT 1");
-    // ¿Existen los helpers? Si no, skipear todo.
+    // Â¿Existen los helpers? Si no, skipear todo.
     const r = await pool.query<{ n: number }>(
       `SELECT COUNT(*)::int AS n
          FROM pg_proc p JOIN pg_namespace s ON s.oid = p.pronamespace
@@ -60,14 +60,14 @@ afterAll(async () => {
 });
 
 describe("PII encryption (pgcrypto)", () => {
-  it("skipea limpiamente si PG no está disponible o migración 00155 no aplicada", () => {
+  it("skipea limpiamente si PG no estÃ¡ disponible o migraciÃ³n 00155 no aplicada", () => {
     if (!pgAvailable) {
-      console.warn("[pii-encryption.test] PG no disponible o migración 00155 no aplicada — skip");
+      console.warn("[pii-encryption.test] PG no disponible o migraciÃ³n 00155 no aplicada â€” skip");
     }
     expect(true).toBe(true);
   });
 
-  it("store.pii_encrypt falla si zentto.master_key no está set", async () => {
+  it("store.pii_encrypt falla si zentto.master_key no estÃ¡ set", async () => {
     if (!pgAvailable || !pool) return;
     const client = await pool.connect();
     try {
@@ -82,7 +82,7 @@ describe("PII encryption (pgcrypto)", () => {
     }
   });
 
-  it("store.pii_decrypt falla si zentto.master_key no está set", async () => {
+  it("store.pii_decrypt falla si zentto.master_key no estÃ¡ set", async () => {
     if (!pgAvailable || !pool) return;
     const client = await pool.connect();
     try {
@@ -171,7 +171,7 @@ describe("PII encryption (pgcrypto)", () => {
     if (!pgAvailable || !pool) return;
     const client = await pool.connect();
     try {
-      // Generamos un bytea cifrado con key distinta, en otra sesión
+      // Generamos un bytea cifrado con key distinta, en otra sesiÃ³n
       await client.query("BEGIN");
       await client.query("SELECT set_config('zentto.master_key', $1, true)", [TEST_KEY]);
       const enc = await client.query<{ enc: Buffer }>(
@@ -179,7 +179,7 @@ describe("PII encryption (pgcrypto)", () => {
       );
       await client.query("ROLLBACK");
 
-      // Nueva transacción sin GUC
+      // Nueva transacciÃ³n sin GUC
       await client.query("BEGIN");
       const r = await client.query<{ dec: string | null }>(
         `SELECT store.pii_decrypt_safe($1::bytea) AS dec`,

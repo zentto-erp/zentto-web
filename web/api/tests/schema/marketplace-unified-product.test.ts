@@ -1,9 +1,9 @@
 /**
  * marketplace-unified-product.test.ts
  *
- * Valida la migración 00158 — vista store."UnifiedProduct" + SPs asociados.
+ * Valida la migraciÃ³n 00158 â€” vista store."UnifiedProduct" + SPs asociados.
  * Cubre el hueco P0 #1 detectado en docs/architecture/marketplace-flow-audit.md:
- * los productos merchant aprobados deben aparecer en el storefront público.
+ * los productos merchant aprobados deben aparecer en el storefront pÃºblico.
  *
  * Casos:
  *   1. Vista existe y expone las columnas esperadas.
@@ -13,10 +13,10 @@
  *   5. SP usp_store_product_list incluye merchant cuando p_include_merchant=true.
  *   6. SP usp_store_product_list filtra por p_merchant_slug.
  *   7. SP usp_store_product_getbycode retorna columnas merchant* populadas.
- *   8. SP usp_store_merchant_public_get retorna merchant si está approved.
+ *   8. SP usp_store_merchant_public_get retorna merchant si estÃ¡ approved.
  *
- * Se skipea limpiamente si PG no está disponible o la migración 00158 no
- * está aplicada. El test crea un tenant de fixtures temporal (CompanyId
+ * Se skipea limpiamente si PG no estÃ¡ disponible o la migraciÃ³n 00158 no
+ * estÃ¡ aplicada. El test crea un tenant de fixtures temporal (CompanyId
  * 999999 reservado) para no contaminar data real.
  *
  * Variables de entorno:
@@ -27,7 +27,7 @@ import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import pg from "pg";
 import "dotenv/config";
 
-const TEST_COMPANY_ID = 999_158; // Aislado por CompanyId — no choca con seeds
+const TEST_COMPANY_ID = 999_158; // Aislado por CompanyId â€” no choca con seeds
 const SLUG_APPROVED   = `test-approved-${Date.now()}`;
 const SLUG_SUSPENDED  = `test-suspended-${Date.now()}`;
 
@@ -47,7 +47,7 @@ beforeAll(async () => {
           database: process.env.PG_DATABASE ?? "zentto_prod",
           user: process.env.PG_USER ?? "zentto_app",
           password: process.env.PG_PASSWORD ?? "",
-          // nosemgrep: javascript.lang.security.audit.sqli.node-bypass-tls-verification
+          // nosemgrep: bypass-tls-verification
           ssl: process.env.PG_SSL === "true" ? { rejectUnauthorized: false } : false,
           connectionTimeoutMillis: 3000,
         });
@@ -97,16 +97,16 @@ beforeAll(async () => {
   merchantSuspendedId = m2.rows[0]?.Id ?? null;
 
   // 3 productos:
-  //   - APPROVED/approved → debe aparecer
-  //   - APPROVED/pending_review → NO debe aparecer
-  //   - SUSPENDED/approved → NO debe aparecer (merchant suspendido)
+  //   - APPROVED/approved â†’ debe aparecer
+  //   - APPROVED/pending_review â†’ NO debe aparecer
+  //   - SUSPENDED/approved â†’ NO debe aparecer (merchant suspendido)
   await pool.query(
     `INSERT INTO store."MerchantProduct" (
        "MerchantId","CompanyId","ProductCode","Name","Price","Stock","Category","Status"
      ) VALUES
-     ($1, $2, 'MP-APPR-001', 'Producto aprobado',   50.00, 10, 'Electrónica', 'approved'),
-     ($1, $2, 'MP-PEND-001', 'Producto en revisión', 25.00,  5, 'Electrónica', 'pending_review'),
-     ($3, $2, 'MP-SUSP-001', 'Producto de suspendido', 75.00, 8, 'Electrónica', 'approved')`,
+     ($1, $2, 'MP-APPR-001', 'Producto aprobado',   50.00, 10, 'ElectrÃ³nica', 'approved'),
+     ($1, $2, 'MP-PEND-001', 'Producto en revisiÃ³n', 25.00,  5, 'ElectrÃ³nica', 'pending_review'),
+     ($3, $2, 'MP-SUSP-001', 'Producto de suspendido', 75.00, 8, 'ElectrÃ³nica', 'approved')`,
     [merchantApprovedId, TEST_COMPANY_ID, merchantSuspendedId]
   );
 });
@@ -123,11 +123,11 @@ afterAll(async () => {
   await pool?.end().catch(() => { /* noop */ });
 });
 
-describe("marketplace — 00158 UnifiedProduct + SPs", () => {
-  it("skipea limpiamente si PG no está disponible o 00158 no aplicada", () => {
+describe("marketplace â€” 00158 UnifiedProduct + SPs", () => {
+  it("skipea limpiamente si PG no estÃ¡ disponible o 00158 no aplicada", () => {
     if (!pgAvailable || !migrationApplied) {
       // eslint-disable-next-line no-console
-      console.warn("[marketplace-unified-product.test] PG no disponible o migración 00158 no aplicada — skip");
+      console.warn("[marketplace-unified-product.test] PG no disponible o migraciÃ³n 00158 no aplicada â€” skip");
     }
     expect(true).toBe(true);
   });

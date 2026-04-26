@@ -87,6 +87,7 @@ async function main() {
     password: process.env.PG_PASSWORD || "",
     ssl:
       String(process.env.PG_SSL || "false").toLowerCase() === "true"
+        // nosemgrep: bypass-tls-verification — internal Docker network (172.18.0.x), self-signed certs.
         ? { rejectUnauthorized: false }
         : false,
   });

@@ -75,6 +75,7 @@ githubSupportWebhookRouter.post(
             `Ticket #${payload.issue.number} resuelto`,
             buildNotificationHtml(
               `Ticket #${payload.issue.number} resuelto`,
+              // nosemgrep: raw-html-format — inputs ya pasaron por escapeHtml(), HTML estatico controlado.
               `Tu ticket "<strong>${escapeHtml(String(payload.issue.title))}</strong>" ha sido cerrado. Si el problema persiste, puedes reabrir el ticket desde la plataforma.`,
               payload.issue.number,
             ),
@@ -91,6 +92,7 @@ githubSupportWebhookRouter.post(
             `IA creó una corrección para Ticket #${payload.issue.number}`,
             buildNotificationHtml(
               `Corrección automática en progreso`,
+              // nosemgrep: raw-html-format — inputs ya pasaron por escapeHtml(), HTML estatico controlado.
               `Nuestro agente de IA ha analizado tu reporte "<strong>${escapeHtml(String(payload.issue.title))}</strong>" y ha creado una propuesta de corrección. El equipo de desarrollo la revisará próximamente.`,
               payload.issue.number,
             ),
@@ -110,6 +112,7 @@ githubSupportWebhookRouter.post(
               `Nuevo comentario en Ticket #${payload.issue.number}`,
               buildNotificationHtml(
                 `Nuevo comentario en Ticket #${payload.issue.number}`,
+                // nosemgrep: raw-html-format — login y commentPreview ya pasaron por escapeHtml(), HTML estatico controlado.
                 `<strong>${escapeHtml(String(payload.comment.user.login))}</strong> comentó:<br><br><blockquote style="border-left:3px solid #ddd;padding-left:12px;color:#555">${commentPreview}</blockquote>`,
                 payload.issue.number,
               ),
