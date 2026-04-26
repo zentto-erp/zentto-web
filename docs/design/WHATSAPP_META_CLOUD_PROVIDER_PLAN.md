@@ -144,16 +144,82 @@ Tenant elige al crear instancia, **scope organization_id** (no user_id):
 | Pro | `meta-cloud` (Embedded Signup default) | OAuth Meta + Phone selection |
 | Enterprise | `meta-cloud` BYO o Embedded | Embedded + multi-WABA |
 
-### 3.3 Multi-tenant + RBAC (foundation crítica)
+### 3.3 Multi-tenant + RBAC — reality check post-inspección
 
-Antes de cualquier provider, refactor `wa_instances` para soportar multi-tenancy real:
+**El plan inicial de F-1 (crear `wa_organizations`, `wa_users`, `wa_roles`, etc. dentro del notify) está OBSOLETO.** Tras inspeccionar `zentto-auth` y SDK `@zentto/auth-client@0.2.0`:
 
-- `wa_organizations` — entidad raíz comercial (tiene plan, billing_status, branding_config).
-- `wa_users` — perfiles users (puede pertenecer a N orgs via `wa_user_organizations`).
-- `wa_roles` + `wa_permissions` — RBAC granular (resource × action).
-- `wa_instances.organization_id` (no user_id) → soft-migration de datos existentes.
-- `wa_api_keys` — API keys por org con scopes y rate limit.
-- `wa_audit_log` — append-only log de acciones sensibles (soporte, compliance).
+#### Lo que YA existe (no duplicar)
+
+`zentto-auth` (`auth.zentto.net`) es la autoridad central de identidad del ecosistema. Schema `auth.*`:
+
+| Tabla | PK | Propósito |
+|---|---|---|
+| `auth.User` | UUID | Usuarios |
+| `auth.Company` | INT SERIAL | **= organizations** (TaxId, fiscal data, plan) |
+| `auth.Branch` | INT SERIAL | Sucursales por company |
+| `auth.UserCompanyAccess` | composite | N:M user ↔ company ↔ branch |
+| `auth.App` | UUID | Apps registradas (zentto-notify es una) |
+| `auth.Module` | UUID | Módulos por app |
+| `auth.Permission` | UUID | Permisos atómicos (read/create/update/delete/approve) |
+| `auth.Role` | UUID | Rol agrupador por app |
+| `auth.{RoleModuleAccess,RolePermission,UserRole,UserModuleAccess,UserModulePermission}` | composite | Asignaciones |
+| `auth.CompanyApp` | composite | Qué apps usa cada company + `PlanCode` ("starter","pro","enterprise") |
+| Vistas `auth.user_effective_modules`, `auth.user_effective_permissions` | — | Resolución efectiva |
+
+**Conclusiones:**
+- ✅ Ya hay `Company` (= organization) con código, taxId, fiscal data.
+- ✅ Ya hay tier comercial por `auth.CompanyApp.PlanCode`.
+- ✅ Ya hay RBAC granular completo con vistas resueltas.
+- ❌ El SDK `@zentto/auth-client@0.2.0` **NO expone `companies` ni `companyId` en `me()`** — solo `{ userId, email, roles }`. Bug arquitectónico que bloquea multi-tenant scoping desde notify (y desde cualquier app del ecosistema).
+- ❌ Solo el módulo `chat.*` (RAG) en notify usa `company_id`. WhatsApp/telegram/email/contacts: todo single-tenant `user_id` heredado.
+
+#### F-1 replanteado: Pragmatic Multi-Tenant
+
+Refactorizar todo el notify a multi-tenant en un PR sería 4-6 semanas y bloquea Meta Cloud sin razón. En su lugar:
+
+##### F-aux (paralelo, en `zentto-auth` + `@zentto/auth-client`) — 2 días
+
+Extender endpoint `/me` para devolver:
+```ts
+{
+  user: { userId, email, displayName, roles, isAdmin },
+  companies: [{ companyId, code, name, planCode, isDefault, branchIds }],
+  defaultCompanyId,
+  modules: [{ appId, moduleCode, permissions: ["read","create",...] }]
+}
+```
+Bumpear SDK a `@zentto/auth-client@0.3.0`. Publicar npm. **Desbloquea multi-tenant de TODAS las apps del ecosistema, no solo notify.**
+
+##### F-1 pragmático en notify — 1 día
+
+- `wa_instances.company_id INT NULL` (NULL = legacy single-tenant; backfill futuro).
+- Tablas NUEVAS de Meta Cloud (`wa_templates`, `wa_campaigns`, `wa_canned_responses`, etc.) nacen multi-tenant: `company_id INT NOT NULL` desde el día 1.
+- Middleware `requireApiKey` se extiende: lee `companies` del SDK 0.3.0, expone `req.user.companies` y `req.user.activeCompanyId` (header `X-Company-Id` permite override).
+- Helper `getActiveCompany(req)` valida que el user tiene acceso al companyId solicitado (vía `auth.UserCompanyAccess`).
+
+##### F-X (post-MVP, sprint separado de 2-3 semanas)
+
+Refactor global del notify (todas las tablas existentes) a multi-tenant `company_id NOT NULL` + scripts de backfill. Cuando el negocio lo justifique.
+
+#### RBAC: módulos y permisos del notify
+
+Registrar en `auth.Module` (vía endpoint `/admin/apps/:notifyAppId/modules`):
+
+| Module Code | Permissions |
+|---|---|
+| `whatsapp` | `read`, `connect`, `send`, `disconnect` |
+| `whatsapp.templates` | `read`, `create`, `submit`, `delete` |
+| `whatsapp.campaigns` | `read`, `create`, `start`, `pause`, `cancel` |
+| `whatsapp.canned` | `read`, `create`, `update`, `delete` |
+| `whatsapp.flows` | `read`, `create`, `update`, `publish`, `delete` |
+| `whatsapp.api_keys` | `read`, `create`, `revoke` |
+| `whatsapp.audit` | `read` |
+| `whatsapp.usage` | `read` |
+
+Roles default seedados via `zentto-auth/migrations/postgres/NNNNN_notify_default_roles.sql`:
+- `notify_admin` → todos los permisos del módulo `whatsapp.*`
+- `notify_agent` → `whatsapp:send|read`, `whatsapp.canned:read|create|update`
+- `notify_viewer` → `whatsapp:read`, `whatsapp.usage:read`
 
 ### 3.3 Interface común `WhatsAppProvider`
 
@@ -184,11 +250,18 @@ Métodos exclusivos de Meta (`sendTemplate`, `submitTemplate`, `subscribeWebhook
 
 ## 4. Modelo de datos (extensión)
 
-Migración goose nueva en `zentto-notify/src/db/migrations/` (verificar siguiente número libre antes del PR).
+> ⚠️ **REWRITE EN CURSO** — Las secciones 4.1 y 4.2 abajo reflejan el plan v1 (con `wa_organizations`/`wa_users`/`wa_roles` duplicados) y están **OBSOLETAS** tras el reality check de la sección 3.3. La fuente de verdad para el plan vigente es:
+>
+> - **F-aux** (en `zentto-auth`): extiende `/me` para exponer companies + planCode + módulos.
+> - **F-1 pragmático** (en `zentto-notify`):
+>   - `ALTER TABLE wa_instances ADD COLUMN company_id INT NULL`
+>   - Tablas Meta nuevas (`wa_templates`, `wa_campaigns`, `wa_campaign_recipients`, `wa_canned_responses`, `wa_outbound_webhooks`, `wa_usage_events`, `wa_audit_log`) con `company_id INT NOT NULL` referenciando `auth.Company.CompanyId` lógicamente (sin FK física: cross-DB).
+>   - Tipos `INT GENERATED ALWAYS AS IDENTITY` para mantener consistencia con schema existente del notify (NO UUID).
+> - **Migration definitiva**: se redacta en el PR de F-1 (zentto-notify) tras inspección final del schema y se incorpora al doc en el siguiente PR de design (no en este).
+>
+> Las secciones 4.1 y 4.2 se mantienen abajo como referencia histórica del modelo descartado.
 
-**Nota crítica:** la migración va en **2 partes** porque hay refactor de tenancy + features Meta. Parte 1 (multi-tenant foundation) NO toca features Meta y debe ir primero.
-
-### 4.1 Parte 1 — Multi-tenant foundation (F-1)
+### 4.1 Parte 1 — Multi-tenant foundation (F-1) — OBSOLETO, NO IMPLEMENTAR
 
 ```sql
 -- 0NN_whatsapp_multitenant_foundation.sql
@@ -340,7 +413,9 @@ DROP TABLE wa_users;
 DROP TABLE wa_organizations;
 ```
 
-### 4.2 Parte 2 — Meta Cloud features (F1-F4)
+### 4.2 Parte 2 — Meta Cloud features (F1-F4) — REFERENCIAR pero ajustar tipos
+
+> ⚠️ **Tipos a ajustar** antes de implementar: el schema notify usa `INT GENERATED ALWAYS AS IDENTITY` (NO UUID `gen_random_uuid()`). Toda referencia a `instance_id UUID` debe ser `instance_id INT REFERENCES wa_instances(id)`. La estructura conceptual de las tablas (templates, campaigns, recipients, canned, outbound_webhooks, audit, usage_events) sigue siendo válida — solo cambia tipo de PK/FK + se agrega `company_id INT NOT NULL`.
 
 ```sql
 -- 0NN_whatsapp_meta_cloud_support.sql
