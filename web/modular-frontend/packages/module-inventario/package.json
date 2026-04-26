@@ -19,7 +19,7 @@
     "@zentto/shared-api": "*",
     "@zentto/shared-auth": "*",
     "@zentto/shared-ui": "*",
-    "lodash": "^4.17.21",
+    "lodash": "^4.18.1",
     "qrcode-generator": "^2.0.4",
     "react": "^19.2.4"
   },
