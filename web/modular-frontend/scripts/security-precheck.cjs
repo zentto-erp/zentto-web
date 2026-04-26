@@ -124,14 +124,25 @@ function runTrivy() {
   if (fs.existsSync(outFile)) fs.unlinkSync(outFile);
 
   const useDocker = dockerOk();
+  const trivyIgnoreRel = path.posix.join(TARGET_REL, ".trivyignore");
+  const trivyIgnoreAbs = path.join(REPO_ROOT, trivyIgnoreRel);
+  // NOTE: secret scanning removed per Trivy upstream recommendation
+  // (https://trivy.dev/docs/guide/scanner/secret#recommendation):
+  // "If your scanning is slow, please try '--scanners vuln,misconfig' to
+  // disable secret scanning". Secret detection is owned by gitleaks
+  // (run-gitleaks: true en el workflow security.yml reusable).
   const baseArgs = [
     "fs", TARGET_REL,
-    "--scanners", "vuln,misconfig,secret",
+    "--scanners", "vuln,misconfig",
     ...SKIP_DIRS.flatMap(d => ["--skip-dirs", d]),
     "--timeout", "30m",
     "--format", "json",
     "--output", ".zentto/security/trivy.json",
   ];
+  if (fs.existsSync(trivyIgnoreAbs)) {
+    baseArgs.push("--ignorefile", trivyIgnoreRel);
+    log("Using Trivy ignorefile:", trivyIgnoreRel);
+  }
 
   if (useDocker) {
     if (!flags.noPull) runStream("docker", ["pull", "aquasec/trivy:latest"]);
@@ -156,11 +167,17 @@ function runOsv() {
 
   const useDocker = dockerOk();
   const lockfileRel = path.posix.join(TARGET_REL, "package-lock.json");
+  const osvConfigRel = path.posix.join(TARGET_REL, ".osv-scanner.toml");
+  const osvConfigAbs = path.join(REPO_ROOT, osvConfigRel);
   const baseArgs = [
     `--lockfile=${lockfileRel}`,
     "--format=json",
     "--output=.zentto/security/osv.json",
   ];
+  if (fs.existsSync(osvConfigAbs)) {
+    baseArgs.unshift(`--config=${osvConfigRel}`);
+    log("Using OSV config:", osvConfigRel);
+  }
 
   if (useDocker) {
     if (!flags.noPull) runStream("docker", ["pull", "ghcr.io/google/osv-scanner:latest"]);
