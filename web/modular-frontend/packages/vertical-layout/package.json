@@ -59,7 +59,7 @@
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",
     "next": "^16",
-    "next-auth": "5.0.0-beta.25",
+    "next-auth": "5.0.0-beta.30",
     "react": "^19",
     "react-dom": "^19",
     "typescript": "^5"
