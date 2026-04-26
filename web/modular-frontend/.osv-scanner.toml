@@ -3,7 +3,12 @@
 # Cualquier nueva vuln NO listada aquí bloqueará el gate.
 # Re-evaluar cada entrada en cada sprint de seguridad.
 
-[[IgnoredVulns]]
-id = "GHSA-r5fr-rjxr-66jc"  # lodash@4.17.21 prototype pollution
-ignoreUntil = 2027-04-25
-reason = "Sin fix upstream. Funciones afectadas (lodash.merge/set/template con user input) NO se usan en el codebase. Verificado: solo se usan utilidades estándar (debounce, get, isEmpty)."
+# NOTA: Esta lista esta vacia tras el bump de lodash a 4.18.1 (PR #613) y la
+# eliminacion del override que forzaba 4.17.21. Las 3 GHSAs residuales del
+# baseline 2026-04-25 ya estan resueltas:
+# - GHSA-r5fr-rjxr-66jc (lodash) -> bump 4.18.1
+# - GHSA-h25m-26qc-wcjf (next 14 transitive) -> landing-kit 2.1.0 estable bump devDeps next 16
+# - GHSA-q4gf-8mx6-v5v3 (next 14 transitive) -> idem
+#
+# Mantener el archivo (vacio) como punto de configuracion futuro: cualquier
+# nueva excepcion va aqui con id + ignoreUntil + reason.
