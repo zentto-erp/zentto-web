@@ -25,6 +25,63 @@ Convertir **Meta Cloud API (oficial)** en el provider primario de WhatsApp en `z
 
 ---
 
+## 1.5 Modelo comercial — zentto-notify como producto SaaS
+
+**Decisión arquitectónica clave:** `zentto-notify` se diseña como **producto SaaS multi-tenant comercializable**, no como herramienta interna del ERP. Esto impacta TODAS las decisiones siguientes.
+
+### 1.5.1 Quién es el cliente
+
+| Tipo | Caso de uso | Cómo conecta WhatsApp |
+|---|---|---|
+| **Cliente Zentto ERP** (interno) | Notificaciones del ERP a sus contactos | WABA propia (manual o Embedded Signup) |
+| **Cliente standalone** (externo) | Empresa que solo usa notify, no el ERP | Embedded Signup Meta |
+| **Partner / agencia** (revendedor) | Gestiona N WABAs de N clientes finales | API + multi-org membership |
+| **Desarrollador** (API consumer) | Integra notify en su propia app | API keys + webhooks |
+
+### 1.5.2 Implicaciones arquitectónicas (vs solo "interno")
+
+| Capability | Si fuera interno | Como SaaS comercial |
+|---|---|---|
+| Tenancy | `user_id` simple | `organization_id` + RBAC granular + multi-org users |
+| Conexión WABA | App ID compartida Zentto | **Embedded Signup Meta como Tech Provider** + BYO opcional |
+| Acceso API | Solo dashboard interno | **API keys por org** + scopes + rate limiting per-key |
+| Costo Meta | Lo absorbe Zentto | **Usage metering** + facturación al cliente |
+| Branding | Zentto fijo | **White-label** (logo, colores, dominio custom opcional) |
+| Compliance | Mínimo | **GDPR delete, AES-256-GCM tokens, audit log, data residency** |
+| Webhooks salientes | Internos | Públicos al sistema del cliente, con HMAC signing y retry |
+| Observabilidad | Logs server | **Dashboard de métricas POR TENANT** (msgs sent, deliverability, errors) |
+| Soporte | Slack interno | **Audit log + impersonation segura** para soporte revisar problemas |
+
+### 1.5.3 Tiers comerciales (propuesta inicial — PO ajusta)
+
+| Tier | Provider permitido | Mensajes/mes incluidos | Features |
+|---|---|---|---|
+| **Free** | Baileys solo | 100 (rate-limited fuerte) | 1 instancia, sin templates, sin campaigns, sin API |
+| **Starter** | Baileys + Meta Cloud (BYO WABA) | 1,000 + costo Meta passthrough | 3 instancias, templates, canned responses |
+| **Pro** | Meta Cloud (Embedded Signup o BYO) | 10,000 + costo Meta passthrough | 10 instancias, campaigns, flow builder, API |
+| **Enterprise** | Meta Cloud (multi-WABA) | Ilimitado + bundle | Multi-org users, white-label, SLA, audit log, data residency |
+
+### 1.5.4 Decisión sobre App ID Meta
+
+**Descartada:** App ID compartida única para todos los clientes.
+- ❌ Si Meta suspende la App, **todos los clientes caen** (riesgo sistémico inaceptable).
+- ❌ Cuotas Meta agregadas → ahogan a unos clientes por uso de otros.
+- ❌ Compliance: clientes regulados (banca, salud) NO pueden compartir App.
+
+**Adoptada: arquitectura híbrida BSP-like:**
+
+| Modo | Quién | App ID | Tech Provider |
+|---|---|---|---|
+| **Embedded Signup** | Pro/Enterprise mayoría | App ID Zentto (Tech Provider verificado Meta) | Zentto |
+| **BYO WABA** (Bring Your Own) | Enterprise regulados | App ID del cliente | Cliente |
+| **Baileys** | Free / dev | N/A | N/A |
+
+Requiere: Zentto debe registrarse como **Tech Provider en Meta Business** (proceso ~7-21 días, pre-requisito de F1).
+
+---
+
+---
+
 ## 2. Estado actual (resumen)
 
 | Módulo | Estado | Path |
@@ -78,13 +135,25 @@ function getProvider(instance: WaInstance): WhatsAppProvider {
 }
 ```
 
-Tenant elige al crear instancia. Default por plan:
+Tenant elige al crear instancia, **scope organization_id** (no user_id):
 
-| Plan | Default | Permite cambiar |
+| Tier | Provider permitido | Onboarding WABA |
 |---|---|---|
-| Free | `baileys` | No |
-| Pro | `meta-cloud` | Sí (puede usar Baileys para dev) |
-| Enterprise | `meta-cloud` | Sí (puede tener mixto) |
+| Free | `baileys` solo | QR scan |
+| Starter | `baileys` o `meta-cloud` BYO | QR o credenciales manuales |
+| Pro | `meta-cloud` (Embedded Signup default) | OAuth Meta + Phone selection |
+| Enterprise | `meta-cloud` BYO o Embedded | Embedded + multi-WABA |
+
+### 3.3 Multi-tenant + RBAC (foundation crítica)
+
+Antes de cualquier provider, refactor `wa_instances` para soportar multi-tenancy real:
+
+- `wa_organizations` — entidad raíz comercial (tiene plan, billing_status, branding_config).
+- `wa_users` — perfiles users (puede pertenecer a N orgs via `wa_user_organizations`).
+- `wa_roles` + `wa_permissions` — RBAC granular (resource × action).
+- `wa_instances.organization_id` (no user_id) → soft-migration de datos existentes.
+- `wa_api_keys` — API keys por org con scopes y rate limit.
+- `wa_audit_log` — append-only log de acciones sensibles (soporte, compliance).
 
 ### 3.3 Interface común `WhatsAppProvider`
 
@@ -117,6 +186,162 @@ Métodos exclusivos de Meta (`sendTemplate`, `submitTemplate`, `subscribeWebhook
 
 Migración goose nueva en `zentto-notify/src/db/migrations/` (verificar siguiente número libre antes del PR).
 
+**Nota crítica:** la migración va en **2 partes** porque hay refactor de tenancy + features Meta. Parte 1 (multi-tenant foundation) NO toca features Meta y debe ir primero.
+
+### 4.1 Parte 1 — Multi-tenant foundation (F-1)
+
+```sql
+-- 0NN_whatsapp_multitenant_foundation.sql
+-- +goose Up
+
+-- Organizaciones (entidad comercial raíz)
+CREATE TABLE wa_organizations (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL,
+  slug TEXT UNIQUE NOT NULL,
+  plan TEXT NOT NULL DEFAULT 'free'
+    CHECK (plan IN ('free','starter','pro','enterprise')),
+  billing_status TEXT NOT NULL DEFAULT 'active'
+    CHECK (billing_status IN ('active','past_due','suspended','cancelled')),
+  branding_config JSONB DEFAULT '{}'::jsonb,
+  data_residency TEXT DEFAULT 'eu' CHECK (data_residency IN ('eu','us','latam')),
+  settings JSONB DEFAULT '{}'::jsonb,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Users
+CREATE TABLE wa_users (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email TEXT UNIQUE NOT NULL,
+  full_name TEXT,
+  password_hash TEXT,
+  is_super_admin BOOLEAN DEFAULT false,
+  sso_provider TEXT,
+  sso_subject TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Many-to-many users ↔ orgs
+CREATE TABLE wa_user_organizations (
+  user_id UUID NOT NULL REFERENCES wa_users(id) ON DELETE CASCADE,
+  organization_id UUID NOT NULL REFERENCES wa_organizations(id) ON DELETE CASCADE,
+  role_id UUID NOT NULL,
+  is_default BOOLEAN DEFAULT false,
+  joined_at TIMESTAMPTZ DEFAULT NOW(),
+  PRIMARY KEY (user_id, organization_id)
+);
+
+-- Roles RBAC granular
+CREATE TABLE wa_roles (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  organization_id UUID REFERENCES wa_organizations(id) ON DELETE CASCADE,
+  -- NULL organization_id = role builtin (admin, agent, viewer)
+  name TEXT NOT NULL,
+  is_builtin BOOLEAN DEFAULT false,
+  permissions JSONB NOT NULL DEFAULT '[]'::jsonb,
+  -- ej: ["templates:read","templates:create","campaigns:start","contacts:delete"]
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE (organization_id, name)
+);
+
+-- API keys por org (para integraciones externas + SDK)
+CREATE TABLE wa_api_keys (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  organization_id UUID NOT NULL REFERENCES wa_organizations(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  key_prefix TEXT NOT NULL,         -- visible: "wak_live_abc123"
+  key_hash TEXT NOT NULL,           -- bcrypt
+  scopes JSONB NOT NULL DEFAULT '["*"]'::jsonb,
+  rate_limit_per_minute INT DEFAULT 60,
+  last_used_at TIMESTAMPTZ,
+  expires_at TIMESTAMPTZ,
+  revoked_at TIMESTAMPTZ,
+  created_by UUID REFERENCES wa_users(id),
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX idx_wa_api_keys_prefix ON wa_api_keys(key_prefix) WHERE revoked_at IS NULL;
+
+-- Audit log (compliance + soporte)
+CREATE TABLE wa_audit_log (
+  id BIGSERIAL PRIMARY KEY,
+  organization_id UUID NOT NULL REFERENCES wa_organizations(id) ON DELETE CASCADE,
+  actor_user_id UUID REFERENCES wa_users(id),
+  actor_api_key_id UUID REFERENCES wa_api_keys(id),
+  action TEXT NOT NULL,             -- "instance.created", "template.submitted", "campaign.started"
+  resource_type TEXT,
+  resource_id TEXT,
+  metadata JSONB,
+  ip_address INET,
+  user_agent TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX idx_wa_audit_log_org_time ON wa_audit_log(organization_id, created_at DESC);
+
+-- Usage events (billing/metering)
+CREATE TABLE wa_usage_events (
+  id BIGSERIAL PRIMARY KEY,
+  organization_id UUID NOT NULL REFERENCES wa_organizations(id) ON DELETE CASCADE,
+  instance_id UUID,
+  event_type TEXT NOT NULL,         -- "message.sent","message.delivered","template.submitted"
+  category TEXT,                    -- "utility","marketing","authentication","service" (Meta categorías de billing)
+  quantity INT DEFAULT 1,
+  meta_cost_usd NUMERIC(10,6),      -- costo Meta passthrough
+  metadata JSONB,
+  occurred_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX idx_wa_usage_events_org_time ON wa_usage_events(organization_id, occurred_at DESC);
+CREATE INDEX idx_wa_usage_events_billing ON wa_usage_events(organization_id, occurred_at) WHERE meta_cost_usd > 0;
+
+-- Webhooks salientes (al sistema del cliente)
+CREATE TABLE wa_outbound_webhooks (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  organization_id UUID NOT NULL REFERENCES wa_organizations(id) ON DELETE CASCADE,
+  url TEXT NOT NULL,
+  secret TEXT NOT NULL,             -- HMAC signing
+  event_types JSONB NOT NULL DEFAULT '["*"]'::jsonb,
+  is_active BOOLEAN DEFAULT true,
+  last_success_at TIMESTAMPTZ,
+  consecutive_failures INT DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Refactor wa_instances: agregar organization_id
+ALTER TABLE wa_instances
+  ADD COLUMN organization_id UUID REFERENCES wa_organizations(id) ON DELETE CASCADE,
+  ADD COLUMN created_by_user_id UUID REFERENCES wa_users(id);
+
+-- Backfill: cada user_id existente → org sintética con su user como admin
+-- (script en scripts/migrate-wa-users-to-orgs.ts; ver F-1 punto 4)
+
+CREATE INDEX idx_wa_instances_org ON wa_instances(organization_id);
+
+-- Seed roles builtin
+INSERT INTO wa_roles (id, organization_id, name, is_builtin, permissions) VALUES
+  (gen_random_uuid(), NULL, 'org_admin', true,
+   '["*"]'::jsonb),
+  (gen_random_uuid(), NULL, 'agent', true,
+   '["messages:read","messages:send","contacts:read","contacts:create","canned:read"]'::jsonb),
+  (gen_random_uuid(), NULL, 'viewer', true,
+   '["messages:read","contacts:read","campaigns:read","analytics:read"]'::jsonb);
+
+-- +goose Down
+ALTER TABLE wa_instances
+  DROP COLUMN created_by_user_id,
+  DROP COLUMN organization_id;
+DROP TABLE wa_outbound_webhooks;
+DROP TABLE wa_usage_events;
+DROP TABLE wa_audit_log;
+DROP TABLE wa_api_keys;
+DROP TABLE wa_user_organizations;
+DROP TABLE wa_roles;
+DROP TABLE wa_users;
+DROP TABLE wa_organizations;
+```
+
+### 4.2 Parte 2 — Meta Cloud features (F1-F4)
+
 ```sql
 -- 0NN_whatsapp_meta_cloud_support.sql
 -- +goose Up
@@ -128,10 +353,14 @@ ALTER TABLE wa_instances
   ADD COLUMN meta_business_id TEXT,
   ADD COLUMN meta_app_id TEXT,
   ADD COLUMN meta_api_version TEXT DEFAULT 'v21.0',
-  ADD COLUMN meta_webhook_verify_token TEXT;
+  ADD COLUMN meta_webhook_verify_token TEXT,
+  ADD COLUMN meta_signup_mode TEXT DEFAULT 'manual'
+    CHECK (meta_signup_mode IN ('manual','embedded_signup','byo_app')),
+  ADD COLUMN meta_signup_session_id TEXT,
+  ADD COLUMN meta_tier INT DEFAULT 1 CHECK (meta_tier IN (1,2,3,4));
 
--- credenciales sensibles van encriptadas en wa_credentials (ya existe la tabla)
--- columnas en wa_credentials: access_token, app_secret (encrypted_jsonb)
+-- Credenciales encriptadas con AES-256-GCM (no en texto plano)
+-- wa_credentials.encrypted_jsonb ya existe; cifrar con KEK de KMS o env var
 
 CREATE INDEX idx_wa_instances_provider ON wa_instances(provider);
 
@@ -369,27 +598,43 @@ Backwards-compat: el executor (`flow-executor.ts`) ya consume YAML. Agregar adap
 
 ## 9. Fases e implementación
 
-| Fase | Días | Branch | PR | Bloqueante de |
-|---|---|---|---|---|
-| **F0** | 0.5 | `feat/whatsapp-meta-cloud-provider` | en notify | F1 |
-| Crear estructura `providers/` + `WhatsAppProvider` interface + mover Baileys actual a `providers/baileys/` (refactor sin cambio funcional). Tests existentes deben seguir pasando. | | | | |
-| **F1** | 3 | `feat/whatsapp-meta-cloud-client` | notify | F2 F3 |
-| `providers/meta-cloud/client.ts` + `webhook-verify.ts` + `media.ts`. Endpoints `POST /api/whatsapp/webhooks/meta/:id` + GET challenge. Migración goose con extensión `wa_instances`. Tests de envío text/media + verificación firma. | | | | |
-| **F2** | 2 | `feat/whatsapp-templates` | notify | F4 |
-| `providers/meta-cloud/templates.ts` + tabla `wa_templates` + 5 endpoints REST + sync via webhook event. | | | | |
-| **F3** | 4 | `feat/whatsapp-campaigns-bullmq` | notify | F5 |
-| `wa_campaigns` + `wa_campaign_recipients` tables + BullMQ queue + worker + retry policy + rate limiting + 6 endpoints REST. | | | | |
-| **F4** | 2 | `feat/whatsapp-canned-responses` | notify | — |
-| Tabla + 4 endpoints + UI dashboard (CRUD simple con ZenttoDataGrid). | | | | |
-| **F5** | 5 | `feat/whatsapp-flow-builder-xyflow` | notify | — |
-| Frontend xyflow + JSON↔YAML adapter + UI nodos + `flow_json` column. | | | | |
-| **F6** | 3 | `feat/whatsapp-dashboard-pro` | notify | — |
-| Dashboard `/whatsapp/templates` + `/whatsapp/campaigns` + `/whatsapp/canned-responses` con ZenttoDataGrid. Realtime status via WebSocket o polling. | | | | |
-| **F7** | 2 | `chore/whatsapp-docs-and-migration` | notify + zentto-erp-docs | — |
-| Doc usuario final + migration guide para clientes Pro que pasan de Baileys a Meta. | | | | |
-| **Total** | **~21.5 días** | | | |
+**Replanificadas para producto SaaS comercial.** Las fases F-1, F-0.5, F8, F9, F10 son nuevas o reordenadas vs versión inicial (que asumía herramienta interna).
 
-**Diferencia con estimación inicial (24-32 días):** acoté scope eliminando IVR, custom JS, SLA tracking. Esfuerzo real concentrado en F1+F3+F5.
+| Fase | Días | Branch | Bloqueante de | Sprint |
+|---|---|---|---|---|
+| **F-1** Multi-tenant foundation | 4 | `refactor/whatsapp-multitenant-foundation` | TODO | 1 |
+| Tablas `wa_organizations`, `wa_users`, `wa_user_organizations`, `wa_roles`, `wa_api_keys`, `wa_audit_log`, `wa_usage_events`, `wa_outbound_webhooks`. Refactor `wa_instances.user_id` → `organization_id` + script de migración de datos. Middleware auth con scoping `organization_id` en todas las queries. RBAC enforcement. **Sin esto no se puede vender.** | | | | |
+| **F-0.5** Crypto + audit | 1 | `feat/whatsapp-crypto-audit` | F1 | 1 |
+| Cifrado AES-256-GCM de access tokens en `wa_credentials` (KEK por env var, rotable). Audit log middleware en endpoints sensibles. GDPR delete (`POST /api/organizations/:id/erase`). | | | | |
+| **F0** Provider abstraction | 0.5 | `refactor/whatsapp-provider-interface` | F1 | 1 |
+| Crear `providers/` + interface `WhatsAppProvider` + mover Baileys a `providers/baileys/`. Sin cambio funcional, tests existentes pasan. | | | | |
+| **F1** Meta Cloud client (manual creds) | 3 | `feat/whatsapp-meta-cloud-client` | F2 F3 F8 | 2 |
+| `providers/meta-cloud/{client,webhook-verify,media}.ts`. Endpoints webhook (challenge GET + POST con HMAC). Onboarding manual (cliente pega `phone_id`/`business_id`/`access_token`). Tests con vectores Meta conocidos. | | | | |
+| **F2** Templates Meta-aprobados | 2 | `feat/whatsapp-templates` | F3 | 2 |
+| `wa_templates` + endpoints CRUD + submit a Meta + sync status via webhook event `message_template_status_update`. | | | | |
+| **F3** Bulk campaigns + BullMQ + usage metering | 5 | `feat/whatsapp-campaigns-bullmq` | F6 | 3 |
+| `wa_campaigns` + `wa_campaign_recipients` + BullMQ queue + worker + **retry exponencial** (no en whatomate) + rate limiting per-tier + **emit `wa_usage_events` por mensaje enviado** (foundation de billing). 6 endpoints REST + 4 endpoints SDK. | | | | |
+| **F4** Public API + SDK + outbound webhooks | 3 | `feat/whatsapp-public-api-sdk` | — | 3 |
+| Auth por API key (header `Authorization: Bearer wak_live_xxx`) + rate limiter per-key. Outbound webhooks con HMAC + retry policy. Extender `packages/sdk/` con métodos `whatsapp.*`. OpenAPI spec. | | | | |
+| **F5** Canned responses | 1.5 | `feat/whatsapp-canned-responses` | — | 4 |
+| Tabla + 4 endpoints + UI dashboard. | | | | |
+| **F6** Visual flow builder | 5 | `feat/whatsapp-flow-builder-xyflow` | — | 4-5 |
+| Frontend `@xyflow/react` + JSON↔YAML adapter + nodos (Message, Condition, AI/RAG, HTTP, End) + `flow_json` column. Compat backwards: el engine sigue consumiendo YAML. | | | | |
+| **F7** Dashboard pro multi-tenant | 4 | `feat/whatsapp-dashboard-multitenant` | — | 5 |
+| `/whatsapp/templates`, `/whatsapp/campaigns`, `/whatsapp/canned-responses`, `/whatsapp/api-keys`, `/whatsapp/audit-log`, `/whatsapp/usage` con ZenttoDataGrid. Realtime status via WebSocket. Org switcher (multi-org users). | | | | |
+| **F8** Embedded Signup Meta (BSP-like) | 5 | `feat/whatsapp-embedded-signup` | — | 6 |
+| **Pre-requisito externo: Zentto verificada como Tech Provider en Meta** (proceso paralelo ~7-21 días). UI button "Connect WhatsApp" → popup OAuth Meta → callback con `phone_number_id`/`waba_id` → instancia auto-creada. Usa SDK Facebook JS o flow custom. Es lo que cierra el funnel de auto-onboarding Pro. | | | | |
+| **F9** Billing + usage dashboard | 4 | `feat/whatsapp-billing-usage` | — | 6-7 |
+| Aggregation `wa_usage_events` → reportes mensuales por org. Integración con Stripe/Paddle (revisar `project_paddle_notify.md` en memoria). Dashboard `/billing/usage` con gráficos. Email mensual. **Threshold alerts** (cliente excede 80% del plan). | | | | |
+| **F10** White-label + custom domain | 3 | `feat/whatsapp-whitelabel` | — | 7 |
+| `wa_organizations.branding_config` aplicado a dashboard (logo, colores, favicon). Subdominio `<org-slug>.notify.zentto.net` o dominio custom CNAME (con cert via Cloudflare for SaaS o Let's Encrypt). Email branding. | | | | |
+| **F11** Docs + migration guide | 2 | `chore/whatsapp-docs` (`zentto-erp-docs`) | — | 7 |
+| Docs cliente final, API reference (Stoplight/Redoc), migration guide Baileys→Meta, onboarding videos. | | | | |
+| **Total** | **~43 días** senior dev | | | **~7 sprints** |
+
+**Camino crítico mínimo viable comercial** (vender Pro): F-1 → F-0.5 → F0 → F1 → F2 → F3 → F4 → F7 + F8 ≈ **30.5 días**.
+
+**Diferencia con plan v1 (21.5 días):** v1 omitía toda la layer comercial (multi-tenant real, API pública, embedded signup, billing, white-label). Para producto interno valdría 21.5 días; para SaaS vendible, mínimo 30.5 días MVP comercial.
 
 ---
 
@@ -431,22 +676,71 @@ Por tenant (en `wa_instances`):
 
 ## 12. Decisiones pendientes (PO)
 
-1. **Plan pricing Pro/Enterprise** — ¿ya hay precio definido para Meta Cloud o se ajusta?
-2. **Quién hace verificación Meta Business** — ¿yo gestiono, o Raúl con la cuenta legal de Zentto?
-3. **¿Implementamos F4 (canned responses) y F5 (flow builder) en este sprint o se difieren?** — Se pueden vender Pro sin ellos si urge.
-4. **App ID Meta** — ¿una App ID compartida para todos los tenants (con system user token), o una App por tenant grande?
-5. **Webhook URL** — ¿dominio nuevo `wa-webhook.zentto.net` o reusa `api-notify.zentto.net`?
+1. **Tiers + pricing Pro/Enterprise** — ¿precio definido o se ajusta? Cuántos mensajes/mes incluidos por tier.
+2. **Verificación Meta Tech Provider** — ¿quién gestiona ante Meta Business? Es bloqueante de F8 (paralelo, no del MVP).
+3. **Stripe vs Paddle** para billing — verificar `project_paddle_notify.md` en memoria.
+4. **Webhook domain** — `wa.zentto.net`, `api.notify.zentto.net/webhooks/wa` o subdominio por org.
+5. **Branding default** — ¿usamos branding Zentto en Free, o mostramos "Powered by Zentto" tipo Vercel?
+6. **Multi-region desde el día 1?** — `data_residency` está en schema; ¿deploy real EU/US/LATAM en F-1 o se difiere?
 
 ---
 
 ## 13. Decisiones tomadas
 
-- **Provider primario** = Meta Cloud para Pro/Enterprise. Baileys = secundario / Free.
+- **zentto-notify es producto SaaS comercial multi-tenant**, no herramienta interna.
+- **Provider primario** = Meta Cloud para Pro/Enterprise. Baileys = Free / dev / Starter BYO.
+- **App ID Meta** = arquitectura híbrida BSP-like:
+  - Embedded Signup con App ID Zentto (Tech Provider) para self-service Pro/Ent.
+  - BYO App ID para Enterprise regulados.
+  - Descartada: App compartida única (riesgo sistémico).
 - **Stack Node** = no migramos a Go; portamos features de whatomate al stack actual.
 - **Visual flow builder** = `@xyflow/react` (no Vue Flow, encaja con Next.js).
 - **Queue** = BullMQ (no goroutines, no canales Go).
+- **Multi-tenant** = `organization_id` no `user_id`; users pueden pertenecer a N orgs (partners/agencias).
+- **Auth API** = API keys con scopes + rate limit per-key (no solo dashboard).
+- **Compliance** = AES-256-GCM credenciales, audit log, GDPR delete, data_residency selectable.
 - **Fuente de verdad whatomate** = clonado en `D:\DatqBoxWorkspace\_references\whatomate` (commit hash referenciado en cada PR de implementación).
 - **NO copiamos** = IVR voice, custom JS executor, SLA tracking, single-binary deployment.
+
+---
+
+## 16. Producto SaaS — checklist commercialization
+
+Ítems necesarios para que zentto-notify sea **comercializable de verdad**, no solo "técnicamente multi-tenant":
+
+| Categoría | Ítem | Fase | Bloqueante de venta |
+|---|---|---|---|
+| **Tenancy** | Organizations + RBAC | F-1 | Sí |
+| **Tenancy** | Multi-org users (un user en N orgs) | F-1 | Para partners/agencias |
+| **Auth** | API keys con scopes | F4 | Sí (Pro+) |
+| **Auth** | SSO (SAML/OIDC) | Post-MVP | Solo Enterprise |
+| **Onboarding** | Manual (paste credentials) | F1 | MVP Starter |
+| **Onboarding** | Embedded Signup Meta | F8 | MVP Pro escalable |
+| **Billing** | Usage metering events | F3 | Sí |
+| **Billing** | Stripe/Paddle integration | F9 | Sí |
+| **Billing** | Threshold alerts | F9 | Sí |
+| **Billing** | Invoice generation | F9 | Sí |
+| **Compliance** | AES-256-GCM credenciales | F-0.5 | Sí (legal) |
+| **Compliance** | Audit log inmutable | F-0.5 | Enterprise |
+| **Compliance** | GDPR delete API | F-0.5 | Sí (UE) |
+| **Compliance** | Data residency selection | F-1 (schema), Post-MVP (deploy) | Enterprise |
+| **Compliance** | DPA template + Terms of Service | Legal task, paralelo | Sí |
+| **Compliance** | SOC2 / ISO27001 | Año 2 | Solo Enterprise grandes |
+| **Branding** | White-label dashboard | F10 | Pro+ premium |
+| **Branding** | Custom domain CNAME | F10 | Enterprise |
+| **API** | Public REST API + OpenAPI spec | F4 | Sí |
+| **API** | SDK npm `@zentto/notify-client` | F4 | Sí |
+| **API** | Webhooks salientes con HMAC + retry | F4 | Sí |
+| **Observabilidad** | Metrics dashboard per-tenant | F7 | Sí |
+| **Observabilidad** | Status page público (statuspage.io) | Post-MVP | Sí |
+| **Observabilidad** | Alerting + on-call (Grafana, PagerDuty) | Post-MVP infra | Pro+ |
+| **Soporte** | Audit log + impersonation segura | F-0.5 + F7 | Sí |
+| **Soporte** | In-app chat support | Post-MVP (usar nuestro propio widget!) | Pro+ |
+| **Marketing** | Landing comercial `notify.zentto.net` | Post-MVP, equipo marketing | Sí |
+| **Marketing** | Documentación pública | F11 | Sí |
+| **Marketing** | Free trial sin tarjeta | F9 funnel | Sí |
+| **Confianza** | Trust center (security.txt, certs, etc.) | Post-MVP | Enterprise |
+| **Confianza** | Reference customers / case studies | Año 2 | Enterprise grandes |
 
 ---
 
@@ -473,4 +767,16 @@ Por tenant (en `wa_instances`):
 
 ## 15. Próximo paso
 
-Aprobación PO de este doc → arrancar **F0 (refactor sin cambio funcional)** en branch `feat/whatsapp-meta-cloud-provider` del repo `zentto-notify`. PR a `developer`.
+Modo automático autorizado por PO. Arrancar **F-1 (multi-tenant foundation)** en branch `refactor/whatsapp-multitenant-foundation` del repo `zentto-notify`. PR a `developer` cuando F-1 cierre.
+
+Orden de ejecución:
+1. Push branch actual (DatqBoxWeb) con doc actualizado + abrir PR a `developer`.
+2. Crear branch en `zentto-notify` desde `developer` para F-1.
+3. Implementar F-1 (4 días estimados): migración goose multi-tenant + middleware auth/RBAC + script de migración de datos existentes.
+4. Smoke test en `apidev.zentto.net` → merge a `developer` → continuar F-0.5.
+
+Trámites paralelos no-código que el PO debe arrancar YA porque tienen lead time:
+- Registro Zentto como Tech Provider en Meta Business Manager (~7-21 días).
+- Acuerdo Stripe o Paddle.
+- DPA + ToS legal (abogado).
+- Definición final de tiers + pricing.
