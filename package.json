@@ -1,5 +1,7 @@
 {
   "dependencies": {
-    "@zentto/obs": "^1.0.0"
+    "@zentto/obs": "^1.0.0",
+    "bullmq": "^5.76.2",
+    "typescript": "^6.0.3"
   }
 }
