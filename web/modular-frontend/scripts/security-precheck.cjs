@@ -80,6 +80,9 @@ function dockerVolumeMount() {
 function runStream(cmd, args, opts = {}) {
   log(">", cmd, args.join(" "));
   const env = { ...process.env, MSYS_NO_PATHCONV: "1" };
+  // nosemgrep: javascript.lang.security.detect-child-process.detect-child-process
+  // Safe: cmd is hardcoded in this file (docker/semgrep/trivy/osv-scanner only),
+  // args are arrays (no shell interpretation), no user input reaches here.
   const r = spawnSync(cmd, args, { stdio: "inherit", env, ...opts });
   return r.status ?? -1;
 }

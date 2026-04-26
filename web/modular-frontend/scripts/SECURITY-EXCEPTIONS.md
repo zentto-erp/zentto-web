@@ -30,27 +30,32 @@ Lista de hallazgos de seguridad **aceptados temporalmente** con plan de fix conc
 
 ---
 
+## ✅ HIGH resueltas en este PR
+
+| Package | Antes | Ahora | Cómo |
+|---|---|---|---|
+| `dompurify` | 2.5.9 (sin uso) | REMOVED | Eliminada de `module-nomina/package.json` (0 imports en código) — fix 7 HIGH |
+| `lodash` | 4.17.23 | 4.17.21 | Override root — fix 2 HIGH |
+| `flatted` | 3.3.3 | 3.4.2 | Override root — fix 1 CRITICAL (CVSS 8.9) + 1 HIGH |
+| `postcss` | 8.4.31 | 8.5.10 | Override root — fix 1 HIGH |
+| `brace-expansion` | 1.1.12/2.0.2 | 2.1.0 | Override root — fix 2 HIGH |
+| `yaml` | 1.10.2/2.5.1 | 2.8.3 | Override root — fix 2 HIGH |
+| `uuid` | 9.0.1 (direct) | 11.1.0 | Bump en `apps/restaurante` — fix 1 HIGH |
+
+**Subtotal:** 1 CRITICAL minor + 16 HIGH cerradas en este commit.
+
 ## ⚠️ HIGH pendientes (no bloquean gate `critical`, sí bloquearían gate `high`)
 
-Pendientes de PRs separados por dep:
+Pendientes de PRs separados por dep (alto riesgo de breaking change):
 
 | Package | Versión | CVEs | Plan |
 |---|---|---|---|
-| `jspdf@2.5.2` | direct | 9 HIGH (CVE-2025-29907, CVE-2025-57810, CVE-2026-24133, CVE-2026-24737, CVE-2026-25535, CVE-2026-25755, CVE-2026-25940, CVE-2026-31898, GHSA-...) | Mismo PR que CRITICAL (todos los HIGH se fixean en jspdf 4.x) |
-| `dompurify@2.5.9` | direct (sin uso real) | 7 HIGH | PR `fix/remove-unused-dompurify` — eliminar de module-nomina (no se usa en código) |
-| `next-auth@5.0.0-beta.25` | direct (19 archivos) | 1 HIGH (GHSA-5jpx-9hw9-2fx4) | PR `fix/next-auth-bump-beta31` — bump a 5.0.0-beta.31 en TODOS los workspaces |
-| `next@14.2.35 / 16.2.0` | direct (multi-version) | 5+1 HIGH | PR `fix/next-bump` — pin a 16.2.3+ |
-| `cross-spawn@5.1.0` | transitive (override existente no aplica) | 1 HIGH | Investigar override raíz que no se aplica |
-| `lodash@4.17.23` | transitive | 2 HIGH | Override `lodash: 4.17.21` |
-| `minimatch@3.1.2 / 9.0.5` | transitive | 6 HIGH | Override versión segura |
-| `picomatch@2.3.1 / 4.0.3` | transitive | 4 HIGH | Override |
-| `flatted@3.3.3` | transitive | 2 (1 HIGH + 1 CRITICAL CVSS 8.9) | Override |
-| `brace-expansion@1.1.12 / 2.0.2` | transitive | 2 | Override |
-| `postcss@8.4.31` | transitive | 1 HIGH | Override `^8.4.49` |
-| `uuid@9.0.1` | direct (apps/restaurante) | 1 HIGH | PR `fix/uuid-bump` — `^11.1.0` (mantiene CJS) |
-| `yaml@1.10.2 / 2.5.1` | transitive | 2 HIGH | Override |
-
-Total: **23 HIGH + 22 MEDIUM** identificados en baseline 2026-04-25.
+| `jspdf@2.5.2` | direct | 9 HIGH (CVE-2025-29907, CVE-2025-57810, CVE-2026-24133, CVE-2026-24737, CVE-2026-25535, CVE-2026-25755, CVE-2026-25940, CVE-2026-31898) | Mismo PR que CRITICAL (jspdf 4.x rompe SSR Turbopack) |
+| `next-auth@5.0.0-beta.25` | direct (19 archivos) | 1 HIGH (GHSA-5jpx-9hw9-2fx4) | PR separado `fix/next-auth-bump-beta31` — afecta 19 workspaces, requiere validar cada app |
+| `next@14.2.35 / 16.2.0` | direct (multi-version) | 5+1 HIGH | PR separado `fix/next-bump` — pin a 16.2.3+, validar cada app |
+| `cross-spawn@5.1.0` | transitive (override existente no aplica) | 1 HIGH | Investigar por qué el override `cross-spawn: 7.0.6` no resuelve |
+| `minimatch@3.1.2 / 9.0.5` | transitive | 6 HIGH | Override `minimatch: 10.x` (breaking API, validar consumidores) |
+| `picomatch@2.3.1 / 4.0.3` | transitive | 4 HIGH | Override `picomatch: 4.x` (breaking ESM, validar fast-glob/chokidar) |
 
 ---
 
